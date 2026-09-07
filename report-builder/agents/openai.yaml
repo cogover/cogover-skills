@@ -1,0 +1,4 @@
+interface:
+  display_name: "Report Builder"
+  short_description: "Tạo và kiểm chứng báo cáo trên Cogover"
+  default_prompt: "Dùng $report-builder để tạo và kiểm chứng một báo cáo Cogover từ yêu cầu của tôi."

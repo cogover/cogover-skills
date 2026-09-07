@@ -1,0 +1,485 @@
+{
+  "metadata": {
+    "scheduleRules": [
+      {
+        "triggerInterval": {
+          "atMinute": 0,
+          "atSecond": 0,
+          "type": "DAYS",
+          "atHour": 9,
+          "between": 1
+        },
+        "start": null,
+        "maxRun": 0,
+        "end": null,
+        "id": "SR000000002",
+        "maxRunTypeFE": "UNLIMITED"
+      }
+    ]
+  },
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "VIEW_INSTANCE_FULL": false
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "CANCEL_INSTANCE",
+        "DELETE_INSTANCE",
+        "VIEW_INSTANCE_PROGRESS",
+        "VIEW_INSTANCE_FULL",
+        "DO_EVERY_TASK_IN_SEQUENCE",
+        "ASSIGN_TASK"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PE00000000013\">    <bpmn2:startEvent id=\"NO00000000074\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_SCHEDULED_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000065</bpmn2:outgoing>    </bpmn2:startEvent>    <bpmn2:endEvent id=\"NO00000000079\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FLDWWSQEDKWGY</bpmn2:incoming>    </bpmn2:endEvent>    <elEx:sendNotificationTask id=\"NODWWSQEXKWGV\" name=\"Gui thong bao\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"SEND_NOTIFICATION_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000065</bpmn2:incoming>      <bpmn2:outgoing>FLDWWSQEDKWGY</bpmn2:outgoing>    </elEx:sendNotificationTask>    <bpmn2:sequenceFlow id=\"FLDWWSQEDKWGY\" name=\"\" sourceRef=\"NODWWSQEXKWGV\" targetRef=\"NO00000000079\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000065\" name=\"\" sourceRef=\"NO00000000074\" targetRef=\"NODWWSQEXKWGV\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000013\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PE00000000013\" bpmnElement=\"PE00000000013\">      <bpmndi:BPMNShape id=\"Event_1k573iz_di\" bpmnElement=\"NO00000000074\">        <dc:Bounds x=\"70\" y=\"280\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"86\" y=\"340\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_0v9wmf3_di\" bpmnElement=\"NO00000000079\">        <dc:Bounds x=\"450\" y=\"280\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"443\" y=\"347\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_0n6whon_di\" bpmnElement=\"NODWWSQEXKWGV\">        <dc:Bounds x=\"260\" y=\"280\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"249\" y=\"350\" width=\"82\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_10ivtl1_di\" bpmnElement=\"FLDWWSQEDKWGY\">        <di:waypoint x=\"320\" y=\"310\" />        <di:waypoint x=\"450\" y=\"310\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_1p5zeve_di\" bpmnElement=\"FL00000000065\">        <di:waypoint x=\"130\" y=\"310\" />        <di:waypoint x=\"260\" y=\"310\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "description": "",
+  "type": "scheduled_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "VIEW_INSTANCE_PROGRESS",
+    "VIEW_INSTANCE_FULL",
+    "CANCEL_INSTANCE",
+    "DELETE_INSTANCE",
+    "DO_EVERY_TASK_IN_SEQUENCE",
+    "ASSIGN_TASK"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "DRAFT",
+  "processInfoId": "PI00000000009",
+  "id": "PE00000000013",
+  "slug": "mau_cho_ai_scheduled_flow",
+  "workspaceId": "WS_SAMPLE",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": false,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PE00000000013",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000013",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000013",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000013",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000006"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000013",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000013",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [],
+    "loops": [],
+    "userTasks": [],
+    "actions": [
+      {
+        "processId": "PE00000000013",
+        "name": "Gui thong bao",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.gui_thong_bao.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "ACDWWSQEAKWGC",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendNotification / Gui thong bao / StartAt",
+            "id": "RS00000000111",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.gui_thong_bao.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "ACDWWSQEAKWGC",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendNotification / Gui thong bao / End At",
+            "id": "RSDWWSQEBKWGZ",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.gui_thong_bao.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "NUMBER",
+            "type": 1,
+            "isList": false,
+            "parentId": "ACDWWSQEAKWGC",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000013",
+            "name": "Output",
+            "metaDataType": {
+              "valueLimit": {
+                "min": -9999999999.999998,
+                "max": 9999999999.999998,
+                "warning": "warning limit note"
+              },
+              "displayType": 2,
+              "multipleLimit": {
+                "min": 1,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "format": {
+                "format": 2,
+                "type": 1
+              },
+              "integralLength": 10,
+              "roundRule": "1",
+              "fractionalLength": 6
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendNotification / Gui thong bao / Output",
+            "id": "RS00000000125",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "ACDWWSQEAKWGC",
+        "type": "SEND_NOTIFICATION",
+        "nodeId": "NODWWSQEXKWGV",
+        "slug": "gui_thong_bao"
+      }
+    ]
+  },
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V1",
+  "versionNumber": 1,
+  "currentVersion": true,
+  "versionLabel": "",
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Mau cho AI: Scheduled Flow",
+  "actions": [
+    {
+      "data": {
+        "displayType": "SIMPLE",
+        "from": {
+          "isRaw": true,
+          "fromType": "WORKSPACE_NOTIFICATION",
+          "personnel": null
+        },
+        "exclude": [],
+        "to": [
+          {
+            "type": 1,
+            "value": "PER_SAMPLE_USER"
+          }
+        ],
+        "redirectType": "ROUTING",
+        "title": {
+          "type": 1,
+          "value": "1"
+        },
+        "notificationChannel": "NO000000000122",
+        "redirectToPage": {
+          "type": 1,
+          "value": ""
+        },
+        "content": {
+          "type": "text/html",
+          "content": {
+            "type": 1,
+            "value": "<div>1</div>"
+          }
+        }
+      },
+      "processId": "PE00000000013",
+      "name": "Gui thong bao",
+      "description": "",
+      "id": "ACDWWSQEAKWGC",
+      "type": "SEND_NOTIFICATION",
+      "nodeId": "NODWWSQEXKWGV",
+      "slug": "gui_thong_bao"
+    }
+  ],
+  "status": 2,
+  "created": "2026-02-09T15:35:05.653Z",
+  "updated": "2026-02-09T15:35:07.422Z",
+  "overviewScreen": {
+    "layout": [],
+    "permissionGeneralInfo": []
+  }
+}

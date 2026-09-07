@@ -1,0 +1,198 @@
+{
+  "name": "Tóm tắt yêu cầu bằng AI Agent",
+  "slug": "ai_agent_example",
+  "description": "Mẫu cấu trúc: thay AGENT_ID và sinh lại ID trước khi tạo; chưa kiểm thử trên Workspace.",
+  "id": "PEAIEXAMPLE01",
+  "processInfoId": "PIAIEXAMPLE01",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "metadata": {},
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE",
+    "CANCEL_INSTANCE",
+    "DELETE_INSTANCE",
+    "VIEW_INSTANCE_PROGRESS",
+    "VIEW_INSTANCE_FULL"
+  ],
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "DELETE_INSTANCE": false,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": false,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": false,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false
+  },
+  "participantPermission": {
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false
+  },
+  "overviewScreen": {
+    "layout": [],
+    "permissionGeneralInfo": []
+  },
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "NOAIEXAMPLE02",
+      "processId": "PEAIEXAMPLE01",
+      "nodeId": "NOAIEXAMPLE02",
+      "type": "AI_AGENT",
+      "name": "Tóm tắt yêu cầu",
+      "slug": "ai_summary",
+      "description": "",
+      "data": "{\"agentId\":\"{AGENT_ID}\",\"instruction\":{\"type\":5,\"value\":\"Tóm tắt yêu cầu sau bằng tiếng Việt trong ba ý ngắn: $flow.request_text. Chỉ phân tích nội dung được cung cấp, không thực hiện thay đổi dữ liệu.\"},\"contextVariables\":[{\"key\":\"request_text\",\"value\":{\"type\":4,\"value\":\"$flow.request_text\"}}],\"contextRecords\":[],\"session\":{\"mode\":\"NEW\"},\"runAs\":{\"mode\":\"PROCESS_STARTER\"},\"approvalPolicy\":\"DENY\",\"timeoutInSeconds\":300,\"maxTurns\":null,\"continueOnFailure\":false}"
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [
+      {
+        "id": "RSAIEXAMPLE01",
+        "processId": "PEAIEXAMPLE01",
+        "parentId": "PEAIEXAMPLE01",
+        "parentTable": "process",
+        "name": "Nội dung yêu cầu",
+        "slug": "request_text",
+        "absoluteSlug": "$flow.request_text",
+        "absolutePath": "workflow_resource:list.variable / Nội dung yêu cầu",
+        "defaultValue": "Khách hàng cần đặt lịch trao đổi về báo cáo bán hàng và phân quyền xem dữ liệu.",
+        "dataType": "TEXT",
+        "type": 1,
+        "isList": false,
+        "editable": true,
+        "assignable": true,
+        "availableForInput": true,
+        "availableForOutput": false,
+        "isStandard": false,
+        "metaDataType": {
+          "characterLimit": {
+            "min": 0,
+            "max": 131072,
+            "warning": "warning limit note"
+          },
+          "richText": "false"
+        },
+        "resourcesUsedIn": [
+          {
+            "actionType": "AI_AGENT",
+            "name": "Tóm tắt yêu cầu",
+            "count": 2,
+            "id": "NOAIEXAMPLE02",
+            "parentTable": "action",
+            "slug": "ai_summary"
+          }
+        ]
+      }
+    ],
+    "userTasks": [],
+    "actions": [
+      {
+        "id": "NOAIEXAMPLE02",
+        "nodeId": "NOAIEXAMPLE02",
+        "name": "Tóm tắt yêu cầu",
+        "slug": "ai_summary",
+        "type": "AI_AGENT",
+        "resources": [
+          {
+            "id": "RSAIEXAMPLE02",
+            "processId": "PEAIEXAMPLE01",
+            "parentId": "NOAIEXAMPLE02",
+            "parentTable": "action",
+            "name": "Start At",
+            "slug": "startAt",
+            "absoluteSlug": "$action.ai_summary.startAt",
+            "absolutePath": "workflow_resource:list.aiAgent / Tóm tắt yêu cầu / Start At",
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          },
+          {
+            "id": "RSAIEXAMPLE03",
+            "processId": "PEAIEXAMPLE01",
+            "parentId": "NOAIEXAMPLE02",
+            "parentTable": "action",
+            "name": "End At",
+            "slug": "endAt",
+            "absoluteSlug": "$action.ai_summary.endAt",
+            "absolutePath": "workflow_resource:list.aiAgent / Tóm tắt yêu cầu / End At",
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          },
+          {
+            "id": "RSAIEXAMPLE04",
+            "processId": "PEAIEXAMPLE01",
+            "parentId": "NOAIEXAMPLE02",
+            "parentTable": "action",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.ai_summary.output",
+            "absolutePath": "workflow_resource:list.aiAgent / Tóm tắt yêu cầu / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          }
+        ]
+      }
+    ],
+    "loops": []
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEAIEXAMPLE01\">\n    <bpmn2:startEvent id=\"NOAIEXAMPLE01\" name=\"Bắt đầu\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:outgoing>FLAIEXAMPLE01</bpmn2:outgoing>\n    </bpmn2:startEvent>\n    <bpmn2:sendTask id=\"NOAIEXAMPLE02\" name=\"Tóm tắt yêu cầu\">\n      <bpmn2:extensionElements>\n        <elEx:aiAgentTask />\n        <configEx:elementInfo renderKey=\"AI_AGENT_TASK\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAIEXAMPLE01</bpmn2:incoming>\n      <bpmn2:outgoing>FLAIEXAMPLE02</bpmn2:outgoing>\n    </bpmn2:sendTask>\n    <bpmn2:endEvent id=\"NOAIEXAMPLE03\" name=\"Kết thúc quy trình\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"END_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAIEXAMPLE02</bpmn2:incoming>\n    </bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLAIEXAMPLE01\" sourceRef=\"NOAIEXAMPLE01\" targetRef=\"NOAIEXAMPLE02\" />\n    <bpmn2:sequenceFlow id=\"FLAIEXAMPLE02\" sourceRef=\"NOAIEXAMPLE02\" targetRef=\"NOAIEXAMPLE03\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_AIEXAMPLE\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_AIEXAMPLE\" bpmnElement=\"PEAIEXAMPLE01\">\n      <bpmndi:BPMNShape id=\"NOAIEXAMPLE01_di\" bpmnElement=\"NOAIEXAMPLE01\">\n        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"49\" y=\"330\" width=\"42\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAIEXAMPLE02_di\" bpmnElement=\"NOAIEXAMPLE02\">\n        <dc:Bounds x=\"200\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"185\" y=\"330\" width=\"90\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAIEXAMPLE03_di\" bpmnElement=\"NOAIEXAMPLE03\">\n        <dc:Bounds x=\"360\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"336\" y=\"330\" width=\"108\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"FLAIEXAMPLE01_di\" bpmnElement=\"FLAIEXAMPLE01\">\n        <di:waypoint x=\"100\" y=\"290\" />\n        <di:waypoint x=\"200\" y=\"290\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FLAIEXAMPLE02_di\" bpmnElement=\"FLAIEXAMPLE02\">\n        <di:waypoint x=\"260\" y=\"290\" />\n        <di:waypoint x=\"360\" y=\"290\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

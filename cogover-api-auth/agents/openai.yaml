@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cogover API Auth"
+  short_description: "Chọn và triển khai xác thực Cogover API"
+  default_prompt: "Dùng $cogover-api-auth để chọn đúng cơ chế xác thực Cogover API và tạo request mẫu an toàn."

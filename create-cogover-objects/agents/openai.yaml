@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Cogover Objects"
+  short_description: "Thiết kế schema Object bằng workbook Excel"
+  default_prompt: "Dùng $create-cogover-objects để tạo workbook định nghĩa Object từ yêu cầu của tôi."

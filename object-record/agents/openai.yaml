@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Record"
+  short_description: "Đọc và quản lý bản ghi trên Cogover"
+  default_prompt: "Dùng $object-record để đọc và quản lý bản ghi trong Workspace tôi đã cấu hình."

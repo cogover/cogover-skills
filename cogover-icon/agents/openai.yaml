@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cogover Icon"
+  short_description: "Tạo, tra cứu và upload icon Cogover chuẩn"
+  default_prompt: "Dùng $cogover-icon để tra cứu thư viện hoặc tạo, kiểm tra và upload SVG cho Button/App Menu Cogover."

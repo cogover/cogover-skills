@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Path Component"
+  short_description: "Configure object paths through Cogover APIs"
+  default_prompt: "Use $object-path-component to inspect or configure an object path through Cogover APIs."

@@ -1,0 +1,1137 @@
+{
+  "metadata": {
+    "objectTypeId": "OT00000000011",
+    "objectTypeSlug": "lead"
+  },
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": true,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": true,
+    "VIEW_INSTANCE_FULL": false
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "CONNECT_SEQUENCE",
+        "CANCEL_INSTANCE",
+        "DO_EVERY_TASK_IN_SEQUENCE",
+        "ASSIGN_TASK"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PE00000000018\">    <bpmn2:endEvent id=\"NO00000000037\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000007</bpmn2:incoming>    </bpmn2:endEvent>    <bpmn2:sendTask id=\"NO00000000039\" name=\"Send email 2\">      <bpmn2:extensionElements>        <configEx:elementInfo sequenceFlowType=\"AUTOMATIC\" />        <configEx:elementInfo renderKey=\"SEND_EMAIL_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000031</bpmn2:incoming>      <bpmn2:outgoing>FL00000000033</bpmn2:outgoing>    </bpmn2:sendTask>    <bpmn2:sendTask id=\"NO00000000049\" name=\"Send email 1\">      <bpmn2:extensionElements>        <configEx:elementInfo sequenceFlowType=\"AUTOMATIC\" />        <configEx:elementInfo renderKey=\"SEND_EMAIL_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000005</bpmn2:incoming>      <bpmn2:outgoing>FL00000000016</bpmn2:outgoing>    </bpmn2:sendTask>    <bpmn2:startEvent id=\"NO00000000048\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_SEQUENCE_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000005</bpmn2:outgoing>    </bpmn2:startEvent>    <elEx:waitTask id=\"NO00000000035\" name=\"Wait 1\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"WAIT_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000016</bpmn2:incoming>      <bpmn2:outgoing>FL00000000031</bpmn2:outgoing>    </elEx:waitTask>    <elEx:waitTask id=\"NO00000000043\" name=\"Wait 2\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"WAIT_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000033</bpmn2:incoming>      <bpmn2:outgoing>FL00000000007</bpmn2:outgoing>    </elEx:waitTask>    <bpmn2:sequenceFlow id=\"FL00000000033\" name=\"\" sourceRef=\"NO00000000039\" targetRef=\"NO00000000043\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000016\" name=\"\" sourceRef=\"NO00000000049\" targetRef=\"NO00000000035\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000031\" name=\"\" sourceRef=\"NO00000000035\" targetRef=\"NO00000000039\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000005\" name=\"\" sourceRef=\"NO00000000048\" targetRef=\"NO00000000049\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000007\" name=\"\" sourceRef=\"NO00000000043\" targetRef=\"NO00000000037\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000018\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PE00000000018\" bpmnElement=\"PE00000000018\">      <bpmndi:BPMNShape id=\"Event_17d27yx_di\" bpmnElement=\"NO00000000037\">        <dc:Bounds x=\"680\" y=\"450\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"673\" y=\"517\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_1j52oax_di\" bpmnElement=\"NO00000000039\">        <dc:Bounds x=\"520\" y=\"290\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"512\" y=\"264\" width=\"76\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_0tqnkh2_di\" bpmnElement=\"NO00000000049\">        <dc:Bounds x=\"200\" y=\"290\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"192\" y=\"360\" width=\"76\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_1sw44fb_di\" bpmnElement=\"NO00000000048\">        <dc:Bounds x=\"60\" y=\"290\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"76\" y=\"350\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_1c1o19a_di\" bpmnElement=\"NO00000000035\">        <dc:Bounds x=\"360\" y=\"290\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"372\" y=\"360\" width=\"37\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_1mhify1_di\" bpmnElement=\"NO00000000043\">        <dc:Bounds x=\"520\" y=\"450\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"532\" y=\"520\" width=\"37\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_01dkmdz_di\" bpmnElement=\"FL00000000033\">        <di:waypoint x=\"550\" y=\"350\" />        <di:waypoint x=\"550\" y=\"450\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_01dzvgw_di\" bpmnElement=\"FL00000000016\">        <di:waypoint x=\"260\" y=\"320\" />        <di:waypoint x=\"360\" y=\"320\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_1gwgpsb_di\" bpmnElement=\"FL00000000031\">        <di:waypoint x=\"420\" y=\"320\" />        <di:waypoint x=\"520\" y=\"320\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_1xskbiw_di\" bpmnElement=\"FL00000000005\">        <di:waypoint x=\"120\" y=\"320\" />        <di:waypoint x=\"200\" y=\"320\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_1tonkjr_di\" bpmnElement=\"FL00000000007\">        <di:waypoint x=\"580\" y=\"480\" />        <di:waypoint x=\"680\" y=\"480\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "description": "",
+  "type": "sequence_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "CANCEL_INSTANCE",
+    "CONNECT_SEQUENCE",
+    "DO_EVERY_TASK_IN_SEQUENCE",
+    "ASSIGN_TASK"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW",
+        "EDIT",
+        "DELETE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "DRAFT",
+  "processInfoId": "PIDWWSQECKWMM",
+  "id": "PE00000000018",
+  "slug": "mau_cho_ai_wait_2",
+  "workspaceId": "WS_SAMPLE",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": false,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PE00000000018",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000018",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000018",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000018",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000006"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.input",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000018",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000018",
+        "children": [
+          {
+            "absoluteSlug": "$flow.input.record",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "SEQUENCE_INPUT",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Record",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "lead",
+              "object": "OT00000000011"
+            },
+            "absolutePath": "workflow_resource:list.resource / Input / Record",
+            "id": "RECORD_DATA",
+            "parentTable": "system",
+            "resourcesUsedIn": [
+              {
+                "actionType": "SEND_EMAIL",
+                "name": "Send email 1",
+                "count": 1,
+                "id": "AC00000000014",
+                "parentTable": "action",
+                "slug": "send_email_1"
+              },
+              {
+                "actionType": "SEND_EMAIL",
+                "name": "Send email 2",
+                "count": 1,
+                "id": "AC00000000002",
+                "parentTable": "action",
+                "slug": "send_email_2"
+              }
+            ],
+            "slug": "record"
+          }
+        ],
+        "name": "Input",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "lead",
+          "object": "OT00000000011"
+        },
+        "absolutePath": "workflow_resource:list.resource / Input",
+        "id": "SEQUENCE_INPUT",
+        "parentTable": "process",
+        "resourcesUsedIn": [
+          {
+            "actionType": "SEND_EMAIL",
+            "name": "Send email 1",
+            "count": 1,
+            "id": "AC00000000014",
+            "parentTable": "action",
+            "slug": "send_email_1"
+          },
+          {
+            "actionType": "SEND_EMAIL",
+            "name": "Send email 2",
+            "count": 1,
+            "id": "AC00000000002",
+            "parentTable": "action",
+            "slug": "send_email_2"
+          }
+        ],
+        "slug": "input"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000018",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000018",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.starter",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Starter",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Starter",
+            "id": "instance_starter",
+            "parentTable": "system",
+            "slug": "starter"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [],
+    "loops": [],
+    "userTasks": [],
+    "actions": [
+      {
+        "processId": "PE00000000018",
+        "name": "Wait 2",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.wait_2.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000017",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.wait / Wait 2 / StartAt",
+            "id": "RS00000000024",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.wait_2.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000017",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.wait / Wait 2 / End At",
+            "id": "RS00000000044",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.wait_2.isEventTriggered",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "BOOLEAN",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000017",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Is Event Triggered",
+            "metaDataType": {
+              "falseValue": "Không",
+              "trueValue": "Có",
+              "language": "vi-VN"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.wait / Wait 2 / Is Event Triggered",
+            "id": "RS00000000053",
+            "parentTable": "action",
+            "slug": "isEventTriggered"
+          }
+        ],
+        "id": "AC00000000017",
+        "type": "WAIT",
+        "nodeId": "NO00000000043",
+        "slug": "wait_2"
+      },
+      {
+        "processId": "PE00000000018",
+        "name": "Send email 2",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.send_email_2.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000002",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / StartAt",
+            "id": "RS00000000036",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.send_email_2.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000002",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / End At",
+            "id": "RS00000000020",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.send_email_2.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000002",
+            "assignable": false,
+            "actionType": "SEND_EMAIL",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "children": [
+              {
+                "absoluteSlug": "$action.send_email_2.output.sent",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000039",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Sent",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / Output / Sent",
+                "parentTable": "resource",
+                "slug": "sent"
+              },
+              {
+                "absoluteSlug": "$action.send_email_2.output.replied",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000039",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Replied",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / Output / Replied",
+                "parentTable": "resource",
+                "slug": "replied"
+              },
+              {
+                "absoluteSlug": "$action.send_email_2.output.opened",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000039",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Opened",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / Output / Opened",
+                "parentTable": "resource",
+                "slug": "opened"
+              },
+              {
+                "absoluteSlug": "$action.send_email_2.output.clicked",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000039",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Clicked",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / Output / Clicked",
+                "parentTable": "resource",
+                "slug": "clicked"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Send email 2 / Output",
+            "id": "RS00000000039",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000002",
+        "type": "SEND_EMAIL",
+        "nodeId": "NO00000000039",
+        "slug": "send_email_2"
+      },
+      {
+        "processId": "PE00000000018",
+        "name": "Send email 1",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.send_email_1.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000014",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / StartAt",
+            "id": "RS00000000055",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.send_email_1.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000014",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / End At",
+            "id": "RS00000000058",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.send_email_1.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000014",
+            "assignable": false,
+            "actionType": "SEND_EMAIL",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "children": [
+              {
+                "absoluteSlug": "$action.send_email_1.output.sent",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000061",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Sent",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / Output / Sent",
+                "parentTable": "resource",
+                "slug": "sent"
+              },
+              {
+                "absoluteSlug": "$action.send_email_1.output.replied",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000061",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Replied",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / Output / Replied",
+                "parentTable": "resource",
+                "slug": "replied"
+              },
+              {
+                "absoluteSlug": "$action.send_email_1.output.opened",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000061",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Opened",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / Output / Opened",
+                "parentTable": "resource",
+                "slug": "opened"
+              },
+              {
+                "absoluteSlug": "$action.send_email_1.output.clicked",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000061",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000018",
+                "name": "Clicked",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / Output / Clicked",
+                "parentTable": "resource",
+                "slug": "clicked"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Send email 1 / Output",
+            "id": "RS00000000061",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000014",
+        "type": "SEND_EMAIL",
+        "nodeId": "NO00000000049",
+        "slug": "send_email_1"
+      },
+      {
+        "processId": "PE00000000018",
+        "name": "Wait 1",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.wait_1.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000003",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.wait / Wait 1 / StartAt",
+            "id": "RS00000000067",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.wait_1.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000003",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.wait / Wait 1 / End At",
+            "id": "RS00000000070",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.wait_1.isEventTriggered",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "BOOLEAN",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000003",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000018",
+            "name": "Is Event Triggered",
+            "metaDataType": {
+              "falseValue": "Không",
+              "trueValue": "Có",
+              "language": "vi-VN"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.wait / Wait 1 / Is Event Triggered",
+            "id": "RS00000000033",
+            "parentTable": "action",
+            "slug": "isEventTriggered"
+          }
+        ],
+        "id": "AC00000000003",
+        "type": "WAIT",
+        "nodeId": "NO00000000035",
+        "slug": "wait_1"
+      }
+    ]
+  },
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": true,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V1",
+  "versionNumber": 1,
+  "currentVersion": true,
+  "externalResourcesUsedIn": [
+    {
+      "absoluteSlug": "$flow.input.record.owner",
+      "parentMetadata": "",
+      "dataType": "RECORD",
+      "type": 1,
+      "isList": false,
+      "parentId": "SEQUENCE_INPUT",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PE00000000018",
+      "name": "Owner",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.resource / Input / Record / Owner",
+      "parentTable": "system",
+      "slug": "owner"
+    },
+    {
+      "absoluteSlug": "$flow.input.record.owner",
+      "parentMetadata": "",
+      "dataType": "RECORD",
+      "type": 1,
+      "isList": false,
+      "parentId": "SEQUENCE_INPUT",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PE00000000018",
+      "name": "Owner",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.resource / Input / Record / Owner",
+      "parentTable": "system",
+      "slug": "owner"
+    }
+  ],
+  "versionLabel": "",
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Mau cho AI: wait 2",
+  "actions": [
+    {
+      "data": {
+        "maximumWaitTimeValue": 20,
+        "sendEmailActionNodeId": "NO00000000039",
+        "sendEmailActionName": "Send email 2",
+        "sendEmailActionSlug": "send_email_2",
+        "eventType": "LINK_WAS_CLICKED",
+        "maximumWaitTimeUnit": "hours"
+      },
+      "processId": "PE00000000018",
+      "name": "Wait 2",
+      "description": "",
+      "id": "AC00000000017",
+      "type": "WAIT",
+      "nodeId": "NO00000000043",
+      "slug": "wait_2"
+    },
+    {
+      "data": {
+        "cc": [],
+        "sendEmailToEmailThreadPrevious": true,
+        "bcc": [],
+        "attachments": [],
+        "subject": {
+          "type": 1,
+          "value": "Tieu de email"
+        },
+        "addActivityToRecord": true,
+        "emailLayout": "",
+        "maximumWaitTimeUnit": null,
+        "content": {
+          "type": "text/html",
+          "content": {
+            "type": 1,
+            "value": "<div>Noi dung email</div>"
+          }
+        },
+        "emailAppendSignature": true,
+        "maximumWaitTimeValue": null,
+        "sendToRecordEmailsField": true,
+        "from": {
+          "personnelDataType": "RECORD",
+          "personnelPathName": "workflow_resource:list.resource / Input / Record / Owner",
+          "isRaw": false,
+          "fromType": "PERSONNEL_EMAIL",
+          "personnel": "$flow.input.record.owner",
+          "emailId": null
+        },
+        "sequenceFlowType": "AUTOMATIC",
+        "to": []
+      },
+      "processId": "PE00000000018",
+      "name": "Send email 2",
+      "description": "",
+      "id": "AC00000000002",
+      "type": "SEND_EMAIL",
+      "nodeId": "NO00000000039",
+      "slug": "send_email_2"
+    },
+    {
+      "data": {
+        "cc": [],
+        "sendEmailToEmailThreadPrevious": true,
+        "bcc": [],
+        "attachments": [],
+        "subject": {
+          "type": 1,
+          "value": "Tieu de email"
+        },
+        "addActivityToRecord": true,
+        "emailLayout": "",
+        "maximumWaitTimeUnit": null,
+        "content": {
+          "type": "text/html",
+          "content": {
+            "type": 1,
+            "value": "<div>Noi dung email</div>"
+          }
+        },
+        "emailAppendSignature": true,
+        "maximumWaitTimeValue": null,
+        "sendToRecordEmailsField": true,
+        "from": {
+          "personnelDataType": "RECORD",
+          "personnelPathName": "workflow_resource:list.resource / Input / Record / Owner",
+          "isRaw": false,
+          "fromType": "PERSONNEL_EMAIL",
+          "personnel": "$flow.input.record.owner",
+          "emailId": null
+        },
+        "sequenceFlowType": "AUTOMATIC",
+        "to": []
+      },
+      "processId": "PE00000000018",
+      "name": "Send email 1",
+      "description": "",
+      "id": "AC00000000014",
+      "type": "SEND_EMAIL",
+      "nodeId": "NO00000000049",
+      "slug": "send_email_1"
+    },
+    {
+      "data": {
+        "maximumWaitTimeValue": 3,
+        "sendEmailActionNodeId": "NO00000000049",
+        "sendEmailActionName": "Send email 1",
+        "sendEmailActionSlug": "send_email_1",
+        "eventType": "EMAIL_REPLY",
+        "maximumWaitTimeUnit": "days"
+      },
+      "processId": "PE00000000018",
+      "name": "Wait 1",
+      "description": "",
+      "id": "AC00000000003",
+      "type": "WAIT",
+      "nodeId": "NO00000000035",
+      "slug": "wait_1"
+    }
+  ],
+  "status": 2,
+  "created": "2026-02-09T16:27:22.542Z",
+  "updated": "2026-02-09T16:34:10.879Z",
+  "overviewScreen": {
+    "layout": [],
+    "permissionGeneralInfo": []
+  }
+}

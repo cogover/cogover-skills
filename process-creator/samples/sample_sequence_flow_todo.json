@@ -1,0 +1,139 @@
+{
+  "name": "Sequence To Do example",
+  "slug": "sequence_todo_example",
+  "description": "Create a To Do activity for a linked record",
+  "id": "PESEQTODO00001",
+  "processInfoId": "PISEQTODO00001",
+  "type": "sequence_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {
+    "objectTypeId": "OTLEADEXAMPLE1",
+    "objectTypeSlug": "lead"
+  },
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "CONNECT_SEQUENCE", "CANCEL_INSTANCE", "DO_EVERY_TASK_IN_SEQUENCE", "ASSIGN_TASK"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [], "option": 2 }],
+  "processInstanceAccessControls": [{ "functions": ["CONNECT_SEQUENCE"], "type": "personnel", "items": [], "option": 2 }],
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "DELETE_INSTANCE": false,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false
+  },
+  "participantPermission": {
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": true,
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": true
+  },
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "ACTODO00000001",
+      "processId": "PESEQTODO00001",
+      "nodeId": "NOTODO00000001",
+      "type": "TO_DO",
+      "name": "Follow up customer",
+      "slug": "follow_up_customer",
+      "description": "",
+      "data": {
+        "maximumWaitTimeUnit": "days",
+        "maximumWaitTimeValue": 3,
+        "activity": {
+          "title": { "type": 1, "value": "Call customer" },
+          "content": { "type": 1, "value": "Confirm the requested information" },
+          "contentType": "text/html",
+          "taskPriority": "medium",
+          "assigned": { "type": 1, "value": "PERSONNEL_EXAMPLE_1" },
+          "timeUnit": "hours",
+          "dueDate": 24,
+          "reminderBeforeDue": 2,
+          "type": "todo",
+          "status": "todo"
+        }
+      }
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "ACTODO00000001",
+        "nodeId": "NOTODO00000001",
+        "name": "Follow up customer",
+        "slug": "follow_up_customer",
+        "type": "TO_DO",
+        "resources": [
+          {
+            "id": "RS000000000194",
+            "name": "Submitted By",
+            "slug": "submittedBy",
+            "absoluteSlug": "$action.follow_up_customer.submittedBy",
+            "absolutePath": "workflow_resource:list.todoTask / Follow up customer / Submitted By",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "assignable": false,
+            "editable": false,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": { "objectSlug": "personnel", "linkField": "id" }
+          },
+          {
+            "id": "RS000000000192",
+            "name": "Skipped",
+            "slug": "skipped",
+            "absoluteSlug": "$action.follow_up_customer.skipped",
+            "absolutePath": "workflow_resource:list.todoTask / Follow up customer / Skipped",
+            "dataType": "BOOLEAN",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "assignable": false,
+            "editable": false,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {}
+          },
+          {
+            "id": "RS000000000193",
+            "name": "Status",
+            "slug": "status",
+            "absoluteSlug": "$action.follow_up_customer.status",
+            "absolutePath": "workflow_resource:list.todoTask / Follow up customer / Status",
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "assignable": false,
+            "editable": false,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {}
+          }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PESEQTODO00001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000119\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_SEQUENCE_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLTODO00000001</bpmn2:outgoing></bpmn2:startEvent>\n    <elEx:todoTask id=\"NOTODO00000001\" name=\"Follow up customer\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"TODO_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FLTODO00000001</bpmn2:incoming><bpmn2:outgoing>FLTODO00000002</bpmn2:outgoing></elEx:todoTask>\n    <bpmn2:endEvent id=\"NOSEQEND000001\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FLTODO00000002</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLTODO00000001\" sourceRef=\"NO000000000119\" targetRef=\"NOTODO00000001\" />\n    <bpmn2:sequenceFlow id=\"FLTODO00000002\" sourceRef=\"NOTODO00000001\" targetRef=\"NOSEQEND000001\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_TODO\"><bpmndi:BPMNPlane id=\"BPMNPlane_TODO\" bpmnElement=\"PESEQTODO00001\">\n    <bpmndi:BPMNShape id=\"NO000000000119_di\" bpmnElement=\"NO000000000119\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOTODO00000001_di\" bpmnElement=\"NOTODO00000001\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"207\" y=\"266\" width=\"126\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOSEQEND000001_di\" bpmnElement=\"NOSEQEND000001\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLTODO00000001_di\" bpmnElement=\"FLTODO00000001\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge>\n    <bpmndi:BPMNEdge id=\"FLTODO00000002_di\" bpmnElement=\"FLTODO00000002\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

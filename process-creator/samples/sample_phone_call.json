@@ -1,0 +1,87 @@
+{
+  "name": "Phone Call example",
+  "slug": "phone_call_example",
+  "description": "Call a customer with text to speech",
+  "id": "PEPHONE0000001",
+  "processInfoId": "PIPHONE0000001",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "START_INSTANCE"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [""], "option": 1 }],
+  "processInstanceAccessControls": [{ "functions": ["START_INSTANCE"], "type": "personnel", "items": [""], "option": 1 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "ACPHONE0000001",
+      "processId": "PEPHONE0000001",
+      "nodeId": "NOPHONE0000001",
+      "type": "PHONE_CALL",
+      "name": "Call customer",
+      "slug": "call_customer",
+      "description": "",
+      "data": {
+        "from": "HOTLINE_EXAMPLE_1",
+        "to": { "type": 1, "value": "+84901234567" },
+        "contentFormat": "TEXT_TO_SPEECH",
+        "content": { "type": 1, "value": "Xin chào, đây là cuộc gọi từ Cogover." },
+        "sequenceFlowType": "AUTOMATIC"
+      }
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "ACPHONE0000001",
+        "nodeId": "NOPHONE0000001",
+        "name": "Call customer",
+        "slug": "call_customer",
+        "type": "PHONE_CALL",
+        "resources": [
+          {
+            "id": "RS000000000179",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.call_customer.output",
+            "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {},
+            "children": [
+              { "id": "RS000000000178", "name": "From", "slug": "from", "absoluteSlug": "$action.call_customer.output.from", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / From", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000182", "name": "To", "slug": "to", "absoluteSlug": "$action.call_customer.output.to", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / To", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000180", "name": "Recorded", "slug": "recorded", "absoluteSlug": "$action.call_customer.output.recorded", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / Recorded", "dataType": "BOOLEAN", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000174", "name": "Answer Duration", "slug": "answer_duration", "absoluteSlug": "$action.call_customer.output.answer_duration", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / Answer Duration", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000173", "name": "Answer Time", "slug": "answer_time", "absoluteSlug": "$action.call_customer.output.answer_time", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / Answer Time", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000181", "name": "Start Time", "slug": "start_time", "absoluteSlug": "$action.call_customer.output.start_time", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / Start Time", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000176", "name": "End Time", "slug": "end_time", "absoluteSlug": "$action.call_customer.output.end_time", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / End Time", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000177", "name": "End Call By", "slug": "end_call_by", "absoluteSlug": "$action.call_customer.output.end_call_by", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / End Call By", "dataType": "RECORD", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": { "objectSlug": "personnel", "linkField": "id" } },
+              { "id": "RS000000000175", "name": "Duration", "slug": "duration", "absoluteSlug": "$action.call_customer.output.duration", "absolutePath": "workflow_resource:list.phoneCallTask / Call customer / Output / Duration", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEPHONE0000001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000114\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLPHONE0000001</bpmn2:outgoing></bpmn2:startEvent>\n    <elEx:phoneCallTask id=\"NOPHONE0000001\" name=\"Call customer\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"PHONE_CALL_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FLPHONE0000001</bpmn2:incoming><bpmn2:outgoing>FLPHONE0000002</bpmn2:outgoing></elEx:phoneCallTask>\n    <bpmn2:endEvent id=\"NO000000000113\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FLPHONE0000002</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLPHONE0000001\" sourceRef=\"NO000000000114\" targetRef=\"NOPHONE0000001\" /><bpmn2:sequenceFlow id=\"FLPHONE0000002\" sourceRef=\"NOPHONE0000001\" targetRef=\"NO000000000113\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PHONE\"><bpmndi:BPMNPlane id=\"BPMNPlane_PHONE\" bpmnElement=\"PEPHONE0000001\">\n    <bpmndi:BPMNShape id=\"NO000000000114_di\" bpmnElement=\"NO000000000114\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOPHONE0000001_di\" bpmnElement=\"NOPHONE0000001\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"218\" y=\"266\" width=\"104\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000113_di\" bpmnElement=\"NO000000000113\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLPHONE0000001_di\" bpmnElement=\"FLPHONE0000001\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id=\"FLPHONE0000002_di\" bpmnElement=\"FLPHONE0000002\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

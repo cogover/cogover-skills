@@ -1,0 +1,4 @@
+interface:
+  display_name: "User Permission"
+  short_description: "Quản lý người dùng, cơ cấu và phân quyền"
+  default_prompt: "Dùng $user-permission để quản lý người dùng, phòng ban, vị trí, vai trò và quyền dữ liệu trong Workspace Cogover."

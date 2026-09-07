@@ -1,0 +1,1192 @@
+{
+  "serviceVersion": 1,
+  "service": 5,
+  "id": 1012024135,
+  "type": 1,
+  "body": {
+    "msg": "Success",
+    "r": 0,
+    "data": {
+      "metadata": {
+        "urlAllVersions": "https://tenant-a.example.com/webhook/v1/process/ORANGE-WH00000000001-ALL",
+        "verifySignature": false,
+        "secretAllVersions": "{WEBHOOK_SECRET_FROM_RUNTIME}",
+        "webhookIdAllVersions": "ORANGE-WH00000000001-ALL",
+        "sampleData": "{\n\t\"text_1\": \"Text 1\",\n\t\"int_1\": 100,\n\t\"array_1\": [\n\t\t{\n      \"text_2\": \"Text 2\"\n    }\n\t],\n\t\"dateString\": \"2026-02-12\",\n\t\"dateLong\": 1772775413,\n\t\"dateTimeString\": \"2026-02-12 21:25:50\",\n\t\"dateTimeLongMs\": 1772775413000,\n\t\"dateTimeLongSecond\": 1772775413,\n\t\"fileUrl\": \"https://tenant-b.example.com/icon/logo.svg\",\n\t\"url\": \"https://cogover.com\"\n}",
+        "dataTypeSlug": "TriggeredHookData_THDOP2IR0O5__input",
+        "respondTiming": "IMMEDIATELY",
+        "parseToDataType": {
+          "nameDataType": "input",
+          "children": [
+            {
+              "absoluteSlug": "$flow.input.text_1",
+              "dataType": "TEXT",
+              "displayOrder": 1,
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "text_1",
+              "absolutePath": "Flow / Input / text_1",
+              "metaDataType": {
+                "characterLimit": {
+                  "min": 0,
+                  "max": 131072,
+                  "warning": "warning limit note"
+                },
+                "richText": "false"
+              },
+              "parentTable": "",
+              "slug": "text_1"
+            },
+            {
+              "absoluteSlug": "$flow.input.int_1",
+              "dataType": "NUMBER",
+              "displayOrder": 2,
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "int_1",
+              "absolutePath": "Flow / Input / int_1",
+              "metaDataType": {
+                "valueLimit": {
+                  "min": -9999999999.999998,
+                  "max": 9999999999.999998,
+                  "warning": "warning limit note"
+                },
+                "displayType": 2,
+                "multipleLimit": {
+                  "min": 1,
+                  "max": 30,
+                  "warning": "warning limit note"
+                },
+                "format": {
+                  "format": 2,
+                  "type": 1
+                },
+                "integralLength": 10,
+                "roundRule": "1",
+                "fractionalLength": 6
+              },
+              "parentTable": "",
+              "slug": "int_1"
+            },
+            {
+              "absoluteSlug": "$flow.input.array_1",
+              "dataType": "RECORD",
+              "displayOrder": 3,
+              "type": 1,
+              "isList": true,
+              "isSystem": false,
+              "nameDataType": "array_1",
+              "actionType": "",
+              "isStandard": true,
+              "children": [
+                {
+                  "absoluteSlug": "$flow.input.array_1[0].text_2",
+                  "dataType": "TEXT",
+                  "displayOrder": 1,
+                  "type": 1,
+                  "isList": false,
+                  "isSystem": false,
+                  "actionType": "",
+                  "isStandard": true,
+                  "name": "text_2",
+                  "absolutePath": "Flow / Input / array_1[0] / text_2",
+                  "metaDataType": {
+                    "characterLimit": {
+                      "min": 0,
+                      "max": 131072,
+                      "warning": "warning limit note"
+                    },
+                    "richText": "false"
+                  },
+                  "parentTable": "",
+                  "slug": "text_2"
+                }
+              ],
+              "name": "array_1",
+              "absolutePath": "Flow / Input / array_1",
+              "metaDataType": {
+                "characterLimit": {
+                  "min": 0,
+                  "max": 131072,
+                  "warning": "warning limit note"
+                },
+                "richText": "false"
+              },
+              "parentTable": "",
+              "slug": "array_1"
+            },
+            {
+              "absoluteSlug": "$flow.input.dateString",
+              "dateFormat": "yyyy-MM-dd",
+              "dataType": "DATE",
+              "displayOrder": 4,
+              "transformationType": "string_to_date",
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "dateString",
+              "absolutePath": "Flow / Input / dateString",
+              "metaDataType": {
+                "defaultValueCurrent": false,
+                "multipleLimit": {
+                  "min": 0,
+                  "max": 30,
+                  "warning": "warning limit note"
+                },
+                "format": {
+                  "format": "dd/MM/yyyy"
+                }
+              },
+              "parentTable": "",
+              "slug": "dateString"
+            },
+            {
+              "absoluteSlug": "$flow.input.dateLong",
+              "dateFormat": "1772775413",
+              "dataType": "DATE",
+              "displayOrder": 5,
+              "transformationType": "string_to_date",
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "dateLong",
+              "absolutePath": "Flow / Input / dateLong",
+              "metaDataType": {
+                "defaultValueCurrent": false,
+                "multipleLimit": {
+                  "min": 0,
+                  "max": 30,
+                  "warning": "warning limit note"
+                },
+                "format": {
+                  "format": "dd/MM/yyyy"
+                }
+              },
+              "parentTable": "",
+              "slug": "dateLong"
+            },
+            {
+              "absoluteSlug": "$flow.input.dateTimeString",
+              "dateFormat": "yyyy-MM-dd HH:mm:ss",
+              "dataType": "DATE_TIME",
+              "displayOrder": 6,
+              "transformationType": "string_to_datetime",
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "dateTimeString",
+              "absolutePath": "Flow / Input / dateTimeString",
+              "metaDataType": {
+                "defaultValueCurrent": false,
+                "format": {
+                  "date": "dd/MM/yyyy",
+                  "time": "hh:mm:ss"
+                },
+                "timeZone": "Asia/Saigon"
+              },
+              "parentTable": "",
+              "slug": "dateTimeString"
+            },
+            {
+              "absoluteSlug": "$flow.input.dateTimeLongMs",
+              "dateFormat": "",
+              "dataType": "DATE_TIME",
+              "displayOrder": 7,
+              "transformationType": "long_ms_to_datetime",
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "dateTimeLongMs",
+              "absolutePath": "Flow / Input / dateTimeLongMs",
+              "metaDataType": {
+                "defaultValueCurrent": false,
+                "format": {
+                  "date": "dd/MM/yyyy",
+                  "time": "hh:mm:ss"
+                },
+                "timeZone": "Asia/Saigon"
+              },
+              "parentTable": "",
+              "slug": "dateTimeLongMs"
+            },
+            {
+              "absoluteSlug": "$flow.input.dateTimeLongSecond",
+              "dateFormat": "",
+              "dataType": "DATE_TIME",
+              "displayOrder": 8,
+              "transformationType": "long_s_to_datetime",
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "dateTimeLongSecond",
+              "absolutePath": "Flow / Input / dateTimeLongSecond",
+              "metaDataType": {
+                "defaultValueCurrent": false,
+                "format": {
+                  "date": "dd/MM/yyyy",
+                  "time": "hh:mm:ss"
+                },
+                "timeZone": "Asia/Saigon"
+              },
+              "parentTable": "",
+              "slug": "dateTimeLongSecond"
+            },
+            {
+              "absoluteSlug": "$flow.input.fileUrl",
+              "dataType": "FILE",
+              "displayOrder": 9,
+              "transformationType": "url_to_file",
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "fileUrl",
+              "absolutePath": "Flow / Input / fileUrl",
+              "metaDataType": {
+                "multipleLimit": {
+                  "min": 0,
+                  "max": 30,
+                  "warning": "warning limit note"
+                },
+                "fileGroupType": "file-media",
+                "isPublic": false,
+                "maxSize": 52428800,
+                "isResizable": false,
+                "fileType": [
+                  "doc",
+                  "docx",
+                  "xlsx",
+                  "xls",
+                  "csv",
+                  "ppt",
+                  "pptx",
+                  "pdf",
+                  "txt",
+                  "rtf",
+                  "html",
+                  "htm",
+                  "zip",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "svg",
+                  "gif",
+                  "bmp",
+                  "tiff",
+                  "tif",
+                  "mp4",
+                  "avi",
+                  "mov",
+                  "wmv",
+                  "mkv",
+                  "mp3"
+                ]
+              },
+              "parentTable": "",
+              "slug": "fileUrl"
+            },
+            {
+              "absoluteSlug": "$flow.input.url",
+              "dataType": "URL",
+              "displayOrder": 10,
+              "type": 1,
+              "isList": false,
+              "isSystem": false,
+              "actionType": "",
+              "isStandard": true,
+              "name": "url",
+              "absolutePath": "Flow / Input / url",
+              "metaDataType": {
+                "multipleLimit": {
+                  "min": 0,
+                  "max": 30,
+                  "warning": "warning limit note"
+                },
+                "characterLimit": {
+                  "min": 0,
+                  "max": 2048,
+                  "warning": "warning limit note"
+                },
+                "useDisplayText": false
+              },
+              "parentTable": "",
+              "slug": "url"
+            }
+          ]
+        },
+        "verifySignatureAllVersions": false,
+        "secret": "{WEBHOOK_SECRET_FROM_RUNTIME}",
+        "type": "webhook",
+        "url": "https://tenant-a.example.com/webhook/v1/process/ORANGE-WH00000000002"
+      },
+      "overviewScreen": {
+        "layout": [],
+        "permissionGeneralInfo": []
+      },
+      "participantPermission": {
+        "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+        "VIEW_INSTANCE_PROGRESS": true,
+        "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+        "VIEW_INSTANCE_FULL": true
+      },
+      "processInstanceAccessControls": [
+        {
+          "functions": [
+            "VIEW_INSTANCE_PROGRESS",
+            "CANCEL_INSTANCE",
+            "DELETE_INSTANCE"
+          ],
+          "type": "personnel",
+          "items": [
+            ""
+          ],
+          "option": 1
+        }
+      ],
+      "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xmlns:bioc=\"http://bpmn.io/schema/bpmn/biocolor/1.0\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" xmlns:themeEx=\"http://theme-ex/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\"><bpmn2:process id=\"PE00000000027\"><bpmn2:endEvent id=\"NO00000000107\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\"/></bpmn2:extensionElements><bpmn2:incoming>FL00000000074</bpmn2:incoming></bpmn2:endEvent><bpmn2:startEvent id=\"NO00000000106\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_TRIGGERED_EVENT\"/></bpmn2:extensionElements><bpmn2:outgoing>FL00000000075</bpmn2:outgoing></bpmn2:startEvent><elEx:sendNotificationTask id=\"NO00000000105\" name=\"Gửi thông báo\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"SEND_NOTIFICATION_TASK\"/></bpmn2:extensionElements><bpmn2:incoming>FL00000000075</bpmn2:incoming><bpmn2:outgoing>FL00000000074</bpmn2:outgoing></elEx:sendNotificationTask><bpmn2:sequenceFlow id=\"FL00000000075\" name=\"\" sourceRef=\"NO00000000106\" targetRef=\"NO00000000105\"><bpmn2:extensionElements/></bpmn2:sequenceFlow><bpmn2:sequenceFlow id=\"FL00000000074\" name=\"\" sourceRef=\"NO00000000105\" targetRef=\"NO00000000107\"><bpmn2:extensionElements/></bpmn2:sequenceFlow></bpmn2:process><bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000027\"><bpmndi:BPMNPlane bpmnElement=\"PE00000000027\" id=\"BPMNPlane_PE00000000027\"><bpmndi:BPMNShape bpmnElement=\"NO00000000107\" id=\"Event_05xtyzn_di\">        <dc:Bounds height=\"60\" width=\"60\" x=\"380\" y=\"290\"/>        <bpmndi:BPMNLabel>          <dc:Bounds height=\"16\" width=\"74\" x=\"373\" y=\"357\"/>        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape><bpmndi:BPMNShape bpmnElement=\"NO00000000106\" id=\"Event_1sw44fb_di\">        <dc:Bounds height=\"60\" width=\"60\" x=\"60\" y=\"290\"/>        <bpmndi:BPMNLabel>          <dc:Bounds height=\"16\" width=\"32\" x=\"74\" y=\"360\"/>        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape><bpmndi:BPMNShape bpmnElement=\"NO00000000105\" id=\"Activity_1e40j65_di\">        <dc:Bounds height=\"60\" width=\"60\" x=\"200\" y=\"290\"/>        <bpmndi:BPMNLabel>          <dc:Bounds height=\"16\" width=\"84\" x=\"188\" y=\"360\"/>        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape><bpmndi:BPMNEdge bpmnElement=\"FL00000000075\" id=\"Flow_1cr4wr7_di\">        <di:waypoint x=\"120\" y=\"320\"/>        <di:waypoint x=\"200\" y=\"320\"/>      </bpmndi:BPMNEdge><bpmndi:BPMNEdge bpmnElement=\"FL00000000074\" id=\"Flow_1wpgxli_di\">        <di:waypoint x=\"260\" y=\"320\"/>        <di:waypoint x=\"380\" y=\"320\"/>      </bpmndi:BPMNEdge></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn2:definitions>",
+      "description": "",
+      "type": "triggered_flow",
+      "permissions": [],
+      "isNewestVersion": true,
+      "accessControls": [
+        {
+          "functions": [
+            "VIEW",
+            "ADD",
+            "EDIT",
+            "DELETE"
+          ],
+          "type": "owner",
+          "items": [
+            "PER_SAMPLE_CREATOR"
+          ],
+          "option": 2
+        },
+        {
+          "functions": [
+            "VIEW"
+          ],
+          "type": "personnel",
+          "items": [
+            ""
+          ],
+          "option": 1
+        }
+      ],
+      "progressStatus": "DRAFT",
+      "processInfoId": "PI00000000022",
+      "id": "PE00000000027",
+      "slug": "triggered_flow22",
+      "workspaceId": "WS_SAMPLE_TENANT_B",
+      "updatedBy": {
+        "_full_name": "Sample User",
+        "last_name": "Sample",
+        "id": "PER_SAMPLE_CREATOR",
+        "avatar": {
+          "fileName": "avatar.jpeg",
+          "fileSize": 632657,
+          "resizable": true,
+          "resolutionSizes": [
+            "original",
+            "tiny",
+            "small",
+            "medium",
+            "large"
+          ],
+          "acl": "public",
+          "fileExt": "jpeg",
+          "fileType": "avatar",
+          "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+          "fileId": "FILE_SAMPLE_AVATAR"
+        },
+        "first_name": "User"
+      },
+      "created": 1772775835346,
+      "isPublished": false,
+      "isValid": true,
+      "resources": {
+        "system": [
+          {
+            "absoluteSlug": "$client",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "parentId": "PE00000000027",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000027",
+            "name": "Client",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "linkField": "id"
+            },
+            "absolutePath": "workflow_resource:list.systemVar / Client",
+            "id": "client",
+            "parentTable": "process",
+            "slug": "client"
+          },
+          {
+            "absoluteSlug": "$currentUser",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "PE00000000027",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000027",
+            "name": "Current User",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000003"
+            },
+            "absolutePath": "workflow_resource:list.systemVar / Current User",
+            "id": "currentUser",
+            "parentTable": "process",
+            "slug": "currentUser"
+          },
+          {
+            "absoluteSlug": "$flow.input",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "PE00000000027",
+            "assignable": false,
+            "isSystem": true,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000027",
+            "children": [
+              {
+                "absoluteSlug": "$flow.input.text_1",
+                "dataType": "TEXT",
+                "displayOrder": 1,
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "text_1",
+                "absolutePath": "workflow_resource:list.resource / Input / text_1",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "parentTable": "",
+                "slug": "text_1"
+              },
+              {
+                "absoluteSlug": "$flow.input.int_1",
+                "dataType": "NUMBER",
+                "displayOrder": 2,
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "int_1",
+                "absolutePath": "workflow_resource:list.resource / Input / int_1",
+                "metaDataType": {
+                  "valueLimit": {
+                    "min": -9999999999.999998,
+                    "max": 9999999999.999998,
+                    "warning": "warning limit note"
+                  },
+                  "displayType": 2,
+                  "multipleLimit": {
+                    "min": 1,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "format": {
+                    "format": 2,
+                    "type": 1
+                  },
+                  "integralLength": 10,
+                  "roundRule": "1",
+                  "fractionalLength": 6
+                },
+                "parentTable": "",
+                "slug": "int_1"
+              },
+              {
+                "absoluteSlug": "$flow.input.array_1",
+                "dataType": "RECORD",
+                "displayOrder": 3,
+                "type": 1,
+                "isList": true,
+                "isSystem": false,
+                "nameDataType": "array_1",
+                "actionType": "",
+                "isStandard": true,
+                "children": [
+                  {
+                    "absoluteSlug": "$flow.input.array_1[0].text_2",
+                    "dataType": "TEXT",
+                    "displayOrder": 1,
+                    "type": 1,
+                    "isList": false,
+                    "isSystem": false,
+                    "actionType": "",
+                    "isStandard": true,
+                    "name": "text_2",
+                    "absolutePath": "workflow_resource:list.resource / Input / array_1[0] / text_2",
+                    "metaDataType": {
+                      "characterLimit": {
+                        "min": 0,
+                        "max": 131072,
+                        "warning": "warning limit note"
+                      },
+                      "richText": "false"
+                    },
+                    "parentTable": "",
+                    "slug": "text_2"
+                  }
+                ],
+                "name": "array_1",
+                "absolutePath": "workflow_resource:list.resource / Input / array_1",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "parentTable": "",
+                "slug": "array_1"
+              },
+              {
+                "absoluteSlug": "$flow.input.dateString",
+                "dateFormat": "yyyy-MM-dd",
+                "dataType": "DATE",
+                "displayOrder": 4,
+                "transformationType": "string_to_date",
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "dateString",
+                "absolutePath": "workflow_resource:list.resource / Input / dateString",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "multipleLimit": {
+                    "min": 0,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "format": {
+                    "format": "dd/MM/yyyy"
+                  }
+                },
+                "parentTable": "",
+                "slug": "dateString"
+              },
+              {
+                "absoluteSlug": "$flow.input.dateLong",
+                "dateFormat": "1772775413",
+                "dataType": "DATE",
+                "displayOrder": 5,
+                "transformationType": "string_to_date",
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "dateLong",
+                "absolutePath": "workflow_resource:list.resource / Input / dateLong",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "multipleLimit": {
+                    "min": 0,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "format": {
+                    "format": "dd/MM/yyyy"
+                  }
+                },
+                "parentTable": "",
+                "slug": "dateLong"
+              },
+              {
+                "absoluteSlug": "$flow.input.dateTimeString",
+                "dateFormat": "yyyy-MM-dd HH:mm:ss",
+                "dataType": "DATE_TIME",
+                "displayOrder": 6,
+                "transformationType": "string_to_datetime",
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "dateTimeString",
+                "absolutePath": "workflow_resource:list.resource / Input / dateTimeString",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "format": {
+                    "date": "dd/MM/yyyy",
+                    "time": "hh:mm:ss"
+                  },
+                  "timeZone": "Asia/Saigon"
+                },
+                "parentTable": "",
+                "slug": "dateTimeString"
+              },
+              {
+                "absoluteSlug": "$flow.input.dateTimeLongMs",
+                "dateFormat": "",
+                "dataType": "DATE_TIME",
+                "displayOrder": 7,
+                "transformationType": "long_ms_to_datetime",
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "dateTimeLongMs",
+                "absolutePath": "workflow_resource:list.resource / Input / dateTimeLongMs",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "format": {
+                    "date": "dd/MM/yyyy",
+                    "time": "hh:mm:ss"
+                  },
+                  "timeZone": "Asia/Saigon"
+                },
+                "parentTable": "",
+                "slug": "dateTimeLongMs"
+              },
+              {
+                "absoluteSlug": "$flow.input.dateTimeLongSecond",
+                "dateFormat": "",
+                "dataType": "DATE_TIME",
+                "displayOrder": 8,
+                "transformationType": "long_s_to_datetime",
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "dateTimeLongSecond",
+                "absolutePath": "workflow_resource:list.resource / Input / dateTimeLongSecond",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "format": {
+                    "date": "dd/MM/yyyy",
+                    "time": "hh:mm:ss"
+                  },
+                  "timeZone": "Asia/Saigon"
+                },
+                "parentTable": "",
+                "slug": "dateTimeLongSecond"
+              },
+              {
+                "absoluteSlug": "$flow.input.fileUrl",
+                "dataType": "FILE",
+                "displayOrder": 9,
+                "transformationType": "url_to_file",
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "fileUrl",
+                "absolutePath": "workflow_resource:list.resource / Input / fileUrl",
+                "metaDataType": {
+                  "multipleLimit": {
+                    "min": 0,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "fileGroupType": "file-media",
+                  "isPublic": false,
+                  "maxSize": 52428800,
+                  "isResizable": false,
+                  "fileType": [
+                    "doc",
+                    "docx",
+                    "xlsx",
+                    "xls",
+                    "csv",
+                    "ppt",
+                    "pptx",
+                    "pdf",
+                    "txt",
+                    "rtf",
+                    "html",
+                    "htm",
+                    "zip",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "svg",
+                    "gif",
+                    "bmp",
+                    "tiff",
+                    "tif",
+                    "mp4",
+                    "avi",
+                    "mov",
+                    "wmv",
+                    "mkv",
+                    "mp3"
+                  ]
+                },
+                "parentTable": "",
+                "slug": "fileUrl"
+              },
+              {
+                "absoluteSlug": "$flow.input.url",
+                "dataType": "URL",
+                "displayOrder": 10,
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "",
+                "isStandard": true,
+                "name": "url",
+                "absolutePath": "workflow_resource:list.resource / Input / url",
+                "metaDataType": {
+                  "multipleLimit": {
+                    "min": 0,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 2048,
+                    "warning": "warning limit note"
+                  },
+                  "useDisplayText": false
+                },
+                "parentTable": "",
+                "slug": "url"
+              }
+            ],
+            "name": "Input",
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.resource / Input",
+            "id": "webhookInput",
+            "parentTable": "process",
+            "slug": "input"
+          },
+          {
+            "absoluteSlug": "$flow.instance",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "PE00000000027",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000027",
+            "children": [
+              {
+                "absoluteSlug": "$flow.instance.id",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "TEXT",
+                "type": 1,
+                "isList": false,
+                "parentId": "instance",
+                "assignable": false,
+                "isSystem": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Id",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "absolutePath": "workflow_resource:list.resource / Instance / Id",
+                "id": "instance_id",
+                "parentTable": "system",
+                "slug": "id"
+              },
+              {
+                "absoluteSlug": "$flow.instance.url",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "URL",
+                "type": 1,
+                "isList": false,
+                "parentId": "instance",
+                "assignable": false,
+                "isSystem": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Url",
+                "metaDataType": {
+                  "multipleLimit": {
+                    "min": 0,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 2048,
+                    "warning": "warning limit note"
+                  },
+                  "useDisplayText": false
+                },
+                "absolutePath": "workflow_resource:list.resource / Instance / Url",
+                "id": "instance_url",
+                "parentTable": "system",
+                "slug": "url"
+              },
+              {
+                "absoluteSlug": "$flow.instance.name",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "TEXT",
+                "type": 1,
+                "isList": false,
+                "parentId": "instance",
+                "assignable": false,
+                "isSystem": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Name",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "absolutePath": "workflow_resource:list.resource / Instance / Name",
+                "id": "instance_name",
+                "parentTable": "system",
+                "slug": "name"
+              },
+              {
+                "absoluteSlug": "$flow.instance.startAt",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "DATE_TIME",
+                "type": 1,
+                "isList": false,
+                "parentId": "instance",
+                "assignable": false,
+                "isSystem": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Start At",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "format": {
+                    "date": "dd/MM/yyyy",
+                    "time": "hh:mm:ss"
+                  },
+                  "timeZone": "Asia/Saigon"
+                },
+                "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+                "id": "instance_start_at",
+                "parentTable": "system",
+                "slug": "startAt"
+              }
+            ],
+            "name": "Instance",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "linkField": "id"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance",
+            "id": "instance",
+            "parentTable": "process",
+            "slug": "instance"
+          },
+          {
+            "absoluteSlug": "$flow.webhook",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "PE00000000027",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000027",
+            "children": [
+              {
+                "absoluteSlug": "$flow.webhook.body",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "TEXT",
+                "type": 1,
+                "isList": false,
+                "parentId": "webhook",
+                "assignable": false,
+                "isSystem": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Body",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "absolutePath": "workflow_resource:list.resource / Webhook / Body",
+                "id": "body",
+                "parentTable": "system",
+                "slug": "body"
+              }
+            ],
+            "name": "Webhook",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "linkField": "id"
+            },
+            "absolutePath": "workflow_resource:list.resource / Webhook",
+            "id": "webhook",
+            "parentTable": "process",
+            "slug": "webhook"
+          }
+        ],
+        "custom": [],
+        "loops": [],
+        "userTasks": [],
+        "actions": [
+          {
+            "processId": "PE00000000027",
+            "name": "Gửi thông báo",
+            "description": "Gửi thông báo",
+            "resources": [
+              {
+                "absoluteSlug": "$action.gui_thong_bao.startAt",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "DATE_TIME",
+                "type": 1,
+                "isList": false,
+                "parentId": "AC00000000031",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Start At",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "format": {
+                    "date": "dd/MM/yyyy",
+                    "time": "hh:mm:ss"
+                  },
+                  "timeZone": "Asia/Saigon"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendNotification / Gửi thông báo / StartAt",
+                "id": "RS00000000143",
+                "parentTable": "action",
+                "slug": "startAt"
+              },
+              {
+                "absoluteSlug": "$action.gui_thong_bao.endAt",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "DATE_TIME",
+                "type": 1,
+                "isList": false,
+                "parentId": "AC00000000031",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "End At",
+                "metaDataType": {
+                  "defaultValueCurrent": false,
+                  "format": {
+                    "date": "dd/MM/yyyy",
+                    "time": "hh:mm:ss"
+                  },
+                  "timeZone": "Asia/Saigon"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendNotification / Gửi thông báo / End At",
+                "id": "RS00000000144",
+                "parentTable": "action",
+                "slug": "endAt"
+              },
+              {
+                "absoluteSlug": "$action.gui_thong_bao.output",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "NUMBER",
+                "type": 1,
+                "isList": false,
+                "parentId": "AC00000000031",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000027",
+                "name": "Output",
+                "metaDataType": {
+                  "valueLimit": {
+                    "min": -9999999999.999998,
+                    "max": 9999999999.999998,
+                    "warning": "warning limit note"
+                  },
+                  "displayType": 2,
+                  "multipleLimit": {
+                    "min": 1,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "format": {
+                    "format": 2,
+                    "type": 1
+                  },
+                  "integralLength": 10,
+                  "roundRule": "1",
+                  "fractionalLength": 6
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendNotification / Gửi thông báo / Output",
+                "id": "RS00000000145",
+                "parentTable": "action",
+                "slug": "output"
+              }
+            ],
+            "id": "AC00000000031",
+            "type": "SEND_NOTIFICATION",
+            "nodeId": "NO00000000105",
+            "slug": "gui_thong_bao"
+          }
+        ]
+      },
+      "starterPermission": {
+        "CANCEL_INSTANCE": false,
+        "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+        "VIEW_INSTANCE_PROGRESS": false,
+        "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+        "VIEW_INSTANCE_FULL": false,
+        "SEQUENCE_STARTER_CAN_DISCONNECT": true
+      },
+      "version": "V1",
+      "versionNumber": 1,
+      "currentVersion": true,
+      "versionLabel": "",
+      "createdBy": {
+        "_full_name": "Sample User",
+        "last_name": "Sample",
+        "id": "PER_SAMPLE_CREATOR",
+        "avatar": {
+          "fileName": "avatar.jpeg",
+          "fileSize": 632657,
+          "resizable": true,
+          "resolutionSizes": [
+            "original",
+            "tiny",
+            "small",
+            "medium",
+            "large"
+          ],
+          "acl": "public",
+          "fileExt": "jpeg",
+          "fileType": "avatar",
+          "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+          "fileId": "FILE_SAMPLE_AVATAR"
+        },
+        "first_name": "User"
+      },
+      "name": "triggered_flow22",
+      "updated": 1772775835346,
+      "actions": [
+        {
+          "data": {
+            "displayType": "SIMPLE",
+            "from": {
+              "isRaw": true,
+              "fromType": "WORKSPACE_NOTIFICATION",
+              "personnel": null
+            },
+            "exclude": [],
+            "to": [
+              {
+                "type": 1,
+                "value": "PER_SAMPLE_CREATOR"
+              }
+            ],
+            "redirectType": "ROUTING",
+            "title": {
+              "type": 1,
+              "value": "Gửi thông báo"
+            },
+            "notificationChannel": "NOTTJZRQMEKMPT",
+            "redirectToPage": {
+              "type": 1,
+              "value": ""
+            },
+            "content": {
+              "type": "text/html",
+              "content": {
+                "type": 1,
+                "value": "<div><span style=\"color: rgb(72, 72, 72); font-family: &quot;Nunito Variable&quot;, sans-serif, sans-serif; font-size: 20px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 700; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;\">Gửi thông báo</span></div>"
+              }
+            }
+          },
+          "processId": "PE00000000027",
+          "name": "Gửi thông báo",
+          "description": "Gửi thông báo",
+          "id": "AC00000000031",
+          "type": "SEND_NOTIFICATION",
+          "nodeId": "NO00000000105",
+          "slug": "gui_thong_bao"
+        }
+      ],
+      "status": 2
+    }
+  }
+}

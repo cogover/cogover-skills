@@ -1,0 +1,142 @@
+{
+  "name": "JSON to Object example",
+  "slug": "json_to_object_example",
+  "description": "Parse an order JSON string",
+  "id": "PEPARSE0000001",
+  "processInfoId": "PIPARSE0000001",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "START_INSTANCE"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [""], "option": 1 }],
+  "processInstanceAccessControls": [{ "functions": ["START_INSTANCE"], "type": "personnel", "items": [""], "option": 1 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "ACPARSE0000001",
+      "processId": "PEPARSE0000001",
+      "nodeId": "NOPARSE0000001",
+      "type": "PARSE_TO_OBJECT",
+      "name": "Parse order JSON",
+      "slug": "parse_order_json",
+      "description": "",
+      "data": {
+        "inputSource": {
+          "type": 1,
+          "value": "{\"customer\":{\"name\":\"An\"},\"total\":120000}"
+        },
+        "sampleResponse": "{\"customer\":{\"name\":\"An\"},\"total\":120000}",
+        "parseToDataType": {
+          "nameDataType": "string",
+          "children": [
+            {
+              "id": "RS000000000168",
+              "name": "Customer",
+              "slug": "customer",
+              "absoluteSlug": "$action.parse_order_json.output.customer",
+              "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output / Customer",
+              "dataType": "RECORD",
+              "type": 1,
+              "isList": false,
+              "actionType": "PARSE_TO_OBJECT",
+              "metaDataType": {},
+              "children": [
+                {
+                  "id": "RS000000000170",
+                  "name": "Name",
+                  "slug": "name",
+                  "absoluteSlug": "$action.parse_order_json.output.customer.name",
+                  "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output / Customer / Name",
+                  "dataType": "TEXT",
+                  "type": 1,
+                  "isList": false,
+                  "actionType": "PARSE_TO_OBJECT",
+                  "metaDataType": {}
+                }
+              ]
+            },
+            {
+              "id": "RS000000000172",
+              "name": "Total",
+              "slug": "total",
+              "absoluteSlug": "$action.parse_order_json.output.total",
+              "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output / Total",
+              "dataType": "NUMBER",
+              "type": 1,
+              "isList": false,
+              "actionType": "PARSE_TO_OBJECT",
+              "metaDataType": {}
+            }
+          ]
+        },
+        "continueOnError": true
+      }
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "ACPARSE0000001",
+        "nodeId": "NOPARSE0000001",
+        "name": "Parse order JSON",
+        "slug": "parse_order_json",
+        "type": "PARSE_TO_OBJECT",
+        "resources": [
+          { "id": "RS000000000169", "name": "Input", "slug": "input", "absoluteSlug": "$action.parse_order_json.input", "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Input", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {}, "actionType": "PARSE_TO_OBJECT" },
+          {
+            "id": "RS000000000171",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.parse_order_json.output",
+            "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {},
+            "actionType": "PARSE_TO_OBJECT",
+            "children": [
+              {
+                "id": "RS000000000168",
+                "name": "Customer",
+                "slug": "customer",
+                "absoluteSlug": "$action.parse_order_json.output.customer",
+                "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output / Customer",
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": false,
+                "availableForInput": false,
+                "availableForOutput": true,
+                "parentTable": "action",
+                "metaDataType": {},
+                "children": [
+                  { "id": "RS000000000170", "name": "Name", "slug": "name", "absoluteSlug": "$action.parse_order_json.output.customer.name", "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output / Customer / Name", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} }
+                ]
+              },
+              { "id": "RS000000000172", "name": "Total", "slug": "total", "absoluteSlug": "$action.parse_order_json.output.total", "absolutePath": "workflow_resource:list.parseToObject / Parse order JSON / Output / Total", "dataType": "NUMBER", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEPARSE0000001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000112\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLPARSE0000001</bpmn2:outgoing></bpmn2:startEvent>\n    <elEx:parseToObjectTask id=\"NOPARSE0000001\" name=\"Parse order JSON\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"PARSE_TO_OBJECT_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FLPARSE0000001</bpmn2:incoming><bpmn2:outgoing>FLPARSE0000002</bpmn2:outgoing></elEx:parseToObjectTask>\n    <bpmn2:endEvent id=\"NO000000000111\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FLPARSE0000002</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLPARSE0000001\" sourceRef=\"NO000000000112\" targetRef=\"NOPARSE0000001\" /><bpmn2:sequenceFlow id=\"FLPARSE0000002\" sourceRef=\"NOPARSE0000001\" targetRef=\"NO000000000111\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PARSE\"><bpmndi:BPMNPlane id=\"BPMNPlane_PARSE\" bpmnElement=\"PEPARSE0000001\">\n    <bpmndi:BPMNShape id=\"NO000000000112_di\" bpmnElement=\"NO000000000112\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOPARSE0000001_di\" bpmnElement=\"NOPARSE0000001\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"212\" y=\"266\" width=\"116\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000111_di\" bpmnElement=\"NO000000000111\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLPARSE0000001_di\" bpmnElement=\"FLPARSE0000001\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id=\"FLPARSE0000002_di\" bpmnElement=\"FLPARSE0000002\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

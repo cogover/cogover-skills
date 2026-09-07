@@ -1,0 +1,4 @@
+interface:
+  display_name: "App & Menu Manager"
+  short_description: "Quản lý App, Menu và icon cấp 1 Cogover"
+  default_prompt: "Dùng $app-menu-manager để tạo hoặc quản lý App, cây menu và icon cấp 1 Cogover qua API."

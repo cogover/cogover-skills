@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cogover Object Form"
+  short_description: "Configure external data collection forms"
+  default_prompt: "Use $object-form to configure a Cogover object form through the API."

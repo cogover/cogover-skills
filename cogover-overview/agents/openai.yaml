@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cogover Overview"
+  short_description: "Tra cứu khả năng và lựa chọn skill Cogover"
+  default_prompt: "Dùng $cogover-overview để giải thích khả năng Cogover phù hợp với nhu cầu của tôi."

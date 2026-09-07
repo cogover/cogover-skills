@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Layout"
+  short_description: "Thiết kế và cập nhật bố cục Object"
+  default_prompt: "Dùng $object-layout để cấu hình bố cục Object Cogover theo nhu cầu của tôi."

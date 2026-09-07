@@ -1,0 +1,4 @@
+interface:
+  display_name: "Document Template"
+  short_description: "Tạo và kiểm thử mẫu tài liệu Cogover"
+  default_prompt: "Use $document-template to create a Cogover document template, verify a real export with representative records, and optionally add an export button to a selected view/edit layout."

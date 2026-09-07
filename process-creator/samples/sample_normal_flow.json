@@ -1,0 +1,70 @@
+{
+  "name": "Normal flow example",
+  "slug": "normal_flow_example",
+  "description": "Normal Flow starts without a Root User Task",
+  "id": "PENORMAL000001",
+  "processInfoId": "PINORMAL000001",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE",
+    "CANCEL_INSTANCE",
+    "DELETE_INSTANCE",
+    "VIEW_INSTANCE_PROGRESS",
+    "VIEW_INSTANCE_FULL"
+  ],
+  "accessControls": [
+    {
+      "functions": ["VIEW"],
+      "type": "personnel",
+      "items": [""],
+      "option": 1
+    }
+  ],
+  "processInstanceAccessControls": [
+    {
+      "functions": ["START_INSTANCE"],
+      "type": "personnel",
+      "items": [""],
+      "option": 1
+    }
+  ],
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "DELETE_INSTANCE": false,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": false,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": false,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false
+  },
+  "participantPermission": {
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false
+  },
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "actions": [],
+    "loops": []
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PENORMAL000001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000109\" name=\"Start\">\n      <bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements>\n      <bpmn2:outgoing>FLNORMAL000001</bpmn2:outgoing>\n    </bpmn2:startEvent>\n    <bpmn2:endEvent id=\"NO000000000108\" name=\"End Process\">\n      <bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements>\n      <bpmn2:incoming>FLNORMAL000001</bpmn2:incoming>\n    </bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLNORMAL000001\" sourceRef=\"NO000000000109\" targetRef=\"NO000000000108\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_NORMAL\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_NORMAL\" bpmnElement=\"PENORMAL000001\">\n      <bpmndi:BPMNShape id=\"NO000000000109_di\" bpmnElement=\"NO000000000109\">\n        <dc:Bounds x=\"80\" y=\"200\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel><dc:Bounds x=\"94\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NO000000000108_di\" bpmnElement=\"NO000000000108\">\n        <dc:Bounds x=\"300\" y=\"200\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel><dc:Bounds x=\"286\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"FLNORMAL000001_di\" bpmnElement=\"FLNORMAL000001\">\n        <di:waypoint x=\"140\" y=\"230\" /><di:waypoint x=\"300\" y=\"230\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

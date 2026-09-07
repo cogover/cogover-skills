@@ -1,0 +1,4 @@
+interface:
+  display_name: "Layout Scripting"
+  short_description: "Viết script cho bố cục và logic form"
+  default_prompt: "Dùng $layout-scripting để viết script bố cục Cogover theo nghiệp vụ của tôi."

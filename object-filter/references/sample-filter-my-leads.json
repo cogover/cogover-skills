@@ -1,0 +1,90 @@
+{
+  "id": "FI00000000003",
+  "name": "My Leads",
+  "slug": "my_leads",
+  "description": null,
+  "objectTypeId": "OT00000000023",
+  "objectTypeSlug": "lead",
+  "objectTypeName": "Khách hàng tiềm năng",
+  "objectType": {
+    "id": "OT00000000023",
+    "name": "Khách hàng tiềm năng",
+    "pluralName": "Khách hàng tiềm năng",
+    "slug": "lead",
+    "langsPluralName": {
+      "enUS": "Leads",
+      "viVN": "Khách hàng tiềm năng"
+    }
+  },
+  "logicType": "AND",
+  "logic": null,
+  "conditions": [
+    {
+      "field": "owner",
+      "op": "=",
+      "params": "$currentUser",
+      "fieldType": "lookup_normal"
+    }
+  ],
+  "sortFields": [
+    {
+      "field": "created",
+      "order": "desc"
+    }
+  ],
+  "limitRecord": 20,
+  "tableSettings": "{\"columns\":[{\"key\":\"name\",\"width\":371},{\"key\":\"salutation\",\"width\":111},{\"key\":\"last_first_name\",\"width\":164},{\"key\":\"status\",\"width\":159},{\"key\":\"rating\",\"width\":100},{\"key\":\"owner\",\"width\":167},{\"key\":\"last_activity_time\",\"width\":157},{\"key\":\"no_of_employees\",\"width\":165},{\"key\":\"avatar\",\"width\":119},{\"key\":\"do_not_call\",\"width\":169},{\"key\":\"address\",\"width\":249},{\"key\":\"industry\",\"width\":124},{\"key\":\"annual_revenue\",\"width\":209},{\"key\":\"websites\",\"width\":233},{\"key\":\"description\",\"width\":200},{\"key\":\"business_phones\",\"width\":180},{\"key\":\"mobile_phones\",\"width\":170},{\"key\":\"emails\",\"width\":245},{\"key\":\"lead_source\",\"width\":178},{\"key\":\"company\",\"width\":210},{\"key\":\"job_title\",\"width\":194},{\"key\":\"created\",\"width\":230},{\"key\":\"updated\",\"width\":230},{\"key\":\"created_by\",\"width\":200},{\"key\":\"updated_by\",\"width\":200},{\"key\":\"id\",\"width\":193},{\"key\":\"first_last_name\",\"width\":200},{\"key\":\"last_name\",\"width\":142},{\"key\":\"first_name\",\"width\":135},{\"key\":\"call_id\",\"width\":200},{\"key\":\"ggggg\",\"width\":200},{\"key\":\"so_nha_ten_duong_hoac_mo_ta\",\"width\":200},{\"key\":\"ward\",\"width\":200},{\"key\":\"province\",\"width\":200},{\"key\":\"dai_ly\",\"width\":200},{\"key\":\"customer_source\",\"width\":200},{\"key\":\"san_pham_quan_tam\",\"width\":200},{\"key\":\"phan_loai\",\"width\":200},{\"key\":\"source_page\",\"width\":200},{\"key\":\"social_ids\",\"width\":200},{\"key\":\"disqualified_reason\",\"width\":200},{\"key\":\"actionColumn\",\"width\":32}],\"showingColumns\":[\"no_of_employees\",\"last_first_name\",\"Disqualified_reason\",\"avatar\",\"do_not_call\",\"status\",\"address\",\"industry\",\"annual_revenue\",\"websites\",\"rating\",\"description\",\"business_phones\",\"mobile_phones\",\"emails\",\"owner\",\"lead_source\",\"company\",\"job_title\",\"salutation\",\"name\",\"created\",\"actionColumn\",\"last_activity_time\"],\"pinnedColumns\":{\"left\":[],\"right\":[\"actionColumn\"]}}",
+  "accessControls": [
+    {
+      "functions": ["VIEW"],
+      "option": 1,
+      "items": [],
+      "type": "personnel"
+    }
+  ],
+  "accessControlFunctions": ["VIEW", "EDIT", "DELETE"],
+  "type": 2,
+  "isQuickFilter": 0,
+  "status": 1,
+  "layoutFilterType": 1,
+  "displayTaskMode": 0,
+  "layoutConfig": {
+    "objectId": "OT00000000023",
+    "name": "My Leads",
+    "description": null,
+    "limitRecord": 20,
+    "sortFieldItems": [
+      {
+        "field": "created",
+        "order": "desc"
+      }
+    ],
+    "layoutFilterType": 1,
+    "displayTaskMode": 0,
+    "assignment": [
+      {
+        "functions": ["VIEW"],
+        "option": 1,
+        "items": [],
+        "type": "personnel"
+      }
+    ],
+    "paddingTop": 10,
+    "paddingRight": 10,
+    "paddingBottom": 10,
+    "paddingLeft": 10,
+    "isShowBorder": true,
+    "gap": 14,
+    "gridColumnLeft": 1,
+    "gridColumnRight": 3,
+    "listItemLayout": null,
+    "itemDetailLayout": null,
+    "calendarConfig": {
+      "startDayOfWeek": 0,
+      "timeFieldSlug": null,
+      "viewType": "week",
+      "nameFieldSlug": "name",
+      "personnelFieldSlug": null
+    }
+  }
+}

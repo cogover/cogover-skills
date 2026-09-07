@@ -1,0 +1,124 @@
+{
+  "name": "Respond to Webhook example",
+  "slug": "respond_to_webhook_example",
+  "description": "Return a controlled response from a webhook flow",
+  "id": "PER00000000002",
+  "processInfoId": "PI000000000024",
+  "type": "triggered_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {
+    "type": "webhook",
+    "name": "Start",
+    "sampleData": "{\"event\":\"ping\"}",
+    "dataTypeSlug": "TriggeredHookData_RESPONSE__input",
+    "respondTiming": "USE_RESPOND_TO_WEBHOOK",
+    "verifySignature": false,
+    "verifySignatureAllVersions": false,
+    "parseToDataType": {
+      "nameDataType": "input",
+      "children": [
+        {
+          "id": "RS000000000195",
+          "name": "Event",
+          "slug": "event",
+          "absoluteSlug": "$flow.input.event",
+          "absolutePath": "workflow_resource:list.resource / Input / Event",
+          "dataType": "TEXT",
+          "type": 1,
+          "isList": false,
+          "metaDataType": {}
+        }
+      ]
+    }
+  },
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "CANCEL_INSTANCE", "VIEW_INSTANCE_PROGRESS", "VIEW_INSTANCE_FULL"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [], "option": 2 }],
+  "processInstanceAccessControls": [{ "functions": ["VIEW_INSTANCE_PROGRESS"], "type": "personnel", "items": [], "option": 2 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "AC000000000032",
+      "processId": "PER00000000002",
+      "nodeId": "NO000000000117",
+      "type": "RESPONSE_WEBHOOK",
+      "name": "Respond to webhook",
+      "slug": "respond_to_webhook",
+      "description": "",
+      "data": {
+        "waitActionSlug": "NO000000000118",
+        "waitActionType": "start",
+        "httpRespondCode": { "type": 1, "value": 200 },
+        "respondBodyType": "DEFAULT_DATA",
+        "documentSampleSlug": { "type": 1, "value": null },
+        "redirectUrl": { "type": 1, "value": null }
+      }
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "AC000000000032",
+        "nodeId": "NO000000000117",
+        "name": "Respond to webhook",
+        "slug": "respond_to_webhook",
+        "type": "RESPONSE_WEBHOOK",
+        "resources": [
+          { "id": "RS000000000190", "name": "Response Time", "slug": "responseTime", "absoluteSlug": "$action.respond_to_webhook.responseTime", "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Response Time", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} },
+          { "id": "RS000000000186", "name": "Respond For Webhook", "slug": "respondForWebhook", "absoluteSlug": "$action.respond_to_webhook.respondForWebhook", "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Respond For Webhook", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} },
+          { "id": "RS000000000191", "name": "Redirect URL", "slug": "redirectUrl", "absoluteSlug": "$action.respond_to_webhook.redirectUrl", "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Redirect URL", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} },
+          {
+            "id": "RS000000000187",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.respond_to_webhook.output",
+            "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {},
+            "children": [
+              { "id": "RS000000000188", "name": "StatusCode", "slug": "statusCode", "absoluteSlug": "$action.respond_to_webhook.output.statusCode", "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Output / StatusCode", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              {
+                "id": "RS000000000185",
+                "name": "Respond",
+                "slug": "respond",
+                "absoluteSlug": "$action.respond_to_webhook.output.respond",
+                "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Output / Respond",
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": false,
+                "availableForInput": false,
+                "availableForOutput": true,
+                "parentTable": "action",
+                "metaDataType": {},
+                "children": [
+                  { "id": "RS000000000189", "name": "Body", "slug": "body", "absoluteSlug": "$action.respond_to_webhook.output.respond.body", "absolutePath": "workflow_resource:list.responseWebhookTask / Respond to webhook / Output / Respond / Body", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PER00000000002\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000118\" name=\"Webhook Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_TRIGGERED_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FL000000000076</bpmn2:outgoing></bpmn2:startEvent>\n    <elEx:responseWebhookTask id=\"NO000000000117\" name=\"Respond to webhook\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"RESPONSE_WEBHOOK_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FL000000000076</bpmn2:incoming><bpmn2:outgoing>FL000000000077</bpmn2:outgoing></elEx:responseWebhookTask>\n    <bpmn2:endEvent id=\"NO000000000116\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FL000000000077</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FL000000000076\" sourceRef=\"NO000000000118\" targetRef=\"NO000000000117\" /><bpmn2:sequenceFlow id=\"FL000000000077\" sourceRef=\"NO000000000117\" targetRef=\"NO000000000116\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_RESPONSE\"><bpmndi:BPMNPlane id=\"BPMNPlane_RESPONSE\" bpmnElement=\"PER00000000002\">\n    <bpmndi:BPMNShape id=\"NO000000000118_di\" bpmnElement=\"NO000000000118\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"48\" y=\"266\" width=\"84\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000117_di\" bpmnElement=\"NO000000000117\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"198\" y=\"266\" width=\"144\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000116_di\" bpmnElement=\"NO000000000116\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FL000000000076_di\" bpmnElement=\"FL000000000076\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id=\"FL000000000077_di\" bpmnElement=\"FL000000000077\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

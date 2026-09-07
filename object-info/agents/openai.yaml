@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Info"
+  short_description: "Xem Object đặc biệt, fields, options và Formula"
+  default_prompt: "Dùng $object-info để nhận diện Object đặc biệt của Workspace hoặc xem và quản lý Object, fields, options và Formula trong Cogover."

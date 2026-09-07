@@ -1,0 +1,499 @@
+{
+  "workspace": "tenant.example.com",
+  "observedAt": "2026-07-27",
+  "purpose": "Chuyển đổi Lead thành Account, Contact, Opportunity và Opportunity Contact Role bằng một action chain.",
+  "format": "documentation bundle; mỗi createPayload là một request riêng và phải resolve lại ID trước khi dùng",
+  "creationOrder": [
+    "accountAction",
+    "contactAction",
+    "opportunityAction",
+    "contactRoleAction",
+    "convertChain"
+  ],
+  "actionButtons": {
+    "accountAction": {
+      "observedId": "BUS0000000002",
+      "createPayload": {
+        "name": "Create or update Account",
+        "slug": "Create_or_update_account",
+        "status": 1,
+        "actionType": 13,
+        "objectTypeSlug": "lead",
+        "targetObjectTypeSlug": "account",
+        "listSourceObject": [
+          "$currentRecord"
+        ],
+        "layoutSourceObject": "LO00000000006",
+        "popupDisplayType": 1,
+        "isBackground": 0,
+        "isBulk": 0,
+        "showRecordAfterAction": 0,
+        "autofill": {
+          "targetCreate": [
+            {
+              "field": "name",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord.company\"}",
+              "valueDataType": "short_text",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "phones",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord.business_phones\"}",
+              "valueDataType": "phone",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "websites",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord.websites\"}",
+              "valueDataType": "url",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "no_of_employees",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord.no_of_employees\"}",
+              "valueDataType": "numeric",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "annual_revenue",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord.annual_revenue\"}",
+              "valueDataType": "currency",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "industry",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord.industry\"}",
+              "valueDataType": "single_choice",
+              "isVariable": 1,
+              "isHidden": 1,
+              "allowEdit": 0,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "originating_lead",
+              "objectTypeSlug": "account",
+              "value": "{\"value\":\"$currentRecord\"}",
+              "valueDataType": "lookup_normal",
+              "isVariable": 0,
+              "isHidden": 1,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            }
+          ],
+          "source": [
+            {
+              "field": "$currentRecord.status",
+              "objectTypeSlug": "$currentRecord",
+              "value": "{\"value\":\"Converted\"}",
+              "valueDataType": "single_choice",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 0,
+              "isOverwrite": true,
+              "overwriteType": 1
+            }
+          ],
+          "syncRelatedList": [
+            {
+              "objectTypeSlug": "account",
+              "sourceRelatedListId": "RL00000000003",
+              "targetRelatedListId": "RL00000000006",
+              "isOverwrite": true,
+              "overwriteType": 1
+            }
+          ]
+        }
+      }
+    },
+    "contactAction": {
+      "observedId": "BUS0000000001",
+      "createPayload": {
+        "name": "Create or update Contact",
+        "slug": "Create_or_update_contact",
+        "status": 1,
+        "actionType": 13,
+        "objectTypeSlug": "lead",
+        "targetObjectTypeSlug": "contact",
+        "listSourceObject": [
+          "$currentRecord",
+          "account"
+        ],
+        "layoutSourceObject": "LO00000000005",
+        "popupDisplayType": 1,
+        "isBackground": 0,
+        "isBulk": 0,
+        "showRecordAfterAction": 0,
+        "autofill": {
+          "targetCreate": [
+            {
+              "field": "first_name",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.first_name\"}",
+              "valueDataType": "short_text",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "name",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.last_name\"}",
+              "valueDataType": "short_text",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "emails",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.emails\"}",
+              "valueDataType": "email",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "mobile_phones",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.mobile_phones\"}",
+              "valueDataType": "phone",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "job_title",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.job_title\"}",
+              "valueDataType": "short_text",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "address",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.address\"}",
+              "valueDataType": "long_text",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "account",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$input_2\"}",
+              "valueDataType": "lookup_normal",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "do_not_call",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.do_not_call\"}",
+              "valueDataType": "boolean",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "originating_lead",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord\"}",
+              "valueDataType": "lookup_normal",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "salutation",
+              "objectTypeSlug": "contact",
+              "value": "{\"value\":\"$currentRecord.salutation\"}",
+              "valueDataType": "single_choice",
+              "isVariable": 1,
+              "isHidden": 1,
+              "allowEdit": 0,
+              "isOverwrite": false,
+              "overwriteType": 1
+            }
+          ],
+          "syncRelatedList": [
+            {
+              "objectTypeSlug": "contact",
+              "sourceRelatedListId": "RL00000000003",
+              "targetRelatedListId": "RL00000000004",
+              "isOverwrite": true,
+              "overwriteType": 1
+            }
+          ]
+        }
+      }
+    },
+    "opportunityAction": {
+      "observedId": "BUS0000000003",
+      "createPayload": {
+        "name": "Create or update Opportunity",
+        "slug": "Create_or_update_opportunity",
+        "status": 1,
+        "actionType": 13,
+        "objectTypeSlug": "lead",
+        "targetObjectTypeSlug": "opportunity",
+        "listSourceObject": [
+          "$currentRecord",
+          "account"
+        ],
+        "layoutSourceObject": "LO00000000007",
+        "popupDisplayType": 1,
+        "isBackground": 0,
+        "isBulk": 0,
+        "showRecordAfterAction": 0,
+        "autofill": {
+          "targetCreate": [
+            {
+              "field": "name",
+              "objectTypeSlug": "opportunity",
+              "value": "{\"value\":\"$currentRecord.name\"}",
+              "valueDataType": "short_text",
+              "isVariable": 1,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "stage",
+              "objectTypeSlug": "opportunity",
+              "value": "{\"value\":\"needs_analysis\"}",
+              "valueDataType": "single_choice",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "account",
+              "objectTypeSlug": "opportunity",
+              "value": "{\"value\":\"$input_2\"}",
+              "valueDataType": "lookup_normal",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "Originating_Lead",
+              "objectTypeSlug": "opportunity",
+              "value": "{\"value\":\"$currentRecord\"}",
+              "valueDataType": "lookup_normal",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            }
+          ],
+          "syncRelatedList": [
+            {
+              "objectTypeSlug": "opportunity",
+              "sourceRelatedListId": "RL00000000003",
+              "targetRelatedListId": "RL00000000005",
+              "isOverwrite": true,
+              "overwriteType": 1
+            }
+          ]
+        }
+      }
+    },
+    "contactRoleAction": {
+      "observedId": "BUS0000000004",
+      "createPayload": {
+        "name": "Create Contact Role",
+        "slug": "Create_Contact_Role",
+        "status": 1,
+        "actionType": 11,
+        "objectTypeSlug": "lead",
+        "targetObjectTypeSlug": "opportunity_contact_role",
+        "listSourceObject": [
+          "$currentRecord",
+          "contact",
+          "opportunity"
+        ],
+        "layoutSourceObject": "LO00000000003",
+        "popupDisplayType": 1,
+        "isBackground": 0,
+        "isBulk": 0,
+        "showRecordAfterAction": 0,
+        "autofill": {
+          "targetCreate": [
+            {
+              "field": "contact",
+              "objectTypeSlug": "opportunity_contact_role",
+              "value": "{\"value\":\"$input_2\"}",
+              "valueDataType": "reference",
+              "isVariable": 0,
+              "isHidden": 1,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "opportunity",
+              "objectTypeSlug": "opportunity_contact_role",
+              "value": "{\"value\":\"$input_3\"}",
+              "valueDataType": "reference",
+              "isVariable": 0,
+              "isHidden": 1,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            },
+            {
+              "field": "roles",
+              "objectTypeSlug": "opportunity_contact_role",
+              "value": "{\"value\":\"\"}",
+              "valueDataType": "multi_choices",
+              "isVariable": 0,
+              "isHidden": 0,
+              "allowEdit": 1,
+              "isOverwrite": false,
+              "overwriteType": 1
+            }
+          ]
+        }
+      }
+    }
+  },
+  "convertChain": {
+    "observedId": "BUS0000000005",
+    "createPayload": {
+      "name": "Convert",
+      "slug": "convert",
+      "status": 1,
+      "actionType": 14,
+      "objectTypeSlug": "lead",
+      "title": "Convert",
+      "isBulk": 0,
+      "buttonIndex": 0,
+      "showRecordAfterAction": 0,
+      "actionChain": [
+        {
+          "actionButtonId": "BUS0000000002",
+          "allowSkip": 0,
+          "isBackground": 0,
+          "stopWhenCreate": null,
+          "stopWhenUpdate": null,
+          "inputs": [
+            {
+              "isCurrentRecord": 1,
+              "sourceButtonIndex": -1
+            }
+          ]
+        },
+        {
+          "actionButtonId": "BUS0000000001",
+          "allowSkip": 0,
+          "isBackground": 0,
+          "stopWhenCreate": null,
+          "stopWhenUpdate": null,
+          "inputs": [
+            {
+              "isCurrentRecord": 1,
+              "sourceButtonIndex": -1
+            },
+            {
+              "isCurrentRecord": 0,
+              "sourceButtonIndex": 0
+            }
+          ]
+        },
+        {
+          "actionButtonId": "BUS0000000003",
+          "allowSkip": 1,
+          "isBackground": 0,
+          "stopWhenCreate": null,
+          "stopWhenUpdate": null,
+          "inputs": [
+            {
+              "isCurrentRecord": 1,
+              "sourceButtonIndex": -1
+            },
+            {
+              "isCurrentRecord": 0,
+              "sourceButtonIndex": 0
+            }
+          ]
+        },
+        {
+          "actionButtonId": "BUS0000000004",
+          "allowSkip": 1,
+          "isBackground": 0,
+          "stopWhenCreate": null,
+          "stopWhenUpdate": null,
+          "inputs": [
+            {
+              "isCurrentRecord": 1,
+              "sourceButtonIndex": -1
+            },
+            {
+              "isCurrentRecord": 0,
+              "sourceButtonIndex": 1
+            },
+            {
+              "isCurrentRecord": 0,
+              "sourceButtonIndex": 2
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

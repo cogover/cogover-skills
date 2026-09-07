@@ -1,0 +1,4 @@
+interface:
+  display_name: "Process Creator"
+  short_description: "Thiết kế và kiểm thử quy trình Cogover"
+  default_prompt: "Dùng $process-creator để thiết kế và kiểm thử quy trình Cogover từ yêu cầu của tôi."

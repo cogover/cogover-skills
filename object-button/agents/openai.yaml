@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Button"
+  short_description: "Thiết kế button và chuỗi nghiệp vụ Cogover"
+  default_prompt: "Dùng $object-button để phân tích và cấu hình một thao tác nghiệp vụ trên Cogover Object."

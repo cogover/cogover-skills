@@ -1,0 +1,157 @@
+{
+  "msg": "Successful",
+  "r": 0,
+  "data": {
+    "updatedBy": {
+      "isSystem": false,
+      "name": "Sample User",
+      "fullName": "Sample User",
+      "id": "PER_SAMPLE_USER",
+      "avatar": {
+        "fileName": "avatar.jpeg",
+        "fileSize": 632657,
+        "resizable": true,
+        "resolutionSizes": [
+          "original",
+          "tiny",
+          "small",
+          "medium",
+          "large"
+        ],
+        "acl": "public",
+        "fileExt": "jpeg",
+        "fileType": "avatar",
+        "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+        "fileId": "FILE_SAMPLE_AVATAR"
+      },
+      "type": "personnel",
+      "acOption": null,
+      "setting": {
+        "maxWorkspace": 1000,
+        "maxWorkspaceAccount": 1000
+      }
+    },
+    "canAssign": null,
+    "createdBy": {
+      "isSystem": false,
+      "name": "Sample User",
+      "fullName": "Sample User",
+      "id": "PER_SAMPLE_USER",
+      "avatar": {
+        "fileName": "avatar.jpeg",
+        "fileSize": 632657,
+        "resizable": true,
+        "resolutionSizes": [
+          "original",
+          "tiny",
+          "small",
+          "medium",
+          "large"
+        ],
+        "acl": "public",
+        "fileExt": "jpeg",
+        "fileType": "avatar",
+        "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+        "fileId": "FILE_SAMPLE_AVATAR"
+      },
+      "type": "personnel",
+      "acOption": null,
+      "setting": {
+        "maxWorkspace": 1000,
+        "maxWorkspaceAccount": 1000
+      }
+    },
+    "created": 1785924938358,
+    "permissions": [
+      {
+        "parent": "",
+        "updatedBy": {
+          "isSystem": false,
+          "name": "Sample User",
+          "fullName": "Sample User",
+          "id": "PER_SAMPLE_USER",
+          "avatar": {
+            "fileName": "avatar.jpeg",
+            "fileSize": 632657,
+            "resizable": true,
+            "resolutionSizes": [
+              "original",
+              "tiny",
+              "small",
+              "medium",
+              "large"
+            ],
+            "acl": "public",
+            "fileExt": "jpeg",
+            "fileType": "avatar",
+            "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+            "fileId": "FILE_SAMPLE_AVATAR"
+          },
+          "type": "personnel",
+          "acOption": null,
+          "setting": {
+            "maxWorkspace": 1000,
+            "maxWorkspaceAccount": 1000
+          }
+        },
+        "functionCode": "record",
+        "roleId": "RO00000000003",
+        "created": 1785924938362,
+        "values": [
+          {
+            "id": "OT00000000008",
+            "slug": "ticket"
+          }
+        ],
+        "valueOption": 1,
+        "groupSlug": "object",
+        "createdBy": {
+          "isSystem": false,
+          "name": "Sample User",
+          "fullName": "Sample User",
+          "id": "PER_SAMPLE_USER",
+          "avatar": {
+            "fileName": "avatar.jpeg",
+            "fileSize": 632657,
+            "resizable": true,
+            "resolutionSizes": [
+              "original",
+              "tiny",
+              "small",
+              "medium",
+              "large"
+            ],
+            "acl": "public",
+            "fileExt": "jpeg",
+            "fileType": "avatar",
+            "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+            "fileId": "FILE_SAMPLE_AVATAR"
+          },
+          "type": "personnel",
+          "acOption": null,
+          "setting": {
+            "maxWorkspace": 1000,
+            "maxWorkspaceAccount": 1000
+          }
+        },
+        "id": "PR00000000001",
+        "actions": [
+          "view"
+        ],
+        "updated": 1785924938362,
+        "workspaceId": "WS_SAMPLE_TENANT_A"
+      }
+    ],
+    "name": "Vai trò nhân viên chăm sóc khách hàng",
+    "description": "Xem/sửa/xoá được bản ghi đối tượng Ticket",
+    "isSuperAdmin": 0,
+    "id": "RO00000000003",
+    "roleType": 2,
+    "updated": 1785924938358,
+    "workspaceId": "WS_SAMPLE_TENANT_A"
+  },
+  "personnelId": "PER_SAMPLE_USER",
+  "requestId": "REQ_SAMPLE",
+  "workspaceDomain": "tenant-a",
+  "workspaceId": "WS_SAMPLE_TENANT_A"
+}

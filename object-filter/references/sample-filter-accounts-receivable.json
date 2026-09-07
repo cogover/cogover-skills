@@ -1,0 +1,45 @@
+{
+  "id": "FIfJJeYfFGAHQ",
+  "name": "Tất cả Công nợ phải thu",
+  "slug": "all",
+  "description": "",
+  "objectTypeId": "OT00000000010",
+  "objectTypeSlug": "accounts_receivable",
+  "objectTypeName": "Accounts receivable",
+  "objectType": {
+    "id": "OT00000000010",
+    "name": "Accounts receivable",
+    "pluralName": "Accounts receivable",
+    "slug": "accounts_receivable",
+    "langsPluralName": {
+      "enUS": "Accounts receivable",
+      "viVN": "Công nợ phải thu"
+    }
+  },
+  "logicType": "NONE",
+  "logic": null,
+  "conditions": [],
+  "sortFields": [
+    {
+      "field": "updated",
+      "order": "desc"
+    }
+  ],
+  "limitRecord": 20,
+  "tableSettings": "{\"columns\":[{\"key\":\"updated_by\",\"width\":150},{\"key\":\"created_by\",\"width\":150},{\"key\":\"updated\",\"width\":150},{\"key\":\"created\",\"width\":150},{\"key\":\"name\",\"width\":150},{\"key\":\"id\",\"width\":150},{\"key\":\"actionColumn\",\"width\":32}],\"pinnedColumns\":{\"left\":[\"name\"],\"right\":[\"actionColumn\"]},\"showingColumns\":[\"updated_by\",\"created_by\",\"updated\",\"created\",\"name\",\"id\"]}",
+  "accessControls": [
+    {
+      "functions": ["VIEW", "EDIT"],
+      "option": 1,
+      "items": [],
+      "type": "personnel"
+    }
+  ],
+  "accessControlFunctions": ["VIEW", "EDIT", "DELETE"],
+  "type": 1,
+  "isQuickFilter": 1,
+  "status": 1,
+  "layoutFilterType": null,
+  "displayTaskMode": 0,
+  "layoutConfig": null
+}

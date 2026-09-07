@@ -1,0 +1,6 @@
+interface:
+  display_name: "Build Cogover App"
+  short_description: "Thiết kế và triển khai App Cogover end-to-end"
+  default_prompt: "Dùng $build-cogover-app để xác thực API key đúng Workspace trước khi khảo sát, làm rõ, thiết kế và triển khai App Cogover qua các cổng duyệt."
+policy:
+  allow_implicit_invocation: false

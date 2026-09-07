@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Builder"
+  short_description: "Quản lý dashboard Cogover an toàn qua API"
+  default_prompt: "Dùng $dashboard-builder để tạo, sửa hoặc xoá dashboard Cogover qua API."

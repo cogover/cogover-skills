@@ -1,0 +1,41 @@
+{
+  "name": "End Branch example",
+  "slug": "end_branch_example",
+  "description": "End one parallel branch while another branch reaches End Process",
+  "id": "PE000000000023",
+  "processInfoId": "PI000000000018",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "START_INSTANCE"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [""], "option": 1 }],
+  "processInstanceAccessControls": [{ "functions": ["START_INSTANCE"], "type": "personnel", "items": [""], "option": 1 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [
+    {
+      "sourceNodeId": "NOGATEWAY00001",
+      "name": "Parallel split",
+      "slug": "parallel_split",
+      "description": "",
+      "isOpen": true
+    }
+  ],
+  "loops": [],
+  "actions": [],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "actions": [],
+    "loops": []
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PE000000000023\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NOEBSTART00001\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLEBSTART00001</bpmn2:outgoing></bpmn2:startEvent>\n    <bpmn2:parallelGateway id=\"NOGATEWAY00001\" name=\"Parallel split\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"PARALLEL_GATEWAY\" /></bpmn2:extensionElements><bpmn2:incoming>FLEBSTART00001</bpmn2:incoming><bpmn2:outgoing>FL000000000072</bpmn2:outgoing><bpmn2:outgoing>FL000000000073</bpmn2:outgoing></bpmn2:parallelGateway>\n    <bpmn2:endEvent id=\"NO000000000102\" name=\"End Branch\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_BRANCH_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FL000000000072</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:endEvent id=\"NO000000000101\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FL000000000073</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLEBSTART00001\" sourceRef=\"NOEBSTART00001\" targetRef=\"NOGATEWAY00001\" /><bpmn2:sequenceFlow id=\"FL000000000072\" sourceRef=\"NOGATEWAY00001\" targetRef=\"NO000000000102\" /><bpmn2:sequenceFlow id=\"FL000000000073\" sourceRef=\"NOGATEWAY00001\" targetRef=\"NO000000000101\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_ENDBRANCH\"><bpmndi:BPMNPlane id=\"BPMNPlane_ENDBRANCH\" bpmnElement=\"PE000000000023\">\n    <bpmndi:BPMNShape id=\"NOEBSTART00001_di\" bpmnElement=\"NOEBSTART00001\"><dc:Bounds x=\"60\" y=\"220\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"286\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOGATEWAY00001_di\" bpmnElement=\"NOGATEWAY00001\" isMarkerVisible=\"true\"><dc:Bounds x=\"240\" y=\"220\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"224\" y=\"286\" width=\"92\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000102_di\" bpmnElement=\"NO000000000102\"><dc:Bounds x=\"420\" y=\"100\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"409\" y=\"166\" width=\"82\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000101_di\" bpmnElement=\"NO000000000101\"><dc:Bounds x=\"420\" y=\"300\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"366\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLEBSTART00001_di\" bpmnElement=\"FLEBSTART00001\"><di:waypoint x=\"120\" y=\"250\" /><di:waypoint x=\"240\" y=\"250\" /></bpmndi:BPMNEdge>\n    <bpmndi:BPMNEdge id=\"FL000000000072_di\" bpmnElement=\"FL000000000072\"><di:waypoint x=\"300\" y=\"250\" /><di:waypoint x=\"350\" y=\"250\" /><di:waypoint x=\"350\" y=\"130\" /><di:waypoint x=\"420\" y=\"130\" /></bpmndi:BPMNEdge>\n    <bpmndi:BPMNEdge id=\"FL000000000073_di\" bpmnElement=\"FL000000000073\"><di:waypoint x=\"300\" y=\"250\" /><di:waypoint x=\"350\" y=\"250\" /><di:waypoint x=\"350\" y=\"330\" /><di:waypoint x=\"420\" y=\"330\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

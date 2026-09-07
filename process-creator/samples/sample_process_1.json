@@ -1,0 +1,1117 @@
+{
+  "metadata": {},
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "VIEW_INSTANCE_FULL": false
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PE00000000012\">    <bpmn2:startEvent id=\"NO00000000012\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_MANUAL_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000010</bpmn2:outgoing>    </bpmn2:startEvent>    <bpmn2:userTask id=\"NO00000000016\" name=\"Root\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000010</bpmn2:incoming>      <bpmn2:outgoing>FL00000000021</bpmn2:outgoing>    </bpmn2:userTask>    <bpmn2:userTask id=\"NO00000000024\" name=\"node 2\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000021</bpmn2:incoming>      <bpmn2:outgoing>FL00000000024</bpmn2:outgoing>    </bpmn2:userTask>    <bpmn2:endEvent id=\"NO00000000021\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000024</bpmn2:incoming>    </bpmn2:endEvent>    <bpmn2:sequenceFlow id=\"FL00000000010\" name=\"\" sourceRef=\"NO00000000012\" targetRef=\"NO00000000016\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000024\" name=\"\" sourceRef=\"NO00000000024\" targetRef=\"NO00000000021\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000021\" name=\"\" sourceRef=\"NO00000000016\" targetRef=\"NO00000000024\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000012\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PE00000000012\" bpmnElement=\"PE00000000012\">      <bpmndi:BPMNShape id=\"Event_1sssol9_di\" bpmnElement=\"NO00000000021\">        <dc:Bounds x=\"550\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"543\" y=\"327\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_161xmzp_di\" bpmnElement=\"NO00000000012\">        <dc:Bounds x=\"-120\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"-103\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_159824c_di\" bpmnElement=\"NO00000000016\">        <dc:Bounds x=\"110\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"126\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_0qi78ry_di\" bpmnElement=\"NO00000000024\">        <dc:Bounds x=\"350\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"360\" y=\"330\" width=\"40\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_08xcm6i_di\" bpmnElement=\"FL00000000010\">        <di:waypoint x=\"-60\" y=\"290\" />        <di:waypoint x=\"110\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_159ywz5_di\" bpmnElement=\"FL00000000024\">        <di:waypoint x=\"410\" y=\"290\" />        <di:waypoint x=\"550\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_19tacjp_di\" bpmnElement=\"FL00000000021\">        <di:waypoint x=\"170\" y=\"290\" />        <di:waypoint x=\"350\" y=\"290\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "overviewScreen": {
+    "layout": [
+      {
+        "paddingBottom": 0,
+        "numberOfColumns": 1,
+        "children": [
+          {
+            "colSpan": 1,
+            "isShowChildren": true,
+            "paddingRight": 0,
+            "type": "layoutColumn",
+            "isBorder": false,
+            "isShowName": false,
+            "paddingBottom": 0,
+            "children": [
+              {
+                "isShowChildren": true,
+                "paddingRight": 20,
+                "type": "section",
+                "typeSection": "normal",
+                "isBorder": false,
+                "isShowName": false,
+                "paddingBottom": 24,
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "components": [
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.starter",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "RECORD",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Starter",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "link_field": "id",
+                              "object_slug": "personnel",
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              },
+                              "object": "OT00000000005"
+                            },
+                            "unique": false,
+                            "name": "Người bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000178",
+                            "fieldType": "lookup_normal",
+                            "slug": "Nguoi_bat_dau",
+                            "status": 1
+                          },
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.startAt",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "DATE_TIME",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Start At",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "value_limit": {
+                                "from": null,
+                                "to": null
+                              },
+                              "default_value_current": false,
+                              "format": {
+                                "date": "DD/MM/YYYY",
+                                "time": "hh:mm A"
+                              },
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              }
+                            },
+                            "unique": false,
+                            "name": "Thời điểm bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000390",
+                            "fieldType": "date_time",
+                            "slug": "Thoi_diem_bat_dau",
+                            "status": 1
+                          }
+                        ],
+                        "canCollapse": false,
+                        "isShowChildren": true,
+                        "paddingRight": 0,
+                        "type": "group",
+                        "isBorder": false,
+                        "isShowName": false,
+                        "paddingBottom": 0,
+                        "numberOfColumns": 2,
+                        "gap": 12,
+                        "name": "",
+                        "id": "00000000-0000-4000-8000-000000000429",
+                        "paddingTop": 0,
+                        "tabKey": 1,
+                        "paddingLeft": 0,
+                        "slug": "group_expand_0_1770051330601"
+                      }
+                    ],
+                    "isShowChildren": true,
+                    "name": "Tab 1",
+                    "id": "00000000-0000-4000-8000-000000000369",
+                    "slug": "tab_1770051330601"
+                  }
+                ],
+                "gap": 20,
+                "name": "",
+                "id": "00000000-0000-4000-8000-000000000024",
+                "paddingTop": 24,
+                "numberOfTabs": 1,
+                "paddingLeft": 20,
+                "slug": "section_1770051330601"
+              }
+            ],
+            "gap": 20,
+            "name": "",
+            "id": "00000000-0000-4000-8000-000000000214",
+            "paddingTop": 0,
+            "paddingLeft": 0,
+            "slug": "layout_column_1770051330600"
+          }
+        ],
+        "isShowChildren": true,
+        "paddingRight": 0,
+        "gap": 20,
+        "id": "00000000-0000-4000-8000-000000000239",
+        "paddingTop": 0,
+        "type": "layoutRow",
+        "paddingLeft": 0,
+        "slug": "layout_row_1770051330600",
+        "isBorder": false
+      }
+    ],
+    "permissionGeneralInfo": [
+      [
+        {
+          "field": "account",
+          "isRawValue": false,
+          "value": [
+            {
+              "valuePathName": "workflow_resource:list.resource / Instance / Starter",
+              "valueDataType": "RECORD",
+              "value": "$flow.instance.starter"
+            }
+          ],
+          "option": 2
+        }
+      ]
+    ]
+  },
+  "type": "manual_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "DRAFT",
+  "processInfoId": "PI00000000004",
+  "userTasks": [
+    {
+      "approvalScreen": 0,
+      "isRoot": true,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "processId": "PE00000000012",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "name": "Root",
+      "description": "",
+      "id": "NC00000000011",
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000347",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_1770051330591"
+      },
+      "nodeId": "NO00000000016",
+      "slug": "Root",
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000177",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1770051330600"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000282",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000445",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000111",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1770051330600"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000192",
+                      "slug": "tab_1770051330600"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000063",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1770051330600"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000421",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1770051330599"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000139",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1770051330599",
+          "isBorder": false
+        }
+      ]
+    },
+    {
+      "approvalScreen": 0,
+      "isRoot": false,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "processId": "PE00000000012",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "name": "node 2",
+      "description": "",
+      "id": "NC00000000013",
+      "nodeId": "NO00000000024",
+      "slug": "node_2",
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000378",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1770051334053"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000419",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000371",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000407",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1770051334054"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000120",
+                      "slug": "tab_1770051334054"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000416",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1770051334054"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000115",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1770051334053"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000089",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1770051334053",
+          "isBorder": false
+        }
+      ],
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000308",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_node_2"
+      }
+    }
+  ],
+  "id": "PE00000000012",
+  "slug": "test_2",
+  "workspaceId": "WS_SAMPLE",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": false,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PE00000000012",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000012",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000012",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000012",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000006"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000012",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000012",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.starter",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Starter",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Starter",
+            "id": "instance_starter",
+            "parentTable": "system",
+            "slug": "starter"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [],
+    "loops": [],
+    "userTasks": [
+      {
+        "approvalScreen": 0,
+        "isRoot": true,
+        "processId": "PE00000000012",
+        "name": "Root",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.Root.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000011",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Submitted By",
+            "id": "RS00000000014",
+            "parentTable": "node_screen",
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000011",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Start At",
+            "id": "RS00000000087",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000011",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / End At",
+            "id": "RS00000000016",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000011",
+        "nodeId": "NO00000000016",
+        "slug": "Root"
+      },
+      {
+        "approvalScreen": 0,
+        "isRoot": false,
+        "processId": "PE00000000012",
+        "name": "node 2",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.node_2.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000013",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / node 2 / Submitted By",
+            "id": "RS00000000084",
+            "parentTable": "node_screen",
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.node_2.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000013",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / node 2 / Start At",
+            "id": "RS00000000018",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.node_2.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000013",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000012",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / node 2 / End At",
+            "id": "RS00000000023",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000013",
+        "nodeId": "NO00000000024",
+        "slug": "node_2"
+      }
+    ],
+    "actions": []
+  },
+  "starterPermission": {
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V1",
+  "versionNumber": 1,
+  "currentVersion": true,
+  "versionLabel": "",
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Test 2",
+  "status": 2,
+  "created": "2026-02-02T16:56:01.378Z",
+  "updated": "2026-02-02T16:56:01.378Z"
+}

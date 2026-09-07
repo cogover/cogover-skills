@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Transition Rule"
+  short_description: "Design and configure object transition rules"
+  default_prompt: "Use $object-transition-rule to design and configure an active transition rule with English action names and collision-free, UI-safe graph metadata, inferring a conservative business flow when I do not provide one; use inactive only when I explicitly request it."

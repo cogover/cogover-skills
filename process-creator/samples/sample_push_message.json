@@ -1,0 +1,75 @@
+{
+  "name": "Push Message example",
+  "slug": "push_message_example",
+  "description": "Show a toast to a personnel",
+  "id": "PEPUSH00000001",
+  "processInfoId": "PIPUSH00000001",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "START_INSTANCE"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [""], "option": 1 }],
+  "processInstanceAccessControls": [{ "functions": ["START_INSTANCE"], "type": "personnel", "items": [""], "option": 1 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "ACPUSH00000001",
+      "processId": "PEPUSH00000001",
+      "nodeId": "NOPUSH00000001",
+      "type": "PUSH_MESSAGE",
+      "name": "Notify user",
+      "slug": "notify_user",
+      "description": "",
+      "data": {
+        "pushType": "TOAST",
+        "recipientType": "PERSONNEL",
+        "recipients": [{ "type": 1, "value": "PERSONNEL_EXAMPLE_1" }],
+        "excludes": [],
+        "objectSlug": null,
+        "records": null,
+        "position": "TOP_RIGHT",
+        "size": "MEDIUM",
+        "duration": 5,
+        "title": { "type": 1, "value": "Process completed" },
+        "content": { "type": 1, "value": "The record is ready." },
+        "links": [
+          {
+            "label": { "type": 1, "value": "Open" },
+            "url": { "type": 1, "value": "https://example.com/records/1" }
+          }
+        ],
+        "contentType": "text"
+      }
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "ACPUSH00000001",
+        "nodeId": "NOPUSH00000001",
+        "name": "Notify user",
+        "slug": "notify_user",
+        "type": "PUSH_MESSAGE",
+        "resources": [
+          { "id": "RS000000000184", "name": "Start At", "slug": "startAt", "absoluteSlug": "$action.notify_user.startAt", "absolutePath": "workflow_resource:list.pushMessageTask / Notify user / Start At", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} },
+          { "id": "RS000000000183", "name": "End At", "slug": "endAt", "absoluteSlug": "$action.notify_user.endAt", "absolutePath": "workflow_resource:list.pushMessageTask / Notify user / End At", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEPUSH00000001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000115\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLPUSH00000001</bpmn2:outgoing></bpmn2:startEvent>\n    <elEx:pushMessageTask id=\"NOPUSH00000001\" name=\"Notify user\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"PUSH_MESSAGE_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FLPUSH00000001</bpmn2:incoming><bpmn2:outgoing>FLPUSH00000002</bpmn2:outgoing></elEx:pushMessageTask>\n    <bpmn2:endEvent id=\"NOPUSHEND00001\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FLPUSH00000002</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLPUSH00000001\" sourceRef=\"NO000000000115\" targetRef=\"NOPUSH00000001\" /><bpmn2:sequenceFlow id=\"FLPUSH00000002\" sourceRef=\"NOPUSH00000001\" targetRef=\"NOPUSHEND00001\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PUSH\"><bpmndi:BPMNPlane id=\"BPMNPlane_PUSH\" bpmnElement=\"PEPUSH00000001\">\n    <bpmndi:BPMNShape id=\"NO000000000115_di\" bpmnElement=\"NO000000000115\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOPUSH00000001_di\" bpmnElement=\"NOPUSH00000001\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"229\" y=\"266\" width=\"82\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOPUSHEND00001_di\" bpmnElement=\"NOPUSHEND00001\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLPUSH00000001_di\" bpmnElement=\"FLPUSH00000001\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id=\"FLPUSH00000002_di\" bpmnElement=\"FLPUSH00000002\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

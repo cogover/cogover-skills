@@ -1,0 +1,104 @@
+{
+  "workspace": "tenant.example.com",
+  "observedAt": "2026-07-27",
+  "observedId": "BU00000000004",
+  "purpose": "Từ customer_invoice hiện tại, mở form tạo cash_transaction và điền sẵn dữ liệu liên quan.",
+  "format": "request-oriented reference; chỉ gửi object createPayload sau khi resolve lại metadata của workspace đích",
+  "recordLayoutPlacement": {
+    "layoutId": "LO00000000004",
+    "layoutName": "View 2 columns",
+    "objectTypeSlug": "customer_invoice",
+    "functionLayout": 2,
+    "jsonPath": "pageSettings.buttons.listButton",
+    "entry": {
+      "onlyShowIcon": false,
+      "size": "medium",
+      "buttonId": "BU00000000004",
+      "useIcon": false,
+      "icon": null,
+      "iconDarkMode": null,
+      "customName": null,
+      "type": "gray",
+      "slug": "create_receipt_voucher"
+    }
+  },
+  "createPayload": {
+    "name": "Create receipt voucher",
+    "slug": "create_receipt_voucher",
+    "status": 1,
+    "actionType": 11,
+    "objectTypeSlug": "customer_invoice",
+    "targetObjectTypeSlug": "cash_transaction",
+    "listSourceObject": [
+      "$currentRecord"
+    ],
+    "layoutSourceObject": "LO00000000010",
+    "popupDisplayType": 1,
+    "isBackground": 0,
+    "isBulk": 0,
+    "showRecordAfterAction": 0,
+    "autofill": {
+      "targetCreate": [
+        {
+          "field": "customer_invoice",
+          "objectTypeSlug": "cash_transaction",
+          "value": "{\"value\":\"$currentRecord\"}",
+          "valueDataType": "lookup_normal",
+          "isVariable": 0,
+          "isHidden": 0,
+          "allowEdit": 0,
+          "isOverwrite": false,
+          "overwriteType": 1
+        },
+        {
+          "field": "creation_source",
+          "objectTypeSlug": "cash_transaction",
+          "value": "{\"value\":\"from_customer_invoice\"}",
+          "valueDataType": "single_choice",
+          "isVariable": 0,
+          "isHidden": 0,
+          "allowEdit": 0,
+          "isOverwrite": false,
+          "overwriteType": 1
+        },
+        {
+          "field": "status",
+          "objectTypeSlug": "cash_transaction",
+          "value": "{\"value\":\"creating\"}",
+          "valueDataType": "single_choice",
+          "isVariable": 0,
+          "isHidden": 0,
+          "allowEdit": 0,
+          "isOverwrite": false,
+          "overwriteType": 1
+        },
+        {
+          "field": "amount",
+          "objectTypeSlug": "cash_transaction",
+          "value": "{\"value\":\"$currentRecord.remaining_amount\"}",
+          "valueDataType": "decimal",
+          "isVariable": 1,
+          "isHidden": 0,
+          "allowEdit": 1,
+          "isOverwrite": false,
+          "overwriteType": 1
+        },
+        {
+          "field": "currency",
+          "objectTypeSlug": "cash_transaction",
+          "value": "{\"value\":\"$currentRecord.currency\"}",
+          "valueDataType": "single_choice",
+          "isVariable": 1,
+          "isHidden": 0,
+          "allowEdit": 0,
+          "isOverwrite": false,
+          "overwriteType": 1
+        }
+      ]
+    },
+    "useIcon": false,
+    "iconOnly": false,
+    "icon": null,
+    "iconDarkMode": null
+  }
+}

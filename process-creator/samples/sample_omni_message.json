@@ -1,0 +1,109 @@
+{
+  "name": "Omni Message example",
+  "slug": "omni_message_example",
+  "description": "Send a Zalo ZBS message with Omni Message",
+  "id": "PEOMNI00000001",
+  "processInfoId": "PIOMNI00000001",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "START_INSTANCE"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [""], "option": 1 }],
+  "processInstanceAccessControls": [{ "functions": ["START_INSTANCE"], "type": "personnel", "items": [""], "option": 1 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "ACOMNI00000001",
+      "processId": "PEOMNI00000001",
+      "nodeId": "NOOMNI00000001",
+      "type": "OMNI_MESSAGE",
+      "name": "Send Zalo message",
+      "slug": "send_zalo_message",
+      "description": "",
+      "data": "{\"to\":{\"type\":1,\"value\":\"+84901234567\"},\"continueOnAllFailed\":true,\"trackingIdPrefix\":\"order_notice\",\"methods\":[{\"id\":\"00000000-0000-4000-8000-000000000147\",\"order\":1,\"enabled\":true,\"type\":\"ZALO_ZBS\",\"timeoutSeconds\":60,\"successCriteria\":\"SENT\",\"oaId\":{\"type\":1,\"value\":\"ZALO_OA_EXAMPLE_1\"},\"templateId\":{\"type\":1,\"value\":\"ZBS_TEMPLATE_EXAMPLE_1\"},\"deliveryMethod\":\"PHONE\",\"sendingMode\":1,\"templateData\":{}}]}"
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "ACOMNI00000001",
+        "nodeId": "NOOMNI00000001",
+        "name": "Send Zalo message",
+        "slug": "send_zalo_message",
+        "type": "OMNI_MESSAGE",
+        "resources": [
+          { "id": "RS000000000164", "name": "Start At", "slug": "startAt", "absoluteSlug": "$action.send_zalo_message.startAt", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Start At", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} },
+          { "id": "RS000000000158", "name": "End At", "slug": "endAt", "absoluteSlug": "$action.send_zalo_message.endAt", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / End At", "dataType": "DATE_TIME", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "isStandard": true, "parentTable": "action", "resourcesUsedIn": [], "metaDataType": {} },
+          {
+            "id": "RS000000000160",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.send_zalo_message.output",
+            "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {},
+            "actionType": "OMNI_MESSAGE",
+            "children": [
+              { "id": "RS000000000165", "name": "Success Method", "slug": "successMethod", "absoluteSlug": "$action.send_zalo_message.output.successMethod", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Success Method", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000166", "name": "Success Order", "slug": "successOrder", "absoluteSlug": "$action.send_zalo_message.output.successOrder", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Success Order", "dataType": "NUMBER", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000167", "name": "Success OA Id", "slug": "successOaId", "absoluteSlug": "$action.send_zalo_message.output.successOaId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Success OA Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000162", "name": "Provider Message Id", "slug": "providerMessageId", "absoluteSlug": "$action.send_zalo_message.output.providerMessageId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Provider Message Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000163", "name": "Send Log Id", "slug": "sendLogId", "absoluteSlug": "$action.send_zalo_message.output.sendLogId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Send Log Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000159", "name": "Final Status", "slug": "finalStatus", "absoluteSlug": "$action.send_zalo_message.output.finalStatus", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Final Status", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              { "id": "RS000000000161", "name": "Price Amount", "slug": "priceAmount", "absoluteSlug": "$action.send_zalo_message.output.priceAmount", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Price Amount", "dataType": "NUMBER", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+              {
+                "id": "RS000000000156",
+                "name": "Attempts",
+                "slug": "attempts",
+                "absoluteSlug": "$action.send_zalo_message.output.attempts[0]",
+                "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts",
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": true,
+                "availableForInput": false,
+                "availableForOutput": true,
+                "parentTable": "action",
+                "metaDataType": {},
+                "children": [
+                  { "id": "RS000000000149", "name": "Method Id", "slug": "methodId", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].methodId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Method Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000157", "name": "Method Type", "slug": "methodType", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].methodType", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Method Type", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000150", "name": "OA Id", "slug": "oaId", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].oaId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / OA Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000151", "name": "Page Id", "slug": "pageId", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].pageId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Page Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000155", "name": "Status", "slug": "status", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].status", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Status", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000152", "name": "Provider Message Id", "slug": "providerMessageId", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].providerMessageId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Provider Message Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000153", "name": "Send Log Id", "slug": "sendLogId", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].sendLogId", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Send Log Id", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000146", "name": "Error Code", "slug": "errorCode", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].errorCode", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Error Code", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000147", "name": "Error Message", "slug": "errorMsg", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].errorMsg", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Error Message", "dataType": "TEXT", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000154", "name": "Sent At", "slug": "sentAt", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].sentAt", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Sent At", "dataType": "NUMBER", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} },
+                  { "id": "RS000000000148", "name": "Finished At", "slug": "finishedAt", "absoluteSlug": "$action.send_zalo_message.output.attempts[0].finishedAt", "absolutePath": "workflow_resource:list.omniMessageTask / Send Zalo message / Output / Attempts / Finished At", "dataType": "NUMBER", "type": 1, "isList": false, "availableForInput": false, "availableForOutput": true, "parentTable": "action", "metaDataType": {} }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEOMNI00000001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000110\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLOMNI00000001</bpmn2:outgoing></bpmn2:startEvent>\n    <bpmn2:sendTask id=\"NOOMNI00000001\" name=\"Send Zalo message\"><bpmn2:extensionElements><elEx:omniMessageTask /><configEx:elementInfo renderKey=\"OMNI_MESSAGE_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FLOMNI00000001</bpmn2:incoming><bpmn2:outgoing>FLOMNI00000002</bpmn2:outgoing></bpmn2:sendTask>\n    <bpmn2:endEvent id=\"NOOMNIEND00001\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FLOMNI00000002</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLOMNI00000001\" sourceRef=\"NO000000000110\" targetRef=\"NOOMNI00000001\" /><bpmn2:sequenceFlow id=\"FLOMNI00000002\" sourceRef=\"NOOMNI00000001\" targetRef=\"NOOMNIEND00001\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_OMNI\"><bpmndi:BPMNPlane id=\"BPMNPlane_OMNI\" bpmnElement=\"PEOMNI00000001\">\n    <bpmndi:BPMNShape id=\"NO000000000110_di\" bpmnElement=\"NO000000000110\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOOMNI00000001_di\" bpmnElement=\"NOOMNI00000001\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"211\" y=\"266\" width=\"118\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOOMNIEND00001_di\" bpmnElement=\"NOOMNIEND00001\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLOMNI00000001_di\" bpmnElement=\"FLOMNI00000001\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id=\"FLOMNI00000002_di\" bpmnElement=\"FLOMNI00000002\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

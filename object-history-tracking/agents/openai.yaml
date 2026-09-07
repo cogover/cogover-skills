@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object History Tracking"
+  short_description: "Configure tracked object fields through Cogover APIs"
+  default_prompt: "Use $object-history-tracking to enable or disable object history tracking and safely select tracked fields through Cogover APIs."

@@ -1,0 +1,128 @@
+{
+  "name": "Export Record example",
+  "slug": "export_record_example",
+  "description": "Export a lead with a document template",
+  "id": "PEEXPORT000001",
+  "processInfoId": "PIEXPORT000001",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "versionLabel": "",
+  "versionNumber": 1,
+  "metadata": {},
+  "permissions": ["VIEW", "ADD", "EDIT", "DELETE", "START_INSTANCE"],
+  "accessControls": [{ "functions": ["VIEW"], "type": "personnel", "items": [""], "option": 1 }],
+  "processInstanceAccessControls": [{ "functions": ["START_INSTANCE"], "type": "personnel", "items": [""], "option": 1 }],
+  "starterPermission": {},
+  "participantPermission": {},
+  "overviewScreen": {"layout": [], "permissionGeneralInfo": []},
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "ACEXPORT000001",
+      "processId": "PEEXPORT000001",
+      "nodeId": "NOEXPORT000001",
+      "type": "EXPORT_RECORD",
+      "name": "Export lead",
+      "slug": "export_lead",
+      "description": "",
+      "data": {
+        "objectSlug": "lead",
+        "recordId": "$flow.export_record_id",
+        "exportType": "template",
+        "layoutId": "",
+        "templateId": "DOCUMENT_TEMPLATE_EXAMPLE_1"
+      }
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [
+      {
+        "id": "RS0000000000142",
+        "processId": "PEEXPORT000001",
+        "parentId": "PEEXPORT000001",
+        "parentTable": "process",
+        "name": "Export record ID",
+        "slug": "export_record_id",
+        "absoluteSlug": "$flow.export_record_id",
+        "absolutePath": "workflow_resource:list.variable / Export record ID",
+        "defaultValue": "LEAD_RECORD_EXAMPLE_1",
+        "dataType": "TEXT",
+        "type": 1,
+        "isList": false,
+        "editable": true,
+        "assignable": true,
+        "availableForInput": true,
+        "availableForOutput": false,
+        "isStandard": false,
+        "metaDataType": {
+          "characterLimit": {"min": 0, "max": 131072, "warning": "warning limit note"},
+          "richText": "false"
+        },
+        "resourcesUsedIn": [
+          {
+            "actionType": "EXPORT_RECORD",
+            "name": "Export lead",
+            "count": 1,
+            "id": "ACEXPORT000001",
+            "parentTable": "action",
+            "slug": "export_lead"
+          }
+        ]
+      }
+    ],
+    "userTasks": [],
+    "loops": [],
+    "actions": [
+      {
+        "id": "ACEXPORT000001",
+        "nodeId": "NOEXPORT000001",
+        "name": "Export lead",
+        "slug": "export_lead",
+        "type": "EXPORT_RECORD",
+        "resources": [
+          {
+            "id": "RS000000000141",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.export_lead.output",
+            "absolutePath": "workflow_resource:list.exportRecordTask / Export lead / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "isStandard": true,
+            "parentTable": "action",
+            "resourcesUsedIn": [],
+            "metaDataType": {},
+            "children": [
+              {
+                "id": "RS000000000140",
+                "name": "File",
+                "slug": "file",
+                "absoluteSlug": "$action.export_lead.output.file",
+                "absolutePath": "workflow_resource:list.exportRecordTask / Export lead / Output / File",
+                "dataType": "FILE",
+                "type": 1,
+                "isList": false,
+                "availableForInput": false,
+                "availableForOutput": true,
+                "isStandard": true,
+                "parentTable": "action",
+                "resourcesUsedIn": [],
+                "metaDataType": {}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEEXPORT000001\" isExecutable=\"false\">\n    <bpmn2:startEvent id=\"NO000000000104\" name=\"Start\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" /></bpmn2:extensionElements><bpmn2:outgoing>FLEXPORT000001</bpmn2:outgoing></bpmn2:startEvent>\n    <elEx:exportRecordTask id=\"NOEXPORT000001\" name=\"Export lead\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"EXPORT_TASK\" /></bpmn2:extensionElements><bpmn2:incoming>FLEXPORT000001</bpmn2:incoming><bpmn2:outgoing>FLEXPORT000002</bpmn2:outgoing></elEx:exportRecordTask>\n    <bpmn2:endEvent id=\"NO000000000103\" name=\"End Process\"><bpmn2:extensionElements><configEx:elementInfo renderKey=\"END_EVENT\" /></bpmn2:extensionElements><bpmn2:incoming>FLEXPORT000002</bpmn2:incoming></bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLEXPORT000001\" sourceRef=\"NO000000000104\" targetRef=\"NOEXPORT000001\" /><bpmn2:sequenceFlow id=\"FLEXPORT000002\" sourceRef=\"NOEXPORT000001\" targetRef=\"NO000000000103\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_EXPORT\"><bpmndi:BPMNPlane id=\"BPMNPlane_EXPORT\" bpmnElement=\"PEEXPORT000001\">\n    <bpmndi:BPMNShape id=\"NO000000000104_di\" bpmnElement=\"NO000000000104\"><dc:Bounds x=\"60\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"74\" y=\"266\" width=\"32\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NOEXPORT000001_di\" bpmnElement=\"NOEXPORT000001\"><dc:Bounds x=\"240\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"225\" y=\"266\" width=\"90\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNShape id=\"NO000000000103_di\" bpmnElement=\"NO000000000103\"><dc:Bounds x=\"420\" y=\"200\" width=\"60\" height=\"60\" /><bpmndi:BPMNLabel><dc:Bounds x=\"406\" y=\"266\" width=\"88\" height=\"16\" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>\n    <bpmndi:BPMNEdge id=\"FLEXPORT000001_di\" bpmnElement=\"FLEXPORT000001\"><di:waypoint x=\"120\" y=\"230\" /><di:waypoint x=\"240\" y=\"230\" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id=\"FLEXPORT000002_di\" bpmnElement=\"FLEXPORT000002\"><di:waypoint x=\"300\" y=\"230\" /><di:waypoint x=\"420\" y=\"230\" /></bpmndi:BPMNEdge>\n  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

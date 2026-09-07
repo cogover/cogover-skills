@@ -1,0 +1,1273 @@
+{
+  "metadata": {},
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "VIEW_INSTANCE_FULL": true
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE",
+        "CANCEL_INSTANCE",
+        "DELETE_INSTANCE",
+        "VIEW_INSTANCE_PROGRESS",
+        "VIEW_INSTANCE_FULL"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PE00000000015\">    <bpmn2:userTask id=\"NO00000000056\" name=\"Root\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000039</bpmn2:incoming>      <bpmn2:outgoing>FL00000000040</bpmn2:outgoing>    </bpmn2:userTask>    <bpmn2:endEvent id=\"NO00000000058\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000038</bpmn2:incoming>    </bpmn2:endEvent>    <bpmn2:startEvent id=\"NO00000000057\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_MANUAL_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000039</bpmn2:outgoing>    </bpmn2:startEvent>    <elEx:httpTask id=\"NO00000000059\" name=\"Send http\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"SEND_HTTP_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000040</bpmn2:incoming>      <bpmn2:outgoing>FL00000000038</bpmn2:outgoing>    </elEx:httpTask>    <bpmn2:sequenceFlow id=\"FL00000000040\" name=\"\" sourceRef=\"NO00000000056\" targetRef=\"NO00000000059\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000038\" name=\"\" sourceRef=\"NO00000000059\" targetRef=\"NO00000000058\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000039\" name=\"\" sourceRef=\"NO00000000057\" targetRef=\"NO00000000056\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000015\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PE00000000015\" bpmnElement=\"PE00000000015\">      <bpmndi:BPMNShape id=\"Activity_159824c_di\" bpmnElement=\"NO00000000056\">        <dc:Bounds x=\"220\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"236\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_0n8z0e7_di\" bpmnElement=\"NO00000000058\">        <dc:Bounds x=\"580\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"573\" y=\"327\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_161xmzp_di\" bpmnElement=\"NO00000000057\">        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"57\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_1pihem4_di\" bpmnElement=\"NO00000000059\">        <dc:Bounds x=\"410\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"412\" y=\"330\" width=\"56\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_1d0ry7a_di\" bpmnElement=\"FL00000000040\">        <di:waypoint x=\"280\" y=\"290\" />        <di:waypoint x=\"410\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_05vu460_di\" bpmnElement=\"FL00000000038\">        <di:waypoint x=\"470\" y=\"290\" />        <di:waypoint x=\"580\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_08xcm6i_di\" bpmnElement=\"FL00000000039\">        <di:waypoint x=\"100\" y=\"290\" />        <di:waypoint x=\"220\" y=\"290\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "overviewScreen": {
+    "layout": [
+      {
+        "paddingBottom": 0,
+        "numberOfColumns": 1,
+        "children": [
+          {
+            "colSpan": 1,
+            "isShowChildren": true,
+            "paddingRight": 0,
+            "type": "layoutColumn",
+            "isBorder": false,
+            "isShowName": false,
+            "paddingBottom": 0,
+            "children": [
+              {
+                "isShowChildren": true,
+                "paddingRight": 20,
+                "type": "section",
+                "typeSection": "normal",
+                "isBorder": false,
+                "isShowName": false,
+                "paddingBottom": 24,
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "components": [
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.starter",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "RECORD",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Starter",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "link_field": "id",
+                              "object_slug": "personnel",
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              },
+                              "object": "OT00000000005"
+                            },
+                            "unique": false,
+                            "name": "Người bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000280",
+                            "fieldType": "lookup_normal",
+                            "slug": "Nguoi_bat_dau",
+                            "status": 1
+                          },
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.startAt",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "DATE_TIME",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Start At",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "value_limit": {
+                                "from": null,
+                                "to": null
+                              },
+                              "default_value_current": false,
+                              "format": {
+                                "date": "DD/MM/YYYY",
+                                "time": "hh:mm A"
+                              },
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              }
+                            },
+                            "unique": false,
+                            "name": "Thời điểm bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000004",
+                            "fieldType": "date_time",
+                            "slug": "Thoi_diem_bat_dau",
+                            "status": 1
+                          }
+                        ],
+                        "canCollapse": false,
+                        "isShowChildren": true,
+                        "paddingRight": 0,
+                        "type": "group",
+                        "isBorder": false,
+                        "isShowName": false,
+                        "paddingBottom": 0,
+                        "numberOfColumns": 2,
+                        "gap": 12,
+                        "name": "",
+                        "id": "00000000-0000-4000-8000-000000000380",
+                        "paddingTop": 0,
+                        "tabKey": 1,
+                        "paddingLeft": 0,
+                        "slug": "group_expand_0_1773116100435"
+                      }
+                    ],
+                    "isShowChildren": true,
+                    "name": "Tab 1",
+                    "id": "00000000-0000-4000-8000-000000000361",
+                    "slug": "tab_1773116100435"
+                  }
+                ],
+                "gap": 20,
+                "name": "",
+                "id": "00000000-0000-4000-8000-000000000221",
+                "paddingTop": 24,
+                "numberOfTabs": 1,
+                "paddingLeft": 20,
+                "slug": "section_1773116100435"
+              }
+            ],
+            "gap": 20,
+            "name": "",
+            "id": "00000000-0000-4000-8000-000000000041",
+            "paddingTop": 0,
+            "paddingLeft": 0,
+            "slug": "layout_column_1773116100434"
+          }
+        ],
+        "isShowChildren": true,
+        "paddingRight": 0,
+        "gap": 20,
+        "id": "00000000-0000-4000-8000-000000000233",
+        "paddingTop": 0,
+        "type": "layoutRow",
+        "paddingLeft": 0,
+        "slug": "layout_row_1773116100434",
+        "isBorder": false
+      }
+    ],
+    "permissionGeneralInfo": [
+      [
+        {
+          "field": "account",
+          "isRawValue": false,
+          "value": [
+            {
+              "valuePathName": "workflow_resource:list.resource / Instance / Starter",
+              "valueDataType": "RECORD",
+              "value": "$flow.instance.starter"
+            }
+          ],
+          "option": 2
+        }
+      ]
+    ]
+  },
+  "type": "manual_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE",
+    "VIEW_INSTANCE_PROGRESS",
+    "VIEW_INSTANCE_FULL",
+    "CANCEL_INSTANCE",
+    "DELETE_INSTANCE"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW",
+        "EDIT",
+        "DELETE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "ACTIVATED",
+  "processInfoId": "PI00000000013",
+  "userTasks": [
+    {
+      "approvalScreen": 0,
+      "isRoot": true,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "description": "",
+      "title": {
+        "helpText": "",
+        "isShowHelpText": false,
+        "valueType": "html",
+        "id": "SC00000000029",
+        "isShowTitle": true,
+        "value": "",
+        "slug": "title_1773050558423",
+        "valueIsRaw": true
+      },
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": 10,
+                              "precision": -1,
+                              "description": "",
+                              "uiSlug": "_1",
+                              "required": 0,
+                              "availableForInput": false,
+                              "min": -9999999999,
+                              "fieldMetaData": {
+                                "display_type": 1,
+                                "round_rule": 0,
+                                "fractional_length": 0,
+                                "value_limit": {
+                                  "min": -9999999999,
+                                  "max": 9999999999
+                                },
+                                "precision": -1,
+                                "format": {
+                                  "format": 3,
+                                  "type": 1
+                                },
+                                "integral_length": 10,
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                }
+                              },
+                              "options": [],
+                              "roundRule": null,
+                              "numberOfDecimalDigits": 0,
+                              "id": "00000000-0000-4000-8000-000000000345",
+                              "slug": "number_1",
+                              "max": 9999999999,
+                              "multiple": 0,
+                              "toolTip": "",
+                              "format": "# ##0",
+                              "readOnly": null,
+                              "label": "",
+                              "displayType": "integer",
+                              "numberOfIntegerDigits": 10,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "disable": null,
+                              "unique": false,
+                              "name": "Number 1",
+                              "availableForOutput": false,
+                              "fieldType": "numeric",
+                              "status": 1
+                            },
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": "Text 1",
+                              "multiple": 0,
+                              "toolTip": "",
+                              "description": "",
+                              "uiSlug": "_2",
+                              "readOnly": null,
+                              "label": "",
+                              "required": 0,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "availableForInput": false,
+                              "fieldMetaData": {
+                                "character_limit": {
+                                  "min": 0,
+                                  "max": 255
+                                },
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                }
+                              },
+                              "disable": null,
+                              "unique": false,
+                              "name": "Text 1",
+                              "options": [],
+                              "availableForOutput": false,
+                              "id": "00000000-0000-4000-8000-000000000064",
+                              "defaultTextValueType": 1,
+                              "fieldType": "short_text",
+                              "slug": "text_1",
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000357",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1773116100434"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000291",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000297",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000435",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1773116100434"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000133",
+                      "slug": "tab_1773116100434"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000022",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1773116100434"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000078",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1773116100433"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000066",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1773116100433",
+          "isBorder": false
+        }
+      ],
+      "processId": "PE00000000015",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "approve": {
+        "approvalType": "none",
+        "id": "SC00000000031",
+        "slug": "approve_1773050558423"
+      },
+      "name": "Root",
+      "id": "NC00000000015",
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000054",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_1773050558423"
+      },
+      "nodeId": "NO00000000056",
+      "slug": "Root"
+    }
+  ],
+  "id": "PE00000000015",
+  "slug": "sample_formula",
+  "workspaceId": "WS_SAMPLE_TENANT_B",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_CREATOR",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": true,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PE00000000015",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000015",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000015",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000015",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000003"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000015",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000015",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.starter",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Starter",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000003"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Starter",
+            "id": "instance_starter",
+            "parentTable": "system",
+            "slug": "starter"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [
+      {
+        "absoluteSlug": "$flow.formula_1",
+        "parentMetadata": "",
+        "defaultValue": "var data = {\n    \"name\": $userTask.Root.text_1,\n    \"age\": $userTask.Root.number_1,\n    \"submittedByEmail\": $userTask.Root.submittedBy.account_email\n};\nreturn Json.stringify(data);",
+        "editable": true,
+        "dataType": "TEXT",
+        "description": "",
+        "type": 3,
+        "isList": false,
+        "parentId": "PE00000000015",
+        "assignable": false,
+        "availableForInput": false,
+        "isStandard": false,
+        "processId": "PE00000000015",
+        "name": "Formula 1",
+        "metaDataType": {
+          "convertNullNumberToZero": true,
+          "richText": 1,
+          "convertNullStringToEmpty": true
+        },
+        "availableForOutput": false,
+        "absolutePath": "workflow_resource:list.formula / Formula 1",
+        "id": "RS00000000094",
+        "parentTable": "process",
+        "resourcesUsedIn": [
+          {
+            "actionType": "SEND_HTTP_REQUEST",
+            "name": "Send http",
+            "count": 1,
+            "id": "AC00000000020",
+            "parentTable": "action",
+            "slug": "send_http"
+          }
+        ],
+        "slug": "formula_1"
+      }
+    ],
+    "loops": [],
+    "userTasks": [
+      {
+        "approvalScreen": 0,
+        "isRoot": true,
+        "processId": "PE00000000015",
+        "name": "Root",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.Root.number_1",
+            "parentMetadata": "",
+            "defaultValue": 10,
+            "dataType": "NUMBER",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000015",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Number 1",
+            "metaDataType": {
+              "display_type": 1,
+              "round_rule": 0,
+              "fractional_length": 0,
+              "value_limit": {
+                "min": -9999999999,
+                "max": 9999999999
+              },
+              "precision": -1,
+              "format": {
+                "format": 3,
+                "type": 1
+              },
+              "integral_length": 10,
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              }
+            },
+            "availableForOutput": false,
+            "absolutePath": "workflow_resource:list.userTask / Root / Number 1",
+            "id": "SC00000000032",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "resourcesUsedIn": [
+              {
+                "dataType": "TEXT",
+                "name": "Formula 1",
+                "count": 1,
+                "id": "RS00000000094",
+                "parentTable": "resource",
+                "slug": "formula_1"
+              }
+            ],
+            "slug": "number_1",
+            "fieldId": "00000000-0000-4000-8000-000000000345",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.Root.text_1",
+            "parentMetadata": "",
+            "defaultValue": "Text 1",
+            "dataType": "TEXT",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000015",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Text 1",
+            "metaDataType": {
+              "character_limit": {
+                "min": 0,
+                "max": 255
+              },
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              }
+            },
+            "availableForOutput": false,
+            "absolutePath": "workflow_resource:list.userTask / Root / Text 1",
+            "id": "SC00000000030",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 1,
+            "resourcesUsedIn": [
+              {
+                "dataType": "TEXT",
+                "name": "Formula 1",
+                "count": 1,
+                "id": "RS00000000094",
+                "parentTable": "resource",
+                "slug": "formula_1"
+              }
+            ],
+            "slug": "text_1",
+            "fieldId": "00000000-0000-4000-8000-000000000064",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.Root.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000015",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000003"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Submitted By",
+            "id": "RS00000000091",
+            "parentTable": "node_screen",
+            "resourcesUsedIn": [
+              {
+                "dataType": "TEXT",
+                "name": "Formula 1",
+                "count": 1,
+                "id": "RS00000000094",
+                "parentTable": "resource",
+                "slug": "formula_1"
+              }
+            ],
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000015",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Start At",
+            "id": "RS00000000089",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000015",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / End At",
+            "id": "RS00000000088",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000015",
+        "nodeId": "NO00000000056",
+        "slug": "Root"
+      }
+    ],
+    "actions": [
+      {
+        "processId": "PE00000000015",
+        "name": "Send http",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.send_http.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000020",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendHttp / Send http / StartAt",
+            "id": "RS00000000090",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.send_http.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000020",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendHttp / Send http / End At",
+            "id": "RS00000000092",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.send_http.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000020",
+            "assignable": false,
+            "actionType": "SEND_HTTP_REQUEST",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000015",
+            "children": [
+              {
+                "absoluteSlug": "$action.send_http.output.statusCode",
+                "dataType": "TEXT",
+                "displayOrder": 1,
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "SEND_HTTP_REQUEST",
+                "isStandard": true,
+                "name": "statusCode",
+                "absolutePath": "workflow_resource:list.sendHttp / Send http / Output / statusCode",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "parentTable": "action",
+                "slug": "statusCode"
+              },
+              {
+                "absoluteSlug": "$action.send_http.output.headers",
+                "dataType": "TEXT",
+                "displayOrder": 2,
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "actionType": "SEND_HTTP_REQUEST",
+                "isStandard": true,
+                "name": "headers",
+                "absolutePath": "workflow_resource:list.sendHttp / Send http / Output / headers",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "parentTable": "action",
+                "slug": "headers"
+              },
+              {
+                "absoluteSlug": "$action.send_http.output.body",
+                "dataType": "RECORD",
+                "displayOrder": 3,
+                "type": 1,
+                "isList": false,
+                "isSystem": false,
+                "nameDataType": "output",
+                "actionType": "SEND_HTTP_REQUEST",
+                "isStandard": true,
+                "children": [],
+                "name": "Body",
+                "absolutePath": "workflow_resource:list.sendHttp / Send http / Output / send_http__output",
+                "parentTable": "action",
+                "slug": "body"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendHttp / Send http / Output",
+            "id": "RS00000000093",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000020",
+        "type": "SEND_HTTP_REQUEST",
+        "nodeId": "NO00000000059",
+        "slug": "send_http"
+      }
+    ]
+  },
+  "starterPermission": {
+    "CANCEL_INSTANCE": true,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "DELETE_INSTANCE": true,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+    "VIEW_INSTANCE_FULL": true,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V1",
+  "versionNumber": 1,
+  "currentVersion": true,
+  "externalResourcesUsedIn": [
+    {
+      "absoluteSlug": "$userTask.Root.submittedBy.account_email",
+      "parentMetadata": "",
+      "dataType": "TEXT",
+      "type": 1,
+      "isList": false,
+      "parentId": "RS00000000091",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PE00000000015",
+      "name": "Account email",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.userTask / Root / Submitted By / Account email",
+      "parentTable": "resource",
+      "slug": "account_email"
+    }
+  ],
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_CREATOR",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Sample Formula",
+  "actions": [
+    {
+      "data": {
+        "headers": {
+          "": {
+            "type": 1,
+            "value": "",
+            "isHidden": false,
+            "order": 0
+          }
+        },
+        "method": "POST",
+        "requestBodyType": 1,
+        "timeout": 10,
+        "continueRunningEventRequestNotSuccessful": true,
+        "sampleResponse": "",
+        "url": {
+          "type": 1,
+          "value": "https://webhook.example.com/endpoint"
+        },
+        "parseResponseToJson": "true",
+        "requestBody": {
+          "valuePathName": "workflow_resource:list.formula / Formula 1",
+          "valueDataType": "TEXT",
+          "type": 4,
+          "value": "$flow.formula_1"
+        },
+        "parseToDataType": {
+          "nameDataType": "output",
+          "children": []
+        },
+        "waitUntilReceivedResponse": true,
+        "contentType": "application/json",
+        "retry": 1
+      },
+      "processId": "PE00000000015",
+      "name": "Send http",
+      "description": "",
+      "id": "AC00000000020",
+      "type": "SEND_HTTP_REQUEST",
+      "nodeId": "NO00000000059",
+      "slug": "send_http"
+    }
+  ],
+  "status": 1,
+  "created": "2026-03-10T04:18:41.918Z",
+  "updated": "2026-03-10T04:19:26.815Z"
+}

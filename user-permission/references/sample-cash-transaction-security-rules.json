@@ -1,0 +1,265 @@
+{
+  "source": {
+    "workspaceDomain": "tenant-a",
+    "objectId": "OT00000000018",
+    "objectSlug": "cash_transaction",
+    "endpoint": "POST /bapi/v1/object-security-rules/list",
+    "capturedOn": "2026-08-05",
+    "normalized": true,
+    "credentialIncluded": false,
+    "notes": [
+      "Creator, updater, avatar, workspace and generated child IDs were omitted because they do not affect permission semantics.",
+      "Empty descriptions are preserved from the live configuration for accuracy but must not be copied into new rules.",
+      "The filter returned for the type-1 rule is response metadata; omit filter when creating a type-1 rule.",
+      "The live configuration separates Create, View and Delete, and uses two Edit rules for different business intents."
+    ]
+  },
+  "fieldMap": {
+    "OF00000000030": {
+      "slug": "is_customer_deposit_refund",
+      "name": "Is customer deposit refund"
+    },
+    "OF00000000034": {
+      "slug": "type",
+      "name": "Type"
+    },
+    "OF00000000038": {
+      "slug": "status",
+      "name": "Trạng thái"
+    },
+    "OF00000000033": {
+      "slug": "balance_after",
+      "name": "Balance after"
+    },
+    "OF00000000031": {
+      "slug": "applied_amount",
+      "name": "Applied amount"
+    },
+    "OF00000000035": {
+      "slug": "unapplied_amount",
+      "name": "Unapplied amount"
+    },
+    "OF00000000037": {
+      "slug": "creation_source",
+      "name": "Nguồn tạo"
+    },
+    "OF00000000029": {
+      "slug": "is_customer_deposit",
+      "name": "Is customer deposit"
+    }
+  },
+  "rules": [
+    {
+      "id": "OS00000000004",
+      "name": "[Finance App] - Allow creation",
+      "description": "",
+      "status": 1,
+      "type": 1,
+      "isStandard": 0,
+      "filter": {
+        "logicType": "AND",
+        "logic": "",
+        "conditions": []
+      },
+      "personnelFilters": [
+        {
+          "type": 1,
+          "op": "all"
+        }
+      ],
+      "scopes": [
+        {
+          "scope": "create",
+          "op": "all"
+        }
+      ]
+    },
+    {
+      "id": "OSIUGDQEKKMTX",
+      "name": "[Finance App] - Allow viewing all fields",
+      "description": "",
+      "status": 1,
+      "type": 2,
+      "isStandard": 0,
+      "filter": {
+        "logicType": "AND",
+        "logic": "",
+        "conditions": []
+      },
+      "personnelFilters": [
+        {
+          "type": 1,
+          "op": "all"
+        }
+      ],
+      "scopes": [
+        {
+          "scope": "read",
+          "op": "all"
+        },
+        {
+          "scope": "edit",
+          "op": "none"
+        },
+        {
+          "scope": "delete",
+          "op": "no"
+        }
+      ]
+    },
+    {
+      "id": "OS00000000002",
+      "name": "[Finance App] - Allow deletion",
+      "description": "Deletion is allowed only when the status is Draft or Cancelled",
+      "status": 1,
+      "type": 2,
+      "isStandard": 0,
+      "filter": {
+        "logicType": "AND",
+        "logic": "",
+        "conditions": [
+          {
+            "field": "status",
+            "op": "in",
+            "params": [
+              "draft",
+              "cancelled"
+            ]
+          }
+        ]
+      },
+      "personnelFilters": [
+        {
+          "type": 1,
+          "op": "all"
+        }
+      ],
+      "scopes": [
+        {
+          "scope": "read",
+          "op": "none"
+        },
+        {
+          "scope": "edit",
+          "op": "none"
+        },
+        {
+          "scope": "delete",
+          "op": "yes"
+        }
+      ]
+    },
+    {
+      "id": "OS00000000003",
+      "name": "[Finance App] - Allow editing selected fields when the status is Creating, Draft",
+      "description": "",
+      "status": 1,
+      "type": 2,
+      "isStandard": 0,
+      "filter": {
+        "logicType": "AND",
+        "logic": "",
+        "conditions": [
+          {
+            "field": "status",
+            "op": "in",
+            "params": [
+              "creating",
+              "draft"
+            ]
+          }
+        ]
+      },
+      "personnelFilters": [
+        {
+          "type": 1,
+          "op": "all"
+        }
+      ],
+      "scopes": [
+        {
+          "scope": "read",
+          "op": "none"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000030"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000034"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000038"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000033"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000031"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000035"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000037"
+        },
+        {
+          "scope": "edit",
+          "op": "exclude",
+          "fieldId": "OF00000000029"
+        },
+        {
+          "scope": "delete",
+          "op": "no"
+        }
+      ]
+    },
+    {
+      "id": "OS00000000005",
+      "name": "[Finance App] - Allow status changes",
+      "description": "",
+      "status": 1,
+      "type": 2,
+      "isStandard": 0,
+      "filter": {
+        "logicType": "AND",
+        "logic": "",
+        "conditions": []
+      },
+      "personnelFilters": [
+        {
+          "type": 1,
+          "op": "all"
+        }
+      ],
+      "scopes": [
+        {
+          "scope": "read",
+          "op": "none"
+        },
+        {
+          "scope": "edit",
+          "op": "include",
+          "fieldId": "OF00000000038"
+        },
+        {
+          "scope": "delete",
+          "op": "no"
+        }
+      ]
+    }
+  ]
+}

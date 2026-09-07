@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Filter"
+  short_description: "Quản lý bộ lọc đã lưu cho Cogover Object"
+  default_prompt: "Dùng $object-filter để tạo và quản lý bộ lọc đã lưu cho một Cogover Object."

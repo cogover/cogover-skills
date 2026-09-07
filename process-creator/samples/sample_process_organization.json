@@ -1,0 +1,1321 @@
+{
+  "metadata": {},
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "VIEW_INSTANCE_FULL": true
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PE00000000020\">    <bpmn2:userTask id=\"NO00000000044\" name=\"Root\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000006</bpmn2:incoming>      <bpmn2:outgoing>FL00000000034</bpmn2:outgoing>    </bpmn2:userTask>    <elEx:organizationTask id=\"NO00000000050\" name=\"Lấy ra người quản lý và email\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"ORGANIZATION_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000034</bpmn2:incoming>      <bpmn2:outgoing>FL00000000032</bpmn2:outgoing>    </elEx:organizationTask>    <bpmn2:endEvent id=\"NO00000000036\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000030</bpmn2:incoming>    </bpmn2:endEvent>    <elEx:organizationTask id=\"NO00000000038\" name=\"Lấy ra tất cả quản lý và emails\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"ORGANIZATION_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000032</bpmn2:incoming>      <bpmn2:outgoing>FL00000000030</bpmn2:outgoing>    </elEx:organizationTask>    <bpmn2:startEvent id=\"NO00000000040\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_MANUAL_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000006</bpmn2:outgoing>    </bpmn2:startEvent>    <bpmn2:sequenceFlow id=\"FL00000000030\" name=\"\" sourceRef=\"NO00000000038\" targetRef=\"NO00000000036\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000032\" name=\"\" sourceRef=\"NO00000000050\" targetRef=\"NO00000000038\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000006\" name=\"\" sourceRef=\"NO00000000040\" targetRef=\"NO00000000044\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000034\" name=\"\" sourceRef=\"NO00000000044\" targetRef=\"NO00000000050\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000020\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PE00000000020\" bpmnElement=\"PE00000000020\">      <bpmndi:BPMNShape id=\"Activity_159824c_di\" bpmnElement=\"NO00000000044\">        <dc:Bounds x=\"220\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"236\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_09zerbs_di\" bpmnElement=\"NO00000000050\">        <dc:Bounds x=\"380\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"341\" y=\"330\" width=\"138\" height=\"32\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_04kj088_di\" bpmnElement=\"NO00000000036\">        <dc:Bounds x=\"760\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"753\" y=\"327\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_06vxitu_di\" bpmnElement=\"NO00000000038\">        <dc:Bounds x=\"540\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"503\" y=\"330\" width=\"135\" height=\"32\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_161xmzp_di\" bpmnElement=\"NO00000000040\">        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"57\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_0huo3nm_di\" bpmnElement=\"FL00000000030\">        <di:waypoint x=\"600\" y=\"290\" />        <di:waypoint x=\"760\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_0kw0mh2_di\" bpmnElement=\"FL00000000032\">        <di:waypoint x=\"440\" y=\"290\" />        <di:waypoint x=\"540\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_08xcm6i_di\" bpmnElement=\"FL00000000006\">        <di:waypoint x=\"100\" y=\"290\" />        <di:waypoint x=\"220\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_1tco1vy_di\" bpmnElement=\"FL00000000034\">        <di:waypoint x=\"280\" y=\"290\" />        <di:waypoint x=\"380\" y=\"290\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "overviewScreen": {
+    "layout": [
+      {
+        "paddingBottom": 0,
+        "numberOfColumns": 1,
+        "children": [
+          {
+            "colSpan": 1,
+            "isShowChildren": true,
+            "paddingRight": 0,
+            "type": "layoutColumn",
+            "isBorder": false,
+            "isShowName": false,
+            "paddingBottom": 0,
+            "children": [
+              {
+                "isShowChildren": true,
+                "paddingRight": 20,
+                "type": "section",
+                "typeSection": "normal",
+                "isBorder": false,
+                "isShowName": false,
+                "paddingBottom": 24,
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "components": [
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.starter",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "RECORD",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Starter",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "link_field": "id",
+                              "object_slug": "personnel",
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              },
+                              "object": "OT00000000005"
+                            },
+                            "unique": false,
+                            "name": "Người bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000183",
+                            "fieldType": "lookup_normal",
+                            "slug": "Nguoi_bat_dau",
+                            "status": 1
+                          },
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.startAt",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "DATE_TIME",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Start At",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "value_limit": {
+                                "from": null,
+                                "to": null
+                              },
+                              "default_value_current": false,
+                              "format": {
+                                "date": "DD/MM/YYYY",
+                                "time": "hh:mm A"
+                              },
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              }
+                            },
+                            "unique": false,
+                            "name": "Thời điểm bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000135",
+                            "fieldType": "date_time",
+                            "slug": "Thoi_diem_bat_dau",
+                            "status": 1
+                          }
+                        ],
+                        "canCollapse": false,
+                        "isShowChildren": true,
+                        "paddingRight": 0,
+                        "type": "group",
+                        "isBorder": false,
+                        "isShowName": false,
+                        "paddingBottom": 0,
+                        "numberOfColumns": 2,
+                        "gap": 12,
+                        "name": "",
+                        "id": "00000000-0000-4000-8000-000000000257",
+                        "paddingTop": 0,
+                        "tabKey": 1,
+                        "paddingLeft": 0,
+                        "slug": "group_expand_0_1770633766003"
+                      }
+                    ],
+                    "isShowChildren": true,
+                    "name": "Tab 1",
+                    "id": "00000000-0000-4000-8000-000000000059",
+                    "slug": "tab_1770633766003"
+                  }
+                ],
+                "gap": 20,
+                "name": "",
+                "id": "00000000-0000-4000-8000-000000000385",
+                "paddingTop": 24,
+                "numberOfTabs": 1,
+                "paddingLeft": 20,
+                "slug": "section_1770633766003"
+              }
+            ],
+            "gap": 20,
+            "name": "",
+            "id": "00000000-0000-4000-8000-000000000395",
+            "paddingTop": 0,
+            "paddingLeft": 0,
+            "slug": "layout_column_1770633766002"
+          }
+        ],
+        "isShowChildren": true,
+        "paddingRight": 0,
+        "gap": 20,
+        "id": "00000000-0000-4000-8000-000000000404",
+        "paddingTop": 0,
+        "type": "layoutRow",
+        "paddingLeft": 0,
+        "slug": "layout_row_1770633766002",
+        "isBorder": false
+      }
+    ],
+    "permissionGeneralInfo": [
+      [
+        {
+          "field": "account",
+          "isRawValue": false,
+          "value": [
+            {
+              "valuePathName": "workflow_resource:list.resource / Instance / Starter",
+              "valueDataType": "RECORD",
+              "value": "$flow.instance.starter"
+            }
+          ],
+          "option": 2
+        }
+      ]
+    ]
+  },
+  "type": "manual_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW",
+        "EDIT",
+        "DELETE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "DRAFT",
+  "processInfoId": "PI00000000015",
+  "userTasks": [
+    {
+      "approvalScreen": 0,
+      "isRoot": true,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "processId": "PE00000000020",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "name": "Root",
+      "description": "",
+      "id": "NC00000000007",
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000061",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_1770625307947"
+      },
+      "nodeId": "NO00000000044",
+      "slug": "Root",
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000278",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1770633766002"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000203",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000228",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000199",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1770633766002"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000194",
+                      "slug": "tab_1770633766002"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000143",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1770633766002"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000232",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1770633766002"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000441",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1770633766002",
+          "isBorder": false
+        }
+      ]
+    }
+  ],
+  "id": "PE00000000020",
+  "slug": "mau_cho_ai_organization",
+  "workspaceId": "WS_SAMPLE",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": false,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PE00000000020",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000020",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000020",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000020",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000006"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000020",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000020",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.starter",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Starter",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Starter",
+            "id": "instance_starter",
+            "parentTable": "system",
+            "slug": "starter"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [
+      {
+        "absoluteSlug": "$flow.manageremail",
+        "parentMetadata": "",
+        "defaultValue": "",
+        "editable": true,
+        "dataType": "TEXT",
+        "description": "",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000020",
+        "assignable": true,
+        "availableForInput": false,
+        "isStandard": false,
+        "processId": "PE00000000020",
+        "name": "managerEmail",
+        "metaDataType": {
+          "characterLimit": {
+            "min": 0,
+            "max": 131072,
+            "warning": "warning limit note"
+          },
+          "richText": "false"
+        },
+        "availableForOutput": false,
+        "absolutePath": "workflow_resource:list.variable / managerEmail",
+        "id": "RS00000000074",
+        "parentTable": "process",
+        "slug": "manageremail"
+      },
+      {
+        "absoluteSlug": "$flow.emailsofmanagers2",
+        "parentMetadata": "",
+        "defaultValue": "",
+        "editable": true,
+        "dataType": "TEXT",
+        "description": "",
+        "type": 1,
+        "isList": true,
+        "parentId": "PE00000000020",
+        "assignable": true,
+        "availableForInput": false,
+        "isStandard": false,
+        "processId": "PE00000000020",
+        "name": "emailsOfManagers2",
+        "metaDataType": {
+          "characterLimit": {
+            "min": 0,
+            "max": 131072,
+            "warning": "warning limit note"
+          },
+          "richText": "false"
+        },
+        "availableForOutput": false,
+        "absolutePath": "workflow_resource:list.variable / emailsOfManagers2",
+        "id": "RS00000000031",
+        "parentTable": "process",
+        "slug": "emailsofmanagers2"
+      }
+    ],
+    "loops": [],
+    "userTasks": [
+      {
+        "approvalScreen": 0,
+        "isRoot": true,
+        "processId": "PE00000000020",
+        "name": "Root",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.Root.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000007",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Submitted By",
+            "id": "RS00000000037",
+            "parentTable": "node_screen",
+            "resourcesUsedIn": [
+              {
+                "actionType": "ORGANIZATION",
+                "name": "Lấy ra người quản lý và email",
+                "count": 1,
+                "id": "AC00000000010",
+                "parentTable": "action",
+                "slug": "lay_ra_nguoi_quan_ly_va_email"
+              }
+            ],
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000007",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Start At",
+            "id": "RS00000000021",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000007",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / End At",
+            "id": "RS00000000040",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000007",
+        "nodeId": "NO00000000044",
+        "slug": "Root"
+      }
+    ],
+    "actions": [
+      {
+        "processId": "PE00000000020",
+        "name": "Lấy ra người quản lý và email",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.lay_ra_nguoi_quan_ly_va_email.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000010",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.organization / Lấy ra người quản lý và email / StartAt",
+            "id": "RS00000000056",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.lay_ra_nguoi_quan_ly_va_email.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000010",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.organization / Lấy ra người quản lý và email / End At",
+            "id": "RS00000000059",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.lay_ra_nguoi_quan_ly_va_email.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000010",
+            "assignable": false,
+            "actionType": "ORGANIZATION",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "children": [
+              {
+                "absoluteSlug": "$action.lay_ra_nguoi_quan_ly_va_email.output.record",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000062",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000020",
+                "name": "Record",
+                "metaDataType": {
+                  "linkField": "id",
+                  "objectSlug": "personnel",
+                  "object": "OT00000000006"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.organization / Lấy ra người quản lý và email / Output / Record",
+                "parentTable": "action",
+                "slug": "record"
+              },
+              {
+                "absoluteSlug": "$action.lay_ra_nguoi_quan_ly_va_email.output.records",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": true,
+                "parentId": "RS00000000062",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000020",
+                "name": "Records",
+                "metaDataType": {
+                  "linkField": "id",
+                  "objectSlug": "personnel",
+                  "object": "OT00000000006"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.organization / Lấy ra người quản lý và email / Output / Records",
+                "parentTable": "action",
+                "slug": "records"
+              },
+              {
+                "absoluteSlug": "$action.lay_ra_nguoi_quan_ly_va_email.output.total",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "NUMBER",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000062",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000020",
+                "name": "Total",
+                "metaDataType": {
+                  "valueLimit": {
+                    "min": -9999999999.999998,
+                    "max": 9999999999.999998,
+                    "warning": "warning limit note"
+                  },
+                  "displayType": 2,
+                  "multipleLimit": {
+                    "min": 1,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "format": {
+                    "format": 2,
+                    "type": 1
+                  },
+                  "integralLength": 10,
+                  "roundRule": "1",
+                  "fractionalLength": 6
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.organization / Lấy ra người quản lý và email / Output / Total",
+                "parentTable": "action",
+                "slug": "total"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.organization / Lấy ra người quản lý và email / Output",
+            "id": "RS00000000062",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000010",
+        "type": "ORGANIZATION",
+        "nodeId": "NO00000000050",
+        "slug": "lay_ra_nguoi_quan_ly_va_email"
+      },
+      {
+        "processId": "PE00000000020",
+        "name": "Lấy ra tất cả quản lý và emails",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.lay_ra_tat_ca_quan_ly_va_emails.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000011",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.organization / Lấy ra tất cả quản lý và emails / StartAt",
+            "id": "RS00000000068",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.lay_ra_tat_ca_quan_ly_va_emails.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000011",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.organization / Lấy ra tất cả quản lý và emails / End At",
+            "id": "RS00000000071",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.lay_ra_tat_ca_quan_ly_va_emails.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000011",
+            "assignable": false,
+            "actionType": "ORGANIZATION",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000020",
+            "children": [
+              {
+                "absoluteSlug": "$action.lay_ra_tat_ca_quan_ly_va_emails.output.record",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000034",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000020",
+                "name": "Record",
+                "metaDataType": {
+                  "linkField": "id",
+                  "objectSlug": "personnel",
+                  "object": "OT00000000006"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.organization / Lấy ra tất cả quản lý và emails / Output / Record",
+                "parentTable": "action",
+                "slug": "record"
+              },
+              {
+                "absoluteSlug": "$action.lay_ra_tat_ca_quan_ly_va_emails.output.records",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": true,
+                "parentId": "RS00000000034",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000020",
+                "name": "Records",
+                "metaDataType": {
+                  "linkField": "id",
+                  "objectSlug": "personnel",
+                  "object": "OT00000000006"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.organization / Lấy ra tất cả quản lý và emails / Output / Records",
+                "parentTable": "action",
+                "slug": "records"
+              },
+              {
+                "absoluteSlug": "$action.lay_ra_tat_ca_quan_ly_va_emails.output.total",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "NUMBER",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000034",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000020",
+                "name": "Total",
+                "metaDataType": {
+                  "valueLimit": {
+                    "min": -9999999999.999998,
+                    "max": 9999999999.999998,
+                    "warning": "warning limit note"
+                  },
+                  "displayType": 2,
+                  "multipleLimit": {
+                    "min": 1,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "format": {
+                    "format": 2,
+                    "type": 1
+                  },
+                  "integralLength": 10,
+                  "roundRule": "1",
+                  "fractionalLength": 6
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.organization / Lấy ra tất cả quản lý và emails / Output / Total",
+                "parentTable": "action",
+                "slug": "total"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.organization / Lấy ra tất cả quản lý và emails / Output",
+            "id": "RS00000000034",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000011",
+        "type": "ORGANIZATION",
+        "nodeId": "NO00000000038",
+        "slug": "lay_ra_tat_ca_quan_ly_va_emails"
+      }
+    ]
+  },
+  "starterPermission": {
+    "CANCEL_INSTANCE": true,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "DELETE_INSTANCE": true,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+    "VIEW_INSTANCE_FULL": true,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V1",
+  "versionNumber": 1,
+  "currentVersion": true,
+  "versionLabel": "",
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Mẫu cho AI: Organization",
+  "actions": [
+    {
+      "data": {
+        "objectFieldSavings": [
+          {
+            "resourceDataType": "TEXT",
+            "objectFieldSlug": "account_email",
+            "resource": "$flow.manageremail",
+            "resourcePathName": "workflow_resource:list.variable / managerEmail"
+          }
+        ],
+        "criteria": [
+          {
+            "personnel": {
+              "field": "personnel",
+              "rankOrderOperation": "gte",
+              "isRawValue": false,
+              "displayOrder": 1,
+              "levelOfDepartment": 0,
+              "rankOrder": 1,
+              "value": [
+                "$userTask.Root.submittedBy"
+              ],
+              "option": -1,
+              "valueForFE": [
+                {
+                  "valuePathName": "workflow_resource:list.userTask / Root / Submitted By",
+                  "valueDataType": "RECORD",
+                  "value": "$userTask.Root.submittedBy"
+                }
+              ]
+            }
+          }
+        ],
+        "outputSaving": "FIELD_OF_FIRST_RECORD",
+        "filterType": "manager"
+      },
+      "processId": "PE00000000020",
+      "name": "Lấy ra người quản lý và email",
+      "description": "",
+      "id": "AC00000000010",
+      "type": "ORGANIZATION",
+      "nodeId": "NO00000000050",
+      "slug": "lay_ra_nguoi_quan_ly_va_email"
+    },
+    {
+      "data": {
+        "objectFieldSavings": [
+          {
+            "resourceDataType": "TEXT",
+            "objectFieldSlug": "account_email",
+            "resource": "$flow.emailsofmanagers2",
+            "resourcePathName": "workflow_resource:list.variable / emailsOfManagers2"
+          }
+        ],
+        "criteria": [
+          {
+            "personnel": {
+              "field": "personnel",
+              "rankOrderOperation": "equals",
+              "isRawValue": true,
+              "displayOrder": 1,
+              "levelOfDepartment": 0,
+              "rankOrder": 1,
+              "value": [
+                "PER_SAMPLE_USER"
+              ],
+              "option": -1,
+              "valueForFE": [
+                "PER_SAMPLE_USER"
+              ]
+            }
+          }
+        ],
+        "outputSaving": "FIELD_OF_LIST_RECORDS",
+        "filterType": "manager"
+      },
+      "processId": "PE00000000020",
+      "name": "Lấy ra tất cả quản lý và emails",
+      "description": "",
+      "id": "AC00000000011",
+      "type": "ORGANIZATION",
+      "nodeId": "NO00000000038",
+      "slug": "lay_ra_tat_ca_quan_ly_va_emails"
+    }
+  ],
+  "status": 2,
+  "created": "2026-02-09T10:43:08.233Z",
+  "updated": "2026-02-09T10:48:11.623Z"
+}

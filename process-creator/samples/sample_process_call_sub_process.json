@@ -1,0 +1,1869 @@
+{
+  "metadata": {},
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "VIEW_INSTANCE_FULL": true
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PE00000000025\">    <bpmn2:userTask id=\"NO00000000002\" name=\"Root\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000002</bpmn2:incoming>      <bpmn2:outgoing>FL00000000003</bpmn2:outgoing>    </bpmn2:userTask>    <elEx:subProcess id=\"NO00000000004\" name=\"Goi quy trinh con la manual_flow\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"SUB_PROCESS\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000003</bpmn2:incoming>      <bpmn2:outgoing>FL00000000001</bpmn2:outgoing>    </elEx:subProcess>    <bpmn2:endEvent id=\"NO00000000001\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000004</bpmn2:incoming>    </bpmn2:endEvent>    <bpmn2:startEvent id=\"NO00000000003\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_MANUAL_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000002</bpmn2:outgoing>    </bpmn2:startEvent>    <bpmn2:userTask id=\"NO00000000005\" name=\"Hien thi\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000001</bpmn2:incoming>      <bpmn2:outgoing>FL00000000004</bpmn2:outgoing>    </bpmn2:userTask>    <bpmn2:sequenceFlow id=\"FL00000000003\" name=\"\" sourceRef=\"NO00000000002\" targetRef=\"NO00000000004\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000002\" name=\"\" sourceRef=\"NO00000000003\" targetRef=\"NO00000000002\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000001\" name=\"\" sourceRef=\"NO00000000004\" targetRef=\"NO00000000005\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000004\" name=\"\" sourceRef=\"NO00000000005\" targetRef=\"NO00000000001\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PE00000000025\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PE00000000025\" bpmnElement=\"PE00000000025\">      <bpmndi:BPMNShape id=\"Activity_159824c_di\" bpmnElement=\"NO00000000002\">        <dc:Bounds x=\"220\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"236\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_117trl4_di\" bpmnElement=\"NO00000000004\">        <dc:Bounds x=\"380\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"354\" y=\"330\" width=\"113\" height=\"32\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_1jnjph3_di\" bpmnElement=\"NO00000000001\">        <dc:Bounds x=\"670\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"663\" y=\"327\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_161xmzp_di\" bpmnElement=\"NO00000000003\">        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"57\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_13hebd2_di\" bpmnElement=\"NO00000000005\">        <dc:Bounds x=\"540\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"548\" y=\"330\" width=\"45\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_0sicy1b_di\" bpmnElement=\"FL00000000003\">        <di:waypoint x=\"280\" y=\"290\" />        <di:waypoint x=\"380\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_08xcm6i_di\" bpmnElement=\"FL00000000002\">        <di:waypoint x=\"100\" y=\"290\" />        <di:waypoint x=\"220\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_0v9cxl5_di\" bpmnElement=\"FL00000000001\">        <di:waypoint x=\"440\" y=\"290\" />        <di:waypoint x=\"540\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_1qx87vt_di\" bpmnElement=\"FL00000000004\">        <di:waypoint x=\"600\" y=\"290\" />        <di:waypoint x=\"670\" y=\"290\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "overviewScreen": {
+    "layout": [
+      {
+        "paddingBottom": 0,
+        "numberOfColumns": 1,
+        "children": [
+          {
+            "colSpan": 1,
+            "isShowChildren": true,
+            "paddingRight": 0,
+            "type": "layoutColumn",
+            "isBorder": false,
+            "isShowName": false,
+            "paddingBottom": 0,
+            "children": [
+              {
+                "isShowChildren": true,
+                "paddingRight": 20,
+                "type": "section",
+                "typeSection": "normal",
+                "isBorder": false,
+                "isShowName": false,
+                "paddingBottom": 24,
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "components": [
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.starter",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "RECORD",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Starter",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "link_field": "id",
+                              "object_slug": "personnel",
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              },
+                              "object": "OT00000000005"
+                            },
+                            "unique": false,
+                            "name": "Người bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000241",
+                            "fieldType": "lookup_normal",
+                            "slug": "Nguoi_bat_dau",
+                            "status": 1
+                          },
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.startAt",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "DATE_TIME",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Start At",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "value_limit": {
+                                "from": null,
+                                "to": null
+                              },
+                              "default_value_current": false,
+                              "format": {
+                                "date": "DD/MM/YYYY",
+                                "time": "hh:mm A"
+                              },
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              }
+                            },
+                            "unique": false,
+                            "name": "Thời điểm bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000317",
+                            "fieldType": "date_time",
+                            "slug": "Thoi_diem_bat_dau",
+                            "status": 1
+                          }
+                        ],
+                        "canCollapse": false,
+                        "isShowChildren": true,
+                        "paddingRight": 0,
+                        "type": "group",
+                        "isBorder": false,
+                        "isShowName": false,
+                        "paddingBottom": 0,
+                        "numberOfColumns": 2,
+                        "gap": 12,
+                        "name": "",
+                        "id": "00000000-0000-4000-8000-000000000045",
+                        "paddingTop": 0,
+                        "tabKey": 1,
+                        "paddingLeft": 0,
+                        "slug": "group_expand_0_1770784694988"
+                      }
+                    ],
+                    "isShowChildren": true,
+                    "name": "Tab 1",
+                    "id": "00000000-0000-4000-8000-000000000299",
+                    "slug": "tab_1770784694988"
+                  }
+                ],
+                "gap": 20,
+                "name": "",
+                "id": "00000000-0000-4000-8000-000000000267",
+                "paddingTop": 24,
+                "numberOfTabs": 1,
+                "paddingLeft": 20,
+                "slug": "section_1770784694988"
+              }
+            ],
+            "gap": 20,
+            "name": "",
+            "id": "00000000-0000-4000-8000-000000000175",
+            "paddingTop": 0,
+            "paddingLeft": 0,
+            "slug": "layout_column_1770784694987"
+          }
+        ],
+        "isShowChildren": true,
+        "paddingRight": 0,
+        "gap": 20,
+        "id": "00000000-0000-4000-8000-000000000382",
+        "paddingTop": 0,
+        "type": "layoutRow",
+        "paddingLeft": 0,
+        "slug": "layout_row_1770784694987",
+        "isBorder": false
+      }
+    ],
+    "permissionGeneralInfo": [
+      [
+        {
+          "field": "account",
+          "isRawValue": false,
+          "value": [
+            {
+              "valuePathName": "workflow_resource:list.resource / Instance / Starter",
+              "valueDataType": "RECORD",
+              "value": "$flow.instance.starter"
+            }
+          ],
+          "option": 2
+        }
+      ]
+    ]
+  },
+  "type": "manual_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW",
+        "EDIT",
+        "DELETE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "DRAFT",
+  "processInfoId": "PI00000000019",
+  "userTasks": [
+    {
+      "approvalScreen": 0,
+      "isRoot": true,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "description": "",
+      "title": {
+        "helpText": "",
+        "isShowHelpText": false,
+        "valueType": "html",
+        "id": "SC00000000002",
+        "isShowTitle": true,
+        "value": "",
+        "slug": "title_1770784684859",
+        "valueIsRaw": true
+      },
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": 20,
+                              "precision": -1,
+                              "description": "",
+                              "uiSlug": "_1",
+                              "required": 0,
+                              "availableForInput": false,
+                              "min": -9999999999,
+                              "fieldMetaData": {
+                                "display_type": 1,
+                                "round_rule": 0,
+                                "fractional_length": 0,
+                                "value_limit": {
+                                  "min": -9999999999,
+                                  "max": 9999999999
+                                },
+                                "precision": -1,
+                                "format": {
+                                  "format": 3,
+                                  "type": 1
+                                },
+                                "integral_length": 10,
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                }
+                              },
+                              "options": [],
+                              "roundRule": null,
+                              "numberOfDecimalDigits": 0,
+                              "id": "00000000-0000-4000-8000-000000000226",
+                              "slug": "so",
+                              "max": 9999999999,
+                              "multiple": 0,
+                              "toolTip": "",
+                              "format": "# ##0",
+                              "readOnly": 0,
+                              "label": "",
+                              "displayType": "integer",
+                              "numberOfIntegerDigits": 10,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "disable": 0,
+                              "unique": false,
+                              "name": "So",
+                              "availableForOutput": true,
+                              "fieldType": "numeric",
+                              "status": 1
+                            },
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": "JO000000000001",
+                              "minLength": 0,
+                              "multiple": 0,
+                              "toolTip": "",
+                              "description": "",
+                              "uiSlug": "_3",
+                              "label": "",
+                              "required": 0,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "availableForInput": false,
+                              "fieldMetaData": {
+                                "link_field": "id",
+                                "object_slug": "contact",
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                },
+                                "object": "OT00000000022"
+                              },
+                              "unique": false,
+                              "defaultValueRecord": 1,
+                              "name": "Contact",
+                              "options": [],
+                              "availableForOutput": true,
+                              "id": "00000000-0000-4000-8000-000000000432",
+                              "fieldType": "lookup_normal",
+                              "slug": "contact",
+                              "maxLength": 30,
+                              "status": 1
+                            },
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": "TI000000000001",
+                              "minLength": 0,
+                              "multiple": 0,
+                              "toolTip": "",
+                              "description": "",
+                              "uiSlug": "_2",
+                              "label": "",
+                              "required": 0,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "availableForInput": false,
+                              "fieldMetaData": {
+                                "link_field": "id",
+                                "object_slug": "ticket",
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                },
+                                "object": "OT00000000014"
+                              },
+                              "unique": false,
+                              "defaultValueRecord": 1,
+                              "name": "Ticket",
+                              "options": [],
+                              "availableForOutput": true,
+                              "id": "00000000-0000-4000-8000-000000000159",
+                              "fieldType": "lookup_normal",
+                              "slug": "ticket",
+                              "maxLength": 30,
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000018",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1770784694987"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000397",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000399",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000053",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1770784694987"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000281",
+                      "slug": "tab_1770784694987"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000408",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1770784694987"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000073",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1770784694986"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000276",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1770784694986",
+          "isBorder": false
+        }
+      ],
+      "processId": "PE00000000025",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "approve": {
+        "approvalType": "none",
+        "id": "SC00000000001",
+        "slug": "approve_1770784684859"
+      },
+      "name": "Root",
+      "id": "NC00000000001",
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000096",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_1770784684859"
+      },
+      "nodeId": "NO00000000002",
+      "slug": "Root"
+    },
+    {
+      "approvalScreen": 0,
+      "isRoot": false,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "description": "",
+      "title": {
+        "helpText": "",
+        "isShowHelpText": false,
+        "valueType": "html",
+        "id": "SC00000000005",
+        "isShowTitle": true,
+        "value": "",
+        "slug": "title_1770784799199",
+        "valueIsRaw": true
+      },
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": "$flow.so_tren_quy_trinh_cha",
+                              "precision": -1,
+                              "description": "",
+                              "uiSlug": "_1",
+                              "required": 0,
+                              "defaultValueDataType": "NUMBER",
+                              "defaultValuePathName": "workflow_resource:list.variable / Số trên quy trình cha",
+                              "availableForInput": false,
+                              "min": -9999999999,
+                              "fieldMetaData": {
+                                "display_type": 1,
+                                "round_rule": 0,
+                                "fractional_length": 0,
+                                "value_limit": {
+                                  "min": -9999999999,
+                                  "max": 9999999999
+                                },
+                                "precision": -1,
+                                "format": {
+                                  "format": 3,
+                                  "type": 1
+                                },
+                                "integral_length": 10,
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                }
+                              },
+                              "options": [],
+                              "roundRule": null,
+                              "numberOfDecimalDigits": 0,
+                              "id": "00000000-0000-4000-8000-000000000273",
+                              "slug": "so",
+                              "max": 9999999999,
+                              "multiple": 0,
+                              "toolTip": "",
+                              "format": "# ##0",
+                              "readOnly": 0,
+                              "label": "",
+                              "displayType": "integer",
+                              "numberOfIntegerDigits": 10,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "disable": 0,
+                              "unique": false,
+                              "name": "Số",
+                              "availableForOutput": false,
+                              "fieldType": "numeric",
+                              "status": 1
+                            },
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": "$flow.record_tren_quy_trinh_cha",
+                              "minLength": 0,
+                              "description": "",
+                              "uiSlug": "_2",
+                              "required": 0,
+                              "defaultValueDataType": "RECORD",
+                              "defaultValuePathName": "workflow_resource:list.variable / Record trên quy trình cha",
+                              "availableForInput": false,
+                              "fieldMetaData": {
+                                "link_field": "id",
+                                "object_slug": "ticket",
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                },
+                                "object": "OT00000000014"
+                              },
+                              "options": [],
+                              "id": "00000000-0000-4000-8000-000000000153",
+                              "slug": "ticket",
+                              "multiple": 0,
+                              "toolTip": "",
+                              "label": "",
+                              "isStandard": 0,
+                              "hintText": "",
+                              "unique": false,
+                              "defaultValueRecord": 0,
+                              "name": "Ticket",
+                              "availableForOutput": false,
+                              "fieldType": "lookup_normal",
+                              "maxLength": 30,
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000215",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1770785252752"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000368",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000392",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000144",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1770785252753"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000260",
+                      "slug": "tab_1770785252753"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000148",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1770785252753"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000196",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1770785252751"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000108",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1770785252751",
+          "isBorder": false
+        }
+      ],
+      "processId": "PE00000000025",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "approve": {
+        "approvalType": "none",
+        "id": "SC00000000007",
+        "slug": "approve_1770784799199"
+      },
+      "name": "Hien thi",
+      "id": "NC00000000002",
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000218",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_1770784799199"
+      },
+      "nodeId": "NO00000000005",
+      "slug": "hien_thi"
+    }
+  ],
+  "id": "PE00000000025",
+  "slug": "quy_trinh_cha_goi_quy_trinh_con_la_manual_flow_3",
+  "workspaceId": "WS_SAMPLE_TENANT_A",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_EDITOR",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": false,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PE00000000025",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000025",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000025",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000025",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000013"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000025",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PE00000000025",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.starter",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Starter",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000013"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Starter",
+            "id": "instance_starter",
+            "parentTable": "system",
+            "slug": "starter"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [
+      {
+        "absoluteSlug": "$flow.so_tren_quy_trinh_cha",
+        "parentMetadata": "",
+        "defaultValue": 0,
+        "editable": true,
+        "dataType": "NUMBER",
+        "description": "",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000025",
+        "assignable": true,
+        "availableForInput": true,
+        "isStandard": false,
+        "processId": "PE00000000025",
+        "name": "Số trên quy trình cha",
+        "metaDataType": {
+          "valueLimit": {
+            "min": -9999999999.999998,
+            "max": 9999999999.999998,
+            "warning": "warning limit note"
+          },
+          "displayType": 2,
+          "multipleLimit": {
+            "min": 1,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "format": {
+            "format": 2,
+            "type": 1
+          },
+          "integralLength": 14,
+          "roundRule": "1"
+        },
+        "availableForOutput": true,
+        "absolutePath": "workflow_resource:list.variable / Số trên quy trình cha",
+        "id": "RS00000000004",
+        "parentTable": "process",
+        "resourcesUsedIn": [
+          {
+            "name": "Hien thi",
+            "count": 1,
+            "id": "NC00000000002",
+            "parentTable": "node_screen",
+            "slug": "hien_thi"
+          }
+        ],
+        "slug": "so_tren_quy_trinh_cha"
+      },
+      {
+        "absoluteSlug": "$flow.record_tren_quy_trinh_cha",
+        "parentMetadata": "",
+        "editable": true,
+        "dataType": "RECORD",
+        "description": "",
+        "type": 1,
+        "isList": false,
+        "parentId": "PE00000000025",
+        "assignable": true,
+        "availableForInput": true,
+        "isStandard": false,
+        "processId": "PE00000000025",
+        "name": "Record trên quy trình cha",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "ticket",
+          "object": "OT00000000014"
+        },
+        "availableForOutput": true,
+        "absolutePath": "workflow_resource:list.variable / Record trên quy trình cha",
+        "id": "RS00000000005",
+        "parentTable": "process",
+        "resourcesUsedIn": [
+          {
+            "name": "Hien thi",
+            "count": 1,
+            "id": "NC00000000002",
+            "parentTable": "node_screen",
+            "slug": "hien_thi"
+          }
+        ],
+        "slug": "record_tren_quy_trinh_cha"
+      }
+    ],
+    "loops": [],
+    "userTasks": [
+      {
+        "approvalScreen": 0,
+        "isRoot": true,
+        "processId": "PE00000000025",
+        "name": "Root",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.Root.ticket",
+            "parentMetadata": "",
+            "defaultValue": "TI000000000001",
+            "dataType": "RECORD",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000001",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Ticket",
+            "metaDataType": {
+              "link_field": "id",
+              "object_slug": "ticket",
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              },
+              "object": "OT00000000014"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Ticket",
+            "id": "SC00000000004",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "slug": "ticket",
+            "fieldId": "00000000-0000-4000-8000-000000000159",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.Root.contact",
+            "parentMetadata": "",
+            "defaultValue": "JO000000000001",
+            "dataType": "RECORD",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000001",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Contact",
+            "metaDataType": {
+              "link_field": "id",
+              "object_slug": "contact",
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              },
+              "object": "OT00000000022"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Contact",
+            "id": "SC00000000008",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "resourcesUsedIn": [
+              {
+                "actionType": "SUB_PROCESS",
+                "name": "Goi quy trinh con la manual_flow",
+                "count": 1,
+                "id": "AC00000000001",
+                "parentTable": "action",
+                "slug": "goi_quy_trinh_con_la_manual_flow"
+              }
+            ],
+            "slug": "contact",
+            "fieldId": "00000000-0000-4000-8000-000000000432",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.Root.so",
+            "parentMetadata": "",
+            "defaultValue": 20,
+            "dataType": "NUMBER",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000001",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "So",
+            "metaDataType": {
+              "display_type": 1,
+              "round_rule": 0,
+              "fractional_length": 0,
+              "value_limit": {
+                "min": -9999999999,
+                "max": 9999999999
+              },
+              "precision": -1,
+              "format": {
+                "format": 3,
+                "type": 1
+              },
+              "integral_length": 10,
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              }
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / So",
+            "id": "SC00000000009",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "resourcesUsedIn": [
+              {
+                "actionType": "SUB_PROCESS",
+                "name": "Goi quy trinh con la manual_flow",
+                "count": 1,
+                "id": "AC00000000001",
+                "parentTable": "action",
+                "slug": "goi_quy_trinh_con_la_manual_flow"
+              }
+            ],
+            "slug": "so",
+            "fieldId": "00000000-0000-4000-8000-000000000226",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.Root.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000001",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000013"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Submitted By",
+            "id": "RS00000000007",
+            "parentTable": "node_screen",
+            "resourcesUsedIn": [
+              {
+                "actionType": "SUB_PROCESS",
+                "name": "Goi quy trinh con la manual_flow",
+                "count": 1,
+                "id": "AC00000000001",
+                "parentTable": "action",
+                "slug": "goi_quy_trinh_con_la_manual_flow"
+              }
+            ],
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000001",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Start At",
+            "id": "RS00000000008",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000001",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / End At",
+            "id": "RS00000000010",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000001",
+        "nodeId": "NO00000000002",
+        "slug": "Root"
+      },
+      {
+        "approvalScreen": 0,
+        "isRoot": false,
+        "processId": "PE00000000025",
+        "name": "Hien thi",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.hien_thi.ticket",
+            "parentMetadata": "",
+            "defaultValue": "$flow.record_tren_quy_trinh_cha",
+            "dataType": "RECORD",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000002",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Ticket",
+            "metaDataType": {
+              "link_field": "id",
+              "object_slug": "ticket",
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              },
+              "object": "OT00000000014"
+            },
+            "availableForOutput": false,
+            "absolutePath": "workflow_resource:list.userTask / Hien thi / Ticket",
+            "id": "SC00000000003",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "slug": "ticket",
+            "fieldId": "00000000-0000-4000-8000-000000000153",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.hien_thi.so",
+            "parentMetadata": "",
+            "defaultValue": "$flow.so_tren_quy_trinh_cha",
+            "dataType": "NUMBER",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000002",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Số",
+            "metaDataType": {
+              "display_type": 1,
+              "round_rule": 0,
+              "fractional_length": 0,
+              "value_limit": {
+                "min": -9999999999,
+                "max": 9999999999
+              },
+              "precision": -1,
+              "format": {
+                "format": 3,
+                "type": 1
+              },
+              "integral_length": 10,
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              }
+            },
+            "availableForOutput": false,
+            "absolutePath": "workflow_resource:list.userTask / Hien thi / Số",
+            "id": "SC00000000006",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "slug": "so",
+            "fieldId": "00000000-0000-4000-8000-000000000273",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.hien_thi.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000002",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000013"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Hien thi / Submitted By",
+            "id": "RS00000000001",
+            "parentTable": "node_screen",
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.hien_thi.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000002",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Hien thi / Start At",
+            "id": "RS00000000006",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.hien_thi.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000002",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Hien thi / End At",
+            "id": "RS00000000002",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000002",
+        "nodeId": "NO00000000005",
+        "slug": "hien_thi"
+      }
+    ],
+    "actions": [
+      {
+        "processId": "PE00000000025",
+        "name": "Goi quy trinh con la manual_flow",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.goi_quy_trinh_con_la_manual_flow.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000001",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.subProcess / Goi quy trinh con la manual_flow / StartAt",
+            "id": "RS00000000011",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.goi_quy_trinh_con_la_manual_flow.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000001",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.subProcess / Goi quy trinh con la manual_flow / End At",
+            "id": "RS00000000003",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.goi_quy_trinh_con_la_manual_flow.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000001",
+            "assignable": false,
+            "actionType": "SUB_PROCESS",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PE00000000025",
+            "children": [
+              {
+                "absoluteSlug": "$action.goi_quy_trinh_con_la_manual_flow.output.status",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "TEXT",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000009",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000025",
+                "name": "Status",
+                "metaDataType": {
+                  "characterLimit": {
+                    "min": 0,
+                    "max": 131072,
+                    "warning": "warning limit note"
+                  },
+                  "richText": "false"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.subProcess / Goi quy trinh con la manual_flow / Output / Status",
+                "parentTable": "resource",
+                "slug": "status"
+              },
+              {
+                "absoluteSlug": "$action.goi_quy_trinh_con_la_manual_flow.output.result",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "RECORD",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000009",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PE00000000025",
+                "name": "Result",
+                "metaDataType": {
+                  "multipleLimit": {
+                    "min": 0,
+                    "max": 30,
+                    "warning": "warning limit note"
+                  },
+                  "linkField": "id"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.subProcess / Goi quy trinh con la manual_flow / Output / Result",
+                "parentTable": "resource",
+                "slug": "result"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.subProcess / Goi quy trinh con la manual_flow / Output",
+            "id": "RS00000000009",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000001",
+        "type": "SUB_PROCESS",
+        "nodeId": "NO00000000004",
+        "slug": "goi_quy_trinh_con_la_manual_flow"
+      }
+    ]
+  },
+  "starterPermission": {
+    "CANCEL_INSTANCE": true,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "DELETE_INSTANCE": true,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+    "VIEW_INSTANCE_FULL": true,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V2",
+  "versionNumber": 2,
+  "currentVersion": false,
+  "versionLabel": "",
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_EDITOR",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Quy trình cha gọi quy trình con la manual_flow 3",
+  "actions": [
+    {
+      "data": {
+        "output": {
+          "$flow.bien_record_o_quy_trinh_con_1": "$flow.record_tren_quy_trinh_cha",
+          "$flow.bien_number_o_quy_trinh_con_1": "$flow.so_tren_quy_trinh_cha"
+        },
+        "async": false,
+        "input": {
+          "$flow.bien_record_o_quy_trinh_con_2": {
+            "dataType": "RECORD",
+            "raw": false,
+            "value": "$userTask.Root.contact"
+          },
+          "$flow.bien_number_o_quy_trinh_con_2": {
+            "dataType": "NUMBER",
+            "raw": false,
+            "value": "$userTask.Root.so"
+          }
+        },
+        "actionType": "SUB_PROCESS",
+        "subWorkflowId": "PE00000000001",
+        "startSubProcessError": "STOP",
+        "processInfoId": "PI00000000001",
+        "valueOutputForFE": [
+          {
+            "absoluteSlug": "$flow.bien_number_o_quy_trinh_con_1",
+            "valuePathName": "workflow_resource:list.variable / Số trên quy trình cha",
+            "valueDataType": "NUMBER",
+            "value": "$flow.so_tren_quy_trinh_cha"
+          },
+          {
+            "absoluteSlug": "$flow.bien_record_o_quy_trinh_con_1",
+            "valuePathName": "workflow_resource:list.variable / Record trên quy trình cha",
+            "valueDataType": "RECORD",
+            "value": "$flow.record_tren_quy_trinh_cha"
+          }
+        ],
+        "valueInputForFE": [
+          {
+            "absoluteSlug": "$flow.bien_number_o_quy_trinh_con_2",
+            "dataType": "NUMBER",
+            "raw": false,
+            "valuePathName": "workflow_resource:list.userTask / Root / So",
+            "valueDataType": "NUMBER",
+            "value": "$userTask.Root.so"
+          },
+          {
+            "absoluteSlug": "$flow.bien_record_o_quy_trinh_con_2",
+            "dataType": "RECORD",
+            "raw": false,
+            "valuePathName": "workflow_resource:list.userTask / Root / Contact",
+            "valueDataType": "RECORD",
+            "value": "$userTask.Root.contact"
+          }
+        ],
+        "starterPersonnelIdForFe": {
+          "raw": false,
+          "valuePathName": "workflow_resource:list.userTask / Root / Submitted By",
+          "valueDataType": "RECORD",
+          "value": "$userTask.Root.submittedBy"
+        },
+        "starterPersonnelId": {
+          "raw": false,
+          "value": "$userTask.Root.submittedBy"
+        }
+      },
+      "processId": "PE00000000025",
+      "name": "Goi quy trinh con la manual_flow",
+      "description": "",
+      "id": "AC00000000001",
+      "type": "SUB_PROCESS",
+      "nodeId": "NO00000000004",
+      "slug": "goi_quy_trinh_con_la_manual_flow"
+    }
+  ],
+  "status": 2,
+  "created": "2026-02-11T04:58:36.622Z",
+  "updated": "2026-02-11T04:58:41.872Z"
+}

@@ -1,0 +1,1253 @@
+{
+  "metadata": {},
+  "participantPermission": {
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "VIEW_INSTANCE_FULL": true
+  },
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd\">  <bpmn2:process id=\"PEDWWSQEEKOXB\">    <bpmn2:sendTask id=\"NO00000000029\" name=\"Gửi email cho Lead đã chọn ở Root\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"SEND_EMAIL_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000013</bpmn2:incoming>      <bpmn2:outgoing>FL00000000028</bpmn2:outgoing>    </bpmn2:sendTask>    <bpmn2:endEvent id=\"NO00000000041\" name=\"End Process\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"END_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000028</bpmn2:incoming>    </bpmn2:endEvent>    <bpmn2:userTask id=\"NO00000000032\" name=\"Root\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"USER_TASK\" />      </bpmn2:extensionElements>      <bpmn2:incoming>FL00000000026</bpmn2:incoming>      <bpmn2:outgoing>FL00000000013</bpmn2:outgoing>    </bpmn2:userTask>    <bpmn2:startEvent id=\"NO00000000027\" name=\"Start\">      <bpmn2:extensionElements>        <configEx:elementInfo renderKey=\"START_MANUAL_EVENT\" />      </bpmn2:extensionElements>      <bpmn2:outgoing>FL00000000026</bpmn2:outgoing>    </bpmn2:startEvent>    <bpmn2:sequenceFlow id=\"FL00000000013\" name=\"\" sourceRef=\"NO00000000032\" targetRef=\"NO00000000029\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000028\" name=\"\" sourceRef=\"NO00000000029\" targetRef=\"NO00000000041\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>    <bpmn2:sequenceFlow id=\"FL00000000026\" name=\"\" sourceRef=\"NO00000000027\" targetRef=\"NO00000000032\">      <bpmn2:extensionElements />    </bpmn2:sequenceFlow>  </bpmn2:process>  <bpmndi:BPMNDiagram id=\"BPMNDiagram_PEDWWSQEEKOXB\">    <bpmndi:BPMNPlane id=\"BPMNPlane_PEDWWSQEEKOXB\" bpmnElement=\"PEDWWSQEEKOXB\">      <bpmndi:BPMNShape id=\"Activity_16kyrz0_di\" bpmnElement=\"NO00000000029\">        <dc:Bounds x=\"390\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"354\" y=\"330\" width=\"132\" height=\"32\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_1dzn6se_di\" bpmnElement=\"NO00000000041\">        <dc:Bounds x=\"590\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"583\" y=\"327\" width=\"74\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Activity_159824c_di\" bpmnElement=\"NO00000000032\">        <dc:Bounds x=\"220\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"236\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNShape id=\"Event_161xmzp_di\" bpmnElement=\"NO00000000027\">        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />        <bpmndi:BPMNLabel>          <dc:Bounds x=\"57\" y=\"330\" width=\"28\" height=\"16\" />        </bpmndi:BPMNLabel>      </bpmndi:BPMNShape>      <bpmndi:BPMNEdge id=\"Flow_0bgwhbw_di\" bpmnElement=\"FL00000000013\">        <di:waypoint x=\"280\" y=\"290\" />        <di:waypoint x=\"390\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_04tgj4d_di\" bpmnElement=\"FL00000000028\">        <di:waypoint x=\"450\" y=\"290\" />        <di:waypoint x=\"590\" y=\"290\" />      </bpmndi:BPMNEdge>      <bpmndi:BPMNEdge id=\"Flow_08xcm6i_di\" bpmnElement=\"FL00000000026\">        <di:waypoint x=\"100\" y=\"290\" />        <di:waypoint x=\"220\" y=\"290\" />      </bpmndi:BPMNEdge>    </bpmndi:BPMNPlane>  </bpmndi:BPMNDiagram></bpmn2:definitions>",
+  "overviewScreen": {
+    "layout": [
+      {
+        "paddingBottom": 0,
+        "numberOfColumns": 1,
+        "children": [
+          {
+            "colSpan": 1,
+            "isShowChildren": true,
+            "paddingRight": 0,
+            "type": "layoutColumn",
+            "isBorder": false,
+            "isShowName": false,
+            "paddingBottom": 0,
+            "children": [
+              {
+                "isShowChildren": true,
+                "paddingRight": 20,
+                "type": "section",
+                "typeSection": "normal",
+                "isBorder": false,
+                "isShowName": false,
+                "paddingBottom": 24,
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "components": [
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.starter",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "RECORD",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Starter",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "link_field": "id",
+                              "object_slug": "personnel",
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              },
+                              "object": "OT00000000005"
+                            },
+                            "unique": false,
+                            "name": "Người bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000057",
+                            "fieldType": "lookup_normal",
+                            "slug": "Nguoi_bat_dau",
+                            "status": 1
+                          },
+                          {
+                            "manualModifyAllow": true,
+                            "defaultValue": "$flow.instance.startAt",
+                            "multiple": 0,
+                            "toolTip": "",
+                            "description": "",
+                            "required": 0,
+                            "defaultValueDataType": "DATE_TIME",
+                            "defaultValuePathName": "workflow_resource:list.resource / Instance / Start At",
+                            "isStandard": 0,
+                            "hintText": "",
+                            "fieldMetaData": {
+                              "value_limit": {
+                                "from": null,
+                                "to": null
+                              },
+                              "default_value_current": false,
+                              "format": {
+                                "date": "DD/MM/YYYY",
+                                "time": "hh:mm A"
+                              },
+                              "multiple_limit": {
+                                "min": 0,
+                                "max": 30
+                              }
+                            },
+                            "unique": false,
+                            "name": "Thời điểm bắt đầu",
+                            "options": [],
+                            "id": "00000000-0000-4000-8000-000000000204",
+                            "fieldType": "date_time",
+                            "slug": "Thoi_diem_bat_dau",
+                            "status": 1
+                          }
+                        ],
+                        "canCollapse": false,
+                        "isShowChildren": true,
+                        "paddingRight": 0,
+                        "type": "group",
+                        "isBorder": false,
+                        "isShowName": false,
+                        "paddingBottom": 0,
+                        "numberOfColumns": 2,
+                        "gap": 12,
+                        "name": "",
+                        "id": "00000000-0000-4000-8000-000000000129",
+                        "paddingTop": 0,
+                        "tabKey": 1,
+                        "paddingLeft": 0,
+                        "slug": "group_expand_0_1770561867198"
+                      }
+                    ],
+                    "isShowChildren": true,
+                    "name": "Tab 1",
+                    "id": "00000000-0000-4000-8000-000000000264",
+                    "slug": "tab_1770561867198"
+                  }
+                ],
+                "gap": 20,
+                "name": "",
+                "id": "00000000-0000-4000-8000-000000000275",
+                "paddingTop": 24,
+                "numberOfTabs": 1,
+                "paddingLeft": 20,
+                "slug": "section_1770561867198"
+              }
+            ],
+            "gap": 20,
+            "name": "",
+            "id": "00000000-0000-4000-8000-000000000151",
+            "paddingTop": 0,
+            "paddingLeft": 0,
+            "slug": "layout_column_1770561867198"
+          }
+        ],
+        "isShowChildren": true,
+        "paddingRight": 0,
+        "gap": 20,
+        "id": "00000000-0000-4000-8000-000000000017",
+        "paddingTop": 0,
+        "type": "layoutRow",
+        "paddingLeft": 0,
+        "slug": "layout_row_1770561867198",
+        "isBorder": false
+      }
+    ],
+    "permissionGeneralInfo": [
+      [
+        {
+          "field": "account",
+          "isRawValue": false,
+          "value": [
+            {
+              "valuePathName": "workflow_resource:list.resource / Instance / Starter",
+              "valueDataType": "RECORD",
+              "value": "$flow.instance.starter"
+            }
+          ],
+          "option": 2
+        }
+      ]
+    ]
+  },
+  "type": "manual_flow",
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE"
+  ],
+  "isNewestVersion": true,
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "progressStatus": "DRAFT",
+  "processInfoId": "PIDWWSQECKOXM",
+  "userTasks": [
+    {
+      "approvalScreen": 0,
+      "isRoot": true,
+      "participantPermission": {
+        "VIEW_INSTANCE_PROGRESS": true,
+        "VIEW_INSTANCE_FULL": false
+      },
+      "description": "",
+      "title": {
+        "helpText": "",
+        "isShowHelpText": false,
+        "valueType": "html",
+        "id": "SC00000000022",
+        "isShowTitle": true,
+        "value": "",
+        "slug": "title_1770550004418",
+        "valueIsRaw": true
+      },
+      "content": [
+        {
+          "paddingBottom": 0,
+          "numberOfColumns": 1,
+          "children": [
+            {
+              "colSpan": 1,
+              "isShowChildren": true,
+              "paddingRight": 0,
+              "type": "layoutColumn",
+              "isBorder": false,
+              "isShowName": false,
+              "paddingBottom": 0,
+              "children": [
+                {
+                  "isShowChildren": true,
+                  "paddingRight": 20,
+                  "type": "section",
+                  "typeSection": "normal",
+                  "isBorder": true,
+                  "isShowName": false,
+                  "paddingBottom": 24,
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "components": [
+                            {
+                              "manualModifyAllow": true,
+                              "defaultValue": "LE000000000002",
+                              "minLength": 0,
+                              "multiple": 0,
+                              "toolTip": "",
+                              "description": "",
+                              "uiSlug": "_1",
+                              "label": "",
+                              "required": 0,
+                              "isStandard": 0,
+                              "hintText": "",
+                              "availableForInput": false,
+                              "fieldMetaData": {
+                                "link_field": "id",
+                                "object_slug": "lead",
+                                "multiple_limit": {
+                                  "min": 0,
+                                  "max": 30
+                                },
+                                "object": "OT00000000011"
+                              },
+                              "unique": false,
+                              "defaultValueRecord": 1,
+                              "name": "Chọn Lead",
+                              "options": [],
+                              "availableForOutput": false,
+                              "id": "00000000-0000-4000-8000-000000000213",
+                              "fieldType": "lookup_normal",
+                              "slug": "chon_lead",
+                              "maxLength": 30,
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000094",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_0_1770561867197"
+                        },
+                        {
+                          "components": [
+                            {
+                              "defaultListButton": [
+                                "rollback"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000099",
+                              "fieldType": "button_group",
+                              "slug": "button_group_2",
+                              "buttonPosition": "left",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "rollback",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hoàn tác",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "hoan_tac"
+                                }
+                              ],
+                              "status": 1
+                            },
+                            {
+                              "defaultListButton": [
+                                "cancel",
+                                "accept"
+                              ],
+                              "menuIcon": "ellipsis-vertical",
+                              "gap": 10,
+                              "name": "button_group",
+                              "combineAction": false,
+                              "id": "00000000-0000-4000-8000-000000000056",
+                              "fieldType": "button_group",
+                              "slug": "button_group_1",
+                              "buttonPosition": "right",
+                              "listButton": [
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "cancel",
+                                  "documents": [],
+                                  "buttonVariant": "outlined",
+                                  "name": "Hủy",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "huy"
+                                },
+                                {
+                                  "onlyShowIcon": false,
+                                  "size": "medium",
+                                  "buttonCategory": "accept",
+                                  "documents": [],
+                                  "buttonVariant": "contained",
+                                  "name": "Thực hiện",
+                                  "useIcon": false,
+                                  "icon": "",
+                                  "resourceSetUp": [],
+                                  "slug": "thuc_hien"
+                                }
+                              ],
+                              "status": 1
+                            }
+                          ],
+                          "canCollapse": false,
+                          "isShowChildren": true,
+                          "paddingRight": 0,
+                          "type": "group",
+                          "isBorder": false,
+                          "isShowName": false,
+                          "paddingBottom": 0,
+                          "numberOfColumns": 2,
+                          "gap": 12,
+                          "name": "",
+                          "id": "00000000-0000-4000-8000-000000000438",
+                          "paddingTop": 0,
+                          "tabKey": 1,
+                          "paddingLeft": 0,
+                          "slug": "group_expand_1_1770561867197"
+                        }
+                      ],
+                      "isShowChildren": true,
+                      "name": "Tab 1",
+                      "id": "00000000-0000-4000-8000-000000000211",
+                      "slug": "tab_1770561867197"
+                    }
+                  ],
+                  "gap": 20,
+                  "name": "",
+                  "id": "00000000-0000-4000-8000-000000000256",
+                  "paddingTop": 24,
+                  "numberOfTabs": 1,
+                  "paddingLeft": 20,
+                  "slug": "section_1770561867197"
+                }
+              ],
+              "gap": 20,
+              "name": "",
+              "id": "00000000-0000-4000-8000-000000000075",
+              "paddingTop": 0,
+              "paddingLeft": 0,
+              "slug": "layout_column_1770561867196"
+            }
+          ],
+          "isShowChildren": true,
+          "paddingRight": 0,
+          "gap": 20,
+          "id": "00000000-0000-4000-8000-000000000210",
+          "paddingTop": 0,
+          "type": "layoutRow",
+          "paddingLeft": 0,
+          "slug": "layout_row_1770561867196",
+          "isBorder": false
+        }
+      ],
+      "processId": "PEDWWSQEEKOXB",
+      "taskPerformer": [
+        [
+          {
+            "field": "account",
+            "isRawValue": true,
+            "value": [],
+            "option": 3
+          }
+        ]
+      ],
+      "approve": {
+        "approvalType": "none",
+        "id": "SC00000000016",
+        "slug": "approve_1770550004418"
+      },
+      "name": "Root",
+      "id": "NC00000000006",
+      "pageSettings": {
+        "settingPage": {
+          "typeColor": "primary",
+          "css": "",
+          "paddingBottom": 0,
+          "color": "#dcdde9",
+          "paddingRight": 0,
+          "paddingTop": 0,
+          "combinationRatio": 100,
+          "paddingLeft": 0
+        },
+        "id": "00000000-0000-4000-8000-000000000298",
+        "settingContentPage": {
+          "typeColor": "primary",
+          "borderColor": "#dcdde9",
+          "css": "",
+          "color": "#dcdde9",
+          "paddingRight": 20,
+          "unitMaxWidth": "px",
+          "combinationRatio": 100,
+          "typeBorder": "primary",
+          "paddingBottom": 20,
+          "paddingTop": 20,
+          "isShowBorder": true,
+          "paddingLeft": 20,
+          "maxWidth": 1000
+        },
+        "slug": "page_setting_1770550004418"
+      },
+      "nodeId": "NO00000000032",
+      "slug": "Root"
+    }
+  ],
+  "id": "PEDWWSQEEKOXB",
+  "slug": "mau_cho_ai_text_template",
+  "workspaceId": "WS_SAMPLE",
+  "updatedBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "isPublished": false,
+  "isValid": true,
+  "resources": {
+    "system": [
+      {
+        "absoluteSlug": "$client",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "parentId": "PEDWWSQEEKOXB",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PEDWWSQEEKOXB",
+        "name": "Client",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Client",
+        "id": "client",
+        "parentTable": "process",
+        "slug": "client"
+      },
+      {
+        "absoluteSlug": "$currentUser",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PEDWWSQEEKOXB",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PEDWWSQEEKOXB",
+        "name": "Current User",
+        "metaDataType": {
+          "linkField": "id",
+          "objectSlug": "personnel",
+          "object": "OT00000000006"
+        },
+        "absolutePath": "workflow_resource:list.systemVar / Current User",
+        "id": "currentUser",
+        "parentTable": "process",
+        "slug": "currentUser"
+      },
+      {
+        "absoluteSlug": "$flow.instance",
+        "parentMetadata": "",
+        "editable": false,
+        "dataType": "RECORD",
+        "type": 1,
+        "isList": false,
+        "parentId": "PEDWWSQEEKOXB",
+        "assignable": false,
+        "isSystem": true,
+        "isStandard": true,
+        "processId": "PEDWWSQEEKOXB",
+        "children": [
+          {
+            "absoluteSlug": "$flow.instance.id",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Id",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Id",
+            "id": "instance_id",
+            "parentTable": "system",
+            "slug": "id"
+          },
+          {
+            "absoluteSlug": "$flow.instance.url",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "URL",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Url",
+            "metaDataType": {
+              "multipleLimit": {
+                "min": 0,
+                "max": 30,
+                "warning": "warning limit note"
+              },
+              "characterLimit": {
+                "min": 0,
+                "max": 2048,
+                "warning": "warning limit note"
+              },
+              "useDisplayText": false
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Url",
+            "id": "instance_url",
+            "parentTable": "system",
+            "slug": "url"
+          },
+          {
+            "absoluteSlug": "$flow.instance.name",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "TEXT",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Name",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Name",
+            "id": "instance_name",
+            "parentTable": "system",
+            "slug": "name"
+          },
+          {
+            "absoluteSlug": "$flow.instance.starter",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Starter",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Starter",
+            "id": "instance_starter",
+            "parentTable": "system",
+            "slug": "starter"
+          },
+          {
+            "absoluteSlug": "$flow.instance.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "instance",
+            "assignable": false,
+            "isSystem": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "absolutePath": "workflow_resource:list.resource / Instance / Start At",
+            "id": "instance_start_at",
+            "parentTable": "system",
+            "slug": "startAt"
+          }
+        ],
+        "name": "Instance",
+        "metaDataType": {
+          "multipleLimit": {
+            "min": 0,
+            "max": 30,
+            "warning": "warning limit note"
+          },
+          "linkField": "id"
+        },
+        "absolutePath": "workflow_resource:list.resource / Instance",
+        "id": "instance",
+        "parentTable": "process",
+        "slug": "instance"
+      }
+    ],
+    "custom": [
+      {
+        "absoluteSlug": "$flow.body_email",
+        "parentMetadata": "",
+        "defaultValue": "<div>Chào anh/chị $userTask.Root.chon_lead.last_first_name,</div>\n\n<div>&nbsp;</div>\n\n<div>Qua tìm hiểu, em thấy $userTask.Root.chon_lead.company đang mở rộng đội sales - đây cũng là bài toán mà nhiều khách hàng của Cogover từng gặp:</div>\n\n<ul>\n\t<li>Quy trình phân tán, nhiều file Excel / phần mềm rời rạc.</li>\n\t<li>CRM hoặc ERP khó tùy chỉnh theo thực tế vận hành.</li>\n\t<li>Mất nhiều thời gian cho phê duyệt, theo dõi, báo cáo.</li>\n</ul>\n\n<div>Với Cogover, doanh nghiệp có thể:</div>\n\n<ul>\n\t<li>Tự thiết kế CRM &amp; quy trình theo nghiệp vụ thực tế</li>\n\t<li>Kéo-thả để chỉnh sửa luồng, form, phân quyền (không cần code)</li>\n\t<li>Triển khai nhanh (vài tuần), chi phí tối ưu hơn so với các giải pháp lớn</li>\n</ul>\n\n<div>Do đó, em muốn đề xuất một buổi trao đổi ngắn 20–30 phút để:</div>\n\n<ul>\n\t<li>Hiểu rõ hơn cách $userTask.Root.chon_lead.company đang vận hành</li>\n\t<li>Demo nhanh cách Cogover có thể giải quyết các vướng mắc hiện tại</li>\n</ul>\n\n<div>Nếu anh/chị thấy phù hợp, mình có thể sắp xếp lịch trong tuần này hoặc tuần sau ạ.</div>\n\n<div>&nbsp;</div>\n\n<div>Cảm ơn anh/chị đã dành thời gian đọc email.</div>\n\n<div>&nbsp;</div>\n\n<div>Trân trọng,</div>",
+        "editable": true,
+        "dataType": "TEXT",
+        "description": "",
+        "type": 4,
+        "isList": false,
+        "parentId": "PEDWWSQEEKOXB",
+        "assignable": false,
+        "availableForInput": false,
+        "isStandard": false,
+        "processId": "PEDWWSQEEKOXB",
+        "name": "Body email",
+        "metaDataType": {
+          "convertNullNumberToZero": true,
+          "richText": 1,
+          "convertNullStringToEmpty": true
+        },
+        "availableForOutput": false,
+        "absolutePath": "workflow_resource:list.textTemplate / Body email",
+        "id": "RS00000000041",
+        "parentTable": "process",
+        "resourcesUsedIn": [
+          {
+            "actionType": "SEND_EMAIL",
+            "name": "Gửi email cho Lead đã chọn ở Root",
+            "count": 1,
+            "id": "AC00000000012",
+            "parentTable": "action",
+            "slug": "gui_email_cho_lead_da_chon_o_root"
+          }
+        ],
+        "slug": "body_email"
+      }
+    ],
+    "loops": [],
+    "userTasks": [
+      {
+        "approvalScreen": 0,
+        "isRoot": true,
+        "processId": "PEDWWSQEEKOXB",
+        "name": "Root",
+        "resources": [
+          {
+            "absoluteSlug": "$userTask.Root.chon_lead",
+            "parentMetadata": "",
+            "defaultValue": "LE000000000002",
+            "dataType": "RECORD",
+            "description": "",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000006",
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Chọn Lead",
+            "metaDataType": {
+              "link_field": "id",
+              "object_slug": "lead",
+              "multiple_limit": {
+                "min": 0,
+                "max": 30
+              },
+              "object": "OT00000000011"
+            },
+            "availableForOutput": false,
+            "absolutePath": "workflow_resource:list.userTask / Root / Chọn Lead",
+            "id": "SC00000000014",
+            "parentTable": "node_screen",
+            "defaultTextValueType": 0,
+            "resourcesUsedIn": [
+              {
+                "actionType": "SEND_EMAIL",
+                "name": "Gửi email cho Lead đã chọn ở Root",
+                "count": 2,
+                "id": "AC00000000012",
+                "parentTable": "action",
+                "slug": "gui_email_cho_lead_da_chon_o_root"
+              },
+              {
+                "dataType": "TEXT",
+                "name": "Body email",
+                "count": 2,
+                "id": "RS00000000041",
+                "parentTable": "resource",
+                "slug": "body_email"
+              }
+            ],
+            "slug": "chon_lead",
+            "fieldId": "00000000-0000-4000-8000-000000000213",
+            "isComponent": true
+          },
+          {
+            "absoluteSlug": "$userTask.Root.submittedBy",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000006",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Submitted By",
+            "metaDataType": {
+              "linkField": "id",
+              "objectSlug": "personnel",
+              "object": "OT00000000006"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Submitted By",
+            "id": "RS00000000063",
+            "parentTable": "node_screen",
+            "slug": "submittedBy",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.startAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000006",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / Start At",
+            "id": "RS00000000078",
+            "parentTable": "node_screen",
+            "slug": "startAt",
+            "isComponent": false
+          },
+          {
+            "absoluteSlug": "$userTask.Root.endAt",
+            "parentMetadata": "",
+            "defaultValue": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "NC00000000006",
+            "assignable": false,
+            "availableForInput": false,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.userTask / Root / End At",
+            "id": "RS00000000075",
+            "parentTable": "node_screen",
+            "slug": "endAt",
+            "isComponent": false
+          }
+        ],
+        "id": "NC00000000006",
+        "nodeId": "NO00000000032",
+        "slug": "Root"
+      }
+    ],
+    "actions": [
+      {
+        "processId": "PEDWWSQEEKOXB",
+        "name": "Gửi email cho Lead đã chọn ở Root",
+        "description": "",
+        "resources": [
+          {
+            "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.startAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000012",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "Start At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / StartAt",
+            "id": "RS00000000081",
+            "parentTable": "action",
+            "slug": "startAt"
+          },
+          {
+            "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.endAt",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000012",
+            "assignable": false,
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "name": "End At",
+            "metaDataType": {
+              "defaultValueCurrent": false,
+              "format": {
+                "date": "dd/MM/yyyy",
+                "time": "hh:mm:ss"
+              },
+              "timeZone": "Asia/Saigon"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / End At",
+            "id": "RS00000000085",
+            "parentTable": "action",
+            "slug": "endAt"
+          },
+          {
+            "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.output",
+            "parentMetadata": "",
+            "editable": false,
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "parentId": "AC00000000012",
+            "assignable": false,
+            "actionType": "SEND_EMAIL",
+            "availableForInput": true,
+            "isStandard": true,
+            "processId": "PEDWWSQEEKOXB",
+            "children": [
+              {
+                "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.output.sent",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000012",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PEDWWSQEEKOXB",
+                "name": "Sent",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / Output / Sent",
+                "parentTable": "resource",
+                "slug": "sent"
+              },
+              {
+                "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.output.replied",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000012",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PEDWWSQEEKOXB",
+                "name": "Replied",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / Output / Replied",
+                "parentTable": "resource",
+                "slug": "replied"
+              },
+              {
+                "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.output.opened",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000012",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PEDWWSQEEKOXB",
+                "name": "Opened",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / Output / Opened",
+                "parentTable": "resource",
+                "slug": "opened"
+              },
+              {
+                "absoluteSlug": "$action.gui_email_cho_lead_da_chon_o_root.output.clicked",
+                "parentMetadata": "",
+                "editable": false,
+                "dataType": "BOOLEAN",
+                "type": 1,
+                "isList": false,
+                "parentId": "RS00000000012",
+                "assignable": false,
+                "availableForInput": true,
+                "isStandard": true,
+                "processId": "PEDWWSQEEKOXB",
+                "name": "Clicked",
+                "metaDataType": {
+                  "falseValue": "Không",
+                  "trueValue": "Có",
+                  "language": "vi-VN"
+                },
+                "availableForOutput": true,
+                "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / Output / Clicked",
+                "parentTable": "resource",
+                "slug": "clicked"
+              }
+            ],
+            "name": "Output",
+            "metaDataType": {
+              "characterLimit": {
+                "min": 0,
+                "max": 131072,
+                "warning": "warning limit note"
+              },
+              "richText": "false"
+            },
+            "availableForOutput": true,
+            "absolutePath": "workflow_resource:list.sendEmail / Gửi email cho Lead đã chọn ở Root / Output",
+            "id": "RS00000000012",
+            "parentTable": "action",
+            "slug": "output"
+          }
+        ],
+        "id": "AC00000000012",
+        "type": "SEND_EMAIL",
+        "nodeId": "NO00000000029",
+        "slug": "gui_email_cho_lead_da_chon_o_root"
+      }
+    ]
+  },
+  "starterPermission": {
+    "CANCEL_INSTANCE": true,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": true,
+    "DELETE_INSTANCE": true,
+    "VIEW_INSTANCE_PROGRESS": true,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false,
+    "VIEW_INSTANCE_FULL": true,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": true
+  },
+  "version": "V3",
+  "versionNumber": 3,
+  "currentVersion": false,
+  "externalResourcesUsedIn": [
+    {
+      "absoluteSlug": "$userTask.Root.chon_lead.last_first_name",
+      "parentMetadata": "",
+      "dataType": "TEXT",
+      "type": 1,
+      "isList": false,
+      "parentId": "SC00000000014",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PEDWWSQEEKOXB",
+      "name": "Last first name",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.userTask / Root / Chọn Lead / Last first name",
+      "parentTable": "screen_component",
+      "slug": "last_first_name"
+    },
+    {
+      "absoluteSlug": "$userTask.Root.chon_lead.emails",
+      "parentMetadata": "",
+      "dataType": "TEXT",
+      "type": 1,
+      "isList": true,
+      "parentId": "SC00000000014",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PEDWWSQEEKOXB",
+      "name": "Emails",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.userTask / Root / Chọn Lead / Emails",
+      "parentTable": "screen_component",
+      "slug": "emails"
+    },
+    {
+      "absoluteSlug": "$userTask.Root.chon_lead.emails",
+      "parentMetadata": "",
+      "dataType": "TEXT",
+      "type": 1,
+      "isList": true,
+      "parentId": "SC00000000014",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PEDWWSQEEKOXB",
+      "name": "Emails",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.userTask / Root / Chọn Lead / Emails",
+      "parentTable": "screen_component",
+      "slug": "emails"
+    },
+    {
+      "absoluteSlug": "$userTask.Root.chon_lead.company",
+      "parentMetadata": "",
+      "dataType": "TEXT",
+      "type": 1,
+      "isList": false,
+      "parentId": "SC00000000014",
+      "isSystem": false,
+      "availableForInput": false,
+      "isStandard": true,
+      "processId": "PEDWWSQEEKOXB",
+      "name": "Company",
+      "availableForOutput": false,
+      "absolutePath": "workflow_resource:list.userTask / Root / Chọn Lead / Company",
+      "parentTable": "screen_component",
+      "slug": "company"
+    }
+  ],
+  "versionLabel": "",
+  "createdBy": {
+    "_full_name": "Sample User",
+    "last_name": "Sample",
+    "id": "PER_SAMPLE_USER",
+    "avatar": {
+      "fileName": "avatar.jpeg",
+      "fileSize": 632657,
+      "resizable": true,
+      "resolutionSizes": [
+        "original",
+        "tiny",
+        "small",
+        "medium",
+        "large"
+      ],
+      "acl": "public",
+      "fileExt": "jpeg",
+      "fileType": "avatar",
+      "url": "https://files.example.com/0/{file_id}/{resolution_size}/avatar.jpeg",
+      "fileId": "FILE_SAMPLE_AVATAR"
+    },
+    "first_name": "User"
+  },
+  "name": "Mau cho AI: text template",
+  "actions": [
+    {
+      "data": {
+        "cc": [],
+        "bcc": [],
+        "attachments": [],
+        "maximumWaitTimeValue": null,
+        "subject": {
+          "type": 1,
+          "value": "Tiêu đề email"
+        },
+        "from": {
+          "isRaw": true,
+          "fromType": "PERSONNEL_EMAIL",
+          "personnel": "PER_SAMPLE_USER",
+          "emailId": null
+        },
+        "sequenceFlowType": "AUTOMATIC",
+        "to": [
+          {
+            "name": {
+              "type": 5,
+              "value": "$userTask.Root.chon_lead.emails"
+            },
+            "index": 0,
+            "email": {
+              "dataPathName": "workflow_resource:list.userTask / Root / Chọn Lead / Emails",
+              "dataType": "TEXT",
+              "type": 4,
+              "value": "$userTask.Root.chon_lead.emails"
+            }
+          }
+        ],
+        "emailLayout": "",
+        "maximumWaitTimeUnit": null,
+        "content": {
+          "type": "text/html",
+          "content": {
+            "valuePathName": "workflow_resource:list.textTemplate / Body email",
+            "valueDataType": "TEXT",
+            "type": 2,
+            "value": "$flow.body_email"
+          }
+        },
+        "emailAppendSignature": true
+      },
+      "processId": "PEDWWSQEEKOXB",
+      "name": "Gửi email cho Lead đã chọn ở Root",
+      "description": "",
+      "id": "AC00000000012",
+      "type": "SEND_EMAIL",
+      "nodeId": "NO00000000029",
+      "slug": "gui_email_cho_lead_da_chon_o_root"
+    }
+  ],
+  "status": 2,
+  "created": "2026-02-08T15:02:43.781Z",
+  "updated": "2026-02-08T15:02:47.867Z"
+}
