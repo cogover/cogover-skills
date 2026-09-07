@@ -3,12 +3,12 @@ name: process-creator
 description: Thiết kế, tạo, kích hoạt, chạy thử và xác minh JSON BPMN cho Cogover Process, gồm Manual, Normal, Scheduled, Triggered và Sequence Flow cùng các task (gồm AI Agent), gateway, event, resource và quyền liên quan. Dùng khi người dùng muốn tạo, sửa, kiểm tra, triển khai hoặc đánh giá end-to-end một Cogover workflow/process.
 metadata:
   author: cogover
-  version: "1.2.2"
+  version: "1.2.3"
 ---
 
 # Cogover Process Creator
 
-- **Phiên bản:** `1.2.2`
+- **Phiên bản:** `1.2.3`
 - **Ngày phát hành:** `2026-09-07`
 
 ## Kích hoạt
@@ -526,15 +526,17 @@ Sử dụng các template và quy tắc sau:
 - Kích thước tất cả node: `width=60, height=60`
 - Luồng chính (main flow): `y=260`
 - Node đầu tiên: `x=40, y=260`
-- Khoảng cách giữa 2 node liên tiếp trên cùng hàng: `x += 160` (có thể điều chỉnh tùy độ phức tạp)
+- Bước bố trí ban đầu giữa 2 node liên tiếp trên cùng hàng: `x += 160`; tăng khi tên node/tên nhánh cần thêm chỗ. Tính khoảng trống theo cả node và label, không chỉ theo icon 60×60.
+
+Trước khi chốt tọa độ, đọc [bố cục gọn và khoảng trống cho nhãn](nodes/bpmn-geometry-validation.md#bố-cục-gọn-và-khoảng-trống-cho-nhãn). Đặt nhánh ngắn gần gateway của nó; các nhánh ở vùng x khác nhau có thể dùng chung hàng nếu node, label và đường nối không xung đột. Không tăng y theo thứ tự gateway trên toàn sơ đồ. Độ gọn phải đi cùng khả năng đọc tên node/tên nhánh; `ok: true` của validator hình học chưa chứng minh bố cục dễ đọc.
 
 ##### Quy tắc bố trí nhánh (Gateway branching)
 
 **Exclusive Gateway (2 nhánh):**
 - Fork gateway và merge gateway nằm trên luồng chính (y=260)
-- Nhánh điều kiện (condition branch): đặt phía **trên** luồng chính, `y = 100` (hoặc y chênh lệch -160 so với main)
-- Nhánh mặc định (default branch): đặt phía **dưới** luồng chính, `y = 420` (hoặc y chênh lệch +160 so với main)
-- Hoặc ngược lại tùy ngữ cảnh, miễn 2 nhánh cách nhau đủ xa (≥ 200px theo chiều dọc)
+- Nếu một nhánh tiếp tục luồng chính và nhánh còn lại chỉ xử lý ngoại lệ/kết thúc/quay lại, giữ nhánh tiếp tục trên hàng chính, đặt nhánh ngắn phía trên hoặc dưới gần gateway.
+- Nếu cả hai nhánh có chuỗi xử lý riêng, có thể đặt nhánh điều kiện ở `y = 100` và nhánh mặc định ở `y = 420`, hoặc đảo phía. Đây là vị trí khởi đầu tương đối với hàng chính `y = 260`, không phải hàng mới dành riêng cho từng gateway.
+- Khi hai chuỗi xử lý nằm trên/dưới ở cùng vùng x, dùng khoảng cách hàng ban đầu ≥ 200 đơn vị BPMN và tăng theo chiều cao nhãn thực tế. Với một nhánh ngắn tách khỏi hàng chính, bắt đầu lệch khoảng 160–200 đơn vị rồi kiểm tra vùng trống.
 
 **Parallel Gateway (nhiều nhánh):**
 - Fork gateway (open) và merge gateway (close) nằm trên luồng chính (y=260)
@@ -544,7 +546,7 @@ Sử dụng các template và quy tắc sau:
 - Merge gateway (close) phải đặt ở vị trí x lớn hơn node cuối cùng của nhánh dài nhất
 
 **Nhánh con lồng nhau (sub-branches):**
-- Nếu trong nhánh parallel có exclusive gateway phân nhánh tiếp, nhánh con đặt lệch y ±80 so với nhánh cha
+- Nếu trong nhánh parallel có exclusive gateway phân nhánh tiếp, bố trí nhánh con theo vùng trống của cả cụm cha; tăng khoảng cách hàng cha khi cần. Không mặc định lệch y ±80 vì node và nhãn nhiều dòng có thể đè nhau.
 
 ##### Quy tắc tính waypoint cho BPMNEdge
 
@@ -678,7 +680,7 @@ Edges:
 
 - `LABEL_WIDTH` = ước lượng chiều rộng label dựa trên độ dài tên node: `max(28, len(name) * 6)` (làm tròn lên số nguyên). Với text dài (>25 ký tự) có thể xuống 2 dòng → `LABEL_HEIGHT = 32`
 - `LABEL_X` = `X + (NODE_WIDTH / 2) - (LABEL_WIDTH / 2)` — **căn giữa** label so với node (KHÔNG dùng `LABEL_X = X`)
-- `LABEL_Y` = `Y + 70` (label nằm dưới node, cách 10px)
+- `LABEL_Y` mặc định = `Y + 70` (label nằm dưới node, cách 10px). Nếu nhãn che đường nối hoặc nhãn khác, dời lên trên/sang bên rồi cập nhật bounds; không giữ công thức mặc định khi có xung đột.
 - `LABEL_HEIGHT` = `16` (hoặc `32` nếu text xuống 2 dòng)
 
 **BPMNLabel cho Edge có tên:** Nếu sequenceFlow có `name` (ví dụ: tên nhánh gateway), thêm BPMNLabel vào BPMNEdge:
@@ -691,7 +693,7 @@ Edges:
   </bpmndi:BPMNLabel>
 </bpmndi:BPMNEdge>
 ```
-Trong đó `MID_X`, `MID_Y` là trung điểm giữa waypoint đầu và waypoint cuối.
+Chọn một đoạn thẳng đủ dài của edge để đặt label sát đoạn đó, chừa khoảng trống với node, tên node và nhãn khác. Tính `MID_X`, `MID_Y` là góc trên trái của bounds nhãn từ vị trí đã chọn; không lấy trung điểm hai đầu toàn tuyến gấp khúc vì nhãn có thể rơi xa đường nối. Nếu chưa đủ chỗ, dời nhãn sang đoạn khác hoặc nới bố cục; không thu nhỏ chữ để ép vừa.
 
 #### Template pageSettings của userTask
 

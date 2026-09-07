@@ -8,6 +8,20 @@
 2. Chạy [validator](../scripts/validate_bpmn_geometry.py) trên payload cuối trước khi gọi API tạo/cập nhật. Nếu lỗi, sửa bộ sinh waypoint/bố cục và chạy lại; không sửa `sourceRef/targetRef` để che lỗi đường vẽ.
 3. Đọc lại process qua API và chạy validator lần nữa ở mode `response`. Giữ nguyên response gốc để đối chiếu. Không tự ghi lại process chỉ để chuẩn hóa namespace.
 4. Chỉ kết luận phần kiểm tra này đạt khi exit code `0` và `ok: true`. Nếu còn lỗi trong bản đã lưu, báo rõ flow/node và xử lý theo phạm vi sửa được phép; không tự xóa/tạo lại process.
+5. Kiểm tra riêng độ gọn và khả năng đọc theo mục dưới, trước khi gửi XML và sau khi mở lại bản đã lưu. Đây là kiểm tra bố cục/hiển thị; validator hiện chưa tự kiểm tra khoảng cách quá lớn hoặc nhãn chồng lấn.
+
+## Bố cục gọn và khoảng trống cho nhãn
+
+Ưu tiên nhánh ngắn gần gateway sở hữu nó, đồng thời giữ đủ khoảng trống để đọc và phân biệt từng đường nối. Các số dưới đây là điểm khởi đầu theo đơn vị tọa độ BPMN, không phải pixel sau zoom hoặc giới hạn cứng cho mọi sơ đồ.
+
+1. **Tính vùng chiếm chỗ trước khi xếp hàng.** Dùng bounds thực tế của node và toàn bộ tên node, kể cả nhãn nhiều dòng. Chừa thêm khoảng đệm ban đầu khoảng 20–32 đơn vị quanh cụm node + nhãn để tách khỏi cụm khác; tính thêm bounds tên nhánh khi chọn tuyến. Ước lượng chiều rộng bằng số ký tự chỉ là bước đầu: kiểm tra chữ có dấu, xuống dòng và font khi hiển thị. Không cắt tên hay giảm cỡ chữ chỉ để sơ đồ nhỏ hơn.
+2. **Bố trí từng nhánh theo gateway của nó.** Với node 60×60, có thể bắt đầu bằng bước ngang 160 và độ lệch hàng nhánh ngắn 160–200. Chọn hàng gần nhất còn đủ khoảng trống; tăng khoảng cách khi nhãn dài, nhánh lồng hoặc vật cản cần thêm chỗ. Không cấp hàng y tăng dần cho mọi gateway độc lập, và không áp một giới hạn độ dài edge cho đường quay lại hoặc nhánh dài hợp lệ.
+3. **Tái sử dụng hàng có điều kiện.** Hai nhánh ngắn của các gateway khác nhau có thể nằm cùng hàng nếu vùng chiếm chỗ theo x không giao nhau, tính cả node, nhãn, đoạn nối và khoảng đệm. Nếu xung đột, thử tăng khoảng cách ngang, chọn phía trên/dưới khác hoặc thêm hàng cục bộ. Không ép các nhánh song song cùng vùng x hay nhánh lồng nhau về cùng hàng chỉ để giảm chiều cao.
+4. **Chừa chỗ cho tên nhánh.** Đặt tên nhánh cạnh một đoạn nối dễ nhận diện, tránh góc rẽ, mũi tên, node và nhãn khác; đường nối không đi xuyên chữ. Với đường nối dọc đi xuống, tên gateway có thể đặt phía trên gateway hoặc lệch sang bên để không che đường. Nếu nhãn không vừa, tăng khoảng trống hoặc đổi tuyến rồi tính lại waypoint theo bounds mới.
+5. **Tách các đường quay lại.** Khi nhiều edge quay về cùng node, chọn các tuyến ngoài cụm node với khoảng cách đủ cho nhãn để người đọc theo được từng nhánh. Có thể dùng chung đoạn cuối vào node đích nếu vẫn rõ hướng và nguồn; tránh chồng cả tuyến khiến hai nhánh trông như một.
+6. **Kiểm tra cả tổng thể và cận cảnh.** Ở chế độ vừa màn hình, xem nhánh có bị đẩy xa bởi khoảng trắng không cần thiết hay không. Ở mức zoom đọc được chữ (ví dụ 100%), kiểm tra tên node/tên nhánh không chồng nhau, không bị cắt và không bị đường nối che. Với sơ đồ lớn, kiểm tra từng vùng; không yêu cầu mọi chữ đều đọc được khi thu nhỏ toàn sơ đồ. Đối chiếu lại sau khi lưu vì editor có thể sắp lại nhãn. Nếu chưa quan sát bản render, báo rõ chưa kiểm tra hiển thị; không dùng kết quả validator thay thế.
+
+Ví dụ tổng hợp: hai gateway trên cùng luồng chính, cách nhau theo chiều ngang, mỗi gateway có một nhánh ngắn phía dưới. Thử đặt hai nhánh cùng hàng cách luồng chính khoảng 180 đơn vị. Nếu tên node dài khiến hai vùng chiếm chỗ giao nhau, nới ngang hoặc tách hàng cho đúng cụm bị xung đột; không tiếp tục tăng y cho tất cả nhánh về sau. Ví dụ này là hướng dẫn bố trí, không phải bằng chứng kiểm thử runtime.
 
 ## Sử dụng script
 
