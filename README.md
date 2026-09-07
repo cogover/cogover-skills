@@ -1,94 +1,96 @@
 # Cogover Skills
 
-Bộ 22 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
+**English** | [Tiếng Việt](README.vi.md)
 
-Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.md). Mỗi skill có version riêng trong frontmatter và dưới tiêu đề.
+A collection of 22 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
 
-## Chọn skill
+For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGELOG.md). Each skill has its own version in its frontmatter and below its heading.
 
-| Nhu cầu | Skill |
+## Choose a skill
+
+| Need | Skill |
 |---|---|
-| Hiểu nền tảng và chọn khả năng phù hợp | [cogover-overview](cogover-overview/SKILL.md) |
-| Điều phối dự án App từ yêu cầu đến triển khai | [build-cogover-app](build-cogover-app/SKILL.md) |
-| Xác thực API và quản lý credential | [cogover-api-auth](cogover-api-auth/SKILL.md) |
-| Xây frontend/backend tùy chỉnh | [cogover-custom-module](cogover-custom-module/SKILL.md) |
-| Thiết kế schema bằng Excel | [create-cogover-objects](create-cogover-objects/SKILL.md) |
-| Tra cứu và quản lý Object/field/formula | [object-info](object-info/SKILL.md) |
-| Đọc/ghi record, file và ảnh rich text | [object-record](object-record/SKILL.md) |
-| Bố cục giao diện Object | [object-layout](object-layout/SKILL.md) |
-| Script cho logic giao diện | [layout-scripting](layout-scripting/SKILL.md) |
-| Button và chuỗi hành động | [object-button](object-button/SKILL.md) |
-| Bộ lọc và cột danh sách | [object-filter](object-filter/SKILL.md) |
-| Biểu mẫu thu thập dữ liệu bên ngoài | [object-form](object-form/SKILL.md) |
-| Quy tắc chuyển trạng thái | [object-transition-rule](object-transition-rule/SKILL.md) |
-| Path Component hướng dẫn theo giai đoạn | [object-path-component](object-path-component/SKILL.md) |
-| Cấu hình lịch sử thay đổi field | [object-history-tracking](object-history-tracking/SKILL.md) |
-| Thành viên, cơ cấu nhân sự, role và quyền dữ liệu | [user-permission](user-permission/SKILL.md) |
-| Process/BPMN và kiểm thử quy trình | [process-creator](process-creator/SKILL.md) |
-| Mẫu Word/Excel/HTML và export | [document-template](document-template/SKILL.md) |
-| Report Type và báo cáo | [report-builder](report-builder/SKILL.md) |
-| Dashboard và biểu đồ | [dashboard-builder](dashboard-builder/SKILL.md) |
-| App và menu | [app-menu-manager](app-menu-manager/SKILL.md) |
-| Icon Button và App Menu | [cogover-icon](cogover-icon/SKILL.md) |
+| Understand the platform and choose the right capabilities | [cogover-overview](cogover-overview/SKILL.md) |
+| Coordinate an App project from requirements to deployment | [build-cogover-app](build-cogover-app/SKILL.md) |
+| Authenticate API requests and manage credentials | [cogover-api-auth](cogover-api-auth/SKILL.md) |
+| Build custom frontends and backends | [cogover-custom-module](cogover-custom-module/SKILL.md) |
+| Design schemas in Excel | [create-cogover-objects](create-cogover-objects/SKILL.md) |
+| Look up and manage Objects, fields, and formulas | [object-info](object-info/SKILL.md) |
+| Read and write records, files, and rich text images | [object-record](object-record/SKILL.md) |
+| Configure Object layouts | [object-layout](object-layout/SKILL.md) |
+| Write scripts for interface logic | [layout-scripting](layout-scripting/SKILL.md) |
+| Configure Buttons and action chains | [object-button](object-button/SKILL.md) |
+| Configure filters and list columns | [object-filter](object-filter/SKILL.md) |
+| Create forms for collecting external submissions | [object-form](object-form/SKILL.md) |
+| Configure status transition rules | [object-transition-rule](object-transition-rule/SKILL.md) |
+| Provide stage guidance with a Path Component | [object-path-component](object-path-component/SKILL.md) |
+| Configure field history tracking | [object-history-tracking](object-history-tracking/SKILL.md) |
+| Manage members, organizational structure, roles, and data permissions | [user-permission](user-permission/SKILL.md) |
+| Build and test Process/BPMN workflows | [process-creator](process-creator/SKILL.md) |
+| Create Word, Excel, and HTML templates and export documents | [document-template](document-template/SKILL.md) |
+| Configure Report Types and reports | [report-builder](report-builder/SKILL.md) |
+| Configure dashboards and charts | [dashboard-builder](dashboard-builder/SKILL.md) |
+| Manage Apps and menus | [app-menu-manager](app-menu-manager/SKILL.md) |
+| Manage Button and App Menu icons | [cogover-icon](cogover-icon/SKILL.md) |
 
-## Cài đặt và cập nhật
+## Install and update
 
-Tải hoặc clone repository này. Mỗi thư mục con chứa `SKILL.md` là một skill; giữ nguyên toàn bộ `references`, `scripts`, `assets` và `agents` đi kèm. Nên cài cả bộ vì các skill tham chiếu chéo và dựa vào cùng contract xác thực.
+Download or clone this repository. Each subdirectory containing a `SKILL.md` file is a skill; keep all accompanying `references`, `scripts`, `assets`, and `agents` directories intact. Installing the full collection is recommended because the skills reference one another and share the same authentication contract.
 
-Với Codex, có thể yêu cầu `$skill-installer` cài các thư mục skill từ URL repository đã public. Hoặc sao chép các thư mục vào vị trí skill được môi trường cấu hình; Codex hỗ trợ `.agents/skills` theo repository và thư mục skill người dùng. Nếu chưa thấy thay đổi, khởi động lại Codex. Xem [hướng dẫn chính thức](https://learn.chatgpt.com/docs/build-skills).
+In Codex, you can ask `$skill-installer` to install the skill directories from the published repository URL. Alternatively, copy the directories into the skill location configured for your environment; Codex supports repository-level `.agents/skills` directories and a user-level skills directory. Restart Codex if changes do not appear. See the [official guide](https://learn.chatgpt.com/docs/build-skills).
 
-Với agent khác hỗ trợ `SKILL.md`, làm theo cơ chế cài skill của agent đó; cú pháp gọi và công cụ đi kèm có thể khác. Bộ này không tự cài browser, thư viện spreadsheet hay runtime sub-agent.
+For other agents that support `SKILL.md`, follow their skill installation instructions; invocation syntax and available tools may differ. This collection does not install a browser, spreadsheet libraries, or a sub-agent runtime automatically.
 
-Khi cập nhật, so sánh version, sao lưu tùy chỉnh riêng rồi thay **toàn bộ từng thư mục skill cùng tên** để không giữ tài nguyên đã bị bỏ. Không trộn hai version cùng tên hoặc ghi đè các skill không thuộc bộ này. Khi gỡ, chỉ xóa các thư mục Cogover đã cài trong bảng trên, không xóa kho skill chung.
+When updating, compare versions, back up your customizations, and replace **each entire skill directory with the same name** so that obsolete resources are removed. Do not mix versions of the same skill or overwrite skills outside this collection. To uninstall, remove only the installed Cogover directories listed above, not the shared skills directory.
 
-## Điều kiện sử dụng
+## Requirements
 
-| Khả năng | Khi cần |
+| Capability | When needed |
 |---|---|
-| Đọc skill/reference và gọi HTTP | Tất cả thao tác API |
-| Workspace HTTPS và credential đúng quyền | Khảo sát hoặc thay đổi Workspace |
-| Shell và Python 3.10+ | Scripts API/validator đi kèm, chỉ dùng thư viện chuẩn |
-| Đọc/ghi XLSX và kiểm tra nội dung/định dạng | Thiết kế Object, report artifact, document template |
-| Trình duyệt có session Workspace, theo dõi download | Kiểm thử document export; kiểm thử frontend |
-| Sub-agent và artifact có phạm vi | Các bước điều phối bắt buộc của App/Custom Module |
-| Node.js, Cogover Dev CLI và dependencies của starter | Custom Module; đọc tài liệu tương ứng trước khi cài |
+| Read skills and references, and make HTTP requests | All API operations |
+| An HTTPS Workspace and credentials with appropriate permissions | Exploring or modifying a Workspace |
+| A shell and Python 3.10+ | Included API scripts and validators, which use only the standard library |
+| Read and write XLSX files, and inspect their contents and formatting | Object design, report artifacts, and document templates |
+| A browser with an active Workspace session and download tracking | Testing document exports and frontends |
+| Sub-agents and artifacts with defined scopes | Required orchestration steps for Apps and Custom Modules |
+| Node.js, Cogover Dev CLI, and starter dependencies | Custom Modules; read the relevant documentation before installing |
 
-Ưu tiên skill spreadsheet/browser của môi trường. Nếu không có skill spreadsheet, dùng công cụ XLSX tương đương và chạy validator. Nếu thiếu browser hoặc sub-agent cần thiết, agent phải báo đúng phần chưa xác minh/thực hiện; không giả lập một kết quả kiểm thử thành công.
+Prefer the spreadsheet and browser skills available in your environment. If no spreadsheet skill is available, use equivalent XLSX tools and run the validator. If a required browser or sub-agent capability is missing, the agent must identify what it could not verify or perform; it must not fabricate a successful test result.
 
-## Workspace và xác thực
+## Workspace and authentication
 
-Nguồn chuẩn: [cogover-api-auth](cogover-api-auth/SKILL.md). Cấu hình origin ví dụ là `https://tenant.example.com`. `COGOVER_BASE_URL` và `COGOVER_API_KEY` là tên biến chung; một số ví dụ hỗ trợ tên tương thích được giải thích trong skill auth. Cấp key qua secret store hoặc scoped environment của tiến trình, không dán vào repository hoặc prompt.
+The authoritative reference is [cogover-api-auth](cogover-api-auth/SKILL.md). An example origin is `https://tenant.example.com`. `COGOVER_BASE_URL` and `COGOVER_API_KEY` are the shared variable names; some examples support compatibility names explained in the authentication skill. Supply keys through a secret store or a scoped process environment, never through repository files or prompts.
 
-| Nhóm API | Xác thực | Phạm vi |
+| API group | Authentication | Scope |
 |---|---|---|
-| Public API `/bapi/v{N}` | API Key Bearer | Contract và quyền của endpoint được mô tả trong skill |
-| Web App API `/api/v{N}` | Phiên Web App gồm cookie và CSRF/XSRF | Dùng khi skill có contract cho chức năng đó; không gửi API Key trực tiếp |
+| Public API `/bapi/v{N}` | Bearer API Key | The endpoint contract and permissions documented in the skill |
+| Web App API `/api/v{N}` | A Web App session with cookies and CSRF/XSRF | Use when the skill documents a contract for that capability; do not send an API Key directly |
 
-API Key phải có đúng quyền thao tác; không mặc định mọi công việc đều cần Super Admin. Agent đọc trạng thái, xác định phạm vi và tuân thủ cổng duyệt của skill trước thao tác có tác động. HTTP thành công chưa chứng minh thay đổi nghiệp vụ đúng; cần đọc lại và kiểm thử phù hợp.
+An API Key must have the permissions required for the operation; do not assume every task requires Super Admin access. Before making changes, the agent reads the current state, determines the scope, and follows the skill's approval requirements. A successful HTTP response does not prove that the intended business change is correct; read the result back and run appropriate tests.
 
-Version của bộ skill không phải version Cogover server. Khả năng Web App API có thể phụ thuộc phiên bản Workspace. Chỉ dùng endpoint được tài liệu hỗ trợ; khi response không khớp, báo phần contract thiếu thay vì dò source riêng hoặc suy đoán endpoint.
+The skill collection version is separate from the Cogover server version. Web App API capabilities may depend on the Workspace version. Use only documented endpoints; if a response does not match the contract, report the documentation gap instead of inspecting private source code or guessing endpoints.
 
-## Bắt đầu
+## Get started
 
 ```text
-Dùng $cogover-overview giải thích cách quản lý yêu cầu mua hàng trên Cogover.
+Use $cogover-overview to explain how to manage purchase requests in Cogover.
 ```
 
 ```text
-Dùng $object-info liệt kê các field của Object order trên Workspace tôi đã cấu hình.
-Chỉ đọc thông tin và nêu những field cần cho báo cáo theo tháng.
+Use $object-info to list the fields of the order Object in my configured Workspace.
+Only read information and identify the fields needed for a monthly report.
 ```
 
 ```text
-Dùng $build-cogover-app phân tích yêu cầu quản lý bảo hành, khảo sát Workspace
-tôi đã cấu hình và chuẩn bị thiết kế để tôi duyệt trước khi triển khai.
+Use $build-cogover-app to analyze warranty management requirements, explore my
+configured Workspace, and prepare a design for my approval before implementation.
 ```
 
-## Dữ liệu mẫu và kiểm tra
+## Sample data and validation
 
-Các ID và domain ví dụ là dữ liệu tổng hợp, không dùng trực tiếp để gọi Workspace. Resolve lại ID/slug/tài nguyên theo metadata đích. Snapshot response không mặc nhiên là request hợp lệ. Đọc [quy ước mẫu Process](process-creator/samples/README.md) và validator tương ứng.
+Example IDs and domains are synthetic and must not be used directly in Workspace requests. Resolve IDs, slugs, and resources from the target metadata. A response snapshot is not necessarily a valid request payload. Read the [Process sample conventions](process-creator/samples/README.md) and use the relevant validator.
 
-Từ root repository:
+From the repository root:
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
@@ -96,8 +98,8 @@ python3 scripts/check_public_release.py
 python3 -m unittest discover -s tests
 ```
 
-Trước public một repo đã có commit, thêm `--history` để kiểm tra nội dung các phiên bản đã lưu trong Git. Bộ kiểm tra này không thay thế kiểm thử API/nghiệp vụ trực tiếp. Xem [CONTRIBUTING.md](CONTRIBUTING.md) và [SECURITY.md](SECURITY.md).
+Before publishing a repository that already has commits, add `--history` to scan the content of versions stored in Git. These checks do not replace live API and business behavior tests. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
-## Giấy phép
+## License
 
-Nội dung do dự án cung cấp dùng [MIT](LICENSE), ngoại trừ asset bên thứ ba ghi rõ tại [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Hai SVG hoàn thành giữ license và attribution Font Awesome Free/CC BY 4.0.
+Content provided by this project is licensed under [MIT](LICENSE), except for third-party assets listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The two completion SVGs retain their Font Awesome Free/CC BY 4.0 license and attribution.
