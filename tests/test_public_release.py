@@ -46,6 +46,10 @@ class ReleaseTests(unittest.TestCase):
 
     def test_synthetic_references_are_allowed(self):
         self.assertEqual([], release.scan_text('NO00000000001 user@example.com https://tenant.example.com', 'sample'))
+        self.assertEqual([], release.scan_text('https://tennant.cogover.com', 'sample'))
+        for host in ('customer-fixture', 'tennant'):
+            issues = release.scan_text('https://' + host + '.cogover.net', 'sample')
+            self.assertTrue(any('CONCRETE_WORKSPACE_HOST' in issue for issue in issues))
         self.assertEqual([], release.scan_json({'secret': '{WEBHOOK_SECRET_FROM_RUNTIME}'}, 'sample'))
 
     def test_history_finds_removed_credential(self):

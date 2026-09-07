@@ -59,7 +59,7 @@ Khi cập nhật, so sánh version, sao lưu tùy chỉnh riêng rồi thay **to
 
 ## Workspace và xác thực
 
-Nguồn chuẩn: [cogover-api-auth](cogover-api-auth/SKILL.md). Cấu hình origin ví dụ là `https://tenant.example.com`. `COGOVER_BASE_URL` và `COGOVER_API_KEY` là tên biến chung; một số ví dụ hỗ trợ tên tương thích được giải thích trong skill auth. Cấp key qua secret store hoặc scoped environment của tiến trình, không dán vào repository hoặc prompt.
+Nguồn chuẩn: [cogover-api-auth](cogover-api-auth/SKILL.md). Cấu hình origin ví dụ là `https://tennant.cogover.com`. `COGOVER_BASE_URL` và `COGOVER_API_KEY` là tên biến chung; một số ví dụ hỗ trợ tên tương thích được giải thích trong skill auth. Cấp key qua secret store hoặc scoped environment của tiến trình, không dán vào repository hoặc prompt.
 
 | Nhóm API | Xác thực | Phạm vi |
 |---|---|---|

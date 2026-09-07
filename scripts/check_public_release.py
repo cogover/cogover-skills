@@ -48,6 +48,9 @@ def scan_text(text: str, label: str) -> list[str]:
         if not any(domain == d or domain.endswith('.' + d) for d in ('example.com', 'example.org', 'example.net')):
             issues.append(f'{label}: NON_EXAMPLE_EMAIL (value redacted)')
     for match in TENANT.finditer(text):
+        # Public example origin used in the repository README.
+        if match.group(0).lower() == 'https://tennant.cogover.com':
+            continue
         if match.group(1).lower() not in {'www', 'docs', 'help', 'developer', 'developers'}:
             issues.append(f'{label}: CONCRETE_WORKSPACE_HOST (value redacted)')
     for match in OPAQUE_ID.finditer(text):
