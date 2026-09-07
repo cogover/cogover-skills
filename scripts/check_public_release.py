@@ -228,15 +228,30 @@ def history_checks(root: Path) -> tuple[list[str], int]:
     return issues, count
 
 
+def is_public_path(root: Path, path: Path, files: set[str]) -> bool:
+    """An existing ignored file cannot satisfy a public package dependency."""
+    try:
+        name = path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return False
+    if path.is_file():
+        return name in files
+    if path.is_dir():
+        prefix = '' if name == '.' else name + '/'
+        return any(item.startswith(prefix) for item in files)
+    return False
+
+
 def check(root: Path, baseline: str | None = None, history: bool = False) -> tuple[list[str], dict]:
     listing = git(root, 'ls-files', '--cached', '--others', '--exclude-standard', '-z')
     if listing.returncode:
         return ['NOT_A_GIT_WORKTREE'], {}
     files = sorted(set(p.decode() for p in listing.stdout.split(b'\0') if p))
+    public_files = set(files)
     issues = []
     skills = sorted(p for p in root.iterdir() if p.is_dir() and (p / 'SKILL.md').is_file())
     for required in ['README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md', 'VERSION.md']:
-        if not (root / required).is_file():
+        if not (root / required).is_file() or not is_public_path(root, root / required, public_files):
             issues.append(required + ': REQUIRED_FILE_MISSING')
     for name in files:
         p = root / name
@@ -263,7 +278,7 @@ def check(root: Path, baseline: str | None = None, history: bool = False) -> tup
             text = re.sub(r'`[^`\n]*`', '', text)
             for target in re.findall(r'\[[^\]\n]+\]\(([^)\n]+)\)', text):
                 target = target.split('#')[0]
-                if target and ':' not in target and not (p.parent / target).exists():
+                if target and ':' not in target and not is_public_path(root, p.parent / target, public_files):
                     issues.append(name + ': BROKEN_RELATIVE_LINK')
             for target in re.findall(r'`(skills/[a-z-]+/[^`]+)`', text):
                 if not (root / target).exists():

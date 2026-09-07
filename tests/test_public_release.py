@@ -13,6 +13,21 @@ spec.loader.exec_module(release)
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_public_paths_exclude_ignored_local_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'README.md').write_text('Public')
+            (root / 'private.md').write_text('Local only')
+            (root / 'docs').mkdir()
+            (root / 'docs' / 'guide.md').write_text('Public guide')
+            files = {'README.md', 'docs/guide.md'}
+            self.assertTrue(release.is_public_path(root, root / 'README.md', files))
+            self.assertTrue(release.is_public_path(root, root / 'docs', files))
+            self.assertTrue(release.is_public_path(root, root / 'docs/../README.md', files))
+            self.assertFalse(release.is_public_path(root, root / 'private.md', files))
+            self.assertFalse(release.is_public_path(root, root / 'missing.md', files))
+            self.assertFalse(release.is_public_path(root, root.parent, files))
+
     def test_token_in_nested_json_is_redacted(self):
         token = 'eyJ' + 'a' * 25 + '.' + 'b' * 25 + '.' + 'c' * 25
         data = json.dumps({'body': json.dumps({'secret': token})}).encode()
