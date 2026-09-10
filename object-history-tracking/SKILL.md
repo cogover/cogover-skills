@@ -3,18 +3,20 @@ name: object-history-tracking
 description: Cấu hình history tracking của Cogover Object qua Web App API, gồm đọc trạng thái, bật hoặc tắt tracking cấp Object, chọn thêm/bớt/thay thế các field được theo dõi và xác minh cấu hình sau khi ghi. Sử dụng khi cần quản lý lịch sử thay đổi field của một Object, kiểm tra field nào đang được tracking, hoặc xử lý giới hạn field tracking; không dùng để đọc các bản ghi lịch sử đã phát sinh.
 metadata:
   author: cogover
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # Object History Tracking
 
-- **Phiên bản:** `1.0.0`
-- **Ngày phát hành:** `2026-08-23`
+- **Phiên bản:** `1.0.1`
+- **Ngày phát hành:** `2026-09-11`
 
 Quản lý cấu hình history tracking bằng API, không thao tác UI trình duyệt. Phân biệt hai lớp trạng thái:
 
 - `enabled` quyết định tracking có hoạt động ở cấp Object hay không.
 - `fields` là toàn bộ danh sách field slug được chọn; danh sách này vẫn được lưu khi `enabled=false` nhưng chưa có hiệu lực tracking.
+
+**Thời hạn lưu lịch sử mặc định:** Dữ liệu lịch sử thay đổi field quá **18 tháng** sẽ được hệ thống tự động xoá. Khi tư vấn về khả năng truy vết hoặc lưu trữ lịch sử, nêu rõ thời hạn này; không mô tả history tracking là lưu lịch sử vĩnh viễn.
 
 Skill này dành cho người dùng bên ngoài. Chỉ dùng tài liệu đi kèm skill, thông tin người dùng cung cấp, cơ chế credential an toàn có sẵn và response API của workspace. Không tìm hoặc đọc source code, repository, file dự án, test, migration, database, log nội bộ, browser bundle hay source map để suy ra contract. Nếu tài liệu và API không đủ thông tin, dừng và báo rõ phần còn thiếu.
 
