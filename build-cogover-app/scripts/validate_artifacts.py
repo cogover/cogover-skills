@@ -20,7 +20,7 @@ from typing import Iterable
 from xml.etree import ElementTree as ET
 
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
@@ -45,6 +45,8 @@ TABLE_COLUMNS = {
     "work-breakdown": 14,
     "lock-register": 5,
     "test-plan": 7,
+    "workbook-scope": 3,
+    "execution-checkpoints": 7,
 }
 
 
@@ -281,6 +283,97 @@ class Validator:
         if data_design_path and self.data_objects:
             self._compare_data_and_workbook(data_design_path, objects)
 
+    def validate_review_workbook(self, path: Path, data_path: Path) -> None:
+        """Validate a human review projection, without relaxing import validation."""
+        artifact = str(path)
+        tables = self._load_markdown(data_path, {"fields", "workbook-scope"})
+        definitions = {
+            canonical_id(cell(row, 0)): row
+            for table in all_tables(tables, "fields") for row in table.rows
+        }
+        aliases = {}
+        for obj_id, obj in self.data_objects.items():
+            for alias in (obj_id, obj["name"], obj["slug"]):
+                aliases[normalize(alias)] = obj
+        scopes = {}
+        included_actions = {"NEW", "MODIFY", "IMPORTANT"}
+        allowed_actions = included_actions | {"OMIT_EXISTING", "OMIT_SYSTEM"}
+        for table in all_tables(tables, "workbook-scope"):
+            for row in table.rows:
+                field_id = canonical_id(cell(row, 0))
+                action = cell(row, 1).upper()
+                if field_id not in definitions or field_id in scopes:
+                    self.error("REVIEW_SCOPE_ID", artifact, f"Unknown or duplicate scope field {field_id}.")
+                if action not in allowed_actions or is_blank(cell(row, 2)) or PLACEHOLDER_PATTERN.search(cell(row, 2)):
+                    self.error("REVIEW_SCOPE_ACTION", artifact, f"{field_id}: invalid action or missing rationale/evidence.")
+                design = definitions.get(field_id, [])
+                obj = aliases.get(normalize(cell(design, 1)), {})
+                if action == "OMIT_EXISTING" and obj.get("disposition") == "CREATE":
+                    self.error("REVIEW_SCOPE_NEW_OBJECT", artifact, f"{field_id}: CREATE Object cannot omit an existing field.")
+                scopes[field_id] = action
+        if set(scopes) != set(definitions):
+            self.error("REVIEW_SCOPE_COVERAGE", artifact, "Every design field must have exactly one scope row.")
+        expected = {key for key, action in scopes.items() if action in included_actions}
+        headers = ["Field name", "Field slug", "Data type", "Field ID", "Object slug", "Action", "Request IDs", "Notes"]
+        actual = set()
+        try:
+            with zipfile.ZipFile(path) as archive:
+                strings = shared_strings(archive)
+                sheets = workbook_sheets(archive)
+                if not sheets:
+                    self.error("REVIEW_EMPTY", artifact, "Review workbook has no sheets.")
+                for sheet_name, sheet_path in sheets:
+                    rows = sheet_rows(archive, sheet_path, strings)
+                    header = rows[0] if rows else []
+                    if cell(header, 0) != "Field name" or any(header.count(h) != 1 for h in headers):
+                        self.error("REVIEW_HEADERS", artifact, f"{sheet_name}: required unique headers missing or Field name is not column A.")
+                        continue
+                    indexes = {h: header.index(h) for h in headers}
+                    root = ET.fromstring(archive.read(sheet_path))
+                    pane = root.find("m:sheetViews/m:sheetView/m:pane", NS)
+                    if pane is None or pane.get("state") != "frozen" or pane.get("xSplit") != "1" or pane.get("ySplit") != "1":
+                        self.error("REVIEW_FREEZE", artifact, f"{sheet_name}: freeze column A and header row (B2).")
+                    cols = root.findall("m:cols/m:col", NS)
+                    # Calibri 11 approximation; visual/font checks remain required.
+                    for col in range(1, len(header) + 1):
+                        widths = [float(c.get("width", "0")) for c in cols if int(c.get("min", "0")) <= col <= int(c.get("max", "0"))]
+                        if not widths or (col == 1 and abs(widths[-1] - 13.57) > 0.2) or (col > 1 and not 0 < widths[-1] <= 22.16):
+                            self.warning("REVIEW_WIDTH", artifact, f"{sheet_name}: verify column {col} renders at 100px (A) / <=160px (others) with its font.")
+                    sheet_objects = set()
+                    for row in rows[1:]:
+                        if not any(v.strip() for v in row):
+                            continue
+                        values = {h: cell(row, i).strip() for h, i in indexes.items()}
+                        field_id = values["Field ID"]
+                        if field_id in actual or field_id not in expected:
+                            self.error("REVIEW_FIELD_SCOPE", artifact, f"Duplicate or out-of-scope review field {field_id}.")
+                        actual.add(field_id)
+                        design = definitions.get(field_id)
+                        if not design:
+                            continue
+                        obj = aliases.get(normalize(cell(design, 1)))
+                        sheet_objects.add(values["Object slug"])
+                        if not obj or values["Object slug"] != obj["slug"]:
+                            self.error("REVIEW_OBJECT", artifact, f"{field_id}: Object slug differs from design.")
+                        for key, index in (("Field name", 2), ("Field slug", 3), ("Data type", 4)):
+                            if normalize(values[key]) != normalize(cell(design, index)):
+                                self.error("REVIEW_FIELD_MISMATCH", artifact, f"{field_id}: {key} differs from design.")
+                        if values["Action"] != scopes.get(field_id):
+                            self.error("REVIEW_ACTION", artifact, f"{field_id}: action differs from scope.")
+                        reqs = ids_of_type(cell(design, 11), "REQ")
+                        if not reqs or ids_of_type(values["Request IDs"], "REQ") != reqs:
+                            self.error("REVIEW_REQUESTS", artifact, f"{field_id}: request mapping differs from design or is empty.")
+                        explanation = ID_PATTERN.sub("", values["Notes"]).strip(" ,;:-")
+                        if not reqs <= ids_of_type(values["Notes"], "REQ") or is_blank(explanation) or PLACEHOLDER_PATTERN.search(explanation):
+                            self.error("REVIEW_NOTES", artifact, f"{field_id}: Notes need explanation and request IDs.")
+                    if len(sheet_objects) > 1:
+                        self.error("REVIEW_SHEET_OBJECTS", artifact, f"{sheet_name}: use one Object per sheet.")
+        except (OSError, zipfile.BadZipFile, ET.ParseError, KeyError, ValueError, IndexError) as error:
+            self.error("REVIEW_READ", artifact, f"Cannot read review workbook: {error}.")
+            return
+        if expected - actual:
+            self.error("REVIEW_FIELD_MISSING", artifact, f"Review workbook is missing fields: {join_ids(expected - actual)}.")
+
     def validate_plan(self, path: Path) -> None:
         required = {"requirement-traceability", "work-breakdown", "lock-register", "test-plan"}
         tables = self._load_markdown(path, required)
@@ -397,6 +490,26 @@ class Validator:
             unknown = linked_work - work_ids
             if unknown:
                 self.error("PLAN_LOCK_WORK_REF", artifact, f"Lock-register line {number} references unknown {join_ids(unknown)}.")
+
+        checkpoints = all_tables(tables, "execution-checkpoints")
+        if checkpoints:
+            statuses = {canonical_id(cell(row, 0)): cell(row, 1).upper() for row in work.rows}
+            seen = set()
+            for table in checkpoints:
+                for row in table.rows:
+                    work_id = canonical_id(cell(row, 0))
+                    mark = cell(row, 1).lower()
+                    if work_id not in work_ids or work_id in seen:
+                        self.error("PLAN_CHECKPOINT_ID", artifact, f"Unknown or duplicate checkpoint {work_id}.")
+                    seen.add(work_id)
+                    if mark not in {"[ ]", "[x]"} or (mark == "[x]") != (statuses.get(work_id) == "DONE"):
+                        self.error("PLAN_CHECKPOINT_STATUS", artifact, f"{work_id}: DONE and checkbox disagree.")
+                    if statuses.get(work_id) == "DONE":
+                        for index in (2, 3, 5):
+                            if is_blank(cell(row, index)) or PLACEHOLDER_PATTERN.search(cell(row, index)):
+                                self.error("PLAN_CHECKPOINT_EVIDENCE", artifact, f"{work_id}: DONE needs time, agent and evidence.")
+            if seen != work_ids:
+                self.error("PLAN_CHECKPOINT_COVERAGE", artifact, "Checkpoint table must cover every work item.")
 
     def _load_markdown(self, path: Path, required: set[str]) -> dict[str, list[MarkdownTable]]:
         artifact = str(path)
@@ -824,11 +937,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--solution", type=Path)
     parser.add_argument("--data-design", type=Path)
     parser.add_argument("--workbook", type=Path)
+    parser.add_argument("--review-workbook", type=Path, help="Human review workbook; requires --data-design, separate from import --workbook.")
     parser.add_argument("--plan", type=Path)
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args(argv)
+    if args.review_workbook and (not args.data_design or args.workbook):
+        parser.error("--review-workbook requires --data-design and cannot be combined with --workbook")
     if not any((args.solution, args.data_design, args.workbook, args.plan)):
         parser.error("provide at least one artifact input")
     return args
@@ -843,6 +959,8 @@ def main(argv: list[str] | None = None) -> int:
         validator.validate_data_design(args.data_design)
     if args.workbook:
         validator.validate_workbook(args.workbook, args.data_design)
+    elif args.review_workbook:
+        validator.validate_review_workbook(args.review_workbook, args.data_design)
     elif args.data_design:
         validator.warning("DATA_WORKBOOK_NOT_PROVIDED", str(args.data_design), "Workbook consistency was not checked.")
     if args.plan:
@@ -852,6 +970,7 @@ def main(argv: list[str] | None = None) -> int:
         "solution": str(args.solution) if args.solution else None,
         "data_design": str(args.data_design) if args.data_design else None,
         "workbook": str(args.workbook) if args.workbook else None,
+        "review_workbook": str(args.review_workbook) if args.review_workbook else None,
         "plan": str(args.plan) if args.plan else None,
     }
     json_report = render_json(validator, inputs)

@@ -3,12 +3,12 @@ name: build-cogover-app
 description: "Điều phối dự án triển khai Cogover end-to-end từ Workspace đích và yêu cầu khách hàng: bắt buộc xác thực API key đúng Workspace trước khảo sát, đọc App/Object hiện có, làm rõ nghiệp vụ, fit-gap với khả năng chuẩn, thiết kế Object/field/state machine, tạo workbook Object, lập kế hoạch có dependency và triển khai/kiểm thử sau các cổng duyệt. Chỉ dùng khi người dùng gọi cụ thể $build-cogover-app hoặc đã đồng ý rõ sau khi AI đề xuất sử dụng. Phù hợp khi cần xây App Cogover mới, tùy chỉnh nhiều thành phần của App hiện có, hoặc chuyển BRD/SRS thành solution blueprint có thể triển khai. Không dùng cho một thay đổi Cogover đơn lẻ đã rõ phạm vi hoặc câu hỏi tổng quan; dùng skill Cogover chuyên trách hoặc $cogover-overview tương ứng."
 metadata:
   author: cogover
-  version: "2.0.3"
+  version: "3.0.0"
 ---
 
 # Build Cogover App
 
-- **Phiên bản:** `2.0.3`
+- **Phiên bản:** `3.0.0`
 - **Ngày phát hành:** `2026-09-11`
 
 ## Vai trò và nguồn chuẩn
@@ -32,6 +32,7 @@ Luôn đọc:
 - [Credential preflight](references/credential-preflight.md) trước mọi khảo sát khi đã biết Workspace đích.
 - [Artifact contracts](references/artifact-contracts.md) trước khi tạo hoặc sửa file bàn giao.
 - [Orchestration and gates](references/orchestration-and-gates.md) trước khi giao sub-agent, mở cổng duyệt hoặc thay đổi Workspace.
+- [Bản đọc HTML/Excel và tiếp nhận câu trả lời](references/human-readable-deliverables.md) trước khi tạo bản người dùng đọc, nhận thông báo “đã trả lời” hoặc cập nhật tiến độ thực thi.
 
 Dùng response mới nhất của Workspace và skill chuyên trách làm nguồn chuẩn cho trạng thái/capability cụ thể. Không coi một Object, menu hoặc tên App tồn tại là bằng chứng tính năng end-to-end đã hoạt động.
 
@@ -53,7 +54,7 @@ Ghi rõ mode trong mọi lời gọi skill con:
 
 Mặc định dùng `DISCOVERY_ONLY`. Trước Gate Plan, luôn truyền cho skill con/sub-agent:
 
-> Chỉ đọc/phân tích. Không create, update, delete, upload, activate, publish, gửi thông báo, chạy process hay thay đổi Workspace.
+> Chỉ đọc/phân tích. Không create, update, delete, upload, activate, publish tài nguyên Workspace, gửi thông báo, chạy process hay thay đổi Workspace; được tạo file bàn giao local đã được giao ở DESIGN_ONLY.
 
 Reviewer độc lập là tùy chọn để giảm thời gian chạy:
 
@@ -67,13 +68,19 @@ Tuân thủ các nguyên tắc:
 - Không đoán thông tin nghiệp vụ đang chặn một quyết định. Dùng `TBD`/`UNKNOWN`, hỏi người dùng và dừng đúng gate.
 - Khi đã có Workspace đích, không bắt đầu Phase 1, không tạo artifact và không giao sub-agent cho đến khi Gate Credential đạt `VERIFIED`.
 - Không xem việc có API key, duyệt giải pháp hay duyệt data model là quyền mutation.
-- Chỉ dùng capability Cogover đã được chứng minh. Nếu không khả thi, ghi `NOT_SUPPORTED` hoặc đề xuất hạng mục code/tích hợp cho team khác; không tự code trong skill này.
+- Chỉ dùng capability Cogover đã được chứng minh. Nếu không khả thi, ghi `NOT_SUPPORTED` hoặc đề xuất hạng mục code/tích hợp cho team khác; không tự code nghiệp vụ hoặc tích hợp Workspace trong skill này. Mã HTML/JavaScript phục vụ bản đọc local và lưu câu trả lời theo contract bản đọc được phép.
 - Không ghi approval giả. Chỉ lưu nội dung xác nhận thực tế của người dùng kèm revision.
 - Không ghi secret, cookie, token hoặc API key vào prompt tự nhiên, file, lệnh shell literal, log, commentary hay câu trả lời.
 - Với `NEW_APP`, mặc định thiết kế một Menu Item cấp 1 dạng nhóm `Home` và một Menu Item cấp 2 `Overview` làm menu mặc định, trỏ tới Dashboard tổng quan các KPI quan trọng của App. Chỉ tạo/wire Dashboard sau khi report/KPI nguồn đã preview và đối soát thành công. Nếu Dashboard không được Workspace/runtime hỗ trợ, dùng Overview dạng report/page đã được chứng minh làm fallback và ghi limitation; không tạo Dashboard rỗng hoặc giả. Với `CUSTOMIZE_EXISTING_APP`, giữ nguyên information architecture/menu hiện có trừ khi người dùng yêu cầu rõ việc tái cấu trúc.
 - Với custom App, mọi Menu Item cấp 1 nên có icon App Menu phù hợp ngữ nghĩa. Chỉ bỏ icon khi người dùng yêu cầu rõ hoặc capability/runtime chứng minh không hỗ trợ; ghi quyết định đó vào solution/plan. Không coi menu tree hoàn tất nếu root-menu icon chưa được resolve, cài và read-back.
 
 ## Đầu vào và nơi lưu artifact
+
+### Bản chuẩn cho AI và bản để người dùng đọc
+
+- Các file **Markdown (.md) là nguồn chuẩn để AI phân tích, triển khai và bàn giao cho Agent khác**. Viết phần yêu cầu/giải pháp và kế hoạch bằng tiếng Việt dễ hiểu cho người không chuyên kỹ thuật, giải thích rõ việc cần làm, lý do và kết quả; hạn chế tiếng Anh và thuật ngữ chuyên ngành. Giữ mã `REQ-ID`, `Q-ID`, `W-ID`, slug, tên skill/API và enum cần cho máy; giải thích thuật ngữ bắt buộc ở lần đầu, đặt chi tiết kỹ thuật ở phần riêng.
+- Mỗi giai đoạn giao **một sub-agent chuyên tạo bản đọc**, với context mới chỉ gồm Markdown nguồn và tài liệu cần thiết: `solution_reader` tạo HTML yêu cầu/giải pháp; `data_design_reader` tạo Excel rồi HTML thiết kế dữ liệu; `plan_reader` tạo HTML kế hoạch. Các agent này bắt buộc ngay cả khi `Reviewer mode: OFF`; chúng không phải reviewer. Chỉ cấp quyền ghi file đầu ra được giao, không sửa Markdown nguồn hoặc thay đổi Workspace.
+- Coordinator giữ quyền ghi Markdown chuẩn và kiểm tra bản đọc khớp nguồn trước khi giao. HTML/Excel có tên nguồn, revision và thời điểm tạo rõ ràng; không dùng chúng thay Markdown ở bước AI tiếp theo. Câu trả lời JSON do HTML xuất là dữ liệu đầu vào, phải được kiểm tra rồi nhập vào revision Markdown mới.
 
 Thu thập tối thiểu:
 
@@ -98,9 +105,9 @@ Nếu chưa có nơi lưu, dùng `artifacts/cogover-implementation/<project-slug
 
 Tạo theo thứ tự:
 
-1. `danh-sach-yeu-cau-va-giai-phap-so-bo-vN.md`
-2. `data-design-vN.md` và `cogover-objects-vN.xlsx` khi có thay đổi mô hình dữ liệu
-3. `implementation-plan-vN.md`
+1. `danh-sach-yeu-cau-va-giai-phap-so-bo-vN.md` và bản đọc cùng tên `.html`; câu trả lời lưu trong `answers/` theo reference bản đọc.
+2. `data-design-vN.md`, `cogover-objects-vN.xlsx` để người dùng duyệt và `data-design-vN.html` có sơ đồ quan hệ khi có thay đổi mô hình dữ liệu.
+3. `implementation-plan-vN.md` và bản đọc cùng tên `.html`, đồng bộ trạng thái từng việc trong quá trình thực hiện.
 4. `snapshots/pre-apply-<timestamp>/` trước mutation cấu hình hiện có
 5. `test-handover-vN.md` sau triển khai
 
@@ -206,7 +213,9 @@ Tạo `danh-sach-yeu-cau-va-giai-phap-so-bo-vN.md` với đúng hai bảng cốt
 - Bảng 1: `Mã yêu cầu | Mô tả yêu cầu | Trạng thái làm rõ | Mã câu hỏi cần trả lời | Giải pháp sơ bộ/cuối cùng`.
 - Bảng 2: `Mã câu hỏi | Mã yêu cầu | Nội dung câu hỏi | Nội dung trả lời`.
 
-Sau mỗi vòng trả lời, tạo `vN+1`, cập nhật cả hai bảng và kiểm tra lại phần ảnh hưởng; nếu `Reviewer mode: ON`, reviewer recheck theo protocol. Khi tất cả yêu cầu đã rõ, tạo revision cuối với trạng thái `PENDING_USER_CONFIRMATION`, đổi cột giải pháp thành giải pháp cuối và bỏ hoàn toàn Bảng 2. Yêu cầu người dùng xác nhận rõ đúng filename/revision rồi kết thúc turn.
+Sau mỗi vòng trả lời, tạo `vN+1`, cập nhật cả hai bảng và kiểm tra lại phần ảnh hưởng; nếu `Reviewer mode: ON`, reviewer recheck theo protocol. Giao `solution_reader` tạo HTML từ Markdown đã kiểm tra: mỗi câu hỏi có ô nhập gắn `Q-ID`, nút lưu câu trả lời ra file JSON local bằng JavaScript và nút Sáng/Tối. Khi người dùng chat “đã trả lời”, đọc file theo quy trình trong reference bản đọc; không coi thao tác lưu hoặc câu chat này là phê duyệt giải pháp.
+
+Khi tất cả yêu cầu đã rõ, tạo revision cuối với trạng thái `PENDING_USER_CONFIRMATION`, đổi cột giải pháp thành giải pháp cuối và bỏ hoàn toàn Bảng 2. Sub-agent tạo lại HTML cùng revision, không còn form câu hỏi cũ. Giao cả Markdown và HTML, yêu cầu người dùng xác nhận rõ đúng filename/revision rồi kết thúc turn.
 
 ### Gate Solution
 
@@ -218,15 +227,15 @@ Chỉ bắt đầu từ solution revision đã xác nhận.
 
 ### 3.1 Data design
 
-1. Tạo `data-design-vN.md` gồm Object, field, relation, option, state machine, security/audit, data quality/migration và impact lên cấu hình hiện có.
-2. Dùng `$create-cogover-objects` tạo `cogover-objects-vN.xlsx`; dùng skill spreadsheet sẵn có hoặc công cụ XLSX tương đương theo yêu cầu của skill đó. Workbook là specification, không phải bằng chứng đã tạo schema.
-3. Đối chiếu Markdown↔Excel, chạy validator của `$create-cogover-objects` và validator của skill này.
+1. Tạo `data-design-vN.md` làm nguồn chuẩn gồm Object, field, relation, option, state machine, security/audit, data quality/migration và impact lên cấu hình hiện có. Giữ đủ thông tin trường đang có cần cho AI; ghi phạm vi trường đưa vào Excel theo contract.
+2. Giao `data_design_reader` ở `DESIGN_ONLY` dùng skill spreadsheet/công cụ XLSX tạo `cogover-objects-vN.xlsx` để người dùng đọc. Mỗi trường có `Notes` giải thích chi tiết lý do cần, nghiệp vụ phục vụ và mã `REQ-ID`; bỏ trường đã có không cần sửa, trừ trường rất quan trọng cần đưa vào để duyệt. Cột `Field name` đứng đầu bên trái, cố định khi cuộn, rộng 100px; các cột khác không quá 160px, xuống dòng và đủ chiều cao để đọc nội dung. Đây là workbook duyệt, không phải file import đầy đủ; xem profile trong reference bản đọc.
+3. Sau Excel, chính `data_design_reader` tạo `data-design-vN.html` từ Markdown chuẩn, có sơ đồ quan hệ giữa các Object và bảng giải thích từng Object dùng làm gì, nghiệp vụ chi tiết và `REQ-ID`. Coordinator đối chiếu Markdown↔Excel↔HTML và chạy validator chế độ `--review-workbook`; không áp validator import yêu cầu mọi trường hiện có lên bản duyệt đã lọc. Nếu cần file import, tạo riêng bằng `$create-cogover-objects` từ Markdown đã duyệt và dùng validator import tương ứng.
 4. Nếu `Reviewer mode: ON`, tạo sub-agent `data_design_reviewer` độc lập để kiểm tra cả Markdown lẫn workbook; sửa và recheck finding ảnh hưởng schema/state/acceptance. Nếu `OFF`, bỏ qua reviewer, ghi `NOT_REQUESTED` và hoàn tất coordinator self-check trước gate.
 5. Nếu không cần Object/field/relation mới hoặc sửa đổi, ghi `DATA_MODEL_NOT_APPLICABLE` cùng bằng chứng và bỏ workbook.
 
 ### Gate Data Model
 
-Sau khi data design đã qua validator và coordinator self-check, đồng thời qua reviewer nếu `Reviewer mode: ON`, giao `data-design-vN.md` + `cogover-objects-vN.xlsx` áp dụng, hoặc `DATA_MODEL_NOT_APPLICABLE` cùng bằng chứng. Yêu cầu người dùng xác nhận rõ filename/revision, Workspace/environment và data model; sau đó kết thúc turn.
+Sau khi data design đã qua validator và coordinator self-check, đồng thời qua reviewer nếu `Reviewer mode: ON`, giao `data-design-vN.md` + `cogover-objects-vN.xlsx` + `data-design-vN.html` cùng revision, hoặc `DATA_MODEL_NOT_APPLICABLE` cùng bằng chứng. Người dùng có thể đọc Excel/HTML để duyệt; xác nhận phải gắn với revision Markdown nguồn, Workspace/environment và data model. Sau đó kết thúc turn.
 
 Chỉ bắt đầu mục 3.2 ở turn sau khi Gate Data Model đã được người dùng xác nhận. Mọi thay đổi schema/state hoặc requirement ảnh hưởng data model sau approval làm baseline `STALE`; tăng revision, kiểm tra lại và quay lại Gate Data Model trước khi lập hoặc sửa kế hoạch triển khai. Chỉ recheck reviewer khi `Reviewer mode: ON`.
 
@@ -263,9 +272,11 @@ Mỗi `W-ID` phải có `REQ-ID`, current→target delta, skill, dependency `W-I
 
 Kế hoạch bắt buộc có requirement traceability, execution waves, dependency DAG, lock register, snapshot strategy, test/UAT cases, unsupported/external items, rollout và containment. Chạy validator và coordinator preflight; không mở gate khi còn requirement không map, dependency cycle, lock conflict, `READY` item chứa `TBD/UNKNOWN` hoặc test không quan sát được.
 
+Viết diễn giải kế hoạch bằng tiếng Việt dễ hiểu như phần yêu cầu/giải pháp. Sau khi Markdown đã kiểm tra, giao `plan_reader` tạo `implementation-plan-vN.html` từ đúng nguồn để người dùng xem; có danh sách việc, mã `W-ID`, trạng thái và dấu hoàn thành tương ứng. Markdown vẫn là nguồn chuẩn cho thực thi.
+
 ### Gate Plan
 
-Giao `implementation-plan-vN.md` được lập từ đúng data model baseline đã duyệt. Yêu cầu người dùng duyệt rõ filename/revision, Workspace/environment và change set; sau đó kết thúc turn. Duyệt data model và plan không thay thế confirmation hẹp của `$process-creator`, delete, replacement, publish/activate, quyền nhạy cảm hoặc side effect bên ngoài.
+Giao `implementation-plan-vN.md` và HTML cùng revision được lập từ đúng data model baseline đã duyệt. Yêu cầu người dùng duyệt rõ filename/revision Markdown nguồn, Workspace/environment và change set; sau đó kết thúc turn. Duyệt data model và plan không thay thế confirmation hẹp của `$process-creator`, delete, replacement, publish/activate, quyền nhạy cảm hoặc side effect bên ngoài.
 
 ## Phase 4 — Thực thi, kiểm thử và bàn giao
 
@@ -277,6 +288,7 @@ Chỉ chạy `APPLY_APPROVED_PLAN` sau khi Gate Data Model đã qua trước, r�
    - Khi work item App/Menu có Menu Item cấp 1, tạo sub-agent chuyên trách `app_menu_icon_specialist` và yêu cầu dùng `$cogover-icon` profile **App Menu**. Agent này phải: đọc thư viện hiện có trước; tái sử dụng exact asset phù hợp khi không mơ hồ; nếu chưa có thì thiết kế SVG `18×18`, kiểm tra XML/stroke/render, upload file và thêm vào thư viện; trả mapping `menu slug → source(REUSE/CREATE) → library name → library item ID/URL`. Agent không được sửa menu tree. Coordinator hoặc executor `$app-menu-manager` là single writer cài mapping icon vào menu sau barrier icon PASS.
    - Tách lock `workspace/icon-library/<asset-name>` khỏi lock `workspace/app/<app-id>/menu-tree`; không cho hai agent cùng upload/cài một asset hoặc cùng sửa menu. Chuẩn bị xong toàn bộ icon cấp 1 trước batch menu mutation để tránh cây menu dở dang.
 4. Sau mỗi mutation, đọc lại resource và so postcondition trước khi mở dependency downstream. Khi timeout, read-back trước retry.
+   - Khi hoàn tất từng `W-ID` và đủ read-back/test đã duyệt, cập nhật ngay `DONE` và `[x]` trong Markdown, rồi giao `plan_reader` đồng bộ dấu hoàn thành trên HTML. Chưa đủ bằng chứng thì giữ trạng thái phù hợp, không tick trước. Ghi thời điểm, Agent thực hiện, ID tài nguyên, bằng chứng, phần còn lại và bước tiếp theo để Agent khác tiếp tục; dùng quy trình checkpoint trong reference bản đọc. Lỗi tạo HTML không làm chạy lại việc đã hoàn tất.
    - Với `NEW_APP`, read-back phải chứng minh `Home` là root group, `Overview` là child/default target, action trỏ đúng Dashboard đã reconciled hoặc fallback đã ghi trong plan; ACL Dashboard/report/menu phải nhất quán theo persona. Với `CUSTOMIZE_EXISTING_APP`, regression check phải chứng minh cây menu cũ không bị tái cấu trúc ngoài change set.
    - Với icon menu, read-back phải chứng minh từng Menu Item cấp 1 có đúng icon URL/ID từ thư viện; không dùng `file_id`, URL upload tạm hoặc asset không resolve được. Regression check giữ nguyên action, parent, order, default, ACL, platform và status ngoài field `icon`.
 5. Không auto-delete để rollback. Khi partial failure, giữ ID/state, chặn downstream, containment và xin approval nếu recovery có tính destructive.

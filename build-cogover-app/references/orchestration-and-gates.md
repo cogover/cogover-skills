@@ -11,13 +11,13 @@
 
 ## Nguyên tắc điều phối
 
-- Chỉ dùng sub-agent cho workstream độc lập, đủ lớn hoặc reviewer đã được người dùng bật; không tạo agent chỉ để lấp slot.
+- Bắt buộc dùng các sub-agent tạo bản đọc `solution_reader`, `data_design_reader`, `plan_reader` theo [contract bản đọc](human-readable-deliverables.md), với context mới chỉ gồm nguồn cần thiết. Đây là tác vụ tạo HTML/Excel, không phải reviewer; vẫn chạy khi `Reviewer mode: OFF`. Các workstream khác chỉ tách khi độc lập, đủ lớn hoặc reviewer đã được người dùng bật; không tạo agent chỉ để lấp slot.
 - Mặc định `Reviewer mode: OFF`. Chỉ chuyển sang `ON` khi người dùng yêu cầu rõ “bật các reviewer” hoặc diễn đạt tương đương; không tự bật theo scope, độ phức tạp hoặc mức rủi ro. Khi `OFF`, bỏ qua `solution_reviewer` và `data_design_reviewer` nhưng vẫn chạy validator, coordinator self-check và approval gate.
 - Khi đã biết Workspace đích, Gate Credential là barrier đầu tiên. Không khởi chạy discovery/design sub-agent hoặc tạo artifact trước khi credential đạt `VERIFIED`.
 - Mọi sub-agent ở phase discovery/design phải nhận `NO WORKSPACE MUTATION` và trả facts/evidence, open questions, findings, proposed rows cùng dependencies/blockers.
 - Coordinator pre-scan và sanitize requirement trước khi giao. Chỉ chuyển phần cần thiết, Workspace identifier, snapshot đã redacted và artifact liên quan.
 - Không chèn secret vào natural-language prompt. Nếu agent cần gọi API, cấp credential qua secret channel của runtime, khóa theo agent, mode, Workspace, W-ID/resource, read/mutation scope và thời hạn. Nếu không có secret channel, coordinator tự gọi rồi chuyển snapshot redacted.
-- Coordinator là single writer cho artifact final. Không cho hai agent sửa cùng file hoặc cùng Workspace resource.
+- Coordinator là single writer cho Markdown chuẩn; mỗi sub-agent tạo bản đọc là single writer cho HTML/Excel được giao. Coordinator kiểm tra và bàn giao bản đọc, không đồng thời sửa file sub-agent đang ghi. Không cho hai agent sửa cùng file hoặc cùng Workspace resource.
 - Dùng barrier: baseline upstream phải ổn định, được review/approve khi cần và không drift trước khi downstream bắt đầu.
 
 ## Các wave
@@ -38,8 +38,8 @@ Chỉ hợp nhất từ cùng snapshot time/baseline. Hỏi người dùng câu 
 2. Coordinator self-check, chạy validator và sửa lỗi.
 3. Nếu `Reviewer mode: ON`, giao bản gần-final cho `solution_reviewer` độc lập theo protocol bên dưới; nếu `OFF`, ghi `NOT_REQUESTED` và không tạo reviewer.
 4. Coordinator disposition từng finding và sửa artifact. Chạy lại validator; chỉ recheck reviewer khi mode `ON` và finding làm đổi recommendation, schema sơ bộ, state hoặc acceptance.
-5. Phát hành revision. Mỗi vòng trả lời người dùng tạo revision kế tiếp.
-6. Khi không còn blocker, bỏ Bảng 2, phát hành revision cuối rồi dừng tại Gate Solution.
+5. Giao `solution_reader` tạo HTML cùng revision, có input theo Q-ID, lưu JSON local và Sáng/Tối; coordinator kiểm tra trước khi giao Markdown + HTML. Khi người dùng báo “đã trả lời”, đọc/đối chiếu JSON theo contract, không coi là approval. Mỗi vòng trả lời tạo revision kế tiếp và sinh lại HTML.
+6. Khi không còn blocker, bỏ Bảng 2, tạo lại HTML không còn form câu hỏi, giao revision cuối Markdown + HTML rồi dừng tại Gate Solution.
 
 ### Wave C — Data design và reviewer tùy chọn
 
@@ -48,9 +48,9 @@ Chỉ bắt đầu sau Gate Solution:
 1. Nghiên cứu pattern liên quan trong tài liệu chính thức SAP, Odoo, Salesforce và Zoho; ẩn danh dữ liệu khách hàng.
 2. Coordinator hoặc `data_architect` thiết kế Object/field/relation/state/migration/security.
 3. Chỉ chia domain song song sau khi khóa glossary, source of truth và ownership boundary. Coordinator hợp nhất cross-domain relation tuần tự.
-4. Tạo Markdown và workbook, coordinator self-check, rồi chạy validator của `$create-cogover-objects` cùng validator của skill này.
+4. Coordinator tạo Markdown chuẩn và workbook-scope; giao `data_design_reader` tạo Excel duyệt với Notes/REQ-ID và độ rộng/cố định cột đúng contract, sau đó tạo HTML sơ đồ quan hệ và giải thích Object. Coordinator self-check, đối chiếu các bản và chạy validator `--review-workbook`; chỉ dùng validator `$create-cogover-objects` cho file import riêng khi thực sự cần.
 5. Nếu `Reviewer mode: ON`, giao cả hai file cho `data_design_reviewer` độc lập; sửa và recheck phần ảnh hưởng khi cần. Nếu `OFF`, ghi `NOT_REQUESTED` và không tạo reviewer.
-6. Giao data design/workbook, hoặc `DATA_MODEL_NOT_APPLICABLE` cùng bằng chứng, rồi dừng tại Gate Data Model. Không bắt đầu Wave D trong cùng turn trước khi người dùng xác nhận data model baseline.
+6. Giao Markdown thiết kế dữ liệu + Excel duyệt + HTML cùng revision, hoặc `DATA_MODEL_NOT_APPLICABLE` cùng bằng chứng, rồi dừng tại Gate Data Model. Không bắt đầu Wave D trong cùng turn trước khi người dùng xác nhận data model baseline.
 
 ### Wave D — Implementation plan
 
@@ -60,11 +60,11 @@ Chỉ lập plan từ solution đã duyệt và data design đã được ngư�
 2. Khi scope đủ lớn, có thể tách planner độc lập: UI configuration, analytics, governance/migration/test.
 3. Coordinator hợp nhất WBS, DAG, waves, lock register và test plan.
 4. Chạy artifact validator và coordinator preflight. Không cần generic plan reviewer; dùng specialist khi contract cụ thể chưa chắc.
-5. Giao plan rồi dừng tại Gate Plan.
+5. Giao `plan_reader` tạo HTML từ Markdown chuẩn, coordinator kiểm tra; giao cả hai rồi dừng tại Gate Plan.
 
 ### Wave E — Apply
 
-Sau tất cả approval áp dụng, kiểm tra drift, snapshot cấu hình cũ rồi phát hành work item theo topological wave. Yêu cầu read-back/postcondition trước khi mở downstream wave.
+Sau tất cả approval áp dụng, kiểm tra drift, snapshot cấu hình cũ rồi phát hành work item theo topological wave. Yêu cầu read-back/postcondition trước khi mở downstream wave. Khi từng W-ID đủ điều kiện hoàn tất, cập nhật ngay DONE/[x] và bằng chứng/next step trong checkpoint Markdown, rồi giao `plan_reader` đồng bộ HTML. Ghi checkpoint và nhật ký để Agent khác tiếp tục; lỗi sinh bản đọc không làm chạy lại mutation đã xong.
 
 Với `NEW_APP`, mặc định dựng information architecture `Home` (root group) → `Overview` (child/default) sau khi Dashboard KPI đã được tạo từ report nguồn preview/reconcile PASS. Nếu Dashboard không được capability/runtime hỗ trợ, dùng report/page đã chứng minh làm target fallback và ghi limitation. Không áp mẫu này để tái cấu trúc `CUSTOMIZE_EXISTING_APP` nếu người dùng không yêu cầu rõ.
 
@@ -100,7 +100,7 @@ Với custom App có menu cấp 1, tạo `app_menu_icon_specialist` dùng `$cogo
 - Pattern SAP/Odoo/Salesforce/Zoho được đối chiếu bằng nguồn chính thức và không sao chép mù quáng.
 - Normalization, duplicate, data quality/migration, concurrency, permission/audit và impact hiện trạng đã xử lý.
 - Mọi lifecycle có transition matrix; actor/precondition/validation/failure/audit đầy đủ.
-- Markdown↔workbook nhất quán về Object, record-name, field type/slug, lookup, required/default, option và state type.
+- Markdown↔workbook nhất quán về Object, record-name, field type/slug, lookup, required/default, option và state type trong phạm vi workbook-scope. Không yêu cầu thêm lại field OMIT_EXISTING/OMIT_SYSTEM vào Excel duyệt; kiểm tra Notes giải thích nghiệp vụ + REQ-ID và HTML bao phủ Object/quan hệ đầy đủ.
 
 ### Findings và verdict
 
@@ -139,7 +139,7 @@ Không đi qua gate khi còn câu hỏi `BLOCKING` nhắm tới gate đó. Có t
 ### Gate Data Model
 
 - Áp dụng khi có create/extend Object/field/relation/state.
-- Yêu cầu xác nhận rõ `data-design-vN.md` và `cogover-objects-vN.xlsx` cùng revision sau validator và coordinator self-check đạt; chỉ yêu cầu reviewer đạt khi `Reviewer mode: ON`.
+- Giao `data-design-vN.md`, `cogover-objects-vN.xlsx` và `data-design-vN.html` cùng revision sau validator và coordinator self-check đạt; người dùng có thể duyệt qua bản đọc nhưng xác nhận phải gắn với revision Markdown nguồn; chỉ yêu cầu reviewer đạt khi `Reviewer mode: ON`.
 - Nếu không có thay đổi data model, yêu cầu xác nhận rõ `DATA_MODEL_NOT_APPLICABLE` cùng bằng chứng.
 - Chỉ approval này mới cho phép bắt đầu lập Implementation Plan; không tự cấp quyền mutation hoặc apply.
 - Schema/state thay đổi hoặc Workspace drift làm approval `STALE`.
