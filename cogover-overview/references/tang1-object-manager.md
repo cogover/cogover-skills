@@ -216,6 +216,8 @@ Xem [hướng dẫn chọn Object Field](object-fields.md), sau đó dùng `$obj
 
 Layout Builder cho phép admin thiết kế giao diện bằng cách kéo thả. Cogover có 3 loại layout theo `functionLayout`.
 
+Độc lập với chức năng tạo/xem/sửa, layout bản ghi có thể thiết kế riêng cho **Web**, riêng cho **Mobile** hoặc dùng chung cho cả hai qua `isWeb` và `isMobile`. Dùng `$object-layout` để đọc và cấu hình đúng layout đích; khi dùng chung, đánh giá bố cục trên cả Web và Mobile.
+
 Ngoài bố cục kéo thả, layout có thể chứa JavaScript tại `pageSettings.script`. Dùng `$layout-scripting` để triển khai rule giao diện phức tạp như ẩn/hiện, bắt buộc, chỉ đọc, giới hạn options, tự động điền giá trị, truy vấn record hoặc xử lý related list. Khi thêm hoặc sửa script trên layout hiện có, bắt buộc dùng `$object-layout` lấy script hiện tại trước và patch đúng phạm vi để không làm mất logic cũ.
 
 ### 1. Giao diện Tạo bản ghi (Create Form)

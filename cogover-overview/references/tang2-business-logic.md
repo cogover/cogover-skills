@@ -112,6 +112,9 @@ Dùng `$user-permission` cho User, Personnel, Department, Position, Role, Object
 Thông báo thường phát sinh từ một sự kiện như record mới, đổi trạng thái, đến hạn hoặc kết quả phê duyệt. Thiết kế cần xác định rõ sự kiện, người nhận, nội dung, kênh và chống gửi lặp.
 
 - Nếu thông báo là một bước trong BPMN, dùng Send Notification/Send Email theo `$process-creator`.
+- Node **Send Notification** có thể gửi thông báo đến ứng dụng Cogover trên Android/iOS khi chọn **Loại thông báo** là **All** hoặc **In app**. `All` và `In app` là hai bản ghi của Object `notification_channel`; kênh nhận được quyết định bởi các trường tương ứng được tick trên bản ghi đó.
+- Khi trường **mobile push** được tick, người nhận nhận thêm thông báo đẩy trên thiết bị mobile, kể cả khi không mở ứng dụng. Phân biệt thông báo trong ứng dụng với push notification khi thiết kế và kiểm thử.
+- Trước khi cấu hình node, dùng `$object-info` đọc schema và `$object-record` đọc bản ghi `notification_channel` trên Workspace đích; resolve đúng bản ghi `All`/`In app` và kiểm tra các trường kênh được tick. Không hardcode ID hoặc đoán slug của các trường kênh từ tên hiển thị; dùng `$process-creator` cho payload node.
 - Project chưa có skill cho module cấu hình Notification độc lập; không suy đoán contract của module này.
 - Nếu nội dung phức tạp hoặc tái sử dụng, cân nhắc `$document-template` theo đúng phạm vi được skill hỗ trợ.
 

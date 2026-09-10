@@ -3,13 +3,13 @@ name: cogover-overview
 description: "Cung cấp kiến thức tổng quan về Cogover Platform, kiến trúc 3 tầng, danh mục tính năng chuẩn của Sales, Finance, Inventory, Manufacture và Omni Channel, khả năng mở rộng bằng Custom Frontend/Backend Module và bản đồ skill chuyên trách. Dùng khi người dùng hỏi Cogover/App chuẩn có thể làm gì, cần hiểu một capability hoặc chọn skill phù hợp. Chuyển yêu cầu tạo/sửa Custom Module sang $cogover-custom-module; dự án App end-to-end từ BRD/SRS, fit-gap, thiết kế dữ liệu đến triển khai thuộc $build-cogover-app."
 metadata:
   author: cogover
-  version: "1.1.1"
+  version: "1.1.2"
 ---
 
 # Tổng quan Cogover Platform
 
-- **Phiên bản:** `1.1.1`
-- **Ngày phát hành:** `2026-09-07`
+- **Phiên bản:** `1.1.2`
+- **Ngày phát hành:** `2026-09-11`
 
 ## Vai trò của skill
 
@@ -33,6 +33,20 @@ Xây dựng trên Tầng 1, cung cấp các khả năng xử lý nghiệp vụ: 
 
 **Tầng 3 — Application (Miền ứng dụng)**
 Các miền ứng dụng được lắp ghép từ hai tầng dưới và cấu hình theo workspace: Sales, Inventory, People, Process, Omni Channel, Finance, Service, Manufacture và Goal. Có thể bổ sung màn hình riêng bằng Custom Frontend Module, sử dụng API có sẵn hoặc kết hợp Custom Backend Module.
+
+## Ứng dụng mobile Android và iOS
+
+Cogover có ứng dụng mobile cho **Android và iOS**, cho phép người dùng theo quyền được cấp:
+
+- Tạo, sửa, xem và xoá bản ghi của Object.
+- Xem các App trong Workspace.
+- Xem, tạo và xoá lượt chạy Process.
+- Xem phòng ban, nhân sự và vị trí.
+- Nhận thông báo đẩy (push notification) từ hệ thống, kể cả khi không mở ứng dụng.
+
+Layout bản ghi có thể được thiết kế **riêng cho Web**, **riêng cho Mobile** hoặc **dùng chung cho cả hai**. Dùng `$object-layout` để cấu hình phạm vi nền tảng và bố cục phù hợp.
+
+Node **Send Notification** của Process có thể gửi thông báo đến ứng dụng mobile khi chọn **Loại thông báo** là **All** hoặc **In app**. Đây là hai bản ghi của Object `notification_channel`, với các trường kênh tương ứng được tick; khi **mobile push** được tick, người nhận nhận thêm push notification mà không cần mở ứng dụng. Đọc [Thông báo ở Tầng 2](references/tang2-business-logic.md#thông-báo) để resolve kênh trước khi cấu hình Process.
 
 ## Khi nào đọc file reference nào
 
@@ -92,7 +106,7 @@ Nếu câu hỏi liên quan đến nhiều tầng, đọc nhiều reference.
 
 3. **Quản lý vai trò & Phân quyền**: Tạo vai trò, gán quyền CRUD cho từng Object, gán quyền truy cập module cho từng vai trò.
 
-4. **Quản lý thông báo**: Cấu hình thông báo tự động gửi đến nhân sự khi có sự kiện xảy ra.
+4. **Quản lý thông báo**: Cấu hình thông báo tự động gửi đến nhân sự khi có sự kiện xảy ra; Send Notification hỗ trợ gửi đến ứng dụng mobile và push theo cấu hình `notification_channel`. Xem [Thông báo ở Tầng 2](references/tang2-business-logic.md#thông-báo).
 
 5. **Quản lý mẫu văn bản**: Tạo template văn bản có chèn biến động, dùng cho email, báo cáo, hợp đồng,...
 
@@ -119,7 +133,7 @@ Cung cấp các miền ứng dụng có thể được đóng gói và tùy ch�
 - **Manufacture**: Quản lý BOM nhiều cấp, lệnh và công đoạn sản xuất, cấp phát nguyên vật liệu, nhập thành phẩm, sửa chữa; đồng thời cung cấp các tiện ích đơn hàng, đối soát, thu tiền, bảng giá và nhập serial. Đọc [danh sách tính năng chuẩn của Manufacture](references/manufacture-app-features.md) để tra cứu tính năng và Object liên quan.
 - **Goal**: Thiết lập, theo dõi và đo lường mục tiêu theo thời gian thực với chỉ số minh bạch.
 
-Ngoài ra có thể mô hình hóa các miền mở rộng như Order Management, Warranty Management, Reseller Management, E-Commerce Management, Purchasing Management, Ticket Management và Task Management. Khả năng kết nối vận chuyển, mạng xã hội, thông báo, portal hoặc mobile app phải được xác minh theo contract của workspace và skill chuyên trách hiện có.
+Ngoài ra có thể mô hình hóa các miền mở rộng như Order Management, Warranty Management, Reseller Management, E-Commerce Management, Purchasing Management, Ticket Management và Task Management. Các kết nối vận chuyển, mạng xã hội, portal hoặc tích hợp mobile ngoài ứng dụng Cogover chuẩn phải được xác minh theo contract của workspace và skill chuyên trách hiện có.
 
 Mức độ có sẵn và khả năng tùy chỉnh cụ thể phải được xác minh trên workspace đích trước khi triển khai.
 

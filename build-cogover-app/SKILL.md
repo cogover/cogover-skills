@@ -3,13 +3,13 @@ name: build-cogover-app
 description: "Điều phối dự án triển khai Cogover end-to-end từ Workspace đích và yêu cầu khách hàng: bắt buộc xác thực API key đúng Workspace trước khảo sát, đọc App/Object hiện có, làm rõ nghiệp vụ, fit-gap với khả năng chuẩn, thiết kế Object/field/state machine, tạo workbook Object, lập kế hoạch có dependency và triển khai/kiểm thử sau các cổng duyệt. Chỉ dùng khi người dùng gọi cụ thể $build-cogover-app hoặc đã đồng ý rõ sau khi AI đề xuất sử dụng. Phù hợp khi cần xây App Cogover mới, tùy chỉnh nhiều thành phần của App hiện có, hoặc chuyển BRD/SRS thành solution blueprint có thể triển khai. Không dùng cho một thay đổi Cogover đơn lẻ đã rõ phạm vi hoặc câu hỏi tổng quan; dùng skill Cogover chuyên trách hoặc $cogover-overview tương ứng."
 metadata:
   author: cogover
-  version: "2.0.1"
+  version: "2.0.2"
 ---
 
 # Build Cogover App
 
-- **Phiên bản:** `2.0.1`
-- **Ngày phát hành:** `2026-09-07`
+- **Phiên bản:** `2.0.2`
+- **Ngày phát hành:** `2026-09-11`
 
 ## Vai trò và nguồn chuẩn
 
@@ -34,6 +34,14 @@ Luôn đọc:
 - [Orchestration and gates](references/orchestration-and-gates.md) trước khi giao sub-agent, mở cổng duyệt hoặc thay đổi Workspace.
 
 Dùng response mới nhất của Workspace và skill chuyên trách làm nguồn chuẩn cho trạng thái/capability cụ thể. Không coi một Object, menu hoặc tên App tồn tại là bằng chứng tính năng end-to-end đã hoạt động.
+
+### Khả năng chuẩn trên Mobile cần đưa vào giải pháp
+
+- Cogover có ứng dụng cho **Android và iOS**: tạo/sửa/xem/xoá bản ghi Object; xem App; xem/tạo/xoá lượt chạy Process; xem phòng ban/nhân sự/vị trí; nhận thông báo đẩy (push notification) từ hệ thống. Thiết kế phạm vi thao tác theo quyền của từng persona.
+- Layout bản ghi có thể thiết kế **riêng cho Web**, **riêng cho Mobile** hoặc **dùng chung**. Ghi lựa chọn này trong giải pháp và chuyển cấu hình `isWeb`/`isMobile` cùng bố cục cho `$object-layout`.
+- Node **Send Notification** trong Process có thể gửi đến ứng dụng mobile khi **Loại thông báo** là **All** hoặc **In app**. Đây là hai bản ghi của Object `notification_channel` với các trường kênh tương ứng được tick; khi **mobile push** được tick, người nhận nhận thêm push notification mà không cần mở ứng dụng. Dùng `$object-info` và `$object-record` đọc schema/bản ghi kênh thật, rồi `$process-creator` cấu hình node; không đoán ID hoặc slug trường kênh. Xem [Thông báo ở Tầng 2](../cogover-overview/references/tang2-business-logic.md#thông-báo).
+
+Khi yêu cầu nằm trong các khả năng trên, ưu tiên ứng dụng Cogover chuẩn trong fit-gap; xác minh cấu hình và quyền trên Workspace đích trước triển khai.
 
 ## Chế độ thực thi và nguyên tắc bất biến
 
@@ -135,6 +143,7 @@ Tạo `Q-001`, `Q-002`, ... và hỏi theo nhóm ưu tiên. Bắt buộc làm r�
 - Validation, duplicate, formula, audit/history và dữ liệu nhạy cảm.
 - Trigger, approval, process node, schedule, notification, idempotency và concurrency.
 - Create/view/edit layout, mobile/web, filter, button, bulk action và public form.
+- Nếu có phạm vi Mobile: persona dùng Android/iOS nào, thao tác cần hỗ trợ, layout riêng hay dùng chung; với Send Notification, làm rõ người nhận, kênh `All`/`In app` và nhu cầu nhận thêm mobile push khi không mở ứng dụng.
 - Report population, metric, dimension, aggregate, drill-down và quyền xem.
 - Với `NEW_APP`: KPI nào xuất hiện trên `Home → Overview`, nguồn report/filter của từng KPI, persona được xem và hành vi drill-down. Không hỏi/tái cấu trúc `CUSTOMIZE_EXISTING_APP` chỉ để áp mẫu Home/Overview nếu yêu cầu không đụng information architecture.
 - Integration, credential owner, error handling, NFR và tiêu chí test.
@@ -236,6 +245,7 @@ Mỗi `W-ID` phải có `REQ-ID`, current→target delta, skill, dependency `W-I
 - Object/field/option/relation và base fields luôn ở wave đầu; lookup target trước lookup phụ thuộc.
 - Formula sau base field và runtime validation; status/options trước transition/path/process condition.
 - Filter/layout/button/report/process chỉ chạy sau schema mà chúng tham chiếu.
+- Với phạm vi Mobile, work item layout phải ghi rõ Web/Mobile/dùng chung; work item Send Notification phải resolve bản ghi `notification_channel` và các trường kênh trước khi cấu hình node. Bổ sung test theo persona trên Android/iOS trong phạm vi, gồm nhận thông báo trong ứng dụng và nhận thêm push khi không mở ứng dụng nếu có yêu cầu mobile push.
 - Saved report phải preview đúng trước dashboard; App/menu sau khi action target tồn tại.
 - Với `NEW_APP`, thêm chuỗi phụ thuộc `KPI/report source → preview/reconciliation PASS → Overview Dashboard → Home/Overview menu wiring`. `Home` là menu cấp 1 dạng nhóm; `Overview` là menu cấp 2 và là default target. Nếu Dashboard `NOT_SUPPORTED`, thay đúng target Overview bằng report/page fallback đã chứng minh, giữ traceability và limitation. Không áp chuỗi tái cấu trúc này cho `CUSTOMIZE_EXISTING_APP` nếu người dùng không yêu cầu.
 - Với App có Menu Item cấp 1, thêm work item icon riêng trước work item tạo/cập nhật menu: `library discovery → reuse exact asset hoặc generate SVG App Menu → technical validation → upload library → resolve returned library URL/ID → set menu icon → read-back`. Root menu parent/icon phải hoàn tất trước các menu con phụ thuộc khi API/menu builder yêu cầu.
@@ -261,6 +271,7 @@ Chỉ chạy `APPLY_APPROVED_PLAN` sau khi Gate Data Model đã qua trước, r�
    - Với icon menu, read-back phải chứng minh từng Menu Item cấp 1 có đúng icon URL/ID từ thư viện; không dùng `file_id`, URL upload tạm hoặc asset không resolve được. Regression check giữ nguyên action, parent, order, default, ACL, platform và status ngoài field `icon`.
 5. Không auto-delete để rollback. Khi partial failure, giữ ID/state, chặn downstream, containment và xin approval nếu recovery có tính destructive.
 6. Chạy test theo persona và acceptance, regression các cấu hình bị ảnh hưởng, cleanup đúng fixture do lần chạy tạo và giữ evidence đã redacted.
+   - Với phạm vi Mobile, ghi riêng kết quả thao tác và bố cục trên Android/iOS được yêu cầu. Với Send Notification, đối chiếu bản ghi kênh và các trường được tick, kiểm tra nhận trong ứng dụng và mobile push khi không mở ứng dụng; không coi node chạy thành công là bằng chứng đã nhận push. Nếu chưa có thiết bị hoặc evidence, ghi rõ chưa kiểm thử phần đó.
 7. Tạo `test-handover-vN.md` map `REQ → W → T`, ghi actual resource IDs, PASS/FAIL, deviation, limitation, residual risk và UAT/handoff.
 
 Không tuyên bố hoàn tất nếu chưa có read-back và test evidence tương ứng.

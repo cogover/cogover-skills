@@ -152,7 +152,7 @@ Cogover có thể được mô hình hóa cho các miền như Order Management,
 | Ticket | Tiếp nhận, phân loại, phân bổ, SLA, escalation và đóng phiếu |
 | Task | Công việc, người thực hiện, deadline, trạng thái và tiến độ |
 
-Các kết nối vận chuyển, mạng xã hội, email/SMS, portal hoặc mobile app cần được xác minh riêng. Không khẳng định connector có sẵn nếu project chưa có skill hoặc contract tương ứng.
+Các kết nối vận chuyển, mạng xã hội, email/SMS, portal hoặc tích hợp mobile ngoài ứng dụng Cogover chuẩn cần được xác minh riêng. Không khẳng định connector có sẵn nếu project chưa có skill hoặc contract tương ứng. Ứng dụng Cogover chuẩn trên Android/iOS hỗ trợ thao tác bản ghi, xem App, thao tác lượt chạy Process, xem cơ cấu tổ chức và nhận push notification; xem [Ứng dụng mobile Android và iOS](../SKILL.md#ứng-dụng-mobile-android-và-ios).
 
 ## Custom Frontend Module
 
