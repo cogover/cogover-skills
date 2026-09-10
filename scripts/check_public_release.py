@@ -32,6 +32,7 @@ UUID = re.compile(r'\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b', re.I)
 EMAIL = re.compile(r'\b[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b')
 TENANT = re.compile(r'https?://([a-z0-9-]+)\.cogover\.(?:net|com)\b', re.I)
 SECRET_KEY = re.compile(r'^(?:secret(?:AllVersions|Key|Token)?|api[_-]?key|access[_-]?token|refresh[_-]?token|password|basicPassword|authorization|cookie)$', re.I)
+RELEASE_TIMEZONE = dt.timezone(dt.timedelta(hours=7), name='ICT')
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -136,9 +137,14 @@ def release_version(text: str) -> str:
     return match.group(1)
 
 
+def release_today() -> dt.date:
+    """Release dates use Vietnam time (UTC+07:00), independent of runner TZ."""
+    return dt.datetime.now(RELEASE_TIMEZONE).date()
+
+
 def check_versions(root: Path, skills: list[Path]) -> list[str]:
     issues = []
-    today = dt.date.today()
+    today = release_today()
     for skill in skills:
         label = skill.name + '/SKILL.md'
         try:

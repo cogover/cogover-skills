@@ -6,6 +6,8 @@ import tempfile
 import unittest
 import zipfile
 import io
+import datetime as dt
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('release', Path(__file__).resolve().parents[1] / 'scripts/check_public_release.py')
 release = importlib.util.module_from_spec(spec)
@@ -13,6 +15,41 @@ spec.loader.exec_module(release)
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_release_day_uses_vietnam_midnight(self):
+        cases = [
+            ('2026-09-10T16:59:59+00:00', '2026-09-10'),
+            ('2026-09-10T17:00:00+00:00', '2026-09-11'),
+            ('2026-09-11T00:00:00+00:00', '2026-09-11'),
+        ]
+        for timestamp, expected in cases:
+            instant = dt.datetime.fromisoformat(timestamp)
+            with self.subTest(timestamp=timestamp), patch.object(release.dt, 'datetime') as clock:
+                clock.now.side_effect = lambda tz: instant.astimezone(tz)
+                self.assertEqual(release.release_today().isoformat(), expected)
+
+    def test_release_dates_accept_today_but_reject_future_and_invalid_dates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skill = root / 'example-skill'
+            skill.mkdir()
+            for date, valid in [('2026-09-11', True), ('2026-09-12', False), ('2026-02-30', False)]:
+                with self.subTest(date=date):
+                    (skill / 'SKILL.md').write_text(
+                        '---\nname: example-skill\ndescription: Example\nmetadata:\n'
+                        '  author: example\n  version: "1.0.0"\n---\n\n# Example\n\n'
+                        '- **Phiên bản:** `1.0.0`\n'
+                        f'- **Ngày phát hành:** `{date}`\n'
+                    )
+                    (root / 'VERSION.md').write_text(f'- Version: `1.0.0`\n- Release date: `{date}`\n')
+                    with patch.object(release, 'release_today', return_value=dt.date(2026, 9, 11)):
+                        issues = release.check_versions(root, [skill])
+                    if valid:
+                        self.assertEqual(issues, [])
+                    else:
+                        self.assertEqual(len(issues), 2)
+                        self.assertIn('VERSION.md: INVALID_RELEASE_METADATA', issues)
+                        self.assertTrue(any('METADATA_ERROR' in issue for issue in issues))
+
     def test_public_paths_exclude_ignored_local_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

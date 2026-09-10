@@ -28,6 +28,8 @@ Keep instructions focused on the skill's scope, and link to supporting reference
 
 Each `SKILL.md` declares `metadata.author` and `metadata.version` in its frontmatter. The visible `Phiên bản` value below the heading must match that version, and `Ngày phát hành` uses `YYYY-MM-DD`.
 
+Release dates follow Vietnam time (UTC+07:00). The validator uses this timezone on both local machines and CI, so a release made after midnight in Vietnam is not rejected while the UTC date is still the previous day. Dates after the current day in Vietnam remain invalid.
+
 When changing a skill or any resource within its directory:
 
 - Increase that skill's version and set its release date to the date of the change.
