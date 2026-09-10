@@ -3,12 +3,12 @@ name: build-cogover-app
 description: "Điều phối dự án triển khai Cogover end-to-end từ Workspace đích và yêu cầu khách hàng: bắt buộc xác thực API key đúng Workspace trước khảo sát, đọc App/Object hiện có, làm rõ nghiệp vụ, fit-gap với khả năng chuẩn, thiết kế Object/field/state machine, tạo workbook Object, lập kế hoạch có dependency và triển khai/kiểm thử sau các cổng duyệt. Chỉ dùng khi người dùng gọi cụ thể $build-cogover-app hoặc đã đồng ý rõ sau khi AI đề xuất sử dụng. Phù hợp khi cần xây App Cogover mới, tùy chỉnh nhiều thành phần của App hiện có, hoặc chuyển BRD/SRS thành solution blueprint có thể triển khai. Không dùng cho một thay đổi Cogover đơn lẻ đã rõ phạm vi hoặc câu hỏi tổng quan; dùng skill Cogover chuyên trách hoặc $cogover-overview tương ứng."
 metadata:
   author: cogover
-  version: "2.0.2"
+  version: "2.0.3"
 ---
 
 # Build Cogover App
 
-- **Phiên bản:** `2.0.2`
+- **Phiên bản:** `2.0.3`
 - **Ngày phát hành:** `2026-09-11`
 
 ## Vai trò và nguồn chuẩn
@@ -180,6 +180,16 @@ Khi giải pháp cần Object/field/relation:
 2. Với pattern doanh nghiệp liên quan, nghiên cứu tài liệu chính thức của SAP, Odoo, Salesforce và Zoho trước thiết kế cuối. Chỉ dùng mô tả nghiệp vụ đã ẩn danh; ghi pattern áp dụng, điểm sửa đổi và `N/A` có lý do nếu hệ thống không có pattern tương ứng.
 3. Với Object có lifecycle/status, định nghĩa initial/terminal state, mọi transition hợp lệ, actor, precondition, cancel/reject/reopen/undo, failure/retry và audit. Không chỉ liệt kê option.
 4. Ưu tiên tái sử dụng Object chuẩn khi semantics, ownership và lifecycle thực sự tương thích; không ép tái sử dụng gây sai mô hình.
+
+### 2.3.1 Quản lý sản phẩm theo số serial hoặc số lô khi chưa cài Inventory
+
+Nếu yêu cầu có quản lý sản phẩm theo **số serial**, **số lô** hoặc **cả hai**, và Workspace đích **chưa cài App Inventory**, thiết kế Object lưu thông tin serial/lô với slug chính xác **`product_batch`**. Đọc bắt buộc [Schema tối thiểu Product batch cho serial và lô](references/product-batch-serial.md) để đưa danh sách trường, kiểu dữ liệu, options và quan hệ vào giải pháp, data design và workbook Object.
+
+- Dùng `$app-menu-manager` xác minh App Inventory đã cài hay chưa; không suy ra chưa cài chỉ vì tài khoản không nhìn thấy menu. Dùng `$object-info` kiểm tra `product_batch` và `product` hiện có, kể cả khi Inventory chưa được cài.
+- Nếu `product_batch` đã tồn tại và tương thích, tái sử dụng/bổ sung phần thiếu; không tạo Object lưu serial/lô trùng chức năng. Nếu cùng slug nhưng khác semantics/schema, nêu xung đột để chốt giải pháp, không tự thay thế hoặc đổi slug.
+- Với thiết kế mới, dùng đủ 10 trường nghiệp vụ trong reference; giữ `name` là record-name kiểu `short_text`, `product` là `reference` bắt buộc tới `product`, còn `serial_number` và `batch_number` là hai trường riêng. Resolve hoặc thiết kế `product` trước `product_batch`.
+- Chốt mỗi bản ghi đại diện cho một đơn vị sản phẩm có serial hay một lô sản phẩm; nếu quản lý cả hai, chốt cách gắn serial với lô. Quy tắc bắt buộc và phạm vi duy nhất phải theo chế độ quản lý; không bắt buộc serial cho sản phẩm chỉ quản lý theo lô, không cấm nhiều serial cùng số lô. Không coi schema này là đã triển khai tồn kho, nhập/xuất hoặc định giá Inventory.
+- Đây là quy tắc thiết kế; chỉ tạo/bổ sung schema sau Gate Data Model và Gate Plan, bằng skill chuyên trách. Khi Inventory đã cài, khảo sát và tái sử dụng cấu hình Inventory hiện có thay vì áp fallback này.
 
 ### 2.4 Kiểm tra giải pháp và reviewer tùy chọn
 
