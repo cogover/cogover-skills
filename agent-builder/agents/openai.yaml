@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Builder"
+  short_description: "Xây và kiểm thử Cogover AI Agent bằng API/WebSocket"
+  default_prompt: "Dùng $agent-builder để tạo và kiểm thử một Cogover AI Agent bằng API/WebSocket; nếu thiếu API hoặc schema, báo tôi cung cấp thêm."

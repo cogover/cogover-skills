@@ -2,7 +2,7 @@
 
 [English](README.md) | **Tiếng Việt**
 
-Bộ 22 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
+Bộ 23 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình, AI Agent và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
 
 Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.md). Mỗi skill có version riêng trong frontmatter và dưới tiêu đề.
 
@@ -13,6 +13,7 @@ Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.
 | Hiểu nền tảng và chọn khả năng phù hợp | [cogover-overview](cogover-overview/SKILL.md) |
 | Điều phối dự án App từ yêu cầu đến triển khai | [build-cogover-app](build-cogover-app/SKILL.md) |
 | Xác thực API và quản lý credential | [cogover-api-auth](cogover-api-auth/SKILL.md) |
+| Xây AI Agent, Skill, Tool, tra cứu kiến thức và kiểm thử hội thoại | [agent-builder](agent-builder/SKILL.md) |
 | Xây frontend/backend tùy chỉnh | [cogover-custom-module](cogover-custom-module/SKILL.md) |
 | Thiết kế schema bằng Excel | [create-cogover-objects](create-cogover-objects/SKILL.md) |
 | Tra cứu và quản lý Object/field/formula | [object-info](object-info/SKILL.md) |

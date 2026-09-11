@@ -2,7 +2,7 @@
 
 **English** | [Tiếng Việt](README.vi.md)
 
-A collection of 22 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
+A collection of 23 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows and AI Agents, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
 
 For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGELOG.md). Each skill has its own version in its frontmatter and below its heading.
 
@@ -13,6 +13,7 @@ For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGEL
 | Understand the platform and choose the right capabilities | [cogover-overview](cogover-overview/SKILL.md) |
 | Coordinate an App project from requirements to deployment | [build-cogover-app](build-cogover-app/SKILL.md) |
 | Authenticate API requests and manage credentials | [cogover-api-auth](cogover-api-auth/SKILL.md) |
+| Build AI Agents, Skills, Tools, and knowledge retrieval; test conversations | [agent-builder](agent-builder/SKILL.md) |
 | Build custom frontends and backends | [cogover-custom-module](cogover-custom-module/SKILL.md) |
 | Design schemas in Excel | [create-cogover-objects](create-cogover-objects/SKILL.md) |
 | Look up and manage Objects, fields, and formulas | [object-info](object-info/SKILL.md) |

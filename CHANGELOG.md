@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.3.0 - 2026-09-11
+
+- Cập nhật `agent-builder` 1.1.0: thực hiện workflow qua API/HTTP/WebSocket; bỏ các nhánh tự chuyển sang trình duyệt.
+- Hướng dẫn test nghiệp vụ và duyệt Tool qua API, ghi rõ các contract còn thiếu để người dùng bổ sung; phân biệt giới hạn probe với thiếu API.
+- Probe báo thiếu contract tương quan lượt hoặc cần quyết định duyệt, không còn hướng dẫn dùng Chrome.
+
+## 4.2.0 - 2026-09-11
+
+- Thêm `agent-builder` 1.0.0: hướng dẫn cấu hình Agent, model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool, phân quyền và Data/RAG.
+- Bổ sung contract Web App API, workflow chuyển đổi/duyệt/index tài liệu và kiểm thử chat qua Chrome/WebSocket. Có probe kết nối với self-test offline; phân biệt kiểm tra cấu hình, transport và nghiệp vụ.
+- Cập nhật danh mục song ngữ thành 23 skill.
+
 ## 4.1.0 - 2026-09-11
 
 Đợt rà soát toàn bộ 22 skill để gọn hơn, ít token hơn và không trùng lặp; mọi hướng dẫn đặc thù Cogover được giữ nguyên ý.
