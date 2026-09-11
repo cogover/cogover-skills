@@ -1,130 +1,89 @@
 ---
 name: dashboard-builder
-description: Tạo, đọc, cấu hình, cập nhật, nhân bản và xoá dashboard Cogover qua Web App API `/api/v{N}/dashboard-server`, gồm metadata, bố cục, component/biểu đồ và dashboard filter. Sử dụng khi người dùng yêu cầu quản lý dashboard Cogover bằng API, chuyển một saved report thành biểu đồ dashboard, sửa chart/layout/filter hiện có, hoặc chẩn đoán dashboard không hiển thị đúng; bắt buộc phối hợp với `$cogover-api-auth` vì API `/api/v{N}` không nhận API Key trực tiếp.
+description: "Quản lý dashboard Cogover qua Web App API `/api/v{N}/dashboard-server` (phiên Web App từ $cogover-api-auth, không nhận API Key trực tiếp): tạo, đọc, cập nhật, nhân bản, xoá; component/biểu đồ từ saved report của $report-builder, layout, dashboard filter; chẩn đoán dashboard không hiển thị đúng. Dùng khi cấu hình dashboard bằng API."
 metadata:
   author: cogover
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # Dashboard Builder
 
-- **Phiên bản:** `1.0.0`
-- **Ngày phát hành:** `2026-08-23`
+- **Phiên bản:** `1.0.1`
+- **Ngày phát hành:** `2026-09-11`
 
-Quản lý dashboard bằng API, không thao tác UI. Xử lý theo chuỗi: xác nhận workspace → tạo phiên Web App → đọc state → lập payload đầy đủ → mutation → đọc lại và kiểm chứng.
+Quản lý dashboard bằng API, không thao tác UI, theo chuỗi: xác nhận workspace → tạo phiên Web App → đọc state → lập payload đầy đủ → mutation → đọc lại và kiểm chứng. Saved report và report field cho chart do `$report-builder` tạo và preview trước; skill này không tạo report.
 
-## Đọc tài liệu theo tác vụ
+## Chuẩn bị
 
-- Luôn đọc [references/api-contract.md](references/api-contract.md) trước khi gọi API.
-- Đọc [references/dashboard-model.md](references/dashboard-model.md) trước khi thêm/sửa component, chart, layout hoặc dashboard filter.
-- Dùng `$report-builder` trước khi dashboard cần saved report hoặc report field chưa tồn tại.
+- Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Mọi thao tác gọi `POST /api/v1/dashboard-server` bằng phiên Web App đổi từ API Key; không gửi API Key trực tiếp tới endpoint này. Ngoại lệ riêng: kiểm tra mã nghiệp vụ ở cả `r` top-level và `body.r` ([Response và kiểm chứng](references/api-contract.md#response-và-kiểm-chứng)); lỗi đặc thù ở [Xử lý lỗi](#xử-lý-lỗi).
+- Đọc [references/api-contract.md](references/api-contract.md) (service, payload, ràng buộc field) trước khi gọi API; đọc [references/dashboard-model.md](references/dashboard-model.md) trước khi thêm hoặc sửa component, chart, layout, dashboard filter.
+- Contract chỉ lấy từ tài liệu trong skill, tài liệu API chính thức do người dùng cung cấp và response API thực tế; không đọc source code, repository, bundle JavaScript hay source map; không dùng browser/UI để suy ra request (`/settings/dashboards` chỉ là deep-link trả cho người dùng).
+- Sau khi tạo phiên, probe chỉ đọc bằng service `6`; dừng khi `401/403`, `r != 0`, workspace lệch hoặc response khác contract.
+- Helper script [scripts/dashboard_api.py](scripts/dashboard_api.py): base URL và API Key qua biến môi trường hoặc secret manager; mặc định dry-run, thêm `--execute` để gửi, mutation (service `3`, `4`, `5`, `20`) thêm `--apply`.
 
-## Quy tắc bắt buộc
-
-1. Gọi và tuân thủ `$cogover-api-auth` trước mọi request. Endpoint dashboard là `/api/v1/...`; không gửi API Key trực tiếp đến endpoint này.
-2. Dùng API Key chỉ cho `POST /bapi/v1/auth-token`, sau đó gửi đủ cookie `HttpSessionId`, `XSRF-TOKEN`, `AuthToken` và hai header `x-csrf-token`, `x-xsrf-token` cho `/api/v1/dashboard-server`.
-3. Chỉ dùng contract đóng gói trong skill, tài liệu API chính thức do người dùng cung cấp và response API thực tế. Không đọc hoặc tìm kiếm source code, repository, bundle JavaScript, source map hay mã ứng dụng để khám phá contract.
-4. Không dùng browser hoặc UI để suy ra request. URL `/settings/dashboards` chỉ là deep-link trả cho người dùng.
-5. Không ghi, echo hoặc commit API key, cookie hay token. Nhận bí mật qua biến môi trường hoặc secret manager.
-6. Kiểm tra trùng `slug` và `name` trước create. Sau timeout của mutation, list lại theo `slug`/`id` trước khi retry.
-7. Update là thay thế cấu hình dashboard ở mức payload. Luôn đọc detail mới nhất, sửa trên bản sao đầy đủ và giữ nguyên component/filter/key chưa định thay đổi.
-8. Không tự dựng config chart phức tạp từ phỏng đoán. Dùng contract trong reference, saved report thực tế và ưu tiên clone config cùng loại đã chạy đúng từ API response.
-9. Không coi HTTP 200 là thành công. Kiểm tra `r`/`msg` ở cả top-level và `body`, rồi xác minh postcondition bằng service list/detail.
-10. Delete chỉ khi người dùng yêu cầu rõ dashboard đích. Resolve ID từ slug/name, trình bày đúng danh sách ID sẽ xoá, rồi mới gọi service `5`.
-11. Không tự rollback bằng delete. Nếu workflow dừng giữa chừng, giữ resource và báo ID/slug/trạng thái.
+  ```bash
+  python3 scripts/dashboard_api.py --service 6 --payload '{"size":20,"page":1,"filters":[]}' --execute
+  ```
 
 ## Quy trình
 
 ### 1. Chuẩn hoá yêu cầu
 
-Xác định:
+Xác định workspace; thao tác (tạo, sửa, nhân bản, xoá); `name`, `slug`, `description`, `layoutSize` (`9` hoặc `12`), `colorPalette`; component cần có, saved report nguồn và field dùng cho group/measure/filter; bố cục và tiêu chí nghiệm thu. Dashboard đích, report nguồn, metric, filter hoặc phạm vi xoá còn mơ hồ: hỏi trước mutation.
 
-- Workspace base URL/domain.
-- Tạo mới, sửa, nhân bản hay xoá.
-- Tên, slug, mô tả, số cột (`9` hoặc `12`) và color palette.
-- Component cần có, saved report nguồn, field dùng cho group/measure/filter.
-- Bố cục mong muốn và tiêu chí nghiệm thu.
+### 2. Đọc state và resolve ID
 
-Hỏi lại trước mutation nếu dashboard đích, report nguồn, metric, filter hoặc phạm vi xoá còn mơ hồ.
+Service `6`: list với pagination, sort, filters; detail với `getDetail: true` và filter `slug = ...` hoặc `id = ...` ([List và detail](references/api-contract.md#list-và-detail)). Chỉ thao tác khi resolve đúng một dashboard; tên khớp nhiều resource thì dừng và yêu cầu chọn bằng ID/slug.
 
-### 2. Tạo và kiểm tra phiên
-
-1. Dùng `$cogover-api-auth` để đổi API Key thành phiên Web App.
-2. Đối chiếu `workspaceDomain`/`workspaceId` trong response auth với workspace đích.
-3. Gọi service `6` như probe chỉ đọc. Dừng khi `401/403`, `r != 0`, workspace lệch hoặc response không có contract mong đợi.
-
-Nếu dùng helper script, thiết lập base URL và API Key bằng biến môi trường hoặc secret manager rồi chạy script đi kèm:
-
-```bash
-python3 scripts/dashboard_api.py \
-  --service 6 --payload '{"size":20,"page":1,"filters":[]}' --execute
-```
-
-### 3. Đọc state và resolve ID
-
-- List: service `6` với pagination, sort và filters.
-- Detail theo slug: service `6` với `getDetail: true` và filter `slug = ...`.
-- Detail theo ID: service `6` với `getDetail: true` và filter `id = ...`.
-
-Resolve đúng một dashboard. Nếu tên khớp nhiều resource, dừng và yêu cầu chọn bằng ID/slug.
-
-### 4. Chuẩn bị saved report và chart
+### 3. Chuẩn bị saved report và chart
 
 Với chart dựa trên báo cáo:
 
-1. Dùng `$report-builder` để tìm/tạo saved report đã preview đúng.
-2. Đọc saved report detail và lấy ID/slug cùng report field ID thật.
-3. Chọn `TypeChart` và lập config theo [references/dashboard-model.md](references/dashboard-model.md).
-4. Với config phức tạp, lấy một component cùng loại đã chạy đúng từ API response làm base, rồi thay tối thiểu `reportId`, field IDs, tiêu đề, filter và palette.
-5. Tạo UUID riêng cho `chartId`; đặt `location.i` đúng bằng `chartId`.
+1. Dùng `$report-builder` tìm hoặc tạo saved report và preview đúng trước khi tạo chart; đọc saved report detail lấy ID/slug và report field ID thật. Không gán object field ID vào nơi yêu cầu report field ID.
+2. Chọn `type` và lập `config` theo [references/dashboard-model.md](references/dashboard-model.md). Không tự dựng config phức tạp từ phỏng đoán: deep-copy một component cùng `type` đang chạy đúng từ API response làm base, chỉ thay `reportId`, field ID, tiêu đề, filter, palette; giữ key chưa biết.
+3. Tạo UUID mới cho `chartId`; `location.i` và `config.chartId` bằng đúng `chartId`.
 
-Không gán object field ID vào nơi yêu cầu report field ID.
+### 4. Tạo dashboard
 
-### 5. Tạo dashboard
+1. Kiểm tra trùng `slug`/`name` bằng service `6`; lập payload theo [Create và update](references/api-contract.md#create-và-update).
+2. Dashboard có chart: validate trước khi gửi — không trùng `chartId`; mỗi component đủ `type`, `location`, `config`; layout không vượt grid; saved report tham chiếu tồn tại.
+3. Gọi service `3`, rồi đọc detail theo slug và đối chiếu toàn bộ metadata/component.
 
-1. Kiểm tra trùng slug/name bằng service `6`.
-2. Chuẩn hoá slug chữ thường; dùng `layoutSize` là số nguyên `9` hoặc `12`.
-3. Với dashboard trống, gửi `components: []`, `filterData: null`.
-4. Với dashboard có chart, kiểm tra mọi `chartId`, `type`, `location`, `config` và tham chiếu saved report.
-5. Gọi service `3`; sau đó list detail theo slug và đối chiếu toàn bộ metadata/component.
+### 5. Sửa dashboard
 
-### 6. Sửa dashboard
+Service `4` thay thế toàn bộ cấu hình theo payload, không partial:
 
-1. Đọc detail mới nhất bằng service `6`.
-2. Deep-copy response và loại field server-managed như `created`, `updated`, `createdBy`, `updatedBy` khỏi write payload.
-3. Chỉ sửa phần người dùng yêu cầu; giữ component/filter/config/key chưa biết.
-4. Đảm bảo payload có `id` và toàn bộ các field create bắt buộc.
-5. Gọi service `4`, đọc lại detail và so sánh postcondition.
+1. Đọc detail mới nhất (service `6`, `getDetail: true`); deep-parse chuỗi JSON nếu gateway trả serialized JSON.
+2. Deep-copy response, loại field server-managed ở root (`created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`); payload gửi đủ `id` và mọi field create bắt buộc.
+3. Chỉ đổi phần người dùng yêu cầu, áp lên đúng component theo `chartId` (không theo array index); giữ nguyên `components[].id`, `slug`, config, filter và layout key chưa sửa.
+4. Validate như bước 4.2, gọi service `4`, đọc lại detail và so sánh postcondition.
 
-Khi xoá một chart khỏi dashboard, chỉ bỏ component tương ứng khỏi `components`; không xoá saved report nguồn trừ khi người dùng yêu cầu riêng.
+Xoá một chart: chỉ bỏ component tương ứng khỏi `components`; không xoá saved report nguồn trừ khi người dùng yêu cầu riêng.
+
+### 6. Nhân bản dashboard
+
+Service `20` với `id` nguồn cùng `name`/`slug` mới đã kiểm tra trùng ([Delete và duplicate](references/api-contract.md#delete-và-duplicate)); backend sao chép component/filter, không nhân bản bằng update. Đọc detail theo slug mới để xác minh.
 
 ### 7. Xoá dashboard
 
-1. Resolve ID và đọc detail cuối cùng.
-2. Xác nhận đúng phạm vi, đặc biệt khi có nhiều ID.
-3. Gọi service `5` với `{ "ids": ["..."] }`.
-4. Gọi service `6` theo từng ID/slug để xác minh không còn resource.
+1. Resolve ID, đọc detail cuối cùng và trình bày đúng danh sách ID sẽ xoá; chỉ tiếp tục khi người dùng yêu cầu rõ dashboard đích và xác nhận phạm vi, nhất là khi có nhiều ID.
+2. Gọi service `5` với `{ "ids": [...] }`, rồi service `6` theo từng ID/slug để xác minh không còn resource.
+3. Không dùng delete để rollback thao tác dở dang: giữ resource và báo ID/slug/trạng thái.
 
-### 8. Trả kết quả
+### 8. Chẩn đoán dashboard không hiển thị đúng
 
-Trả ngắn gọn nhưng đủ audit:
+Đọc detail và đối chiếu từng component với [references/dashboard-model.md](references/dashboard-model.md) (định danh `chartId`/`location.i`/`config.chartId`; layout trong grid và kích thước tối thiểu; `reportId` và report field ID thật; filter `isDynamic`, `params`, `fieldId`/`filtersReplace`), preview lại saved report nguồn bằng `$report-builder`, rồi sửa theo bước 5.
 
-- Workspace domain, không kèm token.
-- Operation, dashboard ID, name, slug.
-- Layout, palette, số component và mapping chart → saved report.
-- Filter/config chính đã thay đổi.
-- Kết quả postcondition và warning còn lại.
-- Deep-link: `https://{WORKSPACE_DOMAIN}/settings/dashboards/{DASHBOARD_SLUG}`.
+### 9. Trả kết quả
+
+- Workspace domain; operation; dashboard ID, name, slug; layout, palette, số component và mapping chart → saved report; filter/config chính đã thay đổi; kết quả postcondition và warning còn lại.
+- Deep-link `https://{WORKSPACE_DOMAIN}/settings/dashboards/{DASHBOARD_SLUG}`; chỉ mở deep-link để kiểm chứng UI khi người dùng yêu cầu.
 
 ## Xử lý lỗi
 
-| Lỗi thường gặp | Hướng xử lý ngắn |
+| Lỗi | Cách xử lý |
 |---|---|
-| `Can not found processor for request: service=...` | Thử lại đúng request bằng literal `curl` thay cho `urllib`. Nếu `curl` PASS, phân loại lỗi client transport và tiếp tục bằng `curl`; chỉ kết luận processor không khả dụng khi `curl` cũng lỗi. Không đổi service number bằng thử ngẫu nhiên. |
-
-- `401/403`: tạo lại phiên hoặc kiểm tra quyền; không retry mutation.
-- HTTP 200 nhưng `r != 0`: coi là lỗi nghiệp vụ; đọc `msg`, không tiếp tục.
-- `r = 5001` hoặc “Can not found processor”: áp dụng bảng trên trước; không đổi service number bằng thử ngẫu nhiên. Nếu literal `curl` vẫn lỗi, dừng và báo endpoint, service/type cùng workspace.
-- `Slug already exists`/`Name already exists`: đọc resource trùng trước khi đề xuất slug/name mới.
-- Timeout ở read: retry tối đa một lần. Timeout ở mutation: đọc lại theo slug/ID trước mọi retry.
-- Response shape lạ: lưu bản redacted, dừng mutation và không đoán ID.
+| `r = 5001` / `Can not found processor for request: service=...` | Thử lại đúng request bằng literal `curl` thay cho `urllib`. `curl` PASS: lỗi client transport, tiếp tục bằng `curl`. `curl` cũng lỗi: dừng, báo endpoint, service/type và workspace. Không đổi service number bằng thử ngẫu nhiên. |
+| `Slug already exists` / `Name already exists` | Đọc resource trùng trước khi đề xuất slug/name mới. |
+| Timeout | Read: retry tối đa một lần. Mutation: list lại theo slug/ID trước mọi retry. |
+| Response khác contract | Dừng mutation, lưu bản đã lọc secret; không đoán ID. |

@@ -40,7 +40,7 @@ TABLE_COLUMNS = {
     "object-catalog": 11,
     "relationships": 9,
     "fields": 13,
-    "state-transitions": 12,
+    "state-transitions": 11,
     "requirement-traceability": 7,
     "work-breakdown": 14,
     "lock-register": 5,
@@ -237,7 +237,7 @@ class Validator:
 
         for table in all_tables(tables, "state-transitions"):
             for number, row in enumerate(table.rows, table.line + 2):
-                self._validate_requirement_refs(ids_of_type(cell(row, 11), "REQ"), artifact, f"Transition line {number}")
+                self._validate_requirement_refs(ids_of_type(cell(row, 10), "REQ"), artifact, f"Transition line {number}")
 
     def validate_workbook(self, path: Path, data_design_path: Path | None) -> None:
         artifact = str(path)

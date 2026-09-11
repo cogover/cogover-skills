@@ -2,7 +2,7 @@
 
 Đọc file này khi cần parse một chuỗi JSON thành RECORD resources cho các node sau.
 
-> **Runtime compatibility:** Backend `run-workflow-server` hiện có parser/model cho schema này nhưng chưa đăng ký action `PARSE_TO_OBJECT` trong runtime factory. Process có thể create/validate nhưng khi chạy sẽ lỗi `ERROR_SEND_TASK_NOT_SET_TYPE` (thường được API bọc thành code 213). Không tạo node này cho process executable và không retry bằng biến thể payload. Chỉ dùng phần dưới để nhận diện, đọc hoặc migrate payload cũ; test lại registration trước khi đổi trạng thái hỗ trợ.
+> **Runtime compatibility:** Runtime Process hiện có parser/model cho schema này nhưng chưa đăng ký action `PARSE_TO_OBJECT` trong runtime factory. Process có thể create/validate nhưng khi chạy sẽ lỗi `ERROR_SEND_TASK_NOT_SET_TYPE` (thường được API bọc thành code 213). Không tạo node này cho process executable và không retry bằng biến thể payload. Chỉ dùng phần dưới để nhận diện, đọc hoặc migrate payload cũ; test lại registration trước khi đổi trạng thái hỗ trợ.
 
 ## Nhận diện
 

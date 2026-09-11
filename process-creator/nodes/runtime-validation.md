@@ -1,22 +1,6 @@
 # Runtime Validation
 
-Đọc file này sau mọi lần tạo process và khi người dùng yêu cầu test chức năng node. Mục tiêu là kiểm thử black-box trên workspace, không chỉ kiểm tra payload create.
-
-## Deploy và tạo lượt chạy
-
-1. POST process mới và GET-back verify topology/config theo `SKILL.md`.
-2. Mở `https://{WORKSPACE_DOMAIN}/process/processes/{PROCESS_ID}/{PROCESS_INFO_ID}` trên Chrome bằng session đã đăng nhập.
-3. **Kích hoạt**, sau đó **Xuất bản** nếu giao diện có bước riêng. Xác nhận process `ACTIVATED`, `isPublished: true`, `isValid: true`.
-4. Tạo lượt chạy theo đúng loại flow:
-   - Manual/Normal: nhấn **Tạo lượt chạy** trên màn hình process.
-   - Scheduled: snapshot lịch người dùng, đặt lịch test gần thời điểm hiện tại, quan sát instance sinh đúng giờ, sau đó phục hồi và verify lại lịch gốc.
-   - Triggered record: dùng `$object-record` tạo/cập nhật fixture phù hợp event và conditions; dùng marker duy nhất và theo dõi ID.
-   - Triggered webhook: gửi body hợp lệ vào URL Webhook thật với đúng auth, kiểm tra HTTP response và instance.
-   - Sequence: trước hết dùng `$cogover-api-auth` đổi API Key thành phiên Web App qua `/bapi/v1/auth-token`; không đọc session từ Browser và không dùng UI để thay thế. Sau đó gọi `POST /api/v1/run-workflow-server` theo payload/cookie/CSRF contract ở mục 4.6 của `SKILL.md`, với `processId` và `flowObjectRecordId` thật.
-5. Bảo đảm người hiện tại có quyền xem instance, rồi mở `https://{WORKSPACE_DOMAIN}/process/process-instances?filter=all` và xác định đúng instance mới.
-6. Khi gặp User Task đầu tiên, nhập dữ liệu hợp lý cho kịch bản và submit. Nếu phải gán vị trí/phòng ban tạm cho người test, dùng `$user-permission`, snapshot trước thay đổi và rollback bắt buộc sau test.
-7. Ghi lại process ID/PI, instance ID, trạng thái, elapsed time, Debug output và bằng chứng hiệu ứng bên ngoài. Khi cần kiểm tra dữ liệu nghiệp vụ hoặc Object `Process_Debug_data`, dùng `$object-record`. Không log secret, API key, cookie hoặc token.
-8. Trong cleanup, luôn phục hồi lịch và quyền/vị trí/phòng ban tạm, rồi đọc lại để xác nhận. Fixture chỉ được xoá sau xác nhận theo quy tắc `$object-record`; báo rõ ID còn lại nếu chưa được phép xoá.
+Đọc file này sau mọi lần tạo process và khi người dùng yêu cầu test chức năng node: kiểm thử black-box trên workspace, không chỉ kiểm tra payload create. Trình tự thao tác (POST + GET-back verify, mở process trên Chrome, **Kích hoạt** và **Xuất bản**, tạo lượt chạy theo từng loại flow, xác định đúng instance, submit User Task đầu tiên, quyền/vị trí tạm bằng `$user-permission`, Object `Process_Debug_data`, cleanup và báo cáo): [SKILL.md mục 4.6](../SKILL.md#46-kích-hoạt-và-xác-nhận-process-end-to-end-bắt-buộc). File này bổ sung tiêu chí PASS theo node, email workspace, giới hạn backend và cách phân loại kết quả. Với mỗi lượt chạy, ghi lại process ID/PI, instance ID, trạng thái, elapsed time, Debug output và bằng chứng hiệu ứng bên ngoài.
 
 `COMPLETED` chỉ là bằng chứng flow đã kết thúc. Chỉ đánh PASS cho node khi quan sát được semantic tương ứng bên dưới.
 

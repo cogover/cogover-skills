@@ -2,7 +2,7 @@
 
 ## Quản lý credential
 
-1. Resolve Workspace đích từ yêu cầu hoặc cấu hình đã được người dùng chọn. Dùng HTTPS origin; không tự đổi Workspace.
+1. Resolve Workspace đích từ yêu cầu hoặc cấu hình đã được người dùng chọn. Chuẩn hoá domain bằng cách bỏ protocol và dấu `/` cuối rồi gọi qua `https://{workspace-domain}`; không tự đổi Workspace.
 2. Ưu tiên credential đã cấp cho đúng Workspace trong phiên làm việc, tiếp theo là scoped environment hoặc secret store của môi trường. Dùng `COGOVER_API_KEY` và `COGOVER_BASE_URL` làm tên cấu hình chung; `API_KEY`, `WORKSPACE_DOMAIN`, `COGOVER_WORKSPACE_DOMAIN` là tên tương thích trong các ví dụ cũ. Nếu các giá trị cùng tồn tại nhưng chỉ tới Workspace/key khác nhau, dừng để giải quyết xung đột, không chọn ngẫu nhiên.
 3. Không dò repository, file dự án hoặc lịch sử shell để tìm secret. Chỉ đọc `.env` cụ thể nếu người dùng đã chủ động chọn file đó hoặc CLI được tài liệu sản phẩm mô tả yêu cầu nó. File phải nằm ngoài gói public, được Git ignore và có quyền truy cập hạn chế. Không yêu cầu một CLI hoặc kho bí mật cá nhân không được đóng gói cùng skill.
 4. Chỉ yêu cầu credential qua kênh nhập bí mật khi chưa có hoặc không truy cập được. Không yêu cầu gửi lại key đã có; không đặt key trong prompt cho sub-agent, log, URL, source, ví dụ, báo cáo hoặc câu trả lời.
@@ -11,8 +11,21 @@
 
 Quy trình chọn credential của một CLI có thể khác thứ tự chung; áp dụng đúng tài liệu của CLI đó và giữ cùng Workspace. Phiên Web App và Workspace API Key không thay thế lẫn nhau tùy ý.
 
+## Quy ước request, response và lỗi chung
+
+Áp dụng cho mọi skill trong bộ; từng skill chỉ ghi thêm ngoại lệ riêng.
+
+- Request `/bapi/v{N}` gửi `Authorization: Bearer {API_KEY}` và `Content-Type: application/json`; request `/api/v{N}` gửi cookie phiên và hai header CSRF/XSRF như mục 3.
+- Response có `r` (số, `0` là thành công), `msg` và `data`. Chỉ coi thao tác thành công khi HTTP status phù hợp và `r: 0`.
+- Khi HTTP 4xx/422 hoặc `r` khác `0`: hiển thị `r`, `msg` và chi tiết lỗi đã lọc secret, rồi dừng; không đổi endpoint, phiên bản API hay cơ chế xác thực để thử lại.
+- `401`/`403`: key không hợp lệ, hết hạn hoặc thiếu quyền; yêu cầu người dùng kiểm tra credential/quyền. Riêng `/api/v{N}`: khi `401`/`403` hoặc lỗi CSRF, tạo lại phiên từ API Key theo mục 3 và thử lại đúng một lần trước khi kết luận; không lặp lại mutation có thể đã có side effect. HTTP 5xx: báo lỗi server, thử lại sau.
+- HTTP thành công chưa chứng minh thay đổi nghiệp vụ đúng: đọc lại tài nguyên (view/list) sau khi ghi và so với payload; nếu không khớp, báo rõ và dừng.
+- Yêu cầu chỉ xem/phân tích thì không gọi endpoint ghi. Resolve ID/slug thật từ API trước khi ghi; không đoán ID từ tên hiển thị.
+- Không đưa API key, cookie, token hoặc response thô chứa secret vào câu trả lời, log, file bàn giao hay prompt cho sub-agent.
+
 ## Mục lục
 
+- [Quy ước request, response và lỗi chung](#quy-ước-request-response-và-lỗi-chung)
 - [1. Chọn cơ chế theo URI](#1-chọn-cơ-chế-theo-uri)
 - [2. Cơ chế API Key cho `/bapi/v{N}`](#2-cơ-chế-api-key-cho-bapivn)
 - [3. Cơ chế phiên Web App cho `/api/v{N}`](#3-cơ-chế-phiên-web-app-cho-apivn)

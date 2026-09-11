@@ -27,9 +27,11 @@ Scheduled Flow dùng `bpmn2:startEvent` với `renderKey="START_SCHEDULED_EVENT"
 }
 ```
 
-`start` và `end` là timestamp milliseconds hoặc `null`. Front-end chuyển giá trị ngày giờ của form thành timestamp trước khi gửi. Không đưa các field chỉ dùng trên form như `temporaryExecutionHours` hoặc `temporaryExecutionMinutes` vào payload.
+`id` dùng prefix `SR` + suffix chữ-số. `start` và `end` là timestamp milliseconds hoặc `null` khi không chỉ định; front-end chuyển giá trị ngày giờ của form thành timestamp trước khi gửi. Không đưa các field chỉ dùng trên form như `temporaryExecutionHours` hoặc `temporaryExecutionMinutes` vào payload.
 
 ## Các chu kỳ được hỗ trợ
+
+`between` là khoảng cách giữa các lần chạy theo đơn vị của `type`.
 
 | `triggerInterval.type` | Field bổ sung |
 |---|---|
@@ -69,7 +71,7 @@ Scheduled Flow dùng `bpmn2:startEvent` với `renderKey="START_SCHEDULED_EVENT"
 
 Chọn một trong hai cách:
 
-- Ngày tuyệt đối: `daysOfMonth`, ví dụ `["1", "15", "L"]`; `L` là ngày cuối tháng.
+- Ngày tuyệt đối: `daysOfMonth`, ví dụ `["1", "15", "L"]`; `L` là ngày cuối tháng. Payload front-end dùng `daysOfMonth` gửi kèm `daysOfWeek: []`.
 - Thứ tương đối trong tháng: `daysOfWeek`, mỗi phần tử có `dayOfWeek` và `nth`; `nth` nhận `"1"`, `"2"`, `"3"`, `"4"` hoặc `"L"`.
 
 ```json
@@ -115,6 +117,8 @@ Chọn một trong hai cách:
 Biểu thức dùng Quartz cron có trường giây và có thể có trường năm. Bắt buộc validate cron trước khi POST.
 
 ## Số lần chạy
+
+`maxRunTypeFE` chỉ nhận `UNLIMITED` hoặc `CUSTOM`:
 
 - `maxRunTypeFE: "UNLIMITED"`: đặt `maxRun: 0`.
 - `maxRunTypeFE: "CUSTOM"`: `maxRun` là số lần chạy tối đa và bắt buộc có giá trị.

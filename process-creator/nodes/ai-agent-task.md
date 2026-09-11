@@ -4,7 +4,7 @@
 
 ## Phạm vi và điều kiện sử dụng
 
-- Dùng được trong thiết kế Manual, Normal, Scheduled, Triggered và Sequence Flow khi Workspace hỗ trợ node. Manual vẫn cần Root User Task ngay sau Start.
+- Dùng được trong thiết kế Manual, Normal, Scheduled, Triggered và Sequence Flow khi Workspace hỗ trợ node.
 - Khả năng thực thi AI Agent không bảo đảm phiên bản Process API và editor hiện tại đã hỗ trợ tạo/lưu node. Trước khi triển khai, xác nhận node **AI Agent** có trong editor hoặc metadata/tài liệu sản phẩm của Workspace; sau khi lưu phải GET-back theo hướng dẫn bên dưới.
 - Editor cũ có thể lưu AI Agent thành loại action khác, chẳng hạn Send Notification. Không mở rồi lưu bằng editor chưa hỗ trợ node. Nếu gặp tình trạng này, dừng chỉnh sửa bằng editor đó, báo giới hạn phiên bản; không đổi action sang loại khác để vượt kiểm tra.
 - Lấy `agentId` thật từ danh sách/chọn agent trong giao diện hoặc API đã được công bố cho Workspace. Agent phải thuộc Workspace và đang hoạt động. Không dùng tên, slug, model ID hay ID ví dụ thay cho agent ID; không tự đoán endpoint liệt kê agent.
@@ -14,7 +14,7 @@
 
 Chỉ hỏi những phần chưa có trong yêu cầu: agent, mục tiêu/instruction, nguồn dữ liệu, đầu ra mong muốn và cách dùng ở bước sau; phiên mới hay tiếp tục phiên trước; danh tính chạy; chính sách tool; giới hạn thời gian/số vòng và cách xử lý lỗi.
 
-Khi dùng record ngữ cảnh, lấy object/field metadata bằng `$object-info` và xác minh record bằng `$object-record`. Khi cần chọn nhân sự chạy, dùng `$user-permission` để resolve personnel ID thực tế. Các ví dụ dưới đây là placeholder, không phải dữ liệu Workspace.
+Khi dùng record ngữ cảnh, lấy object/field metadata bằng `$object-info` và xác minh record bằng `$object-record`. Khi cần chọn nhân sự chạy, dùng `$user-permission` để resolve personnel ID thực tế.
 
 ## BPMN và action payload
 
@@ -27,7 +27,7 @@ Khi dùng record ngữ cảnh, lấy object/field metadata bằng `$object-info`
 | Resource prefix hiển thị | `workflow_resource:list.aiAgent` |
 | Đầu ra | `$action.{action_slug}.output`, kiểu `RECORD` |
 
-Khai báo `xmlns:elEx="http://element-ex/schema"`. Trong create payload, dùng cùng ID cho `action.id`, `action.nodeId` và BPMN node. Giữ ID đã trả về khi sửa process hiện hữu.
+Khai báo `xmlns:elEx="http://element-ex/schema"`.
 
 ```xml
 <bpmn2:sendTask id="{AI_NODE_ID}" name="Tóm tắt yêu cầu">
@@ -40,7 +40,7 @@ Khai báo `xmlns:elEx="http://element-ex/schema"`. Trong create payload, dùng c
 </bpmn2:sendTask>
 ```
 
-Response có thể biểu diễn node bằng `elEx:aiAgentTask`. Kiểm tra loại action, renderKey, topology và cấu hình; không PUT chỉ để đổi cách biểu diễn XML. Request mới theo mẫu trên, có đủ shape/edge/label theo `SKILL.md`.
+Response có thể biểu diễn node bằng `elEx:aiAgentTask`. Kiểm tra loại action, renderKey, topology và cấu hình; không PUT chỉ để đổi cách biểu diễn XML.
 
 ### Cấu hình tối thiểu và mặc định
 

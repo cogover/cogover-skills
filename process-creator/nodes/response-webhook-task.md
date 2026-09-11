@@ -2,7 +2,7 @@
 
 Đọc file này khi webhook không phản hồi ngay mà cần một node chủ động trả response.
 
-> **Runtime compatibility:** Backend `run-workflow-server` hiện chưa đăng ký action `RESPONSE_WEBHOOK` trong runtime factory. Process có thể create/validate nhưng node không chạy được và có thể lỗi `ERROR_SEND_TASK_NOT_SET_TYPE`. Không tạo node này cho process executable. Phần dưới chỉ dùng để nhận diện/migrate schema cũ; test lại runtime registration trước khi đổi trạng thái hỗ trợ.
+> **Runtime compatibility:** Runtime Process hiện chưa đăng ký action `RESPONSE_WEBHOOK` trong runtime factory. Process có thể create/validate nhưng node không chạy được và có thể lỗi `ERROR_SEND_TASK_NOT_SET_TYPE`. Không tạo node này cho process executable. Phần dưới chỉ dùng để nhận diện/migrate schema cũ; test lại runtime registration trước khi đổi trạng thái hỗ trợ.
 
 ## Nhận diện
 

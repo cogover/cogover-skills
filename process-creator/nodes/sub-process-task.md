@@ -1,9 +1,9 @@
 ## Sub Process (Task Gọi Quy Trình Con)
 
-### Mô tả
-Sub Process là một task hệ thống cho phép khởi chạy một quy trình con từ quy trình cha. Nó hỗ trợ truyền biến từ quy trình cha vào quy trình con (input) và nhận biến trả về từ quy trình con (output). Sub Process thường được dùng khi cần tái sử dụng một quy trình đã có sẵn như một bước trong quy trình khác.
+Task hệ thống khởi chạy một quy trình con từ quy trình cha, truyền biến vào (input) và nhận biến trả về (output); dùng để tái sử dụng quy trình có sẵn như một bước. Quy trình con thường là Normal Flow: [normal-flow.md](normal-flow.md). Mẫu: `samples/sample_process_call_sub_process.json` (quy trình con `manual_flow`). Tiêu chí PASS runtime: [runtime-validation.md](runtime-validation.md#tiêu-chí-observable-theo-node).
 
-### Cấu trúc trong BPMN XML
+### BPMN XML
+
 ```xml
 <elEx:subProcess id="{SUB_PROCESS_NODE_ID}" name="{SUB_PROCESS_NAME}">
   <bpmn2:extensionElements>
@@ -14,13 +14,10 @@ Sub Process là một task hệ thống cho phép khởi chạy một quy trình
 </elEx:subProcess>
 ```
 
-**Lưu ý quan trọng:**
-- Sử dụng `elEx:subProcess` (cần namespace `xmlns:elEx="http://element-ex/schema"`)
-- `renderKey="SUB_PROCESS"`
-- Node ID dùng prefix `NO` như các node khác
+Element `elEx:subProcess`; khai báo `xmlns:elEx="http://element-ex/schema"` trong `bpmn2:definitions` ([namespace](../references/bpmn-xml-and-diagram.md#namespace-và-kết-nối-logic)).
 
-### Cấu trúc `actions` trong JSON
-Thêm vào mảng `actions` ở root level với cấu trúc sau:
+### `actions` trong JSON
+
 ```json
 {
   "actions": [
@@ -59,30 +56,21 @@ Thêm vào mảng `actions` ở root level với cấu trúc sau:
             "value": "{BIEN_QUY_TRINH_CHA}"
           }
         ],
-        "starterPersonnelId": {
-          "raw": false,
-          "value": "{SUBMITTED_BY_RESOURCE}"
-        },
+        "starterPersonnelId": { "raw": false, "value": "{SUBMITTED_BY_RESOURCE}" },
         "starterPersonnelIdForFe": {
           "raw": false,
           "valuePathName": "{DISPLAY_PATH_CUA_SUBMITTED_BY}",
           "valueDataType": "RECORD",
           "value": "{SUBMITTED_BY_RESOURCE}"
         },
-        "recordId": {
-          "raw": false,
-          "value": "{RECORD_RESOURCE}"
-        },
+        "recordId": { "raw": false, "value": "{RECORD_RESOURCE}" },
         "recordIdForFe": {
           "raw": false,
           "valuePathName": "{DISPLAY_PATH_CUA_RECORD}",
           "valueDataType": "RECORD",
           "value": "{RECORD_RESOURCE}"
         },
-        "webhookInputBody": {
-          "raw": false,
-          "value": "{WEBHOOK_BODY_RESOURCE}"
-        },
+        "webhookInputBody": { "raw": false, "value": "{WEBHOOK_BODY_RESOURCE}" },
         "webhookInputBodyForFE": {
           "raw": false,
           "valuePathName": "{DISPLAY_PATH_CUA_WEBHOOK_BODY}",
@@ -102,170 +90,48 @@ Thêm vào mảng `actions` ở root level với cấu trúc sau:
 }
 ```
 
-### Chi tiết các trường cấu hình Sub Process
+### Các trường trong `data`
 
-| Trường                    | Mô tả                                                                                                               |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------|
-| `actionType`              | Luôn là `"SUB_PROCESS"`                                                                                             |
-| `subWorkflowId`           | Process ID (PE...) của quy trình con — **BẮT BUỘC** phải là ID thực tế đã tồn tại trong hệ thống, **KHÔNG ĐƯỢC** tự sinh. Cần hỏi người dùng cung cấp cả `subWorkflowId` và `processInfoId` vì đây là 2 ID độc lập, không thể suy ra từ nhau |
-| `processInfoId`           | Process Info ID (PI...) của quy trình con — **BẮT BUỘC** phải là ID thực tế đã tồn tại trong hệ thống, **KHÔNG ĐƯỢC** tự sinh |
-| `async`                   | `false` = đồng bộ (chờ quy trình con hoàn thành), `true` = bất đồng bộ                                              |
-| `startSubProcessError`    | Hành vi khi khởi chạy quy trình con lỗi: `"ERROR"` = dừng quy trình cha nếu khởi chạy quy trình con lỗi, `"IGNORE"` = bỏ qua lỗi và tiếp tục chạy quy trình cha |
-| `input`                   | Object truyền biến từ quy trình cha vào quy trình con. Key = biến quy trình con, value = cấu hình giá trị           |
-| `output`                  | Object nhận biến trả về từ quy trình con. Key = biến quy trình con, value = biến quy trình cha. **Chỉ có khi `async: false`** (đồng bộ, chờ quy trình con hoàn thành mới nhận được output) |
-| `valueInputForFE`         | Mảng mô tả input cho hiển thị trên giao diện (FE)                                                                   |
-| `valueOutputForFE`        | Mảng mô tả output cho hiển thị trên giao diện (FE). **Chỉ có khi `async: false`**                                   |
-| `starterPersonnelId`      | Chỉ định nhân sự sẽ khởi chạy quy trình con (**bắt buộc** khi quy trình con là `manual_flow` hoặc `sequence_flow`)  |
-| `starterPersonnelIdForFe` | Thông tin hiển thị FE của starterPersonnelId (**bắt buộc** khi quy trình con là `manual_flow` hoặc `sequence_flow`) |
-| `recordId`                | Chỉ định bản ghi sẽ kết nối khi khởi chạy quy trình con (**bắt buộc** chỉ khi quy trình con là `sequence_flow`)     |
-| `recordIdForFe`           | Thông tin hiển thị FE của recordId (**bắt buộc** chỉ khi quy trình con là `sequence_flow`)                           |
-| `webhookInputBody`        | Nội dung body gửi cho webhook trigger (**bắt buộc** chỉ khi quy trình con là `triggered_flow`)                       |
-| `webhookInputBodyForFE`   | Thông tin hiển thị FE của webhookInputBody (**bắt buộc** chỉ khi quy trình con là `triggered_flow`). **Lưu ý:** key dùng chữ hoa `ForFE` (khác với `starterPersonnelIdForFe` và `recordIdForFe` dùng chữ thường `Fe`) |
+| Trường | Mô tả |
+|---|---|
+| `actionType` | Luôn `"SUB_PROCESS"` |
+| `subWorkflowId` | Process ID (`PE...`) của quy trình con: BẮT BUỘC là ID thật đã tồn tại, KHÔNG tự sinh |
+| `processInfoId` | Process Info ID (`PI...`) của quy trình con: BẮT BUỘC ID thật, KHÔNG tự sinh. Hai ID độc lập, không suy ra từ nhau; hỏi người dùng cung cấp cả hai |
+| `async` | `false` đồng bộ (chờ quy trình con hoàn thành); `true` bất đồng bộ |
+| `startSubProcessError` | `"ERROR"` dừng quy trình cha khi khởi chạy con lỗi; `"IGNORE"` bỏ qua lỗi, tiếp tục cha |
+| `input` | Object truyền biến vào con: key = biến/tài nguyên **quy trình con** (`$flow.bien_o_quy_trinh_con`), value `{dataType, raw, value}`; `dataType` `NUMBER`/`TEXT`/`BOOLEAN`/`DATE`/`DATE_TIME`/`RECORD`...; `raw: false` → `value` là biến/tài nguyên cha (ví dụ `$userTask.Root.so`), `raw: true` → giá trị thuần |
+| `output` | Object nhận biến trả về: key = biến **quy trình con**, value = biến **quy trình cha** nhận giá trị (`{"$flow.bien_o_quy_trinh_con_1": "$flow.bien_o_quy_trinh_cha_1"}`). **Chỉ có khi `async: false`**; `async: true` không chờ con nên không nhận output — không thêm `output` và `valueOutputForFE` |
+| `valueInputForFE` | Mảng mô tả input cho giao diện: `{absoluteSlug (biến con), dataType, raw, valuePathName, valueDataType, value}` |
+| `valueOutputForFE` | Mảng mô tả output cho giao diện: `{absoluteSlug, valuePathName, valueDataType, value}`; chỉ khi `async: false` |
+| `starterPersonnelId` + `starterPersonnelIdForFe` | Nhân sự giả lập khởi chạy quy trình con: `{raw, value}` và `{raw, valuePathName, valueDataType: "RECORD", value}` (ví dụ `$userTask.Root.submittedBy`, `workflow_resource:list.userTask / Root / Submitted By`); **bắt buộc** khi con là `manual_flow` hoặc `sequence_flow` |
+| `recordId` + `recordIdForFe` | Bản ghi kết nối khi khởi chạy con, cùng cấu trúc (ví dụ `$userTask.Root.contact`); **bắt buộc chỉ khi** con là `sequence_flow` |
+| `webhookInputBody` + `webhookInputBodyForFE` | Body gửi cho webhook trigger (`valueDataType: "TEXT"`); **bắt buộc chỉ khi** con là `triggered_flow` (webhook). Key FE viết hoa `ForFE`, khác `starterPersonnelIdForFe`/`recordIdForFe` viết `Fe` |
 
-### Chi tiết cấu trúc `input` (Truyền biến vào quy trình con)
+| Loại quy trình con | `starterPersonnelId` | `recordId` | `webhookInputBody` | `output` |
+|---|---|---|---|---|
+| `manual_flow` | Bắt buộc | Không | Không | Chỉ khi `async: false` |
+| `normal_flow` | Không | Không | Không | Chỉ khi `async: false` |
+| `sequence_flow` | Bắt buộc | Bắt buộc | Không | Chỉ khi `async: false` |
+| `triggered_flow` | Không | Không | Bắt buộc | Chỉ khi `async: false` |
+| `scheduled_flow` | Không | Không | Không | Chỉ khi `async: false` |
 
-Trong `input`, **key luôn là biến/tài nguyên của quy trình con**, value là object mô tả giá trị từ quy trình cha:
+Cặp `ForFe`/`ForFE` bắt buộc cùng trường chính. Trường không bắt buộc cho loại con đó thì không gửi (`normal_flow`: chỉ mapping `input`/`output`).
 
-```json
-{
-  "input": {
-    "$flow.bien_o_quy_trinh_con": {
-      "dataType": "NUMBER",
-      "raw": false,
-      "value": "$userTask.Root.so"
-    }
-  }
-}
-```
+### Điều kiện gán biến giữa cha và con (input lẫn output)
 
-| Trường     | Mô tả                                                                                          |
-|------------|------------------------------------------------------------------------------------------------|
-| `dataType` | Kiểu dữ liệu: `"NUMBER"`, `"TEXT"`, `"BOOLEAN"`, `"DATE"`, `"DATE_TIME"`, `"RECORD"`, v.v.     |
-| `raw`      | `false` = giá trị ở `value` lấy từ biến/tài nguyên quy trình cha; `true` = giá trị thuần (raw) |
-| `value`    | Biến/tài nguyên quy trình cha (khi `raw=false`) hoặc giá trị thuần (khi `raw=true`)            |
+1. Cùng kiểu dữ liệu (NUMBER/TEXT/...; RECORD phải cùng objectTypeId).
+2. Biến/tài nguyên ở quy trình con có `availableForInput: true` và `availableForOutput: true`; biến cha nhận output cũng cần `availableForInput: true` và `availableForOutput: true`.
+3. Cùng `isList` (`true` cả hai hoặc `false` cả hai).
 
-### Ràng buộc `output` — chỉ khi `async: false`
+### Resources của action (`resources.actions[]`)
 
-**Quan trọng:** `output` và `valueOutputForFE` chỉ có ý nghĩa và chỉ được thêm vào JSON khi `async: false` (đồng bộ — quy trình cha chờ quy trình con hoàn thành). Khi `async: true` (bất đồng bộ), quy trình cha không chờ quy trình con nên **không thể nhận output** — không thêm `output` và `valueOutputForFE`.
+| Resource | Mô tả | dataType | isList |
+|---|---|---|---|
+| `startAt` | Thời điểm bắt đầu chạy quy trình con | DATE_TIME | false |
+| `endAt` | Thời điểm kết thúc quy trình con | DATE_TIME | false |
+| `output` | Kết quả trả về; children `status` (TEXT, trạng thái kết thúc) và `result` (RECORD, bản ghi kết quả) | RECORD | false |
 
-### Chi tiết cấu trúc `output` (Nhận biến trả về từ quy trình con)
-
-Trong `output`, **key luôn là biến/tài nguyên của quy trình con**, value là biến/tài nguyên của quy trình cha sẽ nhận giá trị trả về:
-
-```json
-{
-  "output": {
-    "$flow.bien_o_quy_trinh_con_1": "$flow.bien_o_quy_trinh_cha_1",
-    "$flow.bien_o_quy_trinh_con_2": "$flow.bien_o_quy_trinh_cha_2"
-  }
-}
-```
-
-**Lưu ý:** Biến/tài nguyên quy trình cha dùng trong output cần có `availableForInput: true` và `availableForOutput: true`.
-
-### Điều kiện để gán biến giữa quy trình cha và con
-
-Để gán giá trị giữa quy trình cha và con (cả input lẫn output), cần đủ **3 điều kiện**:
-
-1. **Cùng kiểu dữ liệu**: Biến/tài nguyên ở quy trình cha có cùng kiểu dữ liệu với biến/tài nguyên ở quy trình con (ví dụ: cùng là NUMBER/TEXT/..., nếu là RECORD thì cùng objectTypeId)
-2. **Cấu hình availableForInput/Output**: Biến/tài nguyên ở quy trình con cần được cấu hình `availableForInput: true` và `availableForOutput: true`
-3. **Cùng isList**: Biến/tài nguyên ở quy trình cha và quy trình con phải cùng là `isList: true` hoặc cùng là `isList: false`
-
-### starterPersonnelId (Dành cho manual_flow và sequence_flow)
-
-Khi quy trình con là `manual_flow` hoặc `sequence_flow`, cần chỉ định nhân sự giả lập khởi chạy quy trình con qua `starterPersonnelId` và `starterPersonnelIdForFe`:
-
-```json
-{
-  "starterPersonnelId": {
-    "raw": false,
-    "value": "$userTask.Root.submittedBy"
-  },
-  "starterPersonnelIdForFe": {
-    "raw": false,
-    "valuePathName": "workflow_resource:list.userTask / Root / Submitted By",
-    "valueDataType": "RECORD",
-    "value": "$userTask.Root.submittedBy"
-  }
-}
-```
-
-**Lưu ý:** Nếu quy trình con **không phải** `manual_flow` hay `sequence_flow` (`normal_flow`, `triggered_flow`, `scheduled_flow`), thì **không cần** `starterPersonnelId` và `starterPersonnelIdForFe`.
-
-### recordId (Dành cho sequence_flow)
-
-Khi quy trình con là `sequence_flow`, **bắt buộc** chỉ định bản ghi sẽ kết nối qua `recordId` và `recordIdForFe`:
-
-```json
-{
-  "recordId": {
-    "raw": false,
-    "value": "$userTask.Root.contact"
-  },
-  "recordIdForFe": {
-    "raw": false,
-    "valuePathName": "workflow_resource:list.userTask / Root / Contact",
-    "valueDataType": "RECORD",
-    "value": "$userTask.Root.contact"
-  }
-}
-```
-
-**Lưu ý:** `recordId` chỉ cần khi quy trình con là `sequence_flow`. Các loại khác (`manual_flow`, `normal_flow`, `triggered_flow`, `scheduled_flow`) **không cần** `recordId` và `recordIdForFe`.
-
-### webhookInputBody (Dành cho triggered_flow)
-
-Khi quy trình con là `triggered_flow` (webhook), **bắt buộc** cung cấp nội dung body cho webhook qua `webhookInputBody` và `webhookInputBodyForFE`:
-
-```json
-{
-  "webhookInputBody": {
-    "raw": false,
-    "value": "{WEBHOOK_BODY_RESOURCE}"
-  },
-  "webhookInputBodyForFE": {
-    "raw": false,
-    "valuePathName": "{DISPLAY_PATH_CUA_WEBHOOK_BODY}",
-    "valueDataType": "TEXT",
-    "value": "{WEBHOOK_BODY_RESOURCE}"
-  }
-}
-```
-
-**Lưu ý:**
-- `webhookInputBody` chỉ cần khi quy trình con là `triggered_flow`. Các loại khác **không cần**.
-- Key FE dùng chữ hoa `webhookInputBodyForFE` (khác với `starterPersonnelIdForFe` và `recordIdForFe` dùng chữ thường `Fe`).
-
-### Bảng tổng hợp fields bắt buộc theo loại quy trình con
-
-| Loại quy trình con | `starterPersonnelId` | `recordId` | `webhookInputBody` | `output` (nhận biến trả về) |
-|---------------------|----------------------|------------|---------------------|-----------------------------|
-| `manual_flow`       | **Bắt buộc**         | Không cần  | Không cần           | Chỉ khi `async: false`     |
-| `normal_flow`       | Không cần            | Không cần  | Không cần           | Chỉ khi `async: false`     |
-| `sequence_flow`     | **Bắt buộc**         | **Bắt buộc** | Không cần         | Chỉ khi `async: false`     |
-| `triggered_flow`    | Không cần            | Không cần  | **Bắt buộc**        | Chỉ khi `async: false`     |
-| `scheduled_flow`    | Không cần            | Không cần  | Không cần           | Chỉ khi `async: false`     |
-
-**Lưu ý:** Mỗi trường có cặp `ForFe`/`ForFE` tương ứng cũng bắt buộc khi trường chính bắt buộc.
-
-Với `normal_flow`, chỉ cấu hình mapping `input`/`output` theo nhu cầu. Không gửi `starterPersonnelId`, `recordId` hoặc `webhookInputBody` cùng các field FE tương ứng.
-
-### Resources của Sub Process
-
-Trong `resources.actions[]`, mỗi Sub Process có 3 resource chuẩn: `startAt`, `endAt` và `output`.
-
-| Resource  | Mô tả                                | dataType  | isList |
-|-----------|--------------------------------------|-----------|--------|
-| `startAt` | Thời điểm bắt đầu chạy quy trình con | DATE_TIME | false  |
-| `endAt`   | Thời điểm kết thúc quy trình con     | DATE_TIME | false  |
-| `output`  | Kết quả trả về từ quy trình con      | RECORD    | false  |
-
-Resource `output` có 2 children:
-
-| Child    | Mô tả                                              | dataType |
-|----------|----------------------------------------------------|----------|
-| `status` | Trạng thái kết thúc quy trình con                  | TEXT     |
-| `result` | Bản ghi kết quả (dùng để truy xuất dữ liệu trả về) | RECORD   |
+`absolutePath` dùng prefix `workflow_resource:list.subProcess` (Send Email dùng `list.sendEmail`, Wait dùng `list.wait`); resource `output` có `actionType: "SUB_PROCESS"` (resource khác không có); children của `output` dùng `parentTable: "resource"` (resource gốc dùng `"action"`).
 
 ```json
 {
@@ -286,14 +152,7 @@ Resource `output` có 2 children:
       "isStandard": true,
       "processId": "{PROCESS_ID}",
       "name": "Start At",
-      "metaDataType": {
-        "defaultValueCurrent": false,
-        "format": {
-          "date": "dd/MM/yyyy",
-          "time": "hh:mm:ss"
-        },
-        "timeZone": "Asia/Saigon"
-      },
+      "metaDataType": { "defaultValueCurrent": false, "format": { "date": "dd/MM/yyyy", "time": "hh:mm:ss" }, "timeZone": "Asia/Saigon" },
       "availableForOutput": true,
       "absolutePath": "workflow_resource:list.subProcess / {SUB_PROCESS_NAME} / StartAt",
       "id": "{RESOURCE_ID_1}",
@@ -302,30 +161,11 @@ Resource `output` có 2 children:
     },
     {
       "absoluteSlug": "$action.{sub_process_slug}.endAt",
-      "parentMetadata": "",
-      "editable": false,
-      "dataType": "DATE_TIME",
-      "type": 1,
-      "isList": false,
-      "parentId": "{ACTION_ID}",
-      "assignable": false,
-      "availableForInput": true,
-      "isStandard": true,
-      "processId": "{PROCESS_ID}",
       "name": "End At",
-      "metaDataType": {
-        "defaultValueCurrent": false,
-        "format": {
-          "date": "dd/MM/yyyy",
-          "time": "hh:mm:ss"
-        },
-        "timeZone": "Asia/Saigon"
-      },
-      "availableForOutput": true,
       "absolutePath": "workflow_resource:list.subProcess / {SUB_PROCESS_NAME} / End At",
       "id": "{RESOURCE_ID_2}",
-      "parentTable": "action",
-      "slug": "endAt"
+      "slug": "endAt",
+      "...": "các key còn lại giống startAt"
     },
     {
       "absoluteSlug": "$action.{sub_process_slug}.output",
@@ -354,14 +194,7 @@ Resource `output` có 2 children:
           "isStandard": true,
           "processId": "{PROCESS_ID}",
           "name": "Status",
-          "metaDataType": {
-            "characterLimit": {
-              "min": 0,
-              "max": 131072,
-              "warning": "warning limit note"
-            },
-            "richText": "false"
-          },
+          "metaDataType": { "characterLimit": { "min": 0, "max": 131072, "warning": "warning limit note" }, "richText": "false" },
           "availableForOutput": true,
           "absolutePath": "workflow_resource:list.subProcess / {SUB_PROCESS_NAME} / Output / Status",
           "parentTable": "resource",
@@ -369,40 +202,17 @@ Resource `output` có 2 children:
         },
         {
           "absoluteSlug": "$action.{sub_process_slug}.output.result",
-          "parentMetadata": "",
-          "editable": false,
           "dataType": "RECORD",
-          "type": 1,
-          "isList": false,
-          "parentId": "{RESOURCE_ID_3}",
-          "assignable": false,
-          "availableForInput": true,
-          "isStandard": true,
-          "processId": "{PROCESS_ID}",
           "name": "Result",
-          "metaDataType": {
-            "multipleLimit": {
-              "min": 0,
-              "max": 30,
-              "warning": "warning limit note"
-            },
-            "linkField": "id"
-          },
-          "availableForOutput": true,
+          "metaDataType": { "multipleLimit": { "min": 0, "max": 30, "warning": "warning limit note" }, "linkField": "id" },
           "absolutePath": "workflow_resource:list.subProcess / {SUB_PROCESS_NAME} / Output / Result",
           "parentTable": "resource",
-          "slug": "result"
+          "slug": "result",
+          "...": "các key còn lại giống status"
         }
       ],
       "name": "Output",
-      "metaDataType": {
-        "characterLimit": {
-          "min": 0,
-          "max": 131072,
-          "warning": "warning limit note"
-        },
-        "richText": "false"
-      },
+      "metaDataType": { "characterLimit": { "min": 0, "max": 131072, "warning": "warning limit note" }, "richText": "false" },
       "availableForOutput": true,
       "absolutePath": "workflow_resource:list.subProcess / {SUB_PROCESS_NAME} / Output",
       "id": "{RESOURCE_ID_3}",
@@ -417,129 +227,14 @@ Resource `output` có 2 children:
 }
 ```
 
-**Lưu ý:**
-- `absolutePath` dùng prefix `workflow_resource:list.subProcess` (khác với Send Email dùng `list.sendEmail`, Wait dùng `list.wait`)
-- Resource `output` có `actionType: "SUB_PROCESS"` (các resource khác không có trường này)
-- Children của `output` có `parentTable: "resource"` (khác với resource gốc dùng `parentTable: "action"`)
+### `resourcesUsedIn`
 
-### Cập nhật resourcesUsedIn
-
-Khi biến/tài nguyên của quy trình cha được dùng trong input của Sub Process, cần thêm `resourcesUsedIn` vào resource tương ứng:
+Biến/tài nguyên của quy trình cha dùng trong `input` (ví dụ `$userTask.Root.so`) thêm entry:
 
 ```json
 {
-  "absoluteSlug": "$userTask.Root.so",
-  ...
   "resourcesUsedIn": [
-    {
-      "actionType": "SUB_PROCESS",
-      "name": "{SUB_PROCESS_NAME}",
-      "count": 1,
-      "id": "{ACTION_ID}",
-      "parentTable": "action",
-      "slug": "{sub_process_slug}"
-    }
+    { "actionType": "SUB_PROCESS", "name": "{SUB_PROCESS_NAME}", "count": 1, "id": "{ACTION_ID}", "parentTable": "action", "slug": "{sub_process_slug}" }
   ]
 }
 ```
-
-### Biến quy trình cha dùng cho output
-
-Biến ở quy trình cha nhận giá trị trả về từ quy trình con cần có `availableForInput: true` và `availableForOutput: true`:
-
-```json
-{
-  "absoluteSlug": "$flow.so_tren_quy_trinh_cha",
-  "editable": true,
-  "dataType": "NUMBER",
-  "type": 1,
-  "isList": false,
-  "assignable": true,
-  "availableForInput": true,
-  "availableForOutput": true,
-  ...
-}
-```
-
-### Ví dụ đầy đủ
-
-**Ví dụ: Quy trình cha gọi quy trình con là manual_flow, truyền biến số và record, nhận biến trả về:**
-
-```json
-{
-  "data": {
-    "output": {
-      "$flow.bien_number_o_quy_trinh_con_1": "$flow.so_tren_quy_trinh_cha",
-      "$flow.bien_record_o_quy_trinh_con_1": "$flow.record_tren_quy_trinh_cha"
-    },
-    "async": false,
-    "input": {
-      "$flow.bien_number_o_quy_trinh_con_2": {
-        "dataType": "NUMBER",
-        "raw": false,
-        "value": "$userTask.Root.so"
-      },
-      "$flow.bien_record_o_quy_trinh_con_2": {
-        "dataType": "RECORD",
-        "raw": false,
-        "value": "$userTask.Root.contact"
-      }
-    },
-    "actionType": "SUB_PROCESS",
-    "subWorkflowId": "PE00000000001",
-    "startSubProcessError": "ERROR",
-    "processInfoId": "PI00000000001",
-    "valueInputForFE": [
-      {
-        "absoluteSlug": "$flow.bien_number_o_quy_trinh_con_2",
-        "dataType": "NUMBER",
-        "raw": false,
-        "valuePathName": "workflow_resource:list.userTask / Root / So",
-        "valueDataType": "NUMBER",
-        "value": "$userTask.Root.so"
-      },
-      {
-        "absoluteSlug": "$flow.bien_record_o_quy_trinh_con_2",
-        "dataType": "RECORD",
-        "raw": false,
-        "valuePathName": "workflow_resource:list.userTask / Root / Contact",
-        "valueDataType": "RECORD",
-        "value": "$userTask.Root.contact"
-      }
-    ],
-    "valueOutputForFE": [
-      {
-        "absoluteSlug": "$flow.bien_number_o_quy_trinh_con_1",
-        "valuePathName": "workflow_resource:list.variable / Số trên quy trình cha",
-        "valueDataType": "NUMBER",
-        "value": "$flow.so_tren_quy_trinh_cha"
-      },
-      {
-        "absoluteSlug": "$flow.bien_record_o_quy_trinh_con_1",
-        "valuePathName": "workflow_resource:list.variable / Record trên quy trình cha",
-        "valueDataType": "RECORD",
-        "value": "$flow.record_tren_quy_trinh_cha"
-      }
-    ],
-    "starterPersonnelId": {
-      "raw": false,
-      "value": "$userTask.Root.submittedBy"
-    },
-    "starterPersonnelIdForFe": {
-      "raw": false,
-      "valuePathName": "workflow_resource:list.userTask / Root / Submitted By",
-      "valueDataType": "RECORD",
-      "value": "$userTask.Root.submittedBy"
-    }
-  },
-  "processId": "{PROCESS_ID}",
-  "name": "Goi quy trinh con la manual_flow",
-  "description": "",
-  "id": "AC00000000001",
-  "type": "SUB_PROCESS",
-  "nodeId": "NO00000000004",
-  "slug": "goi_quy_trinh_con_la_manual_flow"
-}
-```
-
----

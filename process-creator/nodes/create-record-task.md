@@ -1,9 +1,9 @@
 ## Create Record Task (Task Tạo Bản Ghi)
 
-### Mô tả
-Create Record Task là một task hệ thống tự động tạo bản ghi mới cho một đối tượng (object type) trong hệ thống khi luồng chạy đến. Có thể cấu hình đối tượng cần tạo, các trường dữ liệu và giá trị cho mỗi trường (giá trị cố định hoặc lấy từ biến).
+Task hệ thống tạo bản ghi mới cho một Object khi luồng chạy đến; mỗi trường nhận giá trị cố định hoặc lấy từ biến. Mẫu: `samples/sample_process_user_task_create_record.json` (Start → Root → Create Lead → End Process).
 
 ### Cấu trúc trong BPMN XML
+
 ```xml
 <elEx:createRecordTask id="{CREATE_RECORD_NODE_ID}" name="{TASK_NAME}">
   <bpmn2:extensionElements>
@@ -14,69 +14,69 @@ Create Record Task là một task hệ thống tự động tạo bản ghi mớ
 </elEx:createRecordTask>
 ```
 
-**Lưu ý quan trọng:**
-- Sử dụng `elEx:createRecordTask` (KHÔNG phải `bpmn2:userTask` hay `bpmn2:sendTask`)
-- Cần thêm namespace: `xmlns:elEx="http://element-ex/schema"` vào `bpmn2:definitions`
-- `renderKey="CREATE_RECORD_TASK"`
+`elEx:createRecordTask` (KHÔNG phải `bpmn2:userTask` hay `bpmn2:sendTask`), cần `xmlns:elEx="http://element-ex/schema"` trong `bpmn2:definitions`; `renderKey="CREATE_RECORD_TASK"`.
 
 ### Cấu trúc `actions` trong JSON
+
 Thêm vào mảng `actions` ở root level:
+
 ```json
 {
-  "actions": [
-    {
-      "id": "{ACTION_ID}",
-      "nodeId": "{CREATE_RECORD_NODE_ID}",
-      "type": "CREATE_RECORD",
-      "name": "{TASK_NAME}",
-      "slug": "{task_slug}",
-      "description": "",
-      "processId": "{PROCESS_ID}",
-      "data": {
-        "valueSettingType": "MANUAL",
-        "objectTypeId": "{OBJECT_TYPE_ID}",
-        "layoutId": "{LAYOUT_ID}",
-        "recordData": [
-          {
-            "field_slug_1": { ... },
-            "field_slug_2": { ... }
-          }
-        ],
-        "createOne": true,
-        "handleDuplicate": false,
-        "isRawValue": true,
-        "isList": false,
-        "fieldsForCheckDuplicate": [],
-        "duplicateMatchLogicType": "AND",
-        "duplicateConditionForMultipleValue": "DUPLICATE_ALL",
-        "duplicateOneRecordStrategy": "UPDATE",
-        "duplicateManyRecordStrategyFe": "UPDATE",
-        "duplicateManyRecordStrategy": "UPDATE_LATEST",
-        "onErrorStrategy": "SKIP_ERROR",
-        "actionType": "CREATE_RECORD"
+  "id": "{ACTION_ID}",
+  "nodeId": "{CREATE_RECORD_NODE_ID}",
+  "type": "CREATE_RECORD",
+  "name": "{TASK_NAME}",
+  "slug": "{task_slug}",
+  "description": "",
+  "processId": "{PROCESS_ID}",
+  "data": {
+    "valueSettingType": "MANUAL",
+    "objectTypeId": "{OBJECT_TYPE_ID}",
+    "layoutId": "{LAYOUT_ID}",
+    "recordData": [
+      {
+        "field_slug_1": { ... },
+        "field_slug_2": { ... }
       }
-    }
-  ]
+    ],
+    "createOne": true,
+    "handleDuplicate": false,
+    "isRawValue": true,
+    "isList": false,
+    "fieldsForCheckDuplicate": [],
+    "duplicateMatchLogicType": "AND",
+    "duplicateConditionForMultipleValue": "DUPLICATE_ALL",
+    "duplicateOneRecordStrategy": "UPDATE",
+    "duplicateManyRecordStrategyFe": "UPDATE",
+    "duplicateManyRecordStrategy": "UPDATE_LATEST",
+    "onErrorStrategy": "SKIP_ERROR",
+    "actionType": "CREATE_RECORD"
+  }
 }
 ```
 
-### Chi tiết các trường cấu hình Create Record
+| Trường trong `data` | Giá trị |
+|---|---|
+| `objectTypeId` | ID Object cần tạo bản ghi. BẮT BUỘC lấy qua `$object-info` (xem [Chuẩn bị](../SKILL.md#chuẩn-bị)); KHÔNG dùng ID trong ví dụ của tài liệu này |
+| `layoutId` | ID layout hiển thị của Object |
+| `recordData` | Mảng chứa MỘT bản ghi; key là slug của trường, value là cấu hình giá trị (mục dưới). Field slug và `fieldType` BẮT BUỘC lấy qua `$object-info`; KHÔNG đoán slug từ tên trường hoặc sao chép từ ví dụ |
+| `valueSettingType` | `"MANUAL"`: cấu hình thủ công |
+| `createOne` | `true`: chỉ tạo một bản ghi |
+| `isRawValue`, `isList` | `true`, `false` |
+| `handleDuplicate` | Bật/tắt kiểm tra trùng lặp |
+| `fieldsForCheckDuplicate` | Mảng các trường dùng để kiểm tra trùng |
+| `duplicateMatchLogicType` | `"AND"` |
+| `duplicateConditionForMultipleValue` | `"DUPLICATE_ALL"` |
+| `duplicateOneRecordStrategy` | Chiến lược khi tìm thấy 1 bản ghi trùng: `UPDATE`, `SKIP`, ... |
+| `duplicateManyRecordStrategyFe` | `"UPDATE"` |
+| `duplicateManyRecordStrategy` | Chiến lược khi tìm thấy nhiều bản ghi trùng: `UPDATE_LATEST`, ... |
+| `onErrorStrategy` | `"SKIP_ERROR"`: bỏ qua lỗi và tiếp tục |
+| `actionType` | `"CREATE_RECORD"` |
 
-#### 1. Object Type (Đối tượng)
-```json
-{
-  "objectTypeId": "OT00000000011",
-  "layoutId": "LO00000000002"
-}
-```
-- `objectTypeId` = ID của loại đối tượng cần tạo bản ghi. **BẮT BUỘC** sử dụng skill `/object-info` để lấy objectTypeId chính xác từ API (xem mục 25 trong Lưu ý quan trọng). **KHÔNG** sử dụng ID từ ví dụ trong tài liệu này.
-- `layoutId` = ID của layout hiển thị của đối tượng
+### Giá trị từng trường trong `recordData`
 
-#### 2. Record Data (Dữ liệu bản ghi)
-`recordData` là mảng chứa **một bản ghi** với các trường dữ liệu cần tạo. Key là slug của trường, value là cấu hình giá trị. **BẮT BUỘC** sử dụng skill `/object-info` để lấy đúng field slug và fieldType của đối tượng — **KHÔNG** đoán slug dựa trên tên trường hoặc sao chép từ ví dụ (xem mục 25 trong Lưu ý quan trọng).
+Giá trị cố định (`type: 1`):
 
-##### Giá trị cố định (type: 1)
-Nhập giá trị trực tiếp:
 ```json
 {
   "field_slug": {
@@ -90,16 +90,8 @@ Nhập giá trị trực tiếp:
 }
 ```
 
-**Các trường BẮT BUỘC cho mọi type (1 và 4):**
-- `fieldType` — Loại trường của field đích (ví dụ: `"short_text"`, `"numeric"`, `"currency"`, `"date_time"`, `"boolean"`, `"single_choice"`, `"lookup_normal"`, ...). Lấy từ kết quả skill `/object-info`.
-- `fieldTypeDisplayAsInteger` — `true` nếu fieldType là `numeric`, `currency`, `percentage`; `null` cho các loại khác.
-- `isList` — `true` nếu trường chứa nhiều giá trị (ví dụ: `phone`, `email`, `url`); `false` cho các trường đơn giá trị.
-- `cleanable` — Luôn đặt `false`.
+Giá trị từ biến (`type: 4`): `value` là đường dẫn biến, `valueDataType` là kiểu dữ liệu nguồn (`TEXT`, `NUMBER`, `DATE_TIME`, `RECORD`, ...), `valuePathName` là tên hiển thị đường dẫn:
 
-> **⚠️ Thiếu các trường này sẽ gây lỗi `Error parse CreateRecordData` khi validate quy trình.**
-
-##### Giá trị từ biến (type: 4)
-Lấy giá trị từ trường trong user task:
 ```json
 {
   "field_slug": {
@@ -114,191 +106,29 @@ Lấy giá trị từ trường trong user task:
   }
 }
 ```
-- `value` = đường dẫn biến (ví dụ: `$userTask.Root.ten`)
-- `valueDataType` = kiểu dữ liệu nguồn (TEXT, NUMBER, DATE_TIME, RECORD, ...)
-- `valuePathName` = tên hiển thị đường dẫn
-- `fieldType`, `fieldTypeDisplayAsInteger`, `isList`, `cleanable` = **BẮT BUỘC** (xem bảng mô tả ở trên)
 
-##### Ví dụ các loại giá trị
+Bốn key BẮT BUỘC với cả `type: 1` và `type: 4`; thiếu sẽ gây lỗi `Error parse CreateRecordData` khi validate quy trình:
 
-**Chuỗi (short_text, long_text):**
-```json
-{
-  "company": {
-    "type": 1,
-    "value": "Công ty A",
-    "isList": false,
-    "fieldType": "short_text",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
+- `fieldType`: loại trường của field đích (`short_text`, `numeric`, `currency`, `date_time`, `boolean`, `single_choice`, `lookup_normal`, ...), lấy từ kết quả `$object-info`.
+- `fieldTypeDisplayAsInteger`: `true` nếu `fieldType` là `numeric`, `currency`, `percentage`; `null` cho các loại khác.
+- `isList`: `true` nếu trường chứa nhiều giá trị (`phone`, `email`, `url`); `false` cho trường đơn giá trị.
+- `cleanable`: luôn `false`.
 
-**Số (numeric, currency):**
-```json
-{
-  "annual_revenue": {
-    "type": 1,
-    "value": 500000000,
-    "isList": false,
-    "fieldType": "currency",
-    "fieldTypeDisplayAsInteger": true,
-    "cleanable": false
-  },
-  "no_of_employees": {
-    "type": 1,
-    "value": 20,
-    "isList": false,
-    "fieldType": "numeric",
-    "fieldTypeDisplayAsInteger": true,
-    "cleanable": false
-  }
-}
-```
+Dạng `value` theo `fieldType`:
 
-**Boolean:**
-```json
-{
-  "do_not_call": {
-    "type": 1,
-    "value": false,
-    "isList": false,
-    "fieldType": "boolean",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-**Danh sách lựa chọn (single_choice):**
-```json
-{
-  "status": {
-    "type": 1,
-    "value": "nurturing",
-    "isList": false,
-    "fieldType": "single_choice",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-**Lookup (tra cứu):**
-```json
-{
-  "owner": {
-    "type": 1,
-    "value": "PER_SAMPLE_USER",
-    "isList": false,
-    "fieldType": "lookup_normal",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-**Số điện thoại (nhiều giá trị):**
-```json
-{
-  "business_phones": {
-    "type": 1,
-    "value": ["+84986116116"],
-    "isList": true,
-    "fieldType": "phone",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-**URL (nhiều giá trị):**
-```json
-{
-  "websites": {
-    "type": 1,
-    "value": [{"url": "https://cogover.com", "alias": ""}],
-    "isList": true,
-    "fieldType": "url",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-**Email từ biến (nhiều giá trị):**
-```json
-{
-  "emails": {
-    "type": 4,
-    "isList": true,
-    "value": "$userTask.Root.emails",
-    "valueDataType": "TEXT",
-    "valuePathName": "workflow_resource:list.userTask / Root / Emails",
-    "fieldType": "email",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-**Giá trị null:**
-```json
-{
-  "mobile_phones": {
-    "type": 1,
-    "value": null,
-    "isList": false,
-    "fieldType": "phone",
-    "fieldTypeDisplayAsInteger": null,
-    "cleanable": false
-  }
-}
-```
-
-#### 3. Duplicate Handling (Xử lý trùng lặp)
-```json
-{
-  "handleDuplicate": false,
-  "fieldsForCheckDuplicate": [],
-  "duplicateMatchLogicType": "AND",
-  "duplicateConditionForMultipleValue": "DUPLICATE_ALL",
-  "duplicateOneRecordStrategy": "UPDATE",
-  "duplicateManyRecordStrategyFe": "UPDATE",
-  "duplicateManyRecordStrategy": "UPDATE_LATEST"
-}
-```
-- `handleDuplicate` = bật/tắt kiểm tra trùng lặp
-- `fieldsForCheckDuplicate` = mảng các trường dùng để kiểm tra trùng
-- `duplicateOneRecordStrategy` = chiến lược khi tìm thấy 1 bản ghi trùng (UPDATE, SKIP, ...)
-- `duplicateManyRecordStrategy` = chiến lược khi tìm thấy nhiều bản ghi trùng (UPDATE_LATEST, ...)
-
-#### 4. Error Strategy (Chiến lược xử lý lỗi)
-```json
-{
-  "onErrorStrategy": "SKIP_ERROR"
-}
-```
-- `"SKIP_ERROR"` = bỏ qua lỗi và tiếp tục
-
-#### 5. Các thuộc tính khác
-```json
-{
-  "valueSettingType": "MANUAL",
-  "createOne": true,
-  "isRawValue": true,
-  "isList": false,
-  "actionType": "CREATE_RECORD"
-}
-```
-- `valueSettingType: "MANUAL"` = cấu hình thủ công
-- `createOne: true` = chỉ tạo một bản ghi
-- `actionType: "CREATE_RECORD"` = loại action
+| `fieldType` | `value` | `fieldTypeDisplayAsInteger` | `isList` |
+|---|---|---|---|
+| `short_text`, `long_text` | `"Công ty A"` | `null` | `false` |
+| `numeric`, `currency` | `20`, `500000000` | `true` | `false` |
+| `boolean` | `false` | `null` | `false` |
+| `single_choice` | `"nurturing"` (giá trị option) | `null` | `false` |
+| `lookup_normal` | `"PER_SAMPLE_USER"` (ID bản ghi) | `null` | `false` |
+| `phone` | `["+84986116116"]` | `null` | `true` |
+| `url` | `[{"url": "https://cogover.com", "alias": ""}]` | `null` | `true` |
+| `email` lấy từ biến | `type: 4`, `value: "$userTask.Root.emails"`, `valueDataType: "TEXT"` | `null` | `true` |
+| Giá trị null (ví dụ `phone` đơn giá trị) | `null` | `null` | `false` |
 
 ### Resources của Create Record Action
-
-Create Record action tạo ra các resources có thể sử dụng trong các bước khác:
 
 ```json
 {
@@ -357,13 +187,12 @@ Create Record action tạo ra các resources có thể sử dụng trong các b�
 }
 ```
 
-**Chi tiết Output:**
-- `output.record` = bản ghi đã tạo (RECORD), liên kết đến object type đã cấu hình
-- `output.result` = mã kết quả (NUMBER)
+- `output.record`: bản ghi đã tạo (RECORD), liên kết đến object type đã cấu hình.
+- `output.result`: mã kết quả (NUMBER).
 
-### Cập nhật resourcesUsedIn
+### Cập nhật `resourcesUsedIn`
 
-Khi một resource của userTask được sử dụng trong recordData của Create Record (type: 4), cần thêm `resourcesUsedIn` vào resource đó trong `resources.userTasks`:
+Resource của userTask được dùng trong `recordData` (`type: 4`) phải có `resourcesUsedIn` trỏ đến action Create Record trong `resources.userTasks[].resources[]` (ví dụ `$userTask.Root.ten` map vào `first_name` → resource `ten`):
 
 ```json
 {
@@ -379,25 +208,3 @@ Khi một resource của userTask được sử dụng trong recordData của Cr
   ]
 }
 ```
-
-Ví dụ: Khi trường `$userTask.Root.ten` được dùng để map vào `first_name` trong recordData, resource `ten` trong `resources.userTasks[].resources[]` cần có `resourcesUsedIn` trỏ đến action Create Record.
-
-### Ví dụ quy trình với Create Record Task
-
-**Mô tả:** Start -> Root -> Create Lead -> End Process
-
-```
-Bắt đầu -> Root (User Task) -> Create Lead (Create Record Task) -> Kết thúc
-```
-
-**Cấu hình:**
-- Object Type: Lead (`objectTypeId: "OT00000000011"`) — *ID chỉ là ví dụ, thực tế lấy từ skill `/object-info` (xem mục 25 trong Lưu ý quan trọng)*
-- Các trường (*field slug lấy từ skill `/object-info`*):
-  - `first_name` = lấy từ biến `$userTask.Root.ten` (type: 4)
-  - `emails` = lấy từ biến `$userTask.Root.emails` (type: 4, isList: true)
-  - `company` = giá trị cố định "Công ty A" (type: 1)
-  - `annual_revenue` = giá trị cố định 500000000 (type: 1, fieldTypeDisplayAsInteger: true)
-  - `status` = giá trị cố định "nurturing" (type: 1, fieldType: single_choice)
-
----
-

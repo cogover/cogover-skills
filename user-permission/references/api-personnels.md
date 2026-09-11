@@ -1,6 +1,6 @@
 # Personnels API — ghi chú cho `user-permission`
 
-Nguồn rút gọn từ tài liệu Authorization Server. Dùng API này để resolve Personnel và đọc/thiết lập quan hệ Department–Position; không dùng Object `personnel` hoặc `department_personnel` qua `object-record` cho các tác vụ này.
+Dùng API này để resolve Personnel và đọc/thiết lập quan hệ Department–Position; không dùng Object `personnel` hoặc `department_personnel` qua `object-record` cho các tác vụ này.
 
 ## Endpoints cần dùng
 

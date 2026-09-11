@@ -1,11 +1,6 @@
 # Danh sách tính năng app Finance
 
-- **Phiên bản:** 1.6.9
-- **Ngày phát hành:** 17/08/2026
-
-Tài liệu này tổng hợp các tính năng chính của app Finance theo từng nhóm nghiệp vụ.
-
-Tên Object trong cột **Object liên quan** được ghi theo mã định danh chuẩn của hệ thống.
+Phiên bản app: 1.6.9 (17/08/2026). Cột **Object liên quan** ghi slug chuẩn của Object lưu trữ hoặc cung cấp dữ liệu cho tính năng.
 
 ## Bán hàng, hóa đơn khách hàng và trả hàng
 

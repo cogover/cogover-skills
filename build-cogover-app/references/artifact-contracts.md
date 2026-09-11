@@ -12,19 +12,17 @@
 
 ## Quy tắc chung
 
-- Dùng revision tăng dần `v1`, `v2`, ... cho mỗi baseline được bàn giao. Riêng cập nhật tiến độ trong phạm vi plan đã duyệt dùng checkpoint trong cùng revision; giữ lịch sử sự kiện và không đổi nội dung phạm vi đã duyệt.
-- Ghi `DRAFT`, `PENDING_USER_CONFIRMATION`, `APPROVED`, `STALE` hoặc `SUPERSEDED`.
+- Revision tăng dần `v1`, `v2`, ... cho mỗi baseline được bàn giao. Riêng cập nhật tiến độ trong phạm vi plan đã duyệt dùng checkpoint trong cùng revision; giữ lịch sử sự kiện và không đổi nội dung phạm vi đã duyệt.
+- Trạng thái: `DRAFT`, `PENDING_USER_CONFIRMATION`, `APPROVED`, `STALE` hoặc `SUPERSEDED`.
 - Ghi nguồn bằng `REQ-ID`, trang/section/sheet, Workspace resource ID/slug và timestamp khi có.
-- Không ghi API key, session, cookie, secret, dữ liệu nhạy cảm không cần thiết hoặc raw response chưa redacted.
-- Dùng ID ổn định: `REQ`, `Q`, `DEC`, `OBJ`, `REL`, `FLD`, `TR`, `MIG`, `ISSUE`, `AUT`, `GAP`, `W`, `T`.
+- ID ổn định: `REQ`, `Q`, `DEC`, `OBJ`, `REL`, `FLD`, `TR`, `MIG`, `ISSUE`, `AUT`, `GAP`, `W`, `T`.
 - Không để một cell trống gây mơ hồ; dùng `N/A`, `TBD`, `UNKNOWN` hoặc lý do cụ thể.
-- Markdown là nguồn chuẩn cho AI; HTML/Excel chỉ là bản để người dùng đọc theo [contract bản đọc](human-readable-deliverables.md). Các sub-agent tạo bản đọc bắt buộc độc lập với chế độ reviewer.
-- Viết diễn giải yêu cầu/giải pháp và kế hoạch bằng tiếng Việt dễ hiểu, giải thích lý do/kết quả cho người không chuyên kỹ thuật; giữ các enum kỹ thuật trong metadata hoặc comment khi phù hợp.
-- Các heading và tên cột trong code block dưới đây chỉ quy định cấu trúc. Dịch mọi nhãn human-readable sang `Artifact language`; giữ nguyên filename contract, stable ID, slug, API/skill name, code và enum/status kỹ thuật.
-- Giữ nguyên comment `<!-- cogover-table:<table-id> -->` ngay trước bảng tương ứng. Đây là marker machine-readable để validator định vị bảng dù heading/tên cột đã dịch; không đổi table ID hoặc thứ tự cột contract.
-- Mọi solution artifact có Workspace đích phải chứa đúng marker `<!-- cogover-api-key-preflight:VERIFIED -->`. Không tạo solution artifact khi credential chưa đạt Gate Credential.
-- Ghi `Reviewer mode: OFF/ON` trong solution và data-design artifact. Mặc định `OFF`; chỉ dùng `ON` khi có yêu cầu rõ “bật các reviewer” hoặc diễn đạt tương đương từ người dùng. Khi `OFF`, dùng `NOT_REQUESTED`/`NOT_APPLICABLE` cho reviewer task, identity và verdict; validator và coordinator self-check vẫn bắt buộc.
-- Chạy `scripts/validate_artifacts.py` trước mỗi Gate Solution, Gate Data Model và Gate Plan; ghi validator version/result vào artifact. Validator kiểm tra cấu trúc/cross-reference, không thay thế đánh giá correctness nghiệp vụ.
+- Markdown là nguồn chuẩn cho AI; HTML/Excel là bản để người dùng đọc, do sub-agent tạo theo [contract bản đọc](human-readable-deliverables.md) (bắt buộc, độc lập với chế độ reviewer). Diễn giải viết bằng tiếng Việt dễ hiểu theo cùng contract; giữ enum kỹ thuật trong metadata hoặc comment khi phù hợp.
+- Heading và tên cột trong code block dưới đây chỉ quy định cấu trúc. Dịch nhãn human-readable sang `Artifact language`; giữ nguyên filename contract, stable ID, slug, API/skill name, code và enum/status kỹ thuật.
+- Giữ nguyên comment `<!-- cogover-table:<table-id> -->` ngay trước bảng tương ứng: marker machine-readable để validator định vị bảng dù heading/tên cột đã dịch; không đổi table ID hoặc thứ tự cột contract.
+- Mọi solution artifact có Workspace đích phải chứa đúng marker `<!-- cogover-api-key-preflight:VERIFIED -->`; không tạo solution artifact khi credential chưa đạt Gate Credential.
+- Ghi `Reviewer mode: OFF/ON` trong solution và data-design artifact (điều kiện bật theo `SKILL.md`). Khi `OFF`, dùng `NOT_REQUESTED`/`NOT_APPLICABLE` cho reviewer task, identity và verdict; validator và coordinator self-check vẫn bắt buộc.
+- Chạy `scripts/validate_artifacts.py` trước mỗi Gate Solution, Gate Data Model và Gate Plan; ghi validator version/result vào artifact. Validator chỉ kiểm tra cấu trúc/cross-reference, không thay thế đánh giá correctness nghiệp vụ.
 
 ## `danh-sach-yeu-cau-va-giai-phap-so-bo-vN.md`
 
@@ -86,15 +84,13 @@
 
 ### Quy tắc hai bảng
 
-- Dòng Bảng 1 phải bắt đầu bằng `REQ-ID`. Cột giải pháp phải chứa disposition, mapping Cogover, delta, dependency/limitation, acceptance và evidence đủ truy nguyên; không được để trống.
-- Markdown yêu cầu/giải pháp chỉ dùng hai bảng contract ở trên; trình bày QA findings bằng danh sách, không tạo bảng thứ ba.
+- Dòng Bảng 1 bắt đầu bằng `REQ-ID`. Cột giải pháp chứa disposition, mapping Cogover, delta, dependency/limitation, acceptance và evidence đủ truy nguyên; không được để trống.
+- Markdown yêu cầu/giải pháp chỉ dùng hai bảng contract ở trên; QA findings trình bày bằng danh sách, không tạo bảng thứ ba.
 - Cột trạng thái chỉ dùng `CẦN LÀM RÕ`, `ĐÃ RÕ`, `OUT_OF_SCOPE` hoặc `UNKNOWN`. Mọi `Q-ID` trong cột câu hỏi phải có đúng một dòng ở Bảng 2.
 - Mỗi dòng Bảng 2 bắt đầu bằng `Q-ID`, tham chiếu một hoặc nhiều `REQ-ID` đã định nghĩa và không để trống nội dung câu hỏi. Mapping Q↔REQ trong hai bảng phải khớp chính xác. Dùng `TBD` cho câu chưa trả lời.
-- Mỗi vòng trả lời của người dùng tạo một revision mới; không sửa đè file đã giao.
-- Revision cuối phải có mọi requirement in-scope ở trạng thái `ĐÃ RÕ`, cột câu hỏi là `N/A`, dùng “giải pháp cuối cùng” và **bỏ hoàn toàn marker/heading/Bảng 2**. Chỉ yêu cầu reviewer verdict đạt khi `Reviewer mode: ON`; khi `OFF`, ghi `NOT_REQUESTED`.
+- Revision cuối: mọi requirement in-scope ở trạng thái `ĐÃ RÕ`, cột câu hỏi là `N/A`, dùng “giải pháp cuối cùng” và **bỏ hoàn toàn marker/heading/Bảng 2**. Chỉ yêu cầu reviewer verdict đạt khi `Reviewer mode: ON`; khi `OFF`, ghi `NOT_REQUESTED`.
 - Không dùng một score duy nhất để che gap. Nếu có score, công khai trọng số và giữ bằng chứng ở cấp requirement.
-
-Sau mỗi revision, `solution_reader` tạo HTML có input theo Q-ID, Sáng/Tối và xuất JSON câu trả lời local theo [contract bản đọc](human-readable-deliverables.md). Khi người dùng báo “đã trả lời”, kiểm tra file, revision/hash và mapping câu hỏi trước khi tạo revision Markdown mới; submit không phải approval.
+- Sau mỗi revision, `solution_reader` tạo HTML; câu trả lời JSON được tiếp nhận theo [quy trình “đã trả lời”](human-readable-deliverables.md#khi-người-dùng-nói-đã-trả-lời); submit không phải approval.
 
 Severity dùng `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`; Disposition dùng `ACCEPTED`, `REJECTED_WITH_REASON`, `DEFERRED`, `NEEDS_USER_DECISION`; Issue status dùng `OPEN`, `RESOLVED`, `OUT_OF_SCOPE_CONFIRMED`. Không xóa hoặc hạ severity issue đã sửa. `DEFERRED` chỉ hợp lệ khi có quyết định out-of-scope của người dùng, owner và target phase/revision. Gate luôn yêu cầu validator `PASS`, không còn issue chặn và không có deferral không hợp lệ; chỉ yêu cầu independent reviewer verdict đạt khi `Reviewer mode: ON`.
 
@@ -201,17 +197,17 @@ Required checks: phạm vi trường Excel so với workbook-scope, Notes và RE
 - Confirmation evidence: empty until user confirms
 ```
 
-Mỗi Object có status/lifecycle phải có transition matrix. Không chỉ liệt kê options.
+Mỗi Object có status/lifecycle phải có transition matrix; không chỉ liệt kê options.
 
 ## `cogover-objects-vN.xlsx`
 
-Workbook này để người dùng đọc/duyệt, do `data_design_reader` tạo từ Markdown chuẩn; mỗi trường một dòng theo [profile workbook duyệt](human-readable-deliverables.md#excel-thiết-kế-dữ-liệu-để-duyệt). Chỉ đưa trường mới, cần sửa hoặc rất quan trọng. Cột `Field name` ở A, cố định bên trái, rộng 100px; cột khác tối đa 160px. `Notes` giải thích chi tiết tại sao cần trường, nghiệp vụ phục vụ và mã `REQ-ID`.
+Workbook để người dùng đọc/duyệt, do `data_design_reader` tạo từ Markdown chuẩn, mỗi trường một dòng theo [profile workbook duyệt](human-readable-deliverables.md#excel-thiết-kế-dữ-liệu-để-duyệt) (phạm vi trường, cột bắt buộc, `Notes`, độ rộng và cố định cột).
 
 Chạy `scripts/validate_artifacts.py --data-design <file.md> --review-workbook <file.xlsx>`. Không áp yêu cầu đủ mọi field, record-name hoặc lookup sheet của workbook import lên bản duyệt đã lọc. Giữ kiểu/slug/mã và thông tin required/default/options/lookup nhất quán với Markdown; field không có trong bản duyệt vẫn có thể là một phần mô hình đã có.
 
-Nếu cần workbook import đầy đủ, tạo file riêng bằng `$create-cogover-objects` từ Markdown đã duyệt; chạy validator của skill đó và `--workbook` của validator này. Không dùng bản duyệt theo dòng làm file import.
+Cần workbook import đầy đủ: tạo file riêng bằng `$create-cogover-objects` từ Markdown đã duyệt; chạy validator của skill đó và `--workbook` của validator này. Không dùng bản duyệt theo dòng làm file import.
 
-Sau Excel, cùng sub-agent tạo `data-design-vN.html` có sơ đồ quan hệ và bảng diễn giải từng Object, nghiệp vụ và `REQ-ID`. Giao cả ba file cùng revision; AI ở bước tiếp theo vẫn dùng Markdown. Ghi filename/revision Excel, generator và kết quả đối chiếu trong Markdown trước khi chốt nguồn. Lưu hash Markdown/Excel/HTML trong file manifest bàn giao riêng sau khi sinh bản đọc; không ghi hash đầu ra trở lại Markdown khiến hash nguồn thay đổi. Ghi tên/hash Markdown nguồn trong HTML và workbook.
+Sau Excel, cùng sub-agent tạo `data-design-vN.html`; giao cả ba file cùng revision, AI ở bước tiếp theo vẫn dùng Markdown. Ghi filename/revision Excel, generator và kết quả đối chiếu trong Markdown trước khi chốt nguồn; hash của các bản đọc lưu trong manifest bàn giao riêng theo contract bản đọc.
 
 ## `automation-feasibility-vN.md`
 
@@ -251,13 +247,7 @@ Sau Excel, cùng sub-agent tạo `data-design-vN.html` có sơ đồ quan hệ v
 | Finding | Affected OBJ/FLD/TR | Requires return to Data Model Gate? | Decision |
 ```
 
-Support status chỉ dùng:
-
-- `SUPPORTED_NATIVE`
-- `SUPPORTED_WITH_CONSTRAINTS`
-- `PARTIAL_EXTERNAL_COMPONENT`
-- `NOT_SUPPORTED`
-- `UNKNOWN_NEEDS_VALIDATION`
+Support status chỉ dùng `SUPPORTED_NATIVE`, `SUPPORTED_WITH_CONSTRAINTS`, `PARTIAL_EXTERNAL_COMPONENT`, `NOT_SUPPORTED`, `UNKNOWN_NEEDS_VALIDATION`.
 
 ## `implementation-plan-vN.md`
 
@@ -342,30 +332,19 @@ Support status chỉ dùng:
 - Confirmation evidence: empty until user confirms
 ```
 
-Marker của plan chỉ dùng một trong hai giá trị:
+Marker của plan chỉ dùng một trong hai giá trị: `<!-- cogover-data-model-gate:APPROVED -->` khi data design/workbook đã được người dùng xác nhận; `<!-- cogover-data-model-gate:DATA_MODEL_NOT_APPLICABLE -->` khi người dùng đã xác nhận data model không áp dụng. Không tạo hoặc phát hành plan trước Gate Data Model; marker phải khớp metadata và bằng chứng approval thực tế. Điều kiện mở Gate Plan: [Approval gates](orchestration-and-gates.md#gate-plan).
 
-- `<!-- cogover-data-model-gate:APPROVED -->` khi data design/workbook đã được người dùng xác nhận.
-- `<!-- cogover-data-model-gate:DATA_MODEL_NOT_APPLICABLE -->` khi người dùng đã xác nhận data model không áp dụng.
+### Bảng checkpoint và cập nhật tiến độ
 
-Không tạo hoặc phát hành plan trước Gate Data Model. Marker phải khớp metadata và bằng chứng approval thực tế; không tự ghi approval giả.
-
-Implementation Plan do coordinator preflight và validator kiểm tra. Không mở Gate Plan khi validator hoặc coordinator preflight chưa `PASS`, còn `NEEDS_USER_DECISION`, deferral không hợp lệ, requirement chưa mapping hoặc W-ID chưa đủ điều kiện `READY`.
-
-### Bản HTML và cập nhật tiến độ
-
-`plan_reader` tạo `implementation-plan-vN.html` từ Markdown đã kiểm tra; dùng tiếng Việt dễ hiểu, có trạng thái/dấu hoàn thành theo `W-ID`. Người dùng duyệt revision Markdown nguồn thông qua bản đọc; HTML không tự cấp approval.
-
-Thêm bảng `<!-- cogover-table:execution-checkpoints -->` với đúng 7 cột `W-ID | Done | Updated at | Agent | Resource IDs | Evidence | Remaining/next step`. Mỗi W-ID có một dòng; `DONE` phải khớp `[x]`, trạng thái khác là `[ ]`. Khởi tạo bảng khi lập plan; mỗi việc hoàn tất cập nhật ngay Markdown rồi đồng bộ HTML. Ghi số checkpoint, thời điểm và nhật ký trạng thái/next step để Agent khác tiếp tục theo [quy trình checkpoint](human-readable-deliverables.md#html-kế-hoạch-checkpoint-và-bàn-giao-agent). Không tăng revision chỉ vì tiến độ, không thay đổi phạm vi đã duyệt, không chạy lại mutation nếu HTML chưa cập nhật.
+Thêm bảng `<!-- cogover-table:execution-checkpoints -->` với đúng 7 cột `W-ID | Done | Updated at | Agent | Resource IDs | Evidence | Remaining/next step`. Mỗi W-ID có một dòng; `DONE` phải khớp `[x]`, trạng thái khác là `[ ]`. Khởi tạo bảng khi lập plan; mỗi việc hoàn tất cập nhật ngay Markdown rồi giao `plan_reader` đồng bộ `implementation-plan-vN.html` theo [quy trình checkpoint](human-readable-deliverables.md#html-kế-hoạch-checkpoint-và-bàn-giao-agent). Không tăng revision chỉ vì tiến độ, không thay đổi phạm vi đã duyệt, không chạy lại mutation nếu HTML chưa cập nhật.
 
 ### Work item rules
 
 - Mỗi `REQ-ID` in-scope phải xuất hiện trong traceability.
 - Mỗi `W-ID` phải có ít nhất một `REQ-ID`; không tạo work item “nice to have” ngoài scope.
-- Dùng `DRAFT`, `BLOCKED`, `READY`, `IN_PROGRESS`, `DONE`, `FAILED` cho Status. Gate Plan chỉ cho apply `READY`; plan mới phát hành thường chỉ dùng `DRAFT`, `BLOCKED` hoặc `READY`.
-- `Depends on` dùng ID, không dùng mô tả mơ hồ.
-- `Parallel group` chỉ được gán sau khi kiểm tra lock và dependency.
-- `Postcondition` phải là state có thể đọc lại hoặc hành vi có thể quan sát.
-- `Rollback` không được mặc định là delete; nêu rõ khi chỉ có containment/manual recovery.
+- Status dùng `DRAFT`, `BLOCKED`, `READY`, `IN_PROGRESS`, `DONE`, `FAILED`. Gate Plan chỉ cho apply `READY`; plan mới phát hành thường chỉ dùng `DRAFT`, `BLOCKED` hoặc `READY`.
+- `Depends on` dùng ID, không dùng mô tả mơ hồ. `Parallel group` chỉ được gán sau khi kiểm tra lock và dependency.
+- `Postcondition` phải là state có thể đọc lại hoặc hành vi có thể quan sát. `Rollback` không được mặc định là delete; nêu rõ khi chỉ có containment/manual recovery.
 - Tách hoặc liệt kê rõ mọi side effect ngầm của skill con: layout mặc định, icon upload, activation/publish, runtime fixture, quyền/persona/schedule tạm và cleanup. Không để chúng ẩn trong một W-ID chung không có lock/postcondition.
 - Với Formula, plan phải thể hiện `base fields → marked fixture hoặc approved existing record → syntax/runtime validation → Formula mutation → read-back`; chỉ tạo cleanup W-ID cho fixture do lần chạy tạo/thay đổi và không cleanup business record có sẵn.
 

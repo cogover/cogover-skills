@@ -146,7 +146,7 @@ Ba validation bắt buộc trước khi gửi:
 | `approvalScreen` | Integer | Loại màn hình phê duyệt |
 | `taskPerformer` | Array | Cấu hình người thực hiện task |
 | `content` | Array | Cấu hình layout/UI của task (chi tiết bỏ qua) |
-| `pageSettings` | Object | Cấu hình giao diện trang. Với `userTask`, mặc định padding trang bằng `0`, `settingPage.typeColor = "primary"`, `settingPage.combinationRatio = 100`; xem template đầy đủ trong `SKILL.md` |
+| `pageSettings` | Object | Cấu hình giao diện trang. Với `userTask`, mặc định padding trang bằng `0`, `settingPage.typeColor = "primary"`, `settingPage.combinationRatio = 100`; xem template đầy đủ trong `references/user-task-templates.md` |
 | `participantPermission` | Object | Quyền người tham gia riêng cho task |
 
 ---

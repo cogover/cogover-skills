@@ -1,127 +1,47 @@
 # Mô hình hóa Report Type và quan hệ object
 
-## Mục lục
-
-1. [Từ câu hỏi nghiệp vụ đến object graph](#từ-câu-hỏi-nghiệp-vụ-đến-object-graph)
-2. [Chọn primary object](#chọn-primary-object)
-3. [Chọn join và kiểm tra cardinality](#chọn-join-và-kiểm-tra-cardinality)
-4. [Khám phá relation](#khám-phá-relation)
-5. [Payload relation và metadata](#payload-relation-và-metadata)
-6. [Section và report field](#section-và-report-field)
-7. [Ví dụ một object](#ví-dụ-một-object)
-8. [Ví dụ nhiều object](#ví-dụ-nhiều-object)
-
-## Từ câu hỏi nghiệp vụ đến object graph
-
-Tách yêu cầu thành:
-
-| Thành phần | Câu hỏi cần trả lời |
-|---|---|
-| Population | Những record nào tạo thành tập gốc? |
-| Dimension | Group theo field nào? |
-| Metric | Count/sum/avg/min/max/median field nào? |
-| Event | Điều gì tạo tử số hoặc trạng thái thành công? |
-| Filter | Khoảng thời gian, trạng thái, owner hoặc điều kiện nào? |
-| Grain | Một row đại diện record nào? |
-| Output | Cần detail list, summary, pivot hay tỷ lệ? |
-
-Chỉ thêm object khi field/record của object đó cần cho một hàng, dimension, metric hoặc filter. Luôn dùng `$object-info` để xác minh object ID, slug, field type, lookup/reference và related list thực tế.
-
 ## Chọn primary object
 
-Chọn object đại diện population hoặc grain chính:
-
-- “Khách hàng tiềm năng theo nguồn”: primary object là Lead.
-- “Doanh thu theo đơn hàng”: primary object thường là Order.
-- “Tỷ lệ Lead tạo thành Opportunity”: primary object thường là Lead nếu mẫu số là toàn bộ Lead.
-
-Không chọn object chỉ vì nó có metric dễ aggregate. Primary object sai có thể loại record chưa match hoặc tạo duplicate trước khi group.
+Primary object đại diện population hoặc grain chính: "khách hàng tiềm năng theo nguồn" → Lead; "doanh thu theo đơn hàng" → thường là Order; "tỷ lệ Lead tạo thành Opportunity" → Lead nếu mẫu số là toàn bộ Lead. Không chọn object chỉ vì nó có metric dễ aggregate: primary object sai có thể loại record chưa match hoặc tạo duplicate trước khi group. Chỉ thêm object khác khi field/record của nó cần cho một hàng, dimension, metric hoặc filter.
 
 ## Chọn join và kiểm tra cardinality
 
-Mapping cố định của Report API:
+`relation_type: 1` là Inner Join, chỉ giữ record có match: dùng khi câu hỏi chỉ quan tâm record đã liên kết. `relation_type: 2` là Left Join, giữ toàn bộ record bên trái: dùng khi cần cả record chưa liên kết, đặc biệt population/mẫu số của conversion.
 
-- `relation_type: 1` — Inner Join: chỉ giữ record có match.
-- `relation_type: 2` — Left Join: giữ toàn bộ record bên trái.
-
-Chọn join theo semantics, không theo thói quen:
-
-- Dùng Inner khi câu hỏi chỉ quan tâm record đã liên kết.
-- Dùng Left khi cần cả record chưa liên kết, đặc biệt population/mẫu số của conversion.
-
-Trước aggregate, kiểm tra cardinality:
-
-| Quan hệ | Rủi ro |
+| Quan hệ | Rủi ro khi aggregate |
 |---|---|
 | one-to-one | Count thường ổn nếu key không null |
 | many-to-one | Record nguồn vẫn giữ grain nếu join đúng chiều |
 | one-to-many | Record nguồn có thể bị nhân bản; count/sum có thể tăng sai |
-| many-to-many | Cần đặc biệt cảnh giác; thường cần distinct/pre-aggregation |
+| many-to-many | Thường cần distinct/pre-aggregation |
 
-Aggregate catalog hiện không nêu `count_distinct`. Với conversion one-to-many, không tính `count(opportunity) / count(lead)` rồi tuyên bố chính xác nếu lead bị lặp. Xác minh ràng buộc một-một, dùng field/snapshot đã precompute, hoặc báo giới hạn.
+Aggregate catalog không có `count_distinct`. Với conversion one-to-many, không tính `count(opportunity) / count(lead)` rồi tuyên bố chính xác nếu lead bị lặp. Trước mutation, chốt một phương án: quan hệ thực tế là một-một nên count thông thường đúng; workspace có field conversion/precomputed metric đáng tin cậy; dùng snapshot/object tổng hợp khác; hoặc báo rõ giới hạn và chỉ tạo report numerator/denominator riêng để kiểm chứng.
 
 ## Khám phá relation
 
-Thực hiện theo thứ tự:
+1. Gọi `$object-info` cho object ứng viên (fields, related lists, metadata) và xác minh lookup/reference field nối hai object.
+2. Gọi service `223` để lấy relation dùng được và `object_relation_id` thật khi `object-info` không cung cấp ID dạng relation. Không biến `RL...` related-list ID thành `OR...` relation ID; không dùng ID quan hệ từ workspace mẫu ở workspace khác.
+3. Xác minh chiều source/destination theo response, không suy ra từ tên field. Tách chiều vật lý của relation khỏi chiều cha–con trên graph: `src_object_id` luôn là object sở hữu lookup field; node cha có thể là source hoặc destination.
+4. Tạo graph liên thông từ primary object, không cycle, tối đa 4 relation/5 object.
 
-1. Gọi `$object-info` cho object ứng viên với fields, related lists và metadata.
-2. Xác minh lookup/reference field nối hai object.
-3. Gọi service `223` để lấy relation có thể dùng và `object_relation_id` thật khi dữ liệu từ `object-info` không cung cấp ID dạng relation.
-4. Xác minh chiều source/destination theo response, không suy ra từ tên field.
-5. Tách chiều vật lý của relation khỏi chiều cha–con trên graph. `src_object_id` luôn là object sở hữu lookup field; node cha có thể là source hoặc destination.
-6. Tạo graph liên thông từ primary object, không cycle, tối đa 4 relation/5 object.
+## Hướng lookup trong graph UI
 
-Không biến `RL...` related-list ID thành `OR...` relation ID. Không dùng ID quan hệ từ workspace mẫu ở workspace khác.
-
-## Payload relation và metadata
-
-Tạo Report Type bằng service `212` mà không gửi `meta_data`:
-
-```json
-{
-  "report_type_name": "<REPORT_TYPE_NAME>",
-  "report_type_slug": "<REPORT_TYPE_SLUG>",
-  "primary_object": "<PRIMARY_OBJECT_ID>"
-}
-```
-
-Không gửi `meta_data: "{}"` hoặc root graph ở `212`; tạo graph bằng service `202` sau khi Report Type đã tồn tại.
-
-Sau `212`, luôn gọi service `202`. Với một object:
-
-```json
-{
-  "report_id": "<REPORT_TYPE_ID>",
-  "relations": [],
-  "src_object_id": "<PRIMARY_OBJECT_ID>",
-  "meta_data": "{\"nodes\":[{\"id\":\"<PRIMARY_OBJECT_ID>\",\"type\":\"nodeRoot\",\"position\":{\"x\":0,\"y\":0},\"data\":{\"title\":\"Đối tượng chính\",\"content\":\"<PRIMARY_OBJECT_DISPLAY_NAME>\"},\"selected\":false}],\"edges\":[],\"viewport\":{\"x\":0,\"y\":0,\"zoom\":1}}"
-}
-```
-
-Lấy primary object display name từ `name` đã được object API trả về theo display context; chỉ dùng translation metadata làm fallback. Không tự dịch.
-
-### Hướng lookup trong graph UI
-
-Relation từ service `223` mô tả lookup vật lý:
-
-```text
-relation source.field -> relation destination.id
-```
-
-Graph UI cần thêm `lookup_type` và `source_name` để biết relation được gắn vào node cha theo chiều nào:
+Relation từ service `223` mô tả lookup vật lý `relation source.field -> relation destination.id`. Graph UI cần thêm `lookup_type` và `source_name` trên mỗi edge để biết relation gắn vào node cha theo chiều nào:
 
 | Node cha trên graph | `lookup_type` | UI | Node con | Biểu thức |
 |---|---:|---|---|---|
 | relation source | `2` | Tra cứu từ `<source_name>` | relation destination | `source.field = destination.id` |
 | relation destination | `1` | Tra cứu tới `<source_name>` | relation source | `source.field = destination.id` |
 
-`source_name` là alias chữ cái của node cha theo thứ tự node trong graph: root là `A`, node tiếp theo là `B`, rồi `C`, `D`, `E`. Thiếu `lookup_type` có thể làm UI đảo chiều lookup, hiển thị sai object con và dựng sai biểu thức JOIN dù service `221` vẫn trả `src_object_id`/`dst_object_id` đúng.
+`source_name` là alias chữ cái của node cha theo thứ tự node trong graph: root là `A`, tiếp theo `B`, `C`, `D`, `E`. Ví dụ chuỗi `Opportunity (A) -> Lead (B) -> Campaign (C)` dùng hai lookup từ node cha nên cả hai edge có `lookup_type: 2`, `source_name` lần lượt là `A` và `B`. Thiếu `lookup_type`, UI có thể đảo chiều lookup, hiển thị sai object con và dựng sai biểu thức JOIN dù service `221` vẫn trả `src_object_id`/`dst_object_id` đúng.
 
-Ví dụ chuỗi `Opportunity (A) -> Lead (B) -> Campaign (C)` dùng hai lookup từ node cha, nên cả hai edge có `lookup_type: 2`; `source_name` lần lượt là `A` và `B`.
+## Payload service 202
+
+Service `212` không nhận `meta_data` hay root graph; graph tạo bằng `202` sau khi Report Type đã tồn tại. Payload `202` một object (`relations: []`, `src_object_id`, root graph trong `meta_data`): xem [Khởi tạo Report Config một object](api-contract.md#khởi-tạo-report-config-một-object-202); `data.content` của root là display `name` của primary object theo cùng quy tắc với `field_name`.
 
 ### Payload nhiều object
 
-Gửi toàn bộ relations và graph đầy đủ trong cùng lần gọi `202`:
+Gửi toàn bộ relation đã xác minh và graph đầy đủ trong cùng lần gọi `202`; `meta_data` là graph serialize thành JSON string, không gửi literal placeholder:
 
 ```json
 {
@@ -134,35 +54,11 @@ Gửi toàn bộ relations và graph đầy đủ trong cùng lần gọi `202`:
       "object_relation_id": "<OBJECT_RELATION_ID>"
     }
   ],
-  "meta_data": "<JSON_STRING_CỦA_GRAPH_ROOT_CHILD_EDGE>"
+  "meta_data": "<JSON string của graph bên dưới>"
 }
 ```
 
-Không gửi literal placeholder trên. Dựng graph đầy đủ theo shape Public API dưới đây, serialize graph thành JSON string rồi dùng làm `meta_data`:
-
-- Root node:
-  - `id`: primary object ID.
-  - `type`: `nodeRoot`.
-  - `position`: `{x,y}`.
-  - `data.title`, `data.content`.
-- Child node:
-  - `id`: unique node ID; ưu tiên UUID như UI.
-  - `type`: `nodeHeader`.
-  - `data.parent_object_id`, `data.current_object_id`, `data.relation_type`, `data.level`, `data.content`.
-  - `parentId`: parent node ID.
-  - `data.content`: `<OBJECT_DISPLAY_NAME> (<LOOKUP_FIELD_DISPLAY_NAME>)`.
-  - Với node lồng từ level 2 trở lên, thêm `data.parent_id` bằng object ID của node cha để tương thích state UI.
-- Edge:
-  - `id`, `source`, `target`, `type: "customSmoothStep"`.
-  - Ưu tiên `id` bằng child node ID như UI tạo tay; `source` là parent node ID, `target` là child node ID.
-  - `data.src_object_id`, `data.dst_object_id`, `data.relation_type`, `data.object_relation_id`, `data.field_slug`.
-  - Bắt buộc có `data.lookup_type` theo bảng hướng lookup và `data.source_name` là alias của parent node.
-  - Có thể thêm `animated: false` để khớp state UI; không dùng key này để suy luận nghiệp vụ.
-- Viewport: `{x,y,zoom}`.
-
-Đặt `selected: false` cho node đã lưu. Không tự thêm `measured`, `dragging` hoặc kích thước runtime vào graph mới. Khi update graph hiện có, giữ mọi key chưa biết và chỉ thay đổi các key thuộc contract đã xác minh.
-
-Graph parsed tối thiểu cho lookup từ A:
+Graph parsed tối thiểu cho một lookup từ `A`:
 
 ```json
 {
@@ -211,84 +107,26 @@ Graph parsed tối thiểu cho lookup từ A:
 }
 ```
 
-Trước mutation, chạy `scripts/report_api.py` ở chế độ dry-run. Validator phải chứng minh mỗi edge khớp đúng một relation, `source_name` khớp alias parent, và `lookup_type` khớp hướng parent/child. Sau `202`, đọc `215.meta_data` và `221`; tự dựng lại biểu thức UI cho từng edge để xác nhận `source.field = destination.id`. Không coi preview dữ liệu đúng là đủ vì execution engine và UI có thể đọc hai phần state khác nhau.
+Quy tắc graph:
 
-Không bỏ qua `202` khi không có relation: bước này khởi tạo Report Config cần cho các service field tiếp theo.
+- Root node: `id` là primary object ID, `type: "nodeRoot"`, `position {x,y}`, `data.title`, `data.content`. Child node: `id` duy nhất (ưu tiên UUID như UI), `type: "nodeHeader"`, `parentId` là node cha, `data.parent_object_id`, `data.current_object_id`, `data.relation_type`, `data.level`, `data.content` dạng `<OBJECT_DISPLAY_NAME> (<LOOKUP_FIELD_DISPLAY_NAME>)`; node lồng từ level 2 trở lên thêm `data.parent_id` bằng object ID của node cha để tương thích state UI.
+- Edge: `id` ưu tiên bằng child node ID như UI tạo tay; `source` là node cha, `target` là node con; `type: "customSmoothStep"`; `data` phải có `src_object_id`, `dst_object_id`, `relation_type`, `object_relation_id`, `field_slug`, `lookup_type` (theo bảng trên) và `source_name` (alias node cha). `animated: false` chỉ để khớp state UI, không dùng suy luận nghiệp vụ.
+- Viewport `{x,y,zoom}`. `selected: false` cho node đã lưu. Không tự thêm `measured`, `dragging` hoặc kích thước runtime vào graph mới. Khi update graph hiện có, giữ mọi key chưa biết và chỉ đổi key thuộc contract đã xác minh.
 
-## Section và report field
+Trước mutation, chạy `scripts/report_api.py` ở chế độ dry-run: validator phải chứng minh mỗi edge khớp đúng một relation, `source_name` khớp alias node cha và `lookup_type` khớp hướng parent/child. Sau `202`, đọc `215.meta_data` và `221`, tự dựng lại biểu thức UI cho từng edge để xác nhận `source.field = destination.id`; preview dữ liệu đúng chưa đủ vì execution engine và UI có thể đọc hai phần state khác nhau.
 
-Sau `202`, đọc service `211` và `222` trước khi tạo field. Dùng state backend trả về làm nguồn xác minh:
+## Ví dụ
 
-- Default section persisted với `section_index: 0` có sẵn sau create config; không gọi `208` để tái tạo section này.
-- Khi cần section bổ sung, gọi `208` với `section_index: 1000` thay vì tự tính index persisted.
-- `section_type: 1` cho section hiển thị; `0` cho ẩn.
+### Một object: "Tạo báo cáo khách hàng tiềm năng theo nguồn"
 
-Tái sử dụng default section cho field nghiệp vụ. Chỉ thêm section khi report contract thực sự cần phân nhóm field riêng.
-
-Payload service `227`:
-
-```json
-{
-  "report_type_id": "<REPORT_TYPE_ID>",
-  "field": {
-    "object_type_id": "<OBJECT_ID>",
-    "field_name": "<DISPLAY_NAME>",
-    "section_id": "<SECTION_ID>",
-    "field_slug": "<OBJECT_FIELD_SLUG_OR_CONFIRMED_PATH>",
-    "field_type": 0,
-    "status": 0,
-    "index_in_section": 0
-  }
-}
-```
-
-Quy tắc field:
-
-- Field trực tiếp của primary hoặc related object: `field_type: 0`, `object_type_id` của object sở hữu field, slug trực tiếp.
-- Field đi qua lookup path lồng nhau: `field_type: 1` và dotted `field_slug`; chỉ dùng path mà object metadata hoặc Public Report API đã trả về.
-- `field_name`: dùng display `name` mà object API trả về; chỉ dùng translation metadata làm fallback, không tự dịch hoặc đổi nhãn.
-- `field_data_type` là dữ liệu response, không thay thế discriminator `field_type` 0/1.
-- Chỉ lấy object field active.
-- Ghi lại mapping `{object_id, object_field_slug} → report_field_id` từ response `227`/service `222`.
-
-Service `222` có thể trả field hệ thống như `workspace_id` và `object_type` sau `202`. Không biến chúng thành object field giả và không gọi `227` để tái tạo. Mặc định loại chúng khỏi display, group, filter và aggregate.
-
-## Ví dụ một object
-
-Yêu cầu: “Tạo báo cáo khách hàng tiềm năng theo nguồn”.
-
-Phân tích:
-
-- Primary object: Lead.
-- Dimension: `lead_source`.
-- Metric: count một field định danh Lead không null.
-- Relation: không có.
-- Group: report field tương ứng `lead_source`.
-- Detail: tùy yêu cầu; không bắt buộc hiển thị mọi field.
-
-Thứ tự:
+Primary object Lead; dimension `lead_source`; metric là count một field định danh Lead không null; không relation; group theo report field của `lead_source`; detail tùy yêu cầu, không bắt buộc hiển thị mọi field. Thứ tự service:
 
 ```text
-object-info → 215 kiểm tra trùng → 212 (không metadata) → 202 (relations [], src object, root metadata) →
-211/222 lấy default state → 227 (source + record key chưa tồn tại) →
-222 resolve report field IDs → 239 → 201 → 229 → 207 → 200
+object-info → 215 kiểm tra trùng → 212 (không meta_data) → 202 (relations [], src_object_id, root graph) →
+211/222 lấy default state → 227 (lead_source + field định danh chưa tồn tại) → 222 resolve report field ID →
+239 → 201 → 229 → 207 → 200
 ```
 
-## Ví dụ nhiều object
+### Nhiều object: "Chiến dịch nào có tỷ lệ chuyển đổi Lead sang Opportunity cao nhất?"
 
-Yêu cầu: “Chiến dịch marketing nào có tỷ lệ chuyển đổi Lead sang Opportunity cao nhất?”.
-
-Phân tích ban đầu:
-
-- Primary object: Lead nếu mẫu số là toàn bộ Lead.
-- Dimension: campaign nguồn trên Lead.
-- Event: Opportunity liên kết qua field/relationship đã xác minh.
-- Join: thường cần Left Join để giữ Lead chưa chuyển đổi, nhưng phải xác nhận định nghĩa nghiệp vụ.
-- Cardinality: kiểm tra một Lead có thể sinh nhiều Opportunity hay không.
-
-Không dùng ngay công thức tỷ lệ nếu API không thể đếm distinct Lead. Trước mutation, chốt một trong các phương án:
-
-1. Quan hệ thực tế một-một và count thông thường là đúng.
-2. Workspace có field conversion/precomputed metric đáng tin cậy.
-3. Dùng snapshot/object tổng hợp khác.
-4. Báo rõ giới hạn và chỉ tạo report numerator/denominator riêng để kiểm chứng.
+Primary object Lead nếu mẫu số là toàn bộ Lead; dimension là campaign nguồn trên Lead; event là Opportunity liên kết qua field/relationship đã xác minh; join thường là Left để giữ Lead chưa chuyển đổi nhưng phải xác nhận định nghĩa nghiệp vụ; kiểm tra một Lead có thể sinh nhiều Opportunity hay không và chốt phương án ở [Chọn join và kiểm tra cardinality](#chọn-join-và-kiểm-tra-cardinality) trước mutation.

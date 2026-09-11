@@ -41,8 +41,6 @@ Wait Task tạm dừng execution cho tới khi timer runtime hoặc event listen
 }
 ```
 
-Trong create payload, `action.id === action.nodeId ===` ID của `elEx:waitTask`. Không tự sinh ID `AC...` riêng.
-
 ### Resource value
 
 `eventTimeValue`, `eventSpecifiedDateTime`, `specifiedDateTime`, `httpRespondCode`, `documentSampleSlug` và `redirectUrl` dùng resource value theo cấu trúc chung:
@@ -51,8 +49,7 @@ Trong create payload, `action.id === action.nodeId ===` ID của `elEx:waitTask`
 { "type": 1, "value": 5 }
 ```
 
-- `type: 1`: raw value.
-- Loại resource khác chỉ dùng khi đã xác minh resource tương thích trên workspace; giữ đúng `value`, `valueDataType` và `valuePathName` mà front-end/API trả về.
+- `type: 1`: raw value. Loại resource khác chỉ dùng khi đã xác minh resource tương thích trên workspace; giữ đúng `value`, `valueDataType` và `valuePathName` mà front-end/API trả về.
 - `maximumWaitTimeValue` là số trực tiếp, không bọc trong resource value. `countOfUpdatesConditions` là raw number hoặc absolute slug kèm metadata resource như mô tả ở phần record.
 - Đơn vị runtime hợp lệ cho `maximumWaitTimeUnit`: `seconds`, `minutes`, `hours`, `days`. Nếu người dùng nhập tuần, đổi sang số ngày tương ứng; không gửi `weeks`.
 
@@ -211,11 +208,9 @@ Không trộn field của hai mode. Riêng time event `AFTER_A_PERIOD_OF_TIME`, 
 
 - `name`: bắt buộc, 2–250 ký tự và duy nhất trong actions.
 - `slug`: theo quy tắc slug chung của skill và duy nhất trong actions.
-- `eventType`: chỉ chọn một event được đánh dấu hỗ trợ runtime trong bảng đầu file khi process phải chạy.
+- `eventType`: chỉ chọn một event được đánh dấu hỗ trợ runtime trong bảng đầu file khi process phải chạy; không tạo Wait Webhook, absolute-time Wait, hoặc Record Wait trong Normal Flow có `objectTypeId` rỗng cho executable flow.
 - Chỉ gửi nhóm field tương ứng với event và maximum-wait mode đã chọn.
 - Event email phải có `sendEmailActionNodeId` của Send Email node; các event khác không gửi `sendEmailAction*`.
-- Không tạo Record Wait cho Normal Flow nếu GET-back process-level `objectTypeId` rỗng.
-- Không tạo Wait Webhook hoặc absolute-time Wait cho executable flow trên backend hiện tại.
 
 ### Resources của Wait Task
 
@@ -233,4 +228,4 @@ Khi `eventType = RECEIVE_EVENT_FROM_WEBHOOK`, front-end còn tạo:
 - `$action.{wait_slug}.input` (`RECORD`) với `headers` và `body`; children của `body` theo `parseToDataType.children`.
 - `$action.{wait_slug}.output` (`RECORD`) với `statusCode` và `respond.body`.
 
-Các resource phải dùng `parentTable: "action"`, `nodeId` của Wait và metadata/date-time mặc định nhất quán với các action resource khác.
+Các resource phải dùng `parentTable: "action"`, `nodeId` của Wait và metadata/date-time mặc định nhất quán với các action resource khác. `absolutePath` dùng prefix `workflow_resource:list.wait` (ví dụ `workflow_resource:list.wait / Wait 1 / StartAt`).

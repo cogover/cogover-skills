@@ -1,6 +1,6 @@
 # Positions API — ghi chú cho `user-permission`
 
-Nguồn rút gọn từ tài liệu Authorization Server. Dùng API này để resolve hoặc quản lý vị trí công việc; không đọc Object schema/record để suy đoán Position.
+Dùng API này để resolve hoặc quản lý vị trí công việc; không đọc Object schema/record để suy đoán Position.
 
 ## Endpoints cần dùng
 

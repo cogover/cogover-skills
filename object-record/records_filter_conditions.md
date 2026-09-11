@@ -1,44 +1,21 @@
 # Lọc danh sách bản ghi
 
-## Cấu trúc bộ lọc:
+Danh mục dùng chung cho cả bộ skill. Mỗi điều kiện lọc là một object `{"field", "op", "params", "fieldType"}`; bảng ở mục [Các điều kiện](#các-điều-kiện) là nguồn duy nhất về toán tử `op` và kiểu `params` theo `fieldType`. Cách bọc các điều kiện khác nhau theo API, xem mục [Cấu trúc bộ lọc](#cấu-trúc-bộ-lọc).
 
-Khi gọi API `/bapi/v1/records/list`, sử dụng key `filters` trong request body (xem SKILL.md). Bên dưới mô tả cấu trúc chi tiết của mỗi phần tử trong mảng `filters`, cùng với `logic_sequence` và `type` để kết hợp các điều kiện.
+## Cấu trúc bộ lọc
 
-### Chế độ kết hợp điều kiện (`type` và `logic_sequence`)
+### Records API (`POST /bapi/v1/records/list`)
 
-Có 3 chế độ kết hợp các điều kiện lọc, được điều khiển bởi tham số số `type` ở cấp cao nhất của request body. Luôn truyền tường minh; không bỏ key để trông chờ mặc định AND. Request thiếu `type` đã được kiểm chứng trả `r: 27`, `Invalid filter type`, kể cả khi `filters[].fieldType` hợp lệ.
+Request body dùng `filters` (mảng điều kiện), `type` (số) và `logic_sequence` (xem [SKILL.md](SKILL.md)). Luôn truyền `type` tường minh ở cấp cao nhất; thiếu `type` đã kiểm chứng trả `r: 27`, `Invalid filter type`, kể cả khi `filters[].fieldType` hợp lệ.
 
-| `type` | Chế độ | `logic_sequence` | Mô tả |
-|--------|--------|-------------------|--------|
-| `1` | **AND** | `""` (để trống) | Tất cả điều kiện phải thoả mãn |
-| `2` | **OR** | `""` (để trống) | Chỉ cần một trong các điều kiện thoả mãn |
-| `3` | **CUSTOM** | Biểu thức tuỳ chỉnh | Kết hợp AND/OR theo biểu thức tự định nghĩa |
+| `type` | Chế độ | `logic_sequence` |
+|--------|--------|-------------------|
+| `1` | **AND** — tất cả điều kiện phải thoả mãn | `""` |
+| `2` | **OR** — chỉ cần một điều kiện thoả mãn | `""` |
+| `3` | **CUSTOM** — kết hợp AND/OR theo biểu thức tự định nghĩa | Biểu thức, ví dụ `"1 AND (2 OR 3)"` |
 
-**Ví dụ AND (`type: 1`)** — lọc bản ghi có `status` là "new" VÀ `is_active` là true:
-```json
-{
-    "type": 1,
-    "logic_sequence": "",
-    "filters": [
-        {"field": "status", "op": "=", "params": "new", "fieldType": "single_choice"},
-        {"field": "is_active", "op": "=", "params": 1, "fieldType": "boolean"}
-    ]
-}
-```
+Trong biểu thức, các số `1`, `2`, `3`,... là thứ tự phần tử trong mảng điều kiện (bắt đầu từ 1); dùng `AND`, `OR` và dấu ngoặc `()`. Ví dụ CUSTOM — điều kiện 1 AND (điều kiện 2 OR điều kiện 3):
 
-**Ví dụ OR (`type: 2`)** — lọc bản ghi có `status` là "new" HOẶC `status` là "completed":
-```json
-{
-    "type": 2,
-    "logic_sequence": "",
-    "filters": [
-        {"field": "status", "op": "=", "params": "new", "fieldType": "single_choice"},
-        {"field": "status", "op": "=", "params": "completed", "fieldType": "single_choice"}
-    ]
-}
-```
-
-**Ví dụ CUSTOM (`type: 3`)** — kết hợp tuỳ chỉnh: điều kiện 1 AND (điều kiện 2 OR điều kiện 3):
 ```json
 {
     "type": 3,
@@ -51,38 +28,43 @@ Có 3 chế độ kết hợp các điều kiện lọc, được điều khiể
 }
 ```
 
-Trong `logic_sequence`, các số `1`, `2`, `3`,... tương ứng với thứ tự các phần tử trong mảng `filters` (bắt đầu từ 1). Sử dụng `AND`, `OR` và dấu ngoặc `()` để tạo biểu thức logic.
+### Dùng trong Process (`$process-creator`)
 
+Node và trigger của Process dùng cùng phần tử điều kiện nhưng bọc bằng `conditions` + `logicType` + `logic` thay cho `filters` + `type` + `logic_sequence`:
+
+| | Records API | Process |
+|---|---|---|
+| Mảng điều kiện | `filters` | `conditions` |
+| Chế độ kết hợp | `type`: `1` / `2` / `3` | `logicType`: `"AND"` / `"OR"` / `"CUSTOM"` |
+| Biểu thức | `logic_sequence`, chỉ khi `type: 3` | `logic`, chỉ khi `logicType` là `"CUSTOM"`; các chế độ khác để `""` |
+
+```json
+{
+    "conditions": [
+        {"field": "is_active", "op": "=", "params": 1, "fieldType": "boolean"},
+        {"field": "status", "op": "in", "params": ["nurturing", "qualified"], "fieldType": "single_choice"}
+    ],
+    "logicType": "AND",
+    "logic": ""
+}
+```
+
+Cách đánh số trong `logic` giống `logic_sequence`. Quy tắc riêng của từng node (giá trị `logicType` khi không có điều kiện, điều kiện tham chiếu biến workflow) theo tài liệu node trong `$process-creator`.
 
 ## Các điều kiện
 
-Có thể lọc danh sách bản ghi trả về bằng cách truyền các điều kiện lọc vào mảng `filters`.
+Ví dụ ba điều kiện: boolean bằng `0`, số điện thoại không trống, email không trống:
 
 ```json
-"filters": [
-    {
-        "field": "do_not_call",
-        "op": "=",
-        "params": 0,
-        "fieldType": "boolean"
-    },
-    {
-        "field": "mobile_phones",
-        "op": "not null",
-        "params": null,
-        "fieldType": "phone"
-    },
-    {
-        "field": "emails",
-        "op": "not null",
-        "params": null,
-        "fieldType": "email"
-    }
+[
+    {"field": "do_not_call", "op": "=", "params": 0, "fieldType": "boolean"},
+    {"field": "mobile_phones", "op": "not null", "params": null, "fieldType": "phone"},
+    {"field": "emails", "op": "not null", "params": null, "fieldType": "email"}
 ]
 ```
 
 - `field`: Slug của trường dữ liệu.
-- `op`, `params`, `fieldType`: Điều kiện, giá trị và loại trường của trường dữ liệu.
+- `op`, `params`, `fieldType`: Điều kiện, giá trị và loại trường của trường dữ liệu; `fieldType` khớp giá trị `fieldType` của field trong Object.
 
     | Trường dữ liệu `fieldType` | Điều kiện | Giá trị `op` | Kiểu dữ liệu truyền vào `params`
     | ----------- | ----------- | ----------- | ----------- |

@@ -1,6 +1,6 @@
 # Departments API — ghi chú cho `user-permission`
 
-Nguồn rút gọn từ tài liệu Authorization Server. Dùng API này để resolve hoặc quản lý phòng ban; không đọc Object `department` qua `object-record` cho mục đích này.
+Dùng API này để resolve hoặc quản lý phòng ban; không đọc Object `department` qua `object-record` cho mục đích này.
 
 ## Endpoints cần dùng
 

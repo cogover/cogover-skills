@@ -24,7 +24,7 @@
 
 Quy tắc:
 
-- Lấy `objectSlug` thật từ `/object-info`; không sao chép object slug trong sample.
+- Lấy `objectSlug` thật từ `$object-info`; không sao chép object slug trong sample.
 - `recordId` **bắt buộc là absolute resource slug**. Runtime luôn resolve chuỗi này qua resource registry trước khi export; gửi ID raw như `QU...` sẽ lỗi `RESOURCE_NOT_VALID`.
 - Resource có thể trả về RECORD (`{"id":"..."}`) hoặc TEXT chứa record ID. Nếu người dùng chỉ có ID cố định, tạo Variable TEXT có `defaultValue` là ID thật rồi dùng `$flow.{variable_slug}`; không đặt ID trực tiếp vào `data.recordId`.
 - Payload được hỗ trợ trong mẫu này dùng `exportType: "template"`. Không sinh `exportType: "layout"` khi chưa có tài liệu sản phẩm và kiểm chứng API cho mode đó.

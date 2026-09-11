@@ -82,7 +82,7 @@ Dùng toàn bộ object bên trong `data` làm `content_upload` của create/upd
 
 ### Response envelope
 
-Front-end đọc response create/list/detail theo envelope object-server:
+Front-end đọc response create/list/detail theo envelope chung:
 
 ```json
 {
@@ -369,13 +369,4 @@ Yêu cầu response có ít nhất một object matching slug trước khi tạo
 
 ## Nguồn bằng chứng và giới hạn
 
-Contract được rút ra từ snapshot front-end `report-builder-app`, chủ yếu:
-
-- `src/apis/document-sample/document-sample.api.ts` và `.type.ts`;
-- `src/apis/file-server/file-server.api.ts` và `.type.ts`;
-- `src/pages/DocumentSample/components/Form/*`;
-- `src/pages/DocumentSample/DocumentSampleListPage/*`;
-- `src/apis/object/object.api.ts` và `.type.ts`;
-- tests/mock của `src/__tests__/pages/DocumentSample` và `src/__mocks__/handlers/documentSample.ts`.
-
-Không có OpenAPI/backend schema trong phạm vi nguồn này. Khi server thực tế trả thêm trường, giữ lại khi read-merge-write nhưng không dựa vào trường đó cho logic mới cho tới khi có contract bổ sung.
+Contract được ghi nhận từ hành vi giao diện Web App và response thực tế của Workspace, không từ OpenAPI hay backend schema. Khi server thực tế trả thêm trường, giữ lại khi read-merge-write nhưng không dựa vào trường đó cho logic mới cho tới khi có contract bổ sung.
