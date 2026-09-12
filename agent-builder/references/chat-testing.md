@@ -103,7 +103,7 @@ Probe trả kết quả JSON và exit code khác 0 nếu lỗi, chờ duyệt, h
 |---|---|
 | Kết nối cơ bản | Câu trả lời kỳ vọng + kết thúc thành công đúng hội thoại/lượt |
 | CORE | Agent làm đúng hướng dẫn cốt lõi và sử dụng công cụ đã gắn |
-| EXTENDED | Có bước kích hoạt đúng Skill trước công cụ của Skill; không kích hoạt Skill không liên quan |
+| EXTENDED | Có bước kích hoạt đúng Skill trước công cụ của Skill; không kích hoạt Skill không liên quan hoặc Skill CORE đã nạp sẵn (lỗi `Unknown skill_slug` cho slug CORE là dấu hiệu System Prompt đang lặp lại cơ chế kích hoạt) |
 | Thiếu thông tin | Agent hỏi đúng dữ liệu cần thiết, chưa thực hiện thay đổi sai |
 | Ngoài phạm vi/thiếu quyền | Agent từ chối hoặc hướng dẫn đúng; không lộ dữ liệu không được phép |
 | Tool cần duyệt | Nhận đúng sự kiện/yêu cầu, gửi quyết định qua service 12; từ chối không tạo side effect; chỉ test chấp thuận khi được phép |

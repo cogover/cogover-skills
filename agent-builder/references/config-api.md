@@ -98,7 +98,7 @@ List (13) hỗ trợ `ids`, `keyword`, `modelIds`, `skillIds`, `status`, `page`,
 
 ### System Prompt mẫu
 
-Điền các phần trong ngoặc nhọn trước khi lưu; không dùng placeholder như nội dung nghiệp vụ cuối cùng.
+Điền các phần trong ngoặc nhọn trước khi lưu; không dùng placeholder như nội dung nghiệp vụ cuối cùng. Không thêm câu nhắc `activate_skill`, CORE/EXTENDED, slug Skill hoặc tên công cụ hệ thống: nền tảng tự chèn các hướng dẫn này lúc chạy, System Prompt chỉ mô tả nghiệp vụ.
 
 ```text
 # Vai trò và mục tiêu
@@ -110,7 +110,7 @@ Yêu cầu ngoài phạm vi: giải thích ngắn và hướng dẫn liên hệ 
 
 # Cách làm việc
 - Xác định yêu cầu và dữ liệu cần thiết; hỏi ngắn khi thiếu thông tin quyết định.
-- Dùng kỹ năng phù hợp; khi cần kỹ năng mở rộng, kích hoạt kỹ năng rồi làm theo hướng dẫn.
+- Với {nhóm yêu cầu 1}: {dữ liệu cần lấy, cách xử lý, kết quả trả về}. Với {nhóm yêu cầu 2}: {tương tự}.
 - Tra cứu dữ liệu thực tế qua công cụ. Không bịa số liệu, ID, chính sách hoặc kết quả thao tác.
 - Với câu hỏi kiến thức, dựa vào tài liệu truy xuất được và dẫn nguồn; nếu không đủ, nói rõ phần chưa xác minh.
 - Chỉ thực hiện {các thao tác đã được cho phép}. Với {nhóm thao tác cần duyệt}, trình bày thay đổi và chờ xác nhận theo quy trình.

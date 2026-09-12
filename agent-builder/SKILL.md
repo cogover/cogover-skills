@@ -3,13 +3,13 @@ name: agent-builder
 description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool, phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth."
 metadata:
   author: cogover
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.1.0`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.1`
+- **Ngày phát hành:** `2026-09-13`
 
 ## Phạm vi
 
@@ -36,7 +36,8 @@ Khi thiếu API hoặc schema cần thiết, báo người dùng cung cấp cont
 - **Model:** chọn từ danh sách thực tế của Workspace. Ưu tiên khả năng làm theo hướng dẫn và gọi công cụ cho nghiệp vụ nhiều bước; cân nhắc độ trễ và chi phí cho chat CSKH. Nêu ngắn lý do chọn; hỏi nếu các lựa chọn có đánh đổi mà yêu cầu chưa làm rõ. Không cố định tên model hoặc tự cấu hình khóa của nhà cung cấp model.
 - **Reasoning:** mặc định bật `defaultReasoningSettings.enabled: true` và `allowUserReasoningOverride: true`. Chọn effort/budget hợp lệ theo metadata model; đây là mặc định của workflow này, không phải khẳng định mọi form có sẵn đều bật. Model không hỗ trợ reasoning thì chọn model phù hợp khác hoặc hỏi người dùng nếu họ đã chỉ định model đó. Không gửi trường mà model không hỗ trợ. Xem [reasoning](references/config-api.md#model-và-reasoning).
 - **Danh tính thực thi:** Agent nội bộ dùng “Quyền của nhân sự chat với Agent (Agent nội bộ)”, tương ứng `runAsPersonnelId: null`. Agent CSKH chọn một nhân sự có quyền phù hợp. Khi chưa rõ, có thể đề xuất nhân sự của người yêu cầu dựa trên `personnelId` trả về từ bước tạo phiên, rồi chốt lựa chọn trước khi gán quyền cố định. Không coi API Key là bằng chứng người yêu cầu muốn cho khách hàng dùng toàn bộ quyền của mình.
-- **System Prompt:** viết đầy đủ vai trò, mục tiêu, phạm vi dữ liệu, quy trình xử lý, cách dùng Skill/Tool, thông tin cần hỏi thêm, giới hạn thao tác, quy tắc chuyển cho người phụ trách và hình thức trả lời. Không chỉ dùng một câu “bạn là trợ lý hữu ích”. Với RAG, yêu cầu dẫn nguồn và nói rõ khi tài liệu không đủ; với thao tác ghi, chỉ báo thành công sau kết quả công cụ và kiểm tra lại. Mẫu tại [API cấu hình](references/config-api.md#system-prompt-mẫu).
+- **System Prompt:** viết đầy đủ vai trò, mục tiêu, phạm vi dữ liệu, quy trình xử lý theo từng nhóm yêu cầu, thông tin cần hỏi thêm, giới hạn thao tác, quy tắc chuyển cho người phụ trách và hình thức trả lời. Không chỉ dùng một câu “bạn là trợ lý hữu ích”. Với RAG, yêu cầu dẫn nguồn và nói rõ khi tài liệu không đủ; với thao tác ghi, chỉ báo thành công sau kết quả công cụ và kiểm tra lại. Mẫu tại [API cấu hình](references/config-api.md#system-prompt-mẫu).
+- **Không viết cơ chế Skill/Tool vào System Prompt:** không nhắc `activate_skill`, `deactivate_skill`, loại CORE/EXTENDED, slug Skill hay tên công cụ hệ thống. Lúc chạy, nền tảng tự chèn hướng dẫn của Skill CORE, danh sách Skill EXTENDED và quy tắc kích hoạt vào ngữ cảnh; hướng dẫn cách gọi công cụ chỉ nằm trong `fullInstructions` của Skill. Lặp lại trong System Prompt tạo hai nguồn hướng dẫn, dễ khiến Agent kích hoạt nhầm Skill CORE đã nạp sẵn và lệch khi nền tảng thay đổi. Mô tả nghiệp vụ thay cho cơ chế: yêu cầu nào cần dữ liệu gì, kết quả ra sao, giới hạn nào.
 - Giữ nguyên biến template ở cuối prompt; không thay bằng ngày hay danh tính tại lúc cấu hình:
 
 ```text
@@ -56,7 +57,7 @@ Loại nằm trên liên kết `Agent.skills[]`, không nằm trên bản thân 
 | `CORE` — Kỹ năng cốt lõi | Tên, mô tả, **hướng dẫn chi tiết và công cụ** được nạp ngay | Dùng trực tiếp; phù hợp nghiệp vụ thường xuyên, hướng dẫn luôn cần |
 | `EXTENDED` — Kỹ năng mở rộng | Slug và **mô tả** đã có để Agent nhận diện nhu cầu | Agent gọi `activate_skill` với `skill_slug`, sau đó mới dùng hướng dẫn chi tiết/công cụ; có thể được gỡ khỏi ngữ cảnh khi không còn dùng |
 
-Không mô tả CORE là chỉ nạp mô tả, hoặc EXTENDED là hoàn toàn không xuất hiện lúc đầu. Cùng một Skill có thể là CORE ở Agent này và EXTENDED ở Agent khác. Mỗi Skill chỉ xuất hiện một lần trong danh sách của một Agent. `maxActiveExtendedSkills` là trường cấu hình giới hạn đồng thời, không phải số Skill được phép gắn; dùng giá trị khởi điểm 5 nếu chưa có yêu cầu khác. Việc lưu trường này chưa chứng minh giới hạn được cưỡng chế lúc chat: kiểm thử nếu nghiệp vụ phụ thuộc vào trần này, không dùng nó làm cơ chế phân quyền hay cam kết hạn mức.
+Cả hai cơ chế do nền tảng tự vận hành lúc chạy; System Prompt và `fullInstructions` không lặp lại quy tắc kích hoạt. Không mô tả CORE là chỉ nạp mô tả, hoặc EXTENDED là hoàn toàn không xuất hiện lúc đầu. Cùng một Skill có thể là CORE ở Agent này và EXTENDED ở Agent khác. Mỗi Skill chỉ xuất hiện một lần trong danh sách của một Agent. `maxActiveExtendedSkills` là trường cấu hình giới hạn đồng thời, không phải số Skill được phép gắn; dùng giá trị khởi điểm 5 nếu chưa có yêu cầu khác. Việc lưu trường này chưa chứng minh giới hạn được cưỡng chế lúc chat: kiểm thử nếu nghiệp vụ phụ thuộc vào trần này, không dùng nó làm cơ chế phân quyền hay cam kết hạn mức.
 
 ### 3. Phân quyền
 
@@ -89,7 +90,7 @@ Upload thành công chưa có nghĩa Agent tra cứu được. Không xem `agent
 
 1. Đọc lại Agent, Skill, Tool, quyền, model/reasoning và các liên kết; bật tài nguyên cần dùng. Kích hoạt Agent bằng thao tác đổi trạng thái được tài liệu hỗ trợ.
 2. Tạo **hội thoại mới** sau thay đổi cấu hình. Đọc [chat và WebSocket](references/chat-testing.md); kết nối WebSocket trước, tạo chat bằng HTTP, đọc phản hồi/công cụ/yêu cầu duyệt từ sự kiện. Dùng script probe cho kiểm tra kết nối cơ bản; test nghiệp vụ bằng HTTP/WebSocket client theo cùng contract, không chuyển sang trình duyệt khi probe chưa hỗ trợ tình huống.
-3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED, quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
+3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
 4. Kết luận dựa trên nội dung trả lời và kết quả nghiệp vụ. HTTP `r: 0` hoặc thông báo “ACCEPTED” chỉ xác nhận nhận yêu cầu. Với WebSocket cần đúng hội thoại/lượt, câu trả lời cuối và sự kiện hoàn tất không lỗi.
 
 ## Bàn giao

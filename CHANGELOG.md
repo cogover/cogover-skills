@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.1 - 2026-09-13
+
+- Cập nhật `agent-builder` 1.1.1: System Prompt chỉ mô tả nghiệp vụ, không nhắc `activate_skill`, CORE/EXTENDED, slug Skill hay tên công cụ hệ thống vì nền tảng tự chèn các hướng dẫn này lúc chạy; mẫu System Prompt bỏ dòng "kích hoạt kỹ năng mở rộng".
+- Ma trận test bổ sung kiểm tra Agent không gọi `activate_skill` cho Skill CORE đã nạp sẵn.
+
 ## 4.3.0 - 2026-09-11
 
 - Cập nhật `agent-builder` 1.1.0: thực hiện workflow qua API/HTTP/WebSocket; bỏ các nhánh tự chuyển sang trình duyệt.
