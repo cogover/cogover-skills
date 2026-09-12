@@ -1,25 +1,27 @@
 ---
 name: process-creator
-description: "Thiết kế, tạo, kích hoạt và xác minh end-to-end Cogover Process qua `/bapi/v1/processes` (Manual, Normal, Scheduled, Triggered record/webhook, Sequence): BPMN XML, User Task, gateway, loop, action gồm AI Agent, Variable/Formula/Text Template, quyền; phối hợp $object-info, $object-record, $cogover-api-auth. Dùng khi tạo, sửa, kiểm thử hoặc đánh giá workflow/process."
+description: "Thiết kế, tạo, kích hoạt, xuất bản, quản lý version và kiểm thử end-to-end Cogover Process qua API (`/bapi/v1/processes` và Web App API lượt chạy: tạo, theo dõi node, form User Task, tạm dừng/huỷ). Manual, Normal, Scheduled, Triggered record/webhook, Sequence; BPMN XML, gateway, loop, action gồm AI Agent; phối hợp $object-info, $object-record, $cogover-api-auth."
 metadata:
   author: cogover
-  version: "1.2.4"
+  version: "1.3.0"
 ---
 
 # Cogover Process Creator
 
-- **Phiên bản:** `1.2.4`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.3.0`
+- **Ngày phát hành:** `2026-09-13`
 
 Trước khi dùng JSON mẫu, đọc [quy ước fixture và giới hạn kiểm thử](samples/README.md). Resolve ID và tài nguyên của Workspace đích; không coi snapshot response hoặc metadata kiểm tra cũ là kết quả validation cho lần triển khai mới.
 
 ## Quy tắc an toàn
 
 - Xoá quy trình (DELETE): PHẢI hỏi xác nhận người dùng trước khi gọi API xoá; không bao giờ tự ý xoá khi chưa có đồng ý rõ ràng. Xoá record test: theo quy tắc xác nhận xoá của `$object-record`.
+- Huỷ hoặc xoá lượt chạy, vô hiệu hoá, bỏ xuất bản hoặc đổi version hiện hành của process đang có lượt chạy hay đang được người dùng thật sử dụng: liệt kê ID và tác động, hỏi xác nhận trước khi gọi. Lượt chạy test do chính phiên này tạo được phép huỷ; xoá vẫn phải hỏi.
+- Mọi thao tác kích hoạt, xuất bản, tạo và điều khiển lượt chạy làm qua API với phiên Web App; không thay bằng thao tác trên giao diện. Giao diện chỉ dùng để quan sát bằng chứng không có API (toast, badge, hộp thư) khi tiêu chí PASS yêu cầu.
 
 ## Chuẩn bị
 
-- Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill này dùng nhóm `/bapi/v1/processes` (API Key Bearer) theo contract [api-process-builder.md](api-process-builder.md); riêng tạo lượt chạy Sequence Flow gọi `/api/v1/run-workflow-server` bằng phiên Web App đổi từ API Key qua `POST /bapi/v1/auth-token` (mục 4.6). `WORKSPACE_DOMAIN` của khách hàng là base URL cho mọi API call và link kết quả. Workspace kiểm thử dùng chứng chỉ self-signed: chỉ bỏ qua kiểm tra TLS (`curl -k`/`--insecure`, `NODE_TLS_REJECT_UNAUTHORIZED=0`) khi người dùng xác nhận đó là môi trường nội bộ; không dùng cho Workspace production.
+- Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill này dùng hai nhóm API: `/bapi/v1/processes` (API Key Bearer) để tạo, sửa DRAFT, xoá, list, view theo [api-process-builder.md](api-process-builder.md); Web App API `/api/v1/workflow` và `/api/v1/run-workflow-server` (phiên Web App đổi từ API Key qua `POST /bapi/v1/auth-token`) để kích hoạt, xuất bản, quản lý version theo [api-process-lifecycle.md](api-process-lifecycle.md) và tạo, theo dõi, submit form, tạm dừng, huỷ, xoá lượt chạy theo [api-process-runtime.md](api-process-runtime.md). Tạo phiên một lần cho cả vòng kích hoạt và kiểm thử (mục 4.6). `WORKSPACE_DOMAIN` của khách hàng là base URL cho mọi API call và link kết quả. Workspace kiểm thử dùng chứng chỉ self-signed: chỉ bỏ qua kiểm tra TLS (`curl -k`/`--insecure`, `NODE_TLS_REJECT_UNAUTHORIZED=0`) khi người dùng xác nhận đó là môi trường nội bộ; không dùng cho Workspace production.
 - Thông tin Object thật: BẮT BUỘC lấy qua `$object-info` trước khi dựng JSON (trả về objectTypeId, slug, name và fields gồm field slug, name, fieldType, fieldMetaData, options). `objectTypeId`, object slug/name, field slug, `fieldType`, field options trong tài liệu này và samples (ví dụ `OT00000000011` Lead, `OT00000000007` Contact) chỉ là minh hoạ, thay đổi theo từng Workspace; không sao chép để dùng trực tiếp. Nơi cần: field `lookup_normal` (`object`, `object_slug` đối tượng đích); `CREATE_RECORD`/`UPDATE_RECORD` (`objectTypeId`, `objectTypeSlug`, field slug + `fieldType` + `fieldMetaData`); `GET_RECORD` (`objectTypeId`, `objectTypeSlug`); hiển thị bản ghi trong User Task; Triggered record (`metadata.object`; loại webhook không cần `object`); Sequence (`metadata.objectTypeId`, `objectTypeSlug`); điều kiện kiểu RECORD (`leftObjectTypeId`); Variable RECORD, Loop `variableMetadata`, Organization (theo `filterType`) và output resources của GET_RECORD/CREATE_RECORD/Organization (`metaDataType.object`, `metaDataType.objectSlug`).
 - Bản ghi test và dữ liệu nghiệp vụ: `$object-record`. Document template cho Export Record: `$document-template`. Quyền/vị trí/phòng ban tạm khi kiểm thử: `$user-permission`.
 - Tài liệu trong skill đọc theo việc cần làm: bảng ở mục [File tham khảo](#file-tham-khảo).
@@ -240,15 +242,14 @@ Theo [api-process-builder.md](api-process-builder.md): `POST /bapi/v1/processes`
 
 `https://{WORKSPACE_DOMAIN}/settings/processes/{id}/{processInfoId}` với `{id}` = `data.id`, `{processInfoId}` = `data.processInfoId`.
 
-#### 4.4. Sửa lỗi cho quy trình đã ACTIVATED
+#### 4.4. Sửa quy trình đã ACTIVATED
 
-`PUT /bapi/v1/processes/{id}` trên process đang `progressStatus: ACTIVATED` (hoặc `isPublished: true`) trả `r: 414` "process is not in the right progress status for save", kể cả khi body có `progressStatus: "DRAFT"` và `isPublished: false`. Cách xử lý:
+`PUT /bapi/v1/processes/{id}` trên version đang `progressStatus: ACTIVATED` (hoặc `isPublished: true`) trả `r: 414` "process is not in the right progress status for save", kể cả khi body có `progressStatus: "DRAFT"` và `isPublished: false`. Xử lý bằng version mới, không xoá:
 
-1. Hỏi xác nhận khách hàng trước khi xoá (Quy tắc an toàn).
-2. Được đồng ý: lấy bản hiện tại qua `POST /bapi/v1/processes/view` với `{"id": "PE..."}`, fix XML, strip các trường server-managed (`id`, `processInfoId`, `version`, `versionNumber`, `status`, `created`, `updated`, ... theo api-process-builder.md) khỏi body.
-3. `POST /bapi/v1/processes/delete` với `{"id": "PE...", "processInfoId": "PI..."}`: xoá toàn bộ versions cùng processInfoId.
-4. `POST /bapi/v1/processes` với body đã fix; process mới mang `id`/`processInfoId` mới.
-5. Trả link mới và giải thích nguyên nhân.
+1. Lấy bản hiện tại qua `POST /bapi/v1/processes/view` với `{"id": "PE..."}`, sửa phần cần đổi, đổi mọi prefix `bpmn:` của response về `bpmn2:` (gửi nguyên response làm server strip toàn bộ flow, version mới `isValid: false` và kích hoạt trả `r: 402`), strip trường server-managed và chạy sanity check mục 4.1.
+2. Gọi `/api/v1/workflow` service `24` (lưu thành version mới) theo [api-process-lifecycle.md mục 3.2](api-process-lifecycle.md#32-sửa-process-đã-activated-bằng-version-mới): version mới `DRAFT` có `id` mới, giữ nguyên `processInfoId`, link, quyền và lịch sử lượt chạy; còn lỗi trong `meta.errors` thì sửa tiếp bằng service `23`.
+3. GET-back verify version mới (mục 4.5), kích hoạt và xuất bản bằng service `39`, đọc lại danh sách version (service `8`): version mới `currentVersion: true`, version cũ bị bỏ xuất bản nhưng vẫn `ACTIVATED` và lượt chạy cũ tiếp tục theo version cũ.
+4. Chỉ khi không tạo được version mới: hỏi xác nhận (Quy tắc an toàn) rồi xoá và tạo lại theo [api-process-builder.md](api-process-builder.md#lỗi-r-414-process-is-not-in-the-right-progress-status-for-save); process mới mang `id`/`processInfoId` mới, trả link mới và giải thích nguyên nhân.
 
 List/find process theo slug: `POST /bapi/v1/processes/list` với `{"page": 1, "limit": 50, "keywords": ["<slug_or_name_keyword>"]}`; tham số phân trang là `limit`, không phải `pageSize` hay `per_page`.
 
@@ -269,50 +270,42 @@ Không PUT toàn bộ body vừa GET về: XML response có thể dùng prefix c
 
 #### 4.6. Kích hoạt và xác nhận process end-to-end (BẮT BUỘC)
 
-Sau mọi lần tạo process, chạy vòng xác nhận dưới đây; không coi công việc hoàn tất chỉ vì API create trả `r: 0`, GET-back trả `isValid: true` hoặc process đã được kích hoạt. Đọc `nodes/runtime-validation.md` trước khi chạy.
+Sau mọi lần tạo process, chạy vòng xác nhận dưới đây bằng API; không coi công việc hoàn tất chỉ vì API create trả `r: 0`, GET-back trả `isValid: true` hoặc process đã được kích hoạt. Đọc `nodes/runtime-validation.md` trước khi chạy. Hợp đồng từng API: [api-process-lifecycle.md](api-process-lifecycle.md) (kích hoạt, xuất bản, version) và [api-process-runtime.md](api-process-runtime.md) (lượt chạy, form, trạng thái).
 
-Không hỏi xác nhận riêng trước khi chạy test: xác nhận luồng ở Bước 1 là quyền thực hiện trọn vòng triển khai trong phạm vi đã mô tả, gồm create, GET-back verify, kích hoạt, xuất bản, tạo lượt chạy và runtime test. Tiếp tục tự động, không dừng để hỏi "có chạy test không?". Vẫn phải hỏi trước khi DELETE process/record, hoặc khi chính sách an toàn cấp hệ thống yêu cầu xác nhận tại thời điểm thực hiện một side effect cụ thể (gửi thông điệp thật, truyền dữ liệu nhạy cảm): hoàn tất mọi bước không bị chặn trước, rồi chỉ hỏi xác nhận hẹp cho đúng hành động đó.
+Không hỏi xác nhận riêng trước khi chạy test: xác nhận luồng ở Bước 1 là quyền thực hiện trọn vòng triển khai trong phạm vi đã mô tả, gồm create, GET-back verify, kích hoạt, xuất bản, tạo lượt chạy và runtime test. Tiếp tục tự động, không dừng để hỏi "có chạy test không?". Vẫn phải hỏi trước khi DELETE process/record/lượt chạy, hoặc khi chính sách an toàn cấp hệ thống yêu cầu xác nhận tại thời điểm thực hiện một side effect cụ thể (gửi thông điệp thật, truyền dữ liệu nhạy cảm): hoàn tất mọi bước không bị chặn trước, rồi chỉ hỏi xác nhận hẹp cho đúng hành động đó.
 
-##### Bước 1: Kích hoạt process
+Chuẩn bị phiên Web App một lần cho cả vòng: dùng `$cogover-api-auth` đổi API Key qua `POST /bapi/v1/auth-token`; chỉ tiếp tục khi HTTP 200, `r: 0`, đúng workspace và đủ `HttpSessionId`, `AuthToken`, `XSRF-TOKEN`. Giữ ba giá trị trong tiến trình tạm, dùng chính `XSRF-TOKEN` cho cả hai header CSRF/XSRF; không đọc cookie/local storage từ trình duyệt; không ghi hoặc in credential ra file/log/commentary/báo cáo. Mẫu curl và envelope response: [api-process-lifecycle.md mục 1](api-process-lifecycle.md#1-endpoint-xác-thực-và-envelope). Lỗi `Can not found processor for request: service=...` (`r: 5001`): thử lại đúng request bằng literal `curl` thay cho thư viện HTTP; `curl` PASS thì phân loại lỗi client transport và tiếp tục bằng `curl`; chỉ kết luận API không khả dụng khi `curl` cũng lỗi. Không đổi service number bằng thử ngẫu nhiên.
 
-1. Mở process bằng Chrome trong đúng session workspace của người dùng: `https://{WORKSPACE_DOMAIN}/process/processes/{PROCESS_ID}/{PROCESS_INFO_ID}`.
-2. Kích hoạt. Giao diện có bước **Xuất bản** riêng thì xuất bản luôn để version sinh lượt chạy ổn định.
-3. Đọc lại và xác nhận tối thiểu `progressStatus: "ACTIVATED"`, `isPublished: true`, `isValid: true`, đúng `PROCESS_ID` và `PROCESS_INFO_ID` vừa tạo.
+##### Bước 1: Kích hoạt và xuất bản
+
+1. Gọi `/api/v1/workflow` service `39` (kích hoạt và xuất bản) với `id`, `processInfoId` vừa tạo; Workspace tách hai bước thì gọi `9` rồi `38`.
+2. Đọc lại bằng `POST /bapi/v1/processes/view` và xác nhận tối thiểu `progressStatus: "ACTIVATED"`, `isPublished: true`, `isValid: true`, đúng `PROCESS_ID` và `PROCESS_INFO_ID` vừa tạo.
+3. Lỗi `r: 402` (version không hợp lệ, `msg` liệt kê lỗi), `r: 409` (version đã `ACTIVATED`, dùng `38` để xuất bản), `r: 414`, `r: 424` hoặc process đã có version khác đang kích hoạt: xử lý theo [api-process-lifecycle.md mục 3](api-process-lifecycle.md#3-quy-trình-chuẩn).
 
 ##### Bước 2: Tạo lượt chạy theo loại flow
 
-- **Manual, Normal:** vào link process ở Bước 1 và nhấn **Tạo lượt chạy**. Nút không xuất hiện hoặc gửi thất bại: kiểm tra trạng thái kích hoạt/xuất bản, quyền `START_INSTANCE` trong `processInstanceAccessControls` và quyền `VIEW` trong `accessControls`.
-- **Scheduled:** trước khi thay đổi, lưu snapshot chính xác `scheduleRules` theo yêu cầu người dùng. Tạm đặt thời gian bắt đầu gần thời điểm kiểm tra, kích hoạt/xuất bản version test, quan sát trên Chrome xem instance có được sinh đúng thời điểm không. Trong cleanup bắt buộc, khôi phục nguyên cấu hình lịch người dùng yêu cầu, kích hoạt/xuất bản lại nếu việc lưu tạo version mới, rồi GET-back đối chiếu với snapshot. Không để lịch test tiếp tục chạy.
-- **Triggered record:** dùng `$object-record` tạo bản ghi test phù hợp Object, event và conditions của trigger; trigger cần update thì cập nhật đúng field/giá trị để đưa bản ghi qua điều kiện kích hoạt. Dùng marker test duy nhất và theo dõi mọi record ID. Trigger delete: tuân thủ quy tắc xác nhận xoá của `$object-record`, chỉ xoá record test sau khi đã liệt kê ID cụ thể và người dùng xác nhận.
-- **Triggered webhook:** lấy URL Webhook thực của process và gửi request với body hợp lệ theo `sampleData`/`parseToDataType` cùng đúng cơ chế xác thực đã cấu hình. Kiểm tra cả HTTP response và instance được sinh. Chỉ giữ token/secret trong tiến trình cần cho request; không đưa cookie, secret hoặc token vào file, log, commentary hay báo cáo.
-- **Sequence:** chọn hoặc tạo bằng `$object-record` một bản ghi thật thuộc `metadata.objectTypeId`/`objectTypeSlug`, rồi gọi API dưới với ID thật. Trước khi gọi `/api/v1/run-workflow-server`, bắt buộc dùng `$cogover-api-auth` đổi API Key thành phiên Web App qua `POST /bapi/v1/auth-token`; không đọc cookie/local storage từ Browser và không thay API call bằng thao tác **Sequence → Kết nối** trên UI. Chỉ tiếp tục khi auth trả HTTP 200, `r: 0`, đúng workspace và đủ `HttpSessionId`, `AuthToken`, `XSRF-TOKEN`. Giữ ba giá trị trong tiến trình tạm, dùng chính `XSRF-TOKEN` cho cả hai header CSRF/XSRF, không ghi hoặc in credential ra file/log/commentary/final.
+Body, response và mã lỗi từng API: [api-process-runtime.md mục 2](api-process-runtime.md#2-tạo-lượt-chạy-theo-loại-flow). Đặt `instanceName` chứa marker duy nhất để tìm lại đúng lượt chạy.
 
-  ```bash
-  curl --url 'https://{WORKSPACE_DOMAIN}/api/v1/run-workflow-server' \
-    -H 'accept: application/json, text/plain, */*' \
-    -H 'content-type: application/json' \
-    -b 'HttpSessionId={HTTP_SESSION_ID}; AuthToken={AUTH_TOKEN}; XSRF-TOKEN={XSRF_TOKEN}' \
-    -H 'x-csrf-token: {XSRF_TOKEN}' \
-    -H 'x-req-service: 7' \
-    -H 'x-req-type: 6' \
-    -H 'x-xsrf-token: {XSRF_TOKEN}' \
-    --data-raw '{"list":[{"processId":"{PROCESS_ID}","flowObjectRecordId":"{FLOW_OBJECT_RECORD_ID}"}]}'
-  ```
+- **Normal:** `/api/v1/run-workflow-server` service `10` với `{"processId", "instanceName"}`; lấy `body.data.instanceId`. `r: 206`: chưa `ACTIVATED`/chưa xuất bản; `r: 9`: thiếu `START_INSTANCE` trong `processInstanceAccessControls`.
+- **Manual:** đọc form Root bằng `/api/v1/workflow` service `29` với `instanceId` rỗng, dựng `data` theo `content` (đủ field `required`, đúng kiểu, `date` dạng `"YYYY-MM-DD"`, không gửi field `readOnly` trừ khi `canSendData`), rồi submit `/api/v1/run-workflow-server` service `1` với `instanceId` rỗng, `nodeId` Root và `submittedButton` (slug nút trong form; form không có nút thì gửi chuỗi bất kỳ); lấy `body.data.instanceId`. Lỗi `30002` kèm `meta.more` liệt kê field sai kiểu/thiếu bắt buộc.
+- **Scheduled:** trước khi thay đổi, lưu snapshot chính xác `scheduleRules` theo yêu cầu người dùng. Tạm đặt thời gian bắt đầu gần thời điểm kiểm tra bằng version mới (mục 4.4), kích hoạt/xuất bản version test, theo dõi bằng API danh sách lượt chạy (service `35` lọc theo `process_info_id`) hoặc `Process_Debug_data` xem lượt chạy có được sinh đúng thời điểm không. Trong cleanup bắt buộc, khôi phục nguyên cấu hình lịch người dùng yêu cầu bằng version mới, kích hoạt/xuất bản lại, rồi GET-back đối chiếu với snapshot. Không để lịch test tiếp tục chạy.
+- **Triggered record:** dùng `$object-record` tạo bản ghi test phù hợp Object, event và conditions của trigger; trigger cần update thì cập nhật đúng field/giá trị để đưa bản ghi qua điều kiện kích hoạt. Dùng marker test duy nhất và theo dõi mọi record ID. Trigger delete: tuân thủ quy tắc xác nhận xoá của `$object-record`, chỉ xoá record test sau khi đã liệt kê ID cụ thể và người dùng xác nhận. Tìm lượt chạy sinh ra bằng service `35` hoặc `Process_Debug_data`.
+- **Triggered webhook:** lấy URL webhook từ `metadata.url` (version hiện tại) hoặc `metadata.urlAllVersions` trong response view, gửi request với body hợp lệ theo `sampleData`/`parseToDataType` cùng đúng cơ chế xác thực đã cấu hình. Kiểm tra cả HTTP response và lượt chạy được sinh. Chỉ giữ token/secret trong tiến trình cần cho request; không đưa cookie, secret hoặc token vào file, log, commentary hay báo cáo.
+- **Sequence:** chọn hoặc tạo bằng `$object-record` một bản ghi thật thuộc `metadata.objectTypeId`/`objectTypeSlug`, rồi gọi `/api/v1/run-workflow-server` service `7` với `{"list": [{"processId", "flowObjectRecordId"}]}`; không thay API call bằng thao tác **Sequence → Kết nối** trên giao diện.
 
-  Lỗi `Can not found processor for request: service=...`: thử lại đúng request bằng literal `curl` thay cho `urllib`. `curl` PASS thì phân loại lỗi client transport và tiếp tục bằng `curl`; chỉ kết luận processor không khả dụng khi `curl` cũng lỗi. Không đổi service number bằng thử ngẫu nhiên.
+##### Bước 3: Theo dõi, submit và đánh giá lượt chạy
 
-##### Bước 3: Quan sát và đánh giá lượt chạy
-
-1. Bảo đảm người test hiện tại có quyền xem instance của process. Cần cấp quyền/vị trí/phòng ban tạm: lưu snapshot trước thay đổi và dùng `$user-permission`; không nới quyền rộng hơn mức cần để kiểm thử.
-2. Mở `https://{WORKSPACE_DOMAIN}/process/process-instances?filter=all`, xác định đúng instance mới bằng process ID, thời gian bắt đầu và dữ liệu test; không nhầm với instance cũ hoặc instance do người khác tạo.
-3. Mở instance, quan sát diagram, trạng thái từng node, output và Debug. Instance tới **User Task đầu tiên**: nhập dữ liệu hợp lý, đúng kiểu và phù hợp kịch bản nghiệp vụ rồi submit. Task chỉ cho một số vị trí/phòng ban thực hiện: dùng `$user-permission` phân tạm vị trí/phòng ban cho người test, xác minh quan hệ đã có hiệu lực, bắt buộc rollback về snapshot sau test.
-4. Đối chiếu với yêu cầu bài toán: nhánh đi đúng, task đúng người, dữ liệu/action/output/side effect đúng giá trị mong đợi. Đọc, tạo hoặc đối chiếu dữ liệu nghiệp vụ bằng `$object-record`; không suy ra PASS chỉ từ trạng thái `COMPLETED`.
+1. Quyền với lượt chạy: service `37` trả `permission[]` của người gọi. Thiếu quyền xem/thực hiện: lưu snapshot rồi dùng `$user-permission` cấp quyền/vị trí/phòng ban tạm; không nới quyền rộng hơn mức cần để kiểm thử.
+2. Poll service `36` mỗi 2–5 giây: `currentState`, `runningUserTasks[]` (node đang chờ), `completedTasks[]` (User Task đã qua, mới nhất trước). Lần đọc ngay sau tạo/submit có thể chưa cập nhật; chỉ kết luận khi trạng thái đã đổi hoặc hết thời gian chờ hợp lý. Ghi elapsed time; xác định đúng lượt chạy bằng `instanceId` trả về từ Bước 2 hoặc marker trong `instanceName` (danh sách: service `35`, việc cần làm của người gọi: service `27`).
+3. Lượt chạy tới **User Task**: đọc form bằng service `29` với `instanceId` và `nodeId` đang chờ, kiểm tra giá trị mặc định, `readOnly`, `required` đúng thiết kế, nhập dữ liệu hợp lý, đúng kiểu và phù hợp kịch bản rồi submit service `1`; đọc lại `36` để xác nhận node đã chuyển. Task chỉ cho một số vị trí/phòng ban thực hiện: dùng `$user-permission` phân tạm cho người test, xác minh hiệu lực, bắt buộc rollback về snapshot sau test.
+4. Đối chiếu với yêu cầu bài toán: tập node đã qua khớp đường đi kỳ vọng tính từ XML cho kịch bản đó và không có node ngoài kỳ vọng; task đúng người; dữ liệu/action/output/side effect đúng giá trị mong đợi. Action, gateway, loop không nằm trong `completedTasks`: đối chiếu qua `Process_Debug_data` và hiệu ứng nghiệp vụ bằng `$object-record`; giá trị Variable/Formula trong lượt chạy đọc bằng service `2`. Không suy ra PASS chỉ từ `currentState: "COMPLETED"`.
 5. Debug sâu: dùng `$object-record` đọc Object có slug chính xác `Process_Debug_data`, lọc theo process/instance/thời điểm hoặc marker test dựa trên schema thực tế; không đoán field slug.
-6. Đánh giá theo tiêu chí observable và phân loại `PASS`, `PARTIAL`, `FAIL_SKILL`, `FAIL_RUNTIME` hoặc `BLOCKED_ENV` trong `nodes/runtime-validation.md`. Lỗi thuộc payload/skill và sửa được an toàn: sửa rồi chạy lại toàn bộ vòng xác nhận. Sửa process đã activated buộc phải xoá/tạo lại: theo mục 4.4 và hỏi xác nhận trước khi xoá.
+6. Đánh giá theo tiêu chí observable và phân loại `PASS`, `PARTIAL`, `FAIL_SKILL`, `FAIL_RUNTIME` hoặc `BLOCKED_ENV` trong `nodes/runtime-validation.md`. Lỗi thuộc payload/skill và sửa được an toàn: sửa bằng version mới (mục 4.4) rồi chạy lại toàn bộ vòng xác nhận. Kịch bản bổ sung cho tạm dừng/tiếp tục/huỷ, rollback User Task, version và quyền: [nodes/runtime-validation.md mục Kịch bản kiểm thử qua API](nodes/runtime-validation.md#kịch-bản-kiểm-thử-qua-api).
 
 ##### Cleanup và báo cáo
 
 - Luôn phục hồi lịch Scheduled Flow và mọi quyền/vị trí/phòng ban tạm, kể cả khi lượt chạy lỗi hoặc kiểm thử bị gián đoạn; đọc lại để xác nhận trạng thái cuối khớp snapshot/yêu cầu người dùng.
+- Lượt chạy test còn `RUNNING`/`PAUSED`: huỷ bằng service `5` (`state: 5`); xoá bằng service `6` chỉ sau khi liệt kê `instanceId` và người dùng xác nhận. Chưa được phép xoá thì báo rõ ID còn lại.
 - Theo dõi dữ liệu test bằng marker/ID. Xoá fixture phải theo quy tắc xác nhận xoá của `$object-record`; chưa được phép xoá thì báo rõ Object và ID còn lại thay vì tuyên bố đã dọn sạch.
 - Báo link process, ID instance, loại flow/cách kích hoạt, trạng thái cuối, bằng chứng nghiệp vụ, dữ liệu Debug đã dùng, các thay đổi tạm đã rollback và mọi fixture còn tồn đọng. Không báo credential hoặc secret.
 
@@ -320,7 +313,7 @@ Không hỏi xác nhận riêng trước khi chạy test: xác nhận luồng �
 
 Người dùng: "Quy trình xin nghỉ phép": `Bắt đầu -> Root -> Exclusive Gateway`; nhánh "Số ngày > 5" (điều kiện `$userTask.Root.so_ngay_xin_nghi >= 5`) `-> User Task 1 -> Kết thúc`; nhánh "Mặc định" `-> User Task 2 -> Kết thúc (2)`.
 
-Trợ lý trình bày lại luồng (Bắt đầu → Root → Exclusive; Exclusive → "Số ngày xin nghỉ > 5" → User Task 1 → Kết thúc quy trình; Exclusive → "Mặc định" → User Task 2 → Kết thúc quy trình (2)), người dùng đồng ý; trợ lý dựng JSON, gọi `POST /bapi/v1/processes`, GET-back verify, kích hoạt, chạy một kịch bản cho từng nhánh cần chứng minh và chỉ sau khi đối chiếu đúng instance và kết quả nghiệp vụ mới báo kết quả kèm link process, instance ID và trạng thái PASS/PARTIAL/FAIL/BLOCKED.
+Trợ lý trình bày lại luồng (Bắt đầu → Root → Exclusive; Exclusive → "Số ngày xin nghỉ > 5" → User Task 1 → Kết thúc quy trình; Exclusive → "Mặc định" → User Task 2 → Kết thúc quy trình (2)), người dùng đồng ý; trợ lý dựng JSON, gọi `POST /bapi/v1/processes`, GET-back verify, kích hoạt và xuất bản qua API, tạo hai lượt chạy bằng submit form Root qua API với `so_ngay_xin_nghi` lần lượt là `7` và `2`, poll chi tiết lượt chạy để chứng minh mỗi lượt dừng đúng User Task 1 hoặc User Task 2, submit tiếp tới Kết thúc, và chỉ sau khi đối chiếu đúng instance và kết quả nghiệp vụ mới báo kết quả kèm link process, instance ID và trạng thái PASS/PARTIAL/FAIL/BLOCKED.
 
 ## File tham khảo
 
@@ -336,5 +329,7 @@ Một số sample là snapshot response/legacy: có thể chứa action ID đã 
 | Start theo loại flow | Normal: [nodes/normal-flow.md](nodes/normal-flow.md), `samples/sample_normal_flow.json`; Scheduled: [nodes/scheduled-start-event.md](nodes/scheduled-start-event.md) (8 chu kỳ, validation từng loại), `samples/sample_scheduled_flow_1.json`; Triggered record: [nodes/record-triggered-flow.md](nodes/record-triggered-flow.md), `samples/sample_triggered_flow.json`; webhook: [nodes/webhook-triggered-flow.md](nodes/webhook-triggered-flow.md), `samples/Webhook_triggered_flow.json`; Sequence: `samples/sample_sequence_flow.json` |
 | Gateway | [nodes/gateway.md](nodes/gateway.md); mẫu `samples/sample_process_exclusive_gw.json` (2 nhánh), `samples/sample_process_gw_conditions.json` (điều kiện chi tiết), `samples/sample_inclusive_gateway.json`, `samples/sample_process_parallel_gw.json` |
 | Task/action cụ thể | File trong bảng "Chi tiết các loại Node". Mẫu: Send Email `samples/sample_process_usertask_send_email.json`; HTTP `samples/sample_send_http_request.json`; Notification `samples/sample_process_send_notification.json`; Get Record `samples/sample_process_usertask_get_records.json`; Create Record `samples/sample_process_user_task_create_record.json`; Update Record `samples/sample_process_user_task_update_record.json`; Loop `samples/sample_process_loop.json` (duyệt danh sách Leads); Assignment `samples/sample_process_assignment.json`; Organization `samples/sample_process_organization.json` (quản lý trực tiếp); Wait `samples/sample_process_wait.json` (Send Email + Wait `EMAIL_REPLY`, `LINK_WAS_CLICKED`; đọc runtime compatibility trong `nodes/wait-task.md`, không suy ra mọi event trên UI đều chạy được); Sub Process `samples/sample_process_call_sub_process.json` (quy trình con `manual_flow`, truyền/nhận biến); To Do `samples/sample_sequence_flow_todo.json`; Phone Call `samples/sample_phone_call.json` (TTS); Export Record `samples/sample_export_record.json`; Push Message `samples/sample_push_message.json` (TOAST); Omni Message `samples/sample_omni_message.json` (Zalo ZBS, action data JSON string); AI Agent `samples/sample_ai_agent.json` (Normal Flow → AI Agent → End Process; agent ID placeholder, `action.data` JSON string, chưa chạy trên Workspace); End Branch `samples/sample_end_branch.json` (parallel split); Respond to Webhook `samples/sample_respond_to_webhook.json` và JSON to Object `samples/sample_parse_to_object.json` (schema/migration only, backend chưa chạy) |
-| Gọi API tạo/cập nhật/xoá/list/view, lỗi `r: 414`, canonicalization của response view | [api-process-builder.md](api-process-builder.md) |
-| Kích hoạt, tạo lượt chạy, tiêu chí PASS theo node, email workspace, backend limitations, phân loại báo cáo | [nodes/runtime-validation.md](nodes/runtime-validation.md) |
+| Gọi API tạo/cập nhật DRAFT/xoá/list/view, lỗi `r: 414`, canonicalization của response view | [api-process-builder.md](api-process-builder.md) |
+| Kích hoạt, xuất bản, bỏ xuất bản, vô hiệu hoá, danh sách version, lưu thành version mới, đổi version hiện hành, rollback; mẫu curl phiên Web App, envelope response | [api-process-lifecycle.md](api-process-lifecycle.md) |
+| Tạo lượt chạy Manual/Normal/Sequence, đọc lượt chạy đang ở node nào và đã qua node nào, đọc và submit form User Task, rollback bước, tạm dừng/tiếp tục/huỷ/xoá lượt chạy, đọc giá trị resource, mã lỗi | [api-process-runtime.md](api-process-runtime.md) |
+| Tiêu chí PASS theo node, kịch bản kiểm thử qua API, email workspace, backend limitations, phân loại báo cáo | [nodes/runtime-validation.md](nodes/runtime-validation.md) |

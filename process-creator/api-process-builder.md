@@ -12,6 +12,8 @@ Tất cả response đều chứa trường `r` (result code):
 - `r = 0`: Thành công
 - `r != 0`: Thất bại (kèm `msg` mô tả lỗi)
 
+Tuỳ phiên bản nền tảng, `r`, `msg`, `data`, `meta` nằm ở cấp cao nhất hoặc được bọc trong `body` của envelope `{"serviceVersion", "service", "id", "type", "body": {...}}` (cùng dạng với Web App API). Khi parse, bóc `body` nếu có rồi mới đọc `r`; các mô tả response bên dưới nói về phần `{r, msg, data, meta}`.
+
 ---
 
 ## 1. Tạo quy trình
@@ -176,7 +178,9 @@ Response trả về cấu trúc tương tự như response khi tạo quy trình 
 
 Xảy ra khi quy trình đang ở `progressStatus: ACTIVATED` hoặc `isPublished: true`. Không thể PUT trực tiếp, **kể cả khi body có** `progressStatus: "DRAFT"` và `isPublished: false`.
 
-**Cách xử lý:**
+**Cách xử lý ưu tiên:** lưu thành version mới bằng Web App API rồi kích hoạt version đó, giữ nguyên `processInfoId` và lịch sử lượt chạy; xem [api-process-lifecycle.md mục 3.2](api-process-lifecycle.md#32-sửa-process-đã-activated-bằng-version-mới).
+
+**Phương án cuối (xoá và tạo lại), chỉ khi không tạo được version mới:**
 1. Hỏi xác nhận khách hàng trước khi xoá.
 2. Lấy bản XML hiện tại qua `POST /bapi/v1/processes/view` với `{"id": "PE..."}`, fix lỗi trong `xmlString`/`resources`/...
 3. Strip các trường server-managed khỏi body: `id`, `processInfoId`, `version`, `versionNumber`, `versionLabel`, `currentVersion`, `isNewestVersion`, `status`, `created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`, `progressStatus`, `isPublished`, `isValid`, `validationMessage`.

@@ -83,6 +83,6 @@ Khai báo `xmlns:configEx="http://config-ex/schema"`. Thêm `BPMNShape` và `BPM
 
 ## Chạy thử
 
-Kích hoạt, **Xuất bản** rồi **Tạo lượt chạy** theo [SKILL.md mục 4.6](../SKILL.md#46-kích-hoạt-và-xác-nhận-process-end-to-end-bắt-buộc); tiêu chí chi tiết tại [runtime-validation.md](runtime-validation.md). Quyền mặc định để mọi personnel hiện tại chạy/xem phải dùng `option: 1`, `items: [""]`.
+Kích hoạt và xuất bản qua API, rồi tạo lượt chạy bằng `/api/v1/run-workflow-server` service `10` với `{"processId", "instanceName"}` theo [SKILL.md mục 4.6](../SKILL.md#46-kích-hoạt-và-xác-nhận-process-end-to-end-bắt-buộc) và [api-process-runtime.md](../api-process-runtime.md); tiêu chí chi tiết tại [runtime-validation.md](runtime-validation.md). API này chỉ nhận `normal_flow` (`r: 205` với loại khác) và yêu cầu version `ACTIVATED` + `isPublished: true` (`r: 206`). Quyền mặc định để mọi personnel hiện tại chạy/xem phải dùng `option: 1`, `items: [""]`.
 
 Nếu Normal Flow được thiết kế để process cha/module gọi, cần kiểm chứng thêm lượt gọi thực tế từ bên gọi đó cùng dữ liệu đầu vào và kết quả mong đợi. Chạy trực tiếp chỉ kiểm tra riêng Normal Flow, chưa chứng minh phần tích hợp với bên gọi hoạt động đúng.

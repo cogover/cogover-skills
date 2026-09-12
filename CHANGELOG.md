@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.4.0 - 2026-09-13
+
+- Cập nhật `process-creator` 1.3.0: kích hoạt, xuất bản, bỏ xuất bản, vô hiệu hoá và quản lý version (danh sách, lưu thành version mới, đổi version hiện hành, rollback) hoàn toàn qua Web App API; thêm `api-process-lifecycle.md`.
+- Thêm `api-process-runtime.md`: tạo lượt chạy Manual/Normal/Sequence, đọc lượt chạy đang ở node nào và đã qua node nào, đọc và submit form User Task, rollback bước, tạm dừng/tiếp tục/huỷ/xoá lượt chạy, đọc giá trị resource, ma trận chuyển trạng thái và mã lỗi.
+- Mục 4.4 ưu tiên tạo version mới thay cho xoá/tạo lại process đã kích hoạt; mục 4.6 chuyển toàn bộ vòng kích hoạt và kiểm thử sang API, bỏ các bước thao tác trên Chrome.
+- `runtime-validation.md` thêm bảng kịch bản kiểm thử qua API (đường đi kỳ vọng, nhánh gateway, validate form, rollback, tạm dừng/huỷ, quyền, version, bỏ xuất bản).
+- Hợp đồng và mã lỗi đã được chạy thử trên Workspace ngày 2026-09-13 với Manual Flow và Normal Flow; `api-process-builder.md` ghi nhận response có thể được bọc trong envelope `body`.
+
 ## 4.3.1 - 2026-09-13
 
 - Cập nhật `agent-builder` 1.1.1: System Prompt chỉ mô tả nghiệp vụ, không nhắc `activate_skill`, CORE/EXTENDED, slug Skill hay tên công cụ hệ thống vì nền tảng tự chèn các hướng dẫn này lúc chạy; mẫu System Prompt bỏ dòng "kích hoạt kỹ năng mở rộng".
