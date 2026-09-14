@@ -10,6 +10,7 @@ Tạo lượt chạy, theo dõi lượt chạy đang ở node nào, đọc và s
 - Thành công khi `body.r = 0`. Với thao tác nhận mảng `instances`, `body.r = 0` chỉ nghĩa là request được xử lý; kết quả từng phần tử nằm trong `body.data[]` với `r` riêng.
 - Thay `{SERVICE}`, `{TYPE}` và `{BODY}` trong mẫu curl ở [api-process-lifecycle.md](api-process-lifecycle.md#1-endpoint-xác-thực-và-envelope), đổi URL theo endpoint tương ứng.
 - ID lượt chạy do server sinh, không có prefix cố định; luôn lấy từ `body.data.instanceId` của lệnh tạo.
+- Link mở một lượt chạy trên giao diện: `https://{WORKSPACE_DOMAIN}/process/process-instances/{INSTANCE_ID}?processId={PROCESS_ID}&processInfoId={PROCESS_INFO_ID}`. `{PROCESS_ID}` là `id` của version đã tạo lượt chạy (trường `processId` trả về cùng `instanceId`), `{PROCESS_INFO_ID}` là `processInfoId` của process; với lượt chạy không do mình tạo, lấy `instanceId`, `processId`, `processInfoId` từ cùng một phần tử của service `35` (mục 3). Dùng link này khi báo cáo kết quả từng lượt chạy.
 
 ## 2. Tạo lượt chạy theo loại flow
 

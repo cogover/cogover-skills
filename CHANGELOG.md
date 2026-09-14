@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.4.1 - 2026-09-14
+
+- Cập nhật `process-creator` 1.3.1: bổ sung định dạng link một lượt chạy `https://{WORKSPACE_DOMAIN}/process/process-instances/{INSTANCE_ID}?processId={PROCESS_ID}&processInfoId={PROCESS_INFO_ID}` (mục 4.3, `api-process-runtime.md`); báo cáo kiểm thử và `runtime-validation.md` yêu cầu kèm link từng lượt chạy bên cạnh link process và instance ID.
+
 ## 4.4.0 - 2026-09-13
 
 - Cập nhật `process-creator` 1.3.0: kích hoạt, xuất bản, bỏ xuất bản, vô hiệu hoá và quản lý version (danh sách, lưu thành version mới, đổi version hiện hành, rollback) hoàn toàn qua Web App API; thêm `api-process-lifecycle.md`.

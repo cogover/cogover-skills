@@ -3,13 +3,13 @@ name: process-creator
 description: "Thiết kế, tạo, kích hoạt, xuất bản, quản lý version và kiểm thử end-to-end Cogover Process qua API (`/bapi/v1/processes` và Web App API lượt chạy: tạo, theo dõi node, form User Task, tạm dừng/huỷ). Manual, Normal, Scheduled, Triggered record/webhook, Sequence; BPMN XML, gateway, loop, action gồm AI Agent; phối hợp $object-info, $object-record, $cogover-api-auth."
 metadata:
   author: cogover
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
 # Cogover Process Creator
 
-- **Phiên bản:** `1.3.0`
-- **Ngày phát hành:** `2026-09-13`
+- **Phiên bản:** `1.3.1`
+- **Ngày phát hành:** `2026-09-14`
 
 Trước khi dùng JSON mẫu, đọc [quy ước fixture và giới hạn kiểm thử](samples/README.md). Resolve ID và tài nguyên của Workspace đích; không coi snapshot response hoặc metadata kiểm tra cũ là kết quả validation cho lần triển khai mới.
 
@@ -240,7 +240,8 @@ Theo [api-process-builder.md](api-process-builder.md): `POST /bapi/v1/processes`
 
 #### 4.3. Trả link cho khách hàng
 
-`https://{WORKSPACE_DOMAIN}/settings/processes/{id}/{processInfoId}` với `{id}` = `data.id`, `{processInfoId}` = `data.processInfoId`.
+- **Link process:** `https://{WORKSPACE_DOMAIN}/settings/processes/{id}/{processInfoId}` với `{id}` = `data.id`, `{processInfoId}` = `data.processInfoId`.
+- **Link một lượt chạy:** `https://{WORKSPACE_DOMAIN}/process/process-instances/{INSTANCE_ID}?processId={PROCESS_ID}&processInfoId={PROCESS_INFO_ID}` với `{INSTANCE_ID}` = `body.data.instanceId` của lệnh tạo lượt chạy, `{PROCESS_ID}` = `id` của version đã tạo lượt chạy đó (không phải version mới nhất nếu đã đổi version), `{PROCESS_INFO_ID}` = `processInfoId` của process. Lượt chạy sinh bởi Scheduled/Triggered Flow: lấy cả ba giá trị từ cùng một phần tử của service `35` ([api-process-runtime.md mục 3](api-process-runtime.md#3-theo-dõi-lượt-chạy)). Trả link này cho mỗi lượt chạy khi báo cáo kiểm thử hoặc khi người dùng cần mở lượt chạy trên giao diện.
 
 #### 4.4. Sửa quy trình đã ACTIVATED
 
@@ -307,13 +308,13 @@ Body, response và mã lỗi từng API: [api-process-runtime.md mục 2](api-pr
 - Luôn phục hồi lịch Scheduled Flow và mọi quyền/vị trí/phòng ban tạm, kể cả khi lượt chạy lỗi hoặc kiểm thử bị gián đoạn; đọc lại để xác nhận trạng thái cuối khớp snapshot/yêu cầu người dùng.
 - Lượt chạy test còn `RUNNING`/`PAUSED`: huỷ bằng service `5` (`state: 5`); xoá bằng service `6` chỉ sau khi liệt kê `instanceId` và người dùng xác nhận. Chưa được phép xoá thì báo rõ ID còn lại.
 - Theo dõi dữ liệu test bằng marker/ID. Xoá fixture phải theo quy tắc xác nhận xoá của `$object-record`; chưa được phép xoá thì báo rõ Object và ID còn lại thay vì tuyên bố đã dọn sạch.
-- Báo link process, ID instance, loại flow/cách kích hoạt, trạng thái cuối, bằng chứng nghiệp vụ, dữ liệu Debug đã dùng, các thay đổi tạm đã rollback và mọi fixture còn tồn đọng. Không báo credential hoặc secret.
+- Báo link process, link và ID từng lượt chạy (định dạng mục 4.3), loại flow/cách kích hoạt, trạng thái cuối, bằng chứng nghiệp vụ, dữ liệu Debug đã dùng, các thay đổi tạm đã rollback và mọi fixture còn tồn đọng. Không báo credential hoặc secret.
 
 ## Ví dụ
 
 Người dùng: "Quy trình xin nghỉ phép": `Bắt đầu -> Root -> Exclusive Gateway`; nhánh "Số ngày > 5" (điều kiện `$userTask.Root.so_ngay_xin_nghi >= 5`) `-> User Task 1 -> Kết thúc`; nhánh "Mặc định" `-> User Task 2 -> Kết thúc (2)`.
 
-Trợ lý trình bày lại luồng (Bắt đầu → Root → Exclusive; Exclusive → "Số ngày xin nghỉ > 5" → User Task 1 → Kết thúc quy trình; Exclusive → "Mặc định" → User Task 2 → Kết thúc quy trình (2)), người dùng đồng ý; trợ lý dựng JSON, gọi `POST /bapi/v1/processes`, GET-back verify, kích hoạt và xuất bản qua API, tạo hai lượt chạy bằng submit form Root qua API với `so_ngay_xin_nghi` lần lượt là `7` và `2`, poll chi tiết lượt chạy để chứng minh mỗi lượt dừng đúng User Task 1 hoặc User Task 2, submit tiếp tới Kết thúc, và chỉ sau khi đối chiếu đúng instance và kết quả nghiệp vụ mới báo kết quả kèm link process, instance ID và trạng thái PASS/PARTIAL/FAIL/BLOCKED.
+Trợ lý trình bày lại luồng (Bắt đầu → Root → Exclusive; Exclusive → "Số ngày xin nghỉ > 5" → User Task 1 → Kết thúc quy trình; Exclusive → "Mặc định" → User Task 2 → Kết thúc quy trình (2)), người dùng đồng ý; trợ lý dựng JSON, gọi `POST /bapi/v1/processes`, GET-back verify, kích hoạt và xuất bản qua API, tạo hai lượt chạy bằng submit form Root qua API với `so_ngay_xin_nghi` lần lượt là `7` và `2`, poll chi tiết lượt chạy để chứng minh mỗi lượt dừng đúng User Task 1 hoặc User Task 2, submit tiếp tới Kết thúc, và chỉ sau khi đối chiếu đúng instance và kết quả nghiệp vụ mới báo kết quả kèm link process, link và instance ID của từng lượt chạy, trạng thái PASS/PARTIAL/FAIL/BLOCKED.
 
 ## File tham khảo
 
