@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.5.4 - 2026-09-16
+
+- Cập nhật `object-record` 1.0.4: cấu trúc giá trị field `long_text` phụ thuộc số định dạng bật trong `metaData.text_types` (`1` plain text, `2` rich text HTML, `3` markdown), không phụ thuộc field có WYSIWYG hay không: bật đúng 1 định dạng (kể cả metadata kiểu cũ `rich_text: "Yes"`) thì ghi/đọc chuỗi thuần; bật từ 2 định dạng thì ghi object `{"text_type", "value"}` và đọc về chuỗi JSON phải parse; bỏ trống field từ 2 định dạng gửi `{"text_type":1,"value":null}` và khi đọc coi rỗng cả bốn trường hợp. API không validate cấu trúc nên phải đọc lại giá trị sau khi ghi; không ghi vào field bóng `_hidden_<slug>`. Sửa mục A, bảng kiểu trường, mục tạo kèm ảnh, bảng lỗi và `wysiwyg-long-text-images.md` theo quy tắc này. Kiểm chứng trên Workspace ngày 2026-09-16.
+- Cập nhật `object-info` 1.0.3: mô tả `text_type`/`text_types` của `long_text` đủ ba định dạng, ý nghĩa số phần tử `text_types` với giá trị record và metadata kiểu cũ thiếu `text_types`.
+
 ## 4.5.3 - 2026-09-16
 
 - Cập nhật `user-permission` 1.1.4: mô tả lại Object Security Rules thành hai cổng độc lập theo họ rule: rule `type: 1` giữ cổng tạo record, rule `type: 2` giữ cổng xem/sửa/xoá; mỗi cổng chỉ chuyển sang mặc định từ chối khi họ rule của nó có rule active, cổng còn lại không đổi (chặn tạo bắt buộc có rule type 1 active; rule View một mình đã khoá sửa/xoá). `filter` của rule type 1 được đánh giá trên dữ liệu gửi lên khi tạo (`conditions: []` là mọi dữ liệu; có điều kiện thì chỉ record thoả điều kiện mới được tạo). Sửa mục mô hình đánh giá quyền, bảng bốn rule, rule giữ chỗ, cảnh báo an toàn khi bật/tắt rule, reference API và ma trận kiểm thử. Kiểm chứng trên Workspace ngày 2026-09-16.

@@ -183,8 +183,8 @@ Nếu `type` không được hỗ trợ, response có `r = 504`.
 | Key metadata | Kiểu | Mô tả |
 |---|---|---|
 | `character_limit.min/max` | Integer/null | Giới hạn ký tự; giá trị max thông dụng là `131072` |
-| `text_type` | Integer | Kiểu chính; rich text là `2`, Markdown là `3` |
-| `text_types` | Array[Integer] | Các kiểu nội dung được cho phép |
+| `text_type` | Integer | Định dạng mặc định: `1` plain text, `2` rich text (HTML), `3` Markdown |
+| `text_types` | Array[Integer] | Các định dạng được bật. Số phần tử quyết định cấu trúc giá trị record: 1 phần tử thì record lưu chuỗi thuần, từ 2 phần tử thì record lưu object/JSON có `text_type` (xem `$object-record`). Field tạo trước đây có thể thiếu key này, chỉ có `text_type` hoặc `rich_text: "Yes"`: coi như bật đúng 1 định dạng |
 | `default_values` | Object | Giá trị mặc định theo từng `text_type` |
 
 Nếu `text_type = 2`, API loại bỏ HTML tag khỏi `default_value` trước khi lưu.

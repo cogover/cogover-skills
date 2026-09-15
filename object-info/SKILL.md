@@ -3,13 +3,13 @@ name: object-info
 description: "Xem Object Cogover cùng fields, options, metadata, related lists và nhận diện Object đặc biệt của Workspace; tạo, cập nhật, xoá mềm/khôi phục/xoá thực tế Object và field qua `/bapi/v1`, gồm options và Formula (kiểm tra cú pháp, chạy thử trên record trước khi lưu). Dùng khi cần Object/field ID, slug, schema hoặc metadata cho skill khác."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # Object Info
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.0.3`
+- **Ngày phát hành:** `2026-09-16`
 
 Xem và quản lý cấu trúc Object Cogover qua `/bapi/v1` (API Key Bearer): xem Object cùng fields, options, metadata, related lists; tạo, sửa, xoá mềm, khôi phục, xoá thực tế Object hoặc field; tạo/cập nhật options của field lựa chọn; viết và kiểm tra Formula. Skill khác gọi `$object-info` để lấy Object ID, field slug, `fieldType`, options, metadata hoặc quan hệ trước khi dựng payload nghiệp vụ. Object phổ biến: Lead, Quote, Order, Product, Personnel, Contact, Account, Opportunity, Task.
 

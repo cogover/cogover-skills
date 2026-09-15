@@ -3,13 +3,13 @@ name: object-record
 description: "Quản lý bản ghi Cogover Object qua Records API `/bapi/v1/records` (lấy danh sách có lọc/phân trang, tạo, cập nhật, xoá) và upload/gắn file, chèn ảnh local vào long-text WYSIWYG bằng phiên Web App. Dùng khi cần thao tác record, tạo record kèm file hoặc ảnh trong cùng request, hoặc đính kèm file vào record hiện có; xoá phải xác nhận trước."
 metadata:
   author: cogover
-  version: "1.0.3"
+  version: "1.0.4"
 ---
 
 # Object Record
 
-- **Phiên bản:** `1.0.3`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.0.4`
+- **Ngày phát hành:** `2026-09-16`
 
 Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác gọi skill này khi cần đọc/ghi record. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Các API record dùng `/bapi/v1` với API Key Bearer; riêng upload file và gắn file vào record đã tồn tại dùng `/api/v1` bằng phiên Web App (đổi từ API Key qua `$cogover-api-auth`; không tạo được phiên thì dừng và báo người dùng, không gọi `/api/v1` bằng API Key).
 
@@ -46,6 +46,7 @@ Response: `data.total` (tổng bản ghi phù hợp), `data.rows[]` (mỗi bản
 - `boolean`: `0`/`1`, không phải `true`/`false`.
 - `url`: mảng object `[{"alias": "", "url": "https://..."}]`, không phải mảng string.
 - `lookup_normal`/`reference`: full object của bản ghi được lookup (`id`, `name` và các field khác).
+- `long_text`: chuỗi thuần; field bật từ 2 định dạng trở lên trả chuỗi JSON `"{\"text_type\":2,\"value\":\"<p>...</p>\"}"` phải parse, xem [Field `long_text`](#field-long_text).
 
 ## B. Tạo — `POST /bapi/v1/records`
 
@@ -60,7 +61,7 @@ Response: `data.total` (tổng bản ghi phù hợp), `data.rows[]` (mỗi bản
 | Kiểu trường | Giá trị | Ví dụ |
 |---|---|---|
 | `short_text`, `phone`, `email` | String | `"Nguyễn Văn A"`, `"0901234567"`, `"a@example.com"` |
-| `long_text` | String; bật WYSIWYG: object | `"Mô tả..."`; `{"value":"<div>...</div>","text_type":2}` |
+| `long_text` | Theo số định dạng bật trong `metaData.text_types`, xem [Field `long_text`](#field-long_text) | Bật 1 định dạng: `"<p>Mô tả</p>"`; bật từ 2 định dạng: `{"text_type":2,"value":"<p>Mô tả</p>"}` |
 | `boolean` | `true`/`false` (response trả `1`/`0`) | `true` |
 | `single_choice` | Slug của option | `"new"`, `"qualified"` |
 | `multi_choices` | Mảng slug option | `["option1", "option2"]` |
@@ -73,13 +74,26 @@ Response: `data.total` (tổng bản ghi phù hợp), `data.rows[]` (mỗi bản
 | `lookup_normal`, `reference` | Record ID | `"PER00000000003"` |
 | `file` | Metadata upload: object nếu đơn, mảng nếu `multiple` | [references/upload-file.md](references/upload-file.md) |
 
+### Field `long_text`
+
+Lấy `metaData.text_types` của field qua `$object-info` trước khi ghi. Ba định dạng: `1` plain text, `2` rich text (HTML), `3` markdown; `metaData.text_type` là định dạng mặc định. Field tạo trước đây có thể không có `text_types` mà chỉ có `text_type` hoặc `rich_text: "Yes"`: coi như bật đúng 1 định dạng.
+
+| `text_types` | Ghi (B, C) | Đọc (A) |
+|---|---|---|
+| Đúng 1 phần tử | Chuỗi thuần theo định dạng đó: `[1]` → `"Giao hàng trước 17h"`; `[2]` → `"<p>Giao hàng <strong>trước 17h</strong></p>"`; `[3]` → `"Giao hàng **trước 17h**"` | Chuỗi thuần như đã ghi |
+| Từ 2 phần tử | Object `{"text_type": 3, "value": "Giao hàng **trước 17h**"}`; `text_type` phải thuộc `text_types` | Chuỗi JSON `"{\"text_type\":3,\"value\":\"Giao hàng **trước 17h**\"}"`, parse để lấy `text_type` và `value` |
+
+- API không kiểm tra cấu trúc và vẫn trả `r: 0` khi gửi sai: object vào field bật 1 định dạng bị lưu nguyên chuỗi JSON và UI hiển thị `{"text_type":2,"value":...}`; chuỗi thuần vào field bật từ 2 định dạng bị lưu thiếu `text_type`. Sau khi ghi phải đọc lại giá trị field, không chỉ dựa vào `r: 0`.
+- Bỏ trống field bật từ 2 định dạng: gửi `{"text_type": 1, "value": null}` để đồng nhất với UI (API cũng chấp nhận `null`, khi đó field biến mất khỏi response). Khi đọc, coi là rỗng cả bốn trường hợp: thiếu key, `null`, JSON có `"value": null`, JSON có `"value": ""`.
+- Không ghi vào field bóng `_hidden_<slug>` (metadata `originalId`) mà hệ thống tạo kèm mỗi field `long_text`.
+
 ### Tạo kèm file
 
 Theo [references/upload-file.md](references/upload-file.md): upload riêng cho từng field đích bằng phiên Web App để lấy `FILE_METADATA`, rồi đưa metadata vào `data` của đúng một request create cùng các field thường và bắt buộc (field đơn: object, field đa: mảng). Không gọi thêm `POST /api/v1/records` sau khi create trả `r: 0`. Đọc lại record để xác minh.
 
 ### Tạo kèm ảnh local trong long-text WYSIWYG
 
-Theo [references/wysiwyg-long-text-images.md](references/wysiwyg-long-text-images.md): lấy ID field hệ thống `_attachments` và ID field WYSIWYG qua `$object-info` (không có `_attachments` thì dừng), upload ảnh bằng phiên Web App theo field ID và Object ID, rồi tạo record bằng đúng một request `/bapi/v1/records` với metadata ảnh trong `data._attachments` và field WYSIWYG dạng `{"value":"<HTML>","text_type":2}`.
+Theo [references/wysiwyg-long-text-images.md](references/wysiwyg-long-text-images.md): lấy ID field hệ thống `_attachments` và ID field WYSIWYG qua `$object-info` (không có `_attachments` thì dừng), upload ảnh bằng phiên Web App theo field ID và Object ID, rồi tạo record bằng đúng một request `/bapi/v1/records` với metadata ảnh trong `data._attachments` và HTML ảnh trong field WYSIWYG theo cấu trúc của [Field `long_text`](#field-long_text): chuỗi HTML khi field chỉ bật rich text, object `{"text_type":2,"value":"<HTML>"}` khi field bật từ 2 định dạng.
 
 ## C. Cập nhật — `PUT /bapi/v1/records/{RECORD_ID}`
 
@@ -126,3 +140,4 @@ Thực hiện bằng API, không dùng trình duyệt. Đọc [references/upload
 | Create lỗi sau khi upload | Báo các file ID đã upload có thể bị mồ côi; không tự retry create. |
 | Không tạo được phiên Web App | Dừng và báo người dùng; không gọi `/api/v1` bằng API Key. |
 | Không tìm thấy field `_attachments` | Đọc lại Object fields; không upload ảnh WYSIWYG khi chưa xác định được field ID này. |
+| UI hiển thị `{"text_type":...,"value":...}` hoặc mất định dạng ở field `long_text` | Đã gửi sai cấu trúc so với `metaData.text_types`; cập nhật lại field bằng đúng cấu trúc theo [Field `long_text`](#field-long_text) rồi đọc lại. |

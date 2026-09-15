@@ -5,7 +5,7 @@
 Dùng `$object-info` để lấy và xác minh:
 
 - `WORKSPACE_ID` và `OBJECT_TYPE_ID` của Object.
-- `LONG_TEXT_FIELD_ID` và `LONG_TEXT_FIELD_SLUG` của field `long_text` bật rich text/WYSIWYG (`text_type = 2`).
+- `LONG_TEXT_FIELD_ID` và `LONG_TEXT_FIELD_SLUG` của field `long_text` có `2` trong `metaData.text_types` (rich text/WYSIWYG; field kiểu cũ chỉ có `text_type: 2` hoặc `rich_text: "Yes"`). Ghi nhận field bật đúng 1 hay từ 2 định dạng để chọn cấu trúc giá trị ở bước 5 theo [Field `long_text`](../SKILL.md#field-long_text).
 - `ATTACHMENTS_FIELD_ID` của field `file` hệ thống có slug `_attachments`. Object có ít nhất một field `long_text` bật WYSIWYG sẽ có field này; không suy đoán ID từ ví dụ hoặc tên hiển thị. Không tìm thấy `_attachments` thì dừng trước khi upload và báo người dùng.
 
 Ảnh local phải tồn tại, không rỗng và dùng đường dẫn tuyệt đối. Nhiều ảnh: lặp bước upload cho từng ảnh và giữ từng object metadata riêng.
@@ -73,7 +73,7 @@ Nhiều ảnh: đưa toàn bộ metadata vào `_attachments` và tạo một th�
 
 ## 5. Tạo record qua BAPI
 
-Gọi đúng một lần `POST /bapi/v1/records` bằng API Key Bearer: metadata ảnh vào `_attachments`, field long-text là object có `text_type: 2`, kèm mọi field bắt buộc của Object trong cùng request:
+Gọi đúng một lần `POST /bapi/v1/records` bằng API Key Bearer: metadata ảnh vào `_attachments`, field long-text theo cấu trúc của [Field `long_text`](../SKILL.md#field-long_text), kèm mọi field bắt buộc của Object trong cùng request. Ví dụ dưới dùng field bật từ 2 định dạng nên giá trị là object có `text_type: 2`:
 
 ```json
 {
@@ -97,11 +97,13 @@ Gọi đúng một lần `POST /bapi/v1/records` bằng API Key Bearer: metadata
 
 `{IMAGE_METADATA_WITH_LONG_TEXT_FIELD_ID_IN_URL}` là JSON object thật từ bước upload (đã thêm `long_text_field_id` vào `url`), không phải chuỗi có dấu ngoặc kép bao quanh.
 
+Field chỉ bật rich text (`text_types: [2]` hoặc metadata kiểu cũ): gửi trực tiếp chuỗi HTML `"{LONG_TEXT_FIELD_SLUG}": "<div>...<img ... /></div>"`; gửi object cho field này bị lưu nguyên chuỗi JSON và UI hiển thị sai.
+
 ## 6. Kiểm tra kết quả và xử lý lỗi
 
 Coi create thành công khi HTTP `2xx`, `r: 0` và `data.id` chứa record ID. Đọc lại record để xác minh:
 
-- Field WYSIWYG có `text_type = 2` và HTML mong muốn.
+- Field WYSIWYG chứa HTML mong muốn đúng cấu trúc: chuỗi HTML với field bật 1 định dạng, chuỗi JSON có `text_type: 2` với field bật từ 2 định dạng.
 - `_attachments` chứa đúng `file_id` vừa upload.
 - URL ảnh có `long_text_field_id` bằng ID của chính field WYSIWYG.
 
