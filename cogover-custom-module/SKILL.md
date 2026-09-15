@@ -3,12 +3,12 @@ name: cogover-custom-module
 description: "Điều phối vòng đời Cogover Custom Module: khảo sát App/Object, chọn backend/frontend và dạng frontend (single page app, custom component, Federation Page), người dùng xác nhận trước khi code, schema duyệt bằng Excel, security rules, Process, Project/policy/key, code/test theo template, publish qua Dev CLI, bàn giao. Không thay skill cấu hình Object/Process đơn lẻ."
 metadata:
   author: cogover
-  version: "1.4.2"
+  version: "1.4.3"
 ---
 
 # Cogover Custom Module
 
-- **Phiên bản:** `1.4.2`
+- **Phiên bản:** `1.4.3`
 - **Ngày phát hành:** `2026-09-16`
 
 ## Tổng quan và phạm vi

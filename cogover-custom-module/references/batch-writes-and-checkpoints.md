@@ -23,7 +23,7 @@ CAS chỉ bảo vệ state; lock chỉ bảo vệ các execution tuân thủ cù
 
 ## Khi local chạy được nhưng production dừng giữa chừng
 
-Đã quan sát một luồng đọc/ghi/checkpoint tuần tự chạy được local nhưng production trả HTTP 400, mã nghiệp vụ 422 với thông báo `Script execution failed or exceeded its limits`, sau khi một phần record đã đổi. Thông báo này không phân biệt được lỗi script và vượt giới hạn thực thi; không suy đoán nguyên nhân gốc hoặc một con số timeout/quota chưa được tài liệu xác nhận.
+Đã quan sát một luồng đọc/ghi/checkpoint tuần tự chạy được local nhưng production trả HTTP `422`, `body.r: 422` với thông báo `Script execution failed or exceeded its limits`, sau khi một phần record đã đổi. Thông báo này không phân biệt được lỗi script và vượt giới hạn thực thi; không suy đoán nguyên nhân gốc hoặc một con số timeout/quota chưa được tài liệu xác nhận.
 
 1. Giữ job ID, version và response đã loại credential; đọc checkpoint và record thật trước mọi quyết định retry. Invocation lỗi không chứng minh các side effect đã rollback. Execution bị ngắt trước cleanup thì lock có thể còn hiệu lực tới lúc lease hết hạn; không đổi namespace hoặc nới quyền để lách lock đang giữ.
 2. Giảm roundtrip khi contract hỗ trợ: đọc nhiều record bằng `records.list` với filter ID và đúng phân trang; dùng `records.batchUpdate` cho nhóm ghi thay vì đọc/ghi/checkpoint từng dòng không giới hạn. Giới hạn SDK 1–200 dòng mỗi batch không bảo đảm mọi batch hoàn tất trong một invocation; test kích thước thực tế của bài toán trên production.

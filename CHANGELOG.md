@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.5 - 2026-09-16
+
+- Cập nhật `cogover-custom-module` 1.4.3: production trả đúng HTTP status handler đã chọn (`400`, `404`, `409`, `422`...) như local, body lỗi trong transport envelope có `r` bằng HTTP status và `code`; `cli-session-and-delivery.md` (mục xử lý lỗi) và `batch-writes-and-checkpoints.md` bỏ mô tả cũ về việc production trả HTTP 400 cho mọi lỗi handler hoặc 200 cho custom status. Status khác 200 chỉ đi qua production khi body là một JSON object. Kiểm chứng trên Workspace ngày 2026-09-16.
+
 ## 4.5.4 - 2026-09-16
 
 - Cập nhật `object-record` 1.0.4: cấu trúc giá trị field `long_text` phụ thuộc số định dạng bật trong `metaData.text_types` (`1` plain text, `2` rich text HTML, `3` markdown), không phụ thuộc field có WYSIWYG hay không: bật đúng 1 định dạng (kể cả metadata kiểu cũ `rich_text: "Yes"`) thì ghi/đọc chuỗi thuần; bật từ 2 định dạng thì ghi object `{"text_type", "value"}` và đọc về chuỗi JSON phải parse; bỏ trống field từ 2 định dạng gửi `{"text_type":1,"value":null}` và khi đọc coi rỗng cả bốn trường hợp. API không validate cấu trúc nên phải đọc lại giá trị sau khi ghi; không ghi vào field bóng `_hidden_<slug>`. Sửa mục A, bảng kiểu trường, mục tạo kèm ảnh, bảng lỗi và `wysiwyg-long-text-images.md` theo quy tắc này. Kiểm chứng trên Workspace ngày 2026-09-16.
