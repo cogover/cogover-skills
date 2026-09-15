@@ -49,7 +49,7 @@ Chỉ sau khi người dùng cho phép rõ việc AI tạo API key cho danh sác
 Thực hiện bằng `$object-record` dưới credential của đúng user test:
 
 1. **View/read:** lọc theo marker hoặc ID của fixture; record được phép xuất hiện, record bị cấm không xuất hiện/không đọc được. Với field security: field được phép có mặt, field bị cấm không bị lộ.
-2. **Create:** tạo record test chỉ với các field được phép, rồi thử riêng một payload chứa field không được phép khi cần kiểm tra field-level create. Không kết luận chỉ từ HTTP response; đọc lại bằng credential kiểm soát để biết record/field có thực sự được lưu.
+2. **Create:** tạo record test chỉ với các field được phép, rồi thử riêng một payload chứa field không được phép khi cần kiểm tra field-level create; rule Create có điều kiện trên dữ liệu thì thêm một payload không thoả điều kiện, kỳ vọng bị từ chối. Không kết luận chỉ từ HTTP response; đọc lại bằng credential kiểm soát để biết record/field có thực sự được lưu.
 3. **Edit:** cập nhật một field được phép và một field bị cấm trong hai request tách biệt; đọc lại bằng credential kiểm soát để xác minh giá trị cuối cùng và không nhầm request bị từ chối toàn bộ với update một phần.
 4. **Delete:** dùng record test chuyên biệt, không dùng record nghiệp vụ; xác minh cả trường hợp được phép và bị từ chối khi cần chứng minh hai nhánh; sau lần xoá bị từ chối, đọc lại để chắc record vẫn tồn tại.
 

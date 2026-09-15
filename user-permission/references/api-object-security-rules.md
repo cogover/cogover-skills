@@ -4,7 +4,7 @@
 
 Mỗi rule xác định ba phần độc lập: records phù hợp (`filter`), người dùng áp dụng (`personnelFilters`) và quyền được cấp (`scopes`). Cả ba phần phải phù hợp thì rule mới cấp quyền.
 
-Khi audit việc lớp bảo mật đã được bật hay chưa, gọi endpoint danh sách theo Object mà không gửi bộ lọc `status`, rồi kiểm tra trạng thái từng rule. Object chỉ chuyển sang mặc định từ chối khi có ít nhất một rule `status: 1`; rule inactive không kích hoạt lớp bảo mật và không đóng góp quyền. Khi lớp bảo mật đã bật, mọi user, kể cả Super Admin, phải khớp active rule phù hợp để được cấp quyền record/field. Nhiều active rules cùng khớp user và record sẽ cộng dồn scope. `none`, `no` hoặc một rule không khớp không thu hồi quyền do active rule phù hợp khác cấp.
+Khi audit việc lớp bảo mật đã được bật hay chưa, gọi endpoint danh sách theo Object mà không gửi bộ lọc `status`, rồi kiểm tra trạng thái từng rule. Rule chia thành hai họ giữ hai cổng độc lập: rule `type: 1` giữ cổng tạo record, rule `type: 2` giữ cổng xem/sửa/xoá. Một cổng chỉ chuyển sang mặc định từ chối khi họ rule của nó có ít nhất một rule `status: 1`; rule inactive không kích hoạt lớp bảo mật và không đóng góp quyền; cổng còn lại không bị ảnh hưởng. Khi một cổng đã bật, mọi user, kể cả Super Admin, phải khớp active rule cùng họ để được cấp quyền ở cổng đó. Nhiều active rules cùng khớp user và record sẽ cộng dồn scope. `none`, `no` hoặc một rule không khớp không thu hồi quyền do active rule phù hợp khác cấp.
 
 ## Endpoint
 
@@ -23,19 +23,19 @@ Workspace được lấy từ token; không gửi Workspace ID riêng.
 
 | `type` | Mục đích | `filter` | Personnel type | Scope bắt buộc |
 |---|---|---|---|---|
-| `1` | Ai được tạo record và được nhập field nào | Bắt buộc gửi, để rỗng (`conditions: []`); server không dùng để lọc record | `1`–`5` | Chỉ `create` |
+| `1` | Ai được tạo record với dữ liệu nào và được nhập field nào | Bắt buộc; đánh giá trên dữ liệu record đang tạo (`conditions: []` là mọi dữ liệu) | `1`–`5` | Chỉ `create` |
 | `2` | Ai được xem/sửa/xoá records phù hợp | Bắt buộc | `1`–`10` | Đủ `read`, `edit`, `delete` |
 
 - Không thể đổi `type` sau khi tạo.
 - Cần cả quyền tạo và quyền trên record hiện có thì tạo hai rule.
 - `status: 1` active, `0` inactive.
-- Chỉ cần có ít nhất một rule active là chế độ mặc định từ chối áp dụng cho mọi user, kể cả Super Admin. Super Admin không bypass Object Security Rules.
+- Một rule active đưa cổng của họ rule đó sang mặc định từ chối cho mọi user, kể cả Super Admin: rule type 1 active đóng cổng tạo, rule type 2 active đóng cổng xem/sửa/xoá; rule type 2 không đóng cổng tạo và ngược lại. Super Admin không bypass Object Security Rules.
 - Chỉ tạo rule tuỳ chỉnh với `isStandard: 0`.
 - Mỗi Object có tối đa 50 rules; tên duy nhất trong Object và tối đa 100 ký tự.
 
 ## Filter chọn records
 
-Mọi payload tạo rule đều phải có `filter` vì server tạo một Filter record kèm theo rule. Thiếu `filter`: rule `type: 2` bị `r: 406` `Record filter is empty`; rule `type: 1` bị `r: 600` bọc 422 `logicType required` từ Filters API. Chỉ `type: 2` dùng `filter` để chọn records; filter rỗng `{"logicType":"AND","logic":"","conditions":[]}` hợp lệ cho cả hai loại và với `type: 2` nghĩa là mọi record hiện có (đã kiểm chứng: list trả đủ records). Ví dụ filter có điều kiện:
+Mọi payload tạo rule đều phải có `filter` vì server tạo một Filter record kèm theo rule. Thiếu `filter`: rule `type: 2` bị `r: 406` `Record filter is empty`; rule `type: 1` bị `r: 600` bọc 422 `logicType required` từ Filters API. `type: 2` dùng `filter` để chọn records hiện có; `type: 1` đánh giá `filter` trên dữ liệu gửi lên khi tạo (đã kiểm chứng: rule Create có điều kiện `discount_type = percent` từ chối `r: 36` khi tạo record `amount` và chấp nhận record `percent`). Filter rỗng `{"logicType":"AND","logic":"","conditions":[]}` hợp lệ cho cả hai loại: với `type: 2` nghĩa là mọi record hiện có (đã kiểm chứng: list trả đủ records), với `type: 1` nghĩa là mọi dữ liệu tạo. Ví dụ filter có điều kiện:
 
 ```json
 {
@@ -106,14 +106,14 @@ Ví dụ áp dụng theo Role:
 Dùng `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]` khi cần giữ slot của action chưa cấp cho người dùng hoặc chặn CRUD trực tiếp trên Object do backend quản lý. Đây là giá trị `null` có chủ đích, không phải thiếu ID cần resolve; không dùng chuỗi `"null"`, ID giả, `op: "all"` hay mảng rỗng thay thế.
 
 - Audience trên không khớp nhân sự nào, kể cả Super Admin; không thêm phần tử khác vào `personnelFilters` của rule giữ chỗ vì các audience được hợp nhất.
-- Đặt `status: 1`. Chỉ cần một rule active là Object chuyển sang mặc định từ chối, dù rule đó không chọn nhân sự nào. Rule inactive chỉ giữ cấu hình, không kích hoạt hoặc duy trì chế độ này.
+- Đặt `status: 1`. Một rule active đưa cổng của họ rule đó (type 1: tạo; type 2: xem/sửa/xoá) sang mặc định từ chối, dù rule không chọn nhân sự nào; slot Create phải là rule type 1 active vì rule type 2 không đóng cổng tạo. Rule inactive chỉ giữ cấu hình, không kích hoạt hoặc duy trì chế độ này.
 - Rule giữ chỗ không cấp quyền cho ai và không ghi đè quyền do active rule khác cấp. Để chặn một action, phải bảo đảm không có active rule nào khác cấp action đó cho audience cần chặn. Khi cả bốn action chỉ dành cho backend, dùng bốn rule giữ chỗ riêng.
-- Nếu không còn rule active, lớp bảo mật chi tiết không hạn chế record/field; các quyền qua Role lại áp dụng trên toàn bộ dữ liệu. Điều này không tự cấp đủ CRUD cho user thiếu quyền Role.
+- Nếu một họ rule không còn rule active, cổng tương ứng không hạn chế record/field; các quyền qua Role lại áp dụng trên toàn bộ dữ liệu ở cổng đó. Điều này không tự cấp đủ CRUD cho user thiếu quyền Role.
 - Rule vẫn phải có scope hợp lệ cho action. Không dùng `create: none` vì scope Create không hỗ trợ `none`. `type` trong personnel filter luôn là `1` cho mẫu này, còn `type` của rule phụ thuộc action.
 
 | Slot action | `type` của rule | `scopes` | `filter` |
 |---|---|---|---|
-| Create | `1` | `create: all` | `{"logicType":"AND","logic":"","conditions":[]}` (bắt buộc gửi, server không dùng để lọc) |
+| Create | `1` | `create: all` | `{"logicType":"AND","logic":"","conditions":[]}` (bắt buộc; rỗng nghĩa là mọi dữ liệu tạo) |
 | View | `2` | `read: all`, `edit: none`, `delete: no` | `{"logicType":"AND","logic":"","conditions":[]}` |
 | Edit | `2` | `read: none`, `edit: all`, `delete: no` | Như View |
 | Delete | `2` | `read: none`, `edit: none`, `delete: yes` | Như View |
@@ -322,7 +322,7 @@ Create và delete dùng top-level `data` array và hỗ trợ batch. Nếu một
 ```
 
 - Có thể dùng `objectSlug` thay cho `objectTypeId`.
-- Bỏ `status` để audit toàn bộ cấu hình, sau đó kiểm tra có ít nhất một rule `status: 1` hay không. Chỉ rule active mới kích hoạt lớp bảo mật và đóng góp quyền; Object chỉ còn rule inactive được xử lý như không có rule active.
+- Bỏ `status` để audit toàn bộ cấu hình, sau đó kiểm tra từng họ rule (`type: 1`, `type: 2`) có ít nhất một rule `status: 1` hay không. Chỉ rule active mới kích hoạt cổng của họ rule đó và đóng góp quyền; họ rule chỉ còn rule inactive được xử lý như không có rule active ở cổng đó.
 - `withDetails: false` trả `filter: null` và mảng chi tiết rỗng; dùng `true` khi cần audit.
 - Endpoint chưa phân trang.
 
@@ -394,7 +394,7 @@ Xoá vĩnh viễn:
 
 Ưu tiên `status: 0` nếu người dùng nói “tạm dừng”, “vô hiệu hoá” hoặc muốn khả năng khôi phục.
 
-Trước khi tắt hoặc xoá rule active cuối cùng, cảnh báo rằng lớp bảo mật chi tiết sẽ bị tắt dù các rule inactive vẫn còn. Khi đó quyền cấp Object lại áp dụng trên toàn bộ records; với Super Admin, cổng quyền Role được coi là đã qua.
+Trước khi tắt hoặc xoá rule active cuối cùng của một họ rule (`type: 1` hoặc `type: 2`), cảnh báo rằng cổng tương ứng (tạo, hoặc xem/sửa/xoá) sẽ mở lại dù các rule inactive vẫn còn. Khi đó quyền cấp Object lại áp dụng trên toàn bộ records ở cổng đó; với Super Admin, cổng quyền Role được coi là đã qua. Cổng còn lại không đổi.
 
 ## Mã lỗi thường gặp
 

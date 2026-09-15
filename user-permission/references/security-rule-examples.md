@@ -6,7 +6,7 @@ Bổ sung cho mục "Đặt tên và mô tả security rule" trong `SKILL.md`; s
 
 | Action | Ví dụ tên tiếng Anh | Nội dung description phải nêu |
 |---|---|---|
-| Create | `[Finance App] - Create Cash Transactions` | Audience, fields được nhập và việc rule không cấp quyền trên records đã tồn tại |
+| Create | `[Finance App] - Create Cash Transactions` | Audience, điều kiện trên dữ liệu tạo nếu có, fields được nhập và việc rule không cấp quyền trên records đã tồn tại |
 | View | `[Finance App] - View Eligible Cash Transactions` | Audience, record filter, fields được xem và không cấp edit/delete |
 | Edit | `[Finance App] - Edit Draft Cash Transactions` | Audience, record filter, fields được sửa và không cấp read/delete trong rule này |
 | Delete | `[Finance App] - Delete Draft or Cancelled Cash Transactions` | Audience, record filter được xoá và không cấp read/edit |

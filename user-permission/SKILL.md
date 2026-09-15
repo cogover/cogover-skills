@@ -3,15 +3,15 @@ name: user-permission
 description: "Quản lý user, Personnel/Department/Position, Role và quyền dữ liệu Cogover Workspace qua `/bapi/v1` (Users, Roles, Personnels, Departments, Positions, Object Security Rules, API Keys): mời/xoá user, gán/gỡ Role, cấp quyền tính năng và quyền record/field, rule giữ chỗ cho Object do backend quản lý, kiểm thử quyền runtime bằng persona test."
 metadata:
   author: cogover
-  version: "1.1.3"
+  version: "1.1.4"
 ---
 
 # User Permission
 
-- **Phiên bản:** `1.1.3`
+- **Phiên bản:** `1.1.4`
 - **Ngày phát hành:** `2026-09-16`
 
-Quản lý người dùng, Role, cơ cấu nhân sự (Personnel, Department, Position, quan hệ phòng ban–vị trí) và quyền dữ liệu trong một Cogover Workspace. Phân loại yêu cầu trước để chọn đúng API cơ cấu hoặc lớp phân quyền. Role ở mức Object chỉ đủ khi Object không có security rule active; có ít nhất một rule active thì mọi quyền record của mọi user, kể cả Super Admin, còn phải được rule phù hợp cấp.
+Quản lý người dùng, Role, cơ cấu nhân sự (Personnel, Department, Position, quan hệ phòng ban–vị trí) và quyền dữ liệu trong một Cogover Workspace. Phân loại yêu cầu trước để chọn đúng API cơ cấu hoặc lớp phân quyền. Role ở mức Object chỉ đủ khi cổng tương ứng chưa có security rule active: rule `type: 1` giữ cổng tạo record, rule `type: 2` giữ cổng xem/sửa/xoá; cổng đã có rule active thì quyền của mọi user ở cổng đó, kể cả Super Admin, còn phải được rule phù hợp cấp.
 
 ## Chuẩn bị
 
@@ -36,7 +36,7 @@ Quản lý người dùng, Role, cơ cấu nhân sự (Personnel, Department, Po
 
 - Lấy toàn bộ Role của user và đọc từng Role. Có ít nhất một Role `isSuperAdmin: 1` → user là Super Admin, qua cổng quyền Role ở cấp Object. Super Admin không tự động bypass Object Security Rules.
 - Không có Role Super Admin → mặc định user không có quyền tạo, xem, sửa, xoá record của bất kỳ Object nào cho đến khi có Role cấp action tương ứng.
-- Object có ít nhất một rule active: đánh giá Super Admin như mọi user ở lớp record/field (rule active, khớp personnel filter, khớp record filter khi có); không có rule active phù hợp cấp scope tương ứng thì Super Admin cũng bị từ chối action đó.
+- Cổng đã có rule active: đánh giá Super Admin như mọi user (rule active, khớp personnel filter, khớp `filter` trên record hiện có hoặc trên dữ liệu đang tạo); không có rule active phù hợp cấp scope tương ứng thì Super Admin cũng bị từ chối action đó.
 
 ### 2. Hợp nhất quyền từ nhiều Role
 
@@ -51,17 +51,25 @@ Cộng quyền của mọi Role đang gán: Role A cấp `view`, Role B cấp `e
 | `edit` | Rule `type: 2`, scope `edit` |
 | `delete` | Rule `type: 2`, scope `delete` |
 
-### 3. Xác định chế độ bảo mật của Object
+### 3. Hai cổng bảo mật độc lập theo loại rule
 
-Liệt kê rules của Object không lọc `status`, kiểm tra trạng thái từng rule:
+Liệt kê rules của Object không lọc `status`, kiểm tra trạng thái từng rule. Rule chia thành hai họ, mỗi họ giữ một cổng riêng và không ảnh hưởng cổng còn lại:
 
-- Không có rule active: lớp bảo mật chi tiết không hạn chế; quyền qua cổng Role áp dụng cho toàn bộ records và fields (Super Admin qua cổng Role, user thường dùng `roleActions`). Rule inactive không kích hoạt mặc định từ chối và không đóng góp quyền.
-- Có ít nhất một rule active: mặc định từ chối với mọi user, kể cả Super Admin; quyền cấp Object không tự áp dụng cho record. Không có rule active phù hợp cho tạo → không được tạo record; record hiện có không khớp rule active phù hợp → không được xem, sửa, xoá record đó. Chỉ rule active khớp user và record mới cộng quyền trở lại.
-- Rule giữ chỗ active với `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]` cũng kích hoạt chế độ này dù không khớp nhân sự nào và không cấp quyền cho ai; dùng để giữ slot action chưa cấp và duy trì mặc định từ chối, đặc biệt với Object do backend quản lý (đọc [Object do backend quản lý và rule giữ chỗ](#4-object-do-backend-quản-lý-và-rule-giữ-chỗ) trước khi dùng). Không có rule active nghĩa là lớp chi tiết không hạn chế dữ liệu, vẫn phải qua cổng Role; không phải mọi user mặc nhiên có đủ CRUD.
+| Cổng | Họ rule | Kích hoạt mặc định từ chối khi | Điều kiện để được cấp |
+|---|---|---|---|
+| Tạo record | `type: 1` (Create) | Có ít nhất một rule type 1 active | Một rule type 1 active có `personnelFilters` khớp user và `filter` khớp dữ liệu của record đang tạo |
+| Xem / sửa / xoá record | `type: 2` (View, Edit, Delete) | Có ít nhất một rule type 2 active | Một rule type 2 active có `personnelFilters` khớp user và `filter` khớp record hiện có; action được cấp là scope của rule đó (`read`, `edit`, `delete`) |
+
+- Cổng nào chưa có rule active thì cổng đó không hạn chế; quyền qua Role áp dụng cho toàn bộ record/field của cổng đó (Super Admin qua cổng Role, user thường dùng `roleActions`). Rule inactive không kích hoạt và không đóng góp quyền.
+- Cả hai cổng đều áp dụng cho Super Admin. Rule không mở rộng vượt cổng Role: action không có trong `roleActions` vẫn bị từ chối dù rule khớp.
+- `filter` của rule type 1 là bắt buộc và được đánh giá trên dữ liệu gửi lên khi tạo. Cho phép tạo với mọi dữ liệu thì gửi `{"logicType":"AND","logic":"","conditions":[]}`; có điều kiện thì chỉ record thoả điều kiện mới được tạo (ví dụ chỉ tạo được record `status = draft`).
+- Nhiều rule cùng khớp thì cộng quyền: hợp scope và field của từng rule; `none`/`no` không thu hồi quyền rule khác đã cấp.
+- Hệ quả khi cấu hình: muốn chặn tạo trực tiếp thì phải có ít nhất một rule type 1 active không khớp ai; một rule View active một mình đã đủ đưa sửa/xoá về mặc định từ chối vì không rule nào cấp `edit`/`delete`; bật rule active đầu tiên của một họ chỉ đổi chế độ của cổng họ đó.
+- Rule giữ chỗ active với `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]` kích hoạt cổng của họ rule đó dù không khớp nhân sự nào và không cấp quyền cho ai; dùng để giữ slot action chưa cấp và duy trì mặc định từ chối, đặc biệt với Object do backend quản lý (đọc [Object do backend quản lý và rule giữ chỗ](#4-object-do-backend-quản-lý-và-rule-giữ-chỗ) trước khi dùng). Không có rule active nghĩa là cổng đó không hạn chế dữ liệu, vẫn phải qua cổng Role; không phải mọi user mặc nhiên có đủ CRUD.
 
 ### 4. Hợp nhất các security rule phù hợp
 
-Chỉ đưa rule vào tập tính quyền khi rule active và khớp đầy đủ: `type: 1` → user khớp `personnelFilters` (payload vẫn phải gửi `filter` rỗng, server không dùng nó để lọc record); `type: 2` → user khớp `personnelFilters` và record khớp `filter`.
+Chỉ đưa rule vào tập tính quyền khi rule active và khớp đầy đủ: `type: 1` → user khớp `personnelFilters` và dữ liệu record đang tạo khớp `filter` (`conditions: []` là mọi dữ liệu); `type: 2` → user khớp `personnelFilters` và record hiện có khớp `filter`.
 
 Nhiều rule đồng thời khớp user + record thì cộng quyền:
 
@@ -71,9 +79,9 @@ Nhiều rule đồng thời khớp user + record thì cộng quyền:
 - Personnel filter `exclude` không phải "user thuộc đối tượng bị loại trừ thì không khớp rule". Với audience theo Role (`type: 4`, `op: exclude`), runtime duyệt từng Role của user: user vẫn khớp nếu có ít nhất một Role không nằm trong danh sách loại trừ; chỉ khi mọi Role đều bị loại trừ (hoặc user không có Role) thì nhánh này không cấp quyền. Đây là điều kiện chọn audience, không phải lệnh cấm ghi đè rule khác. Đọc [Semantics của Role `exclude` khi user có nhiều Role](references/api-object-security-rules.md#semantics-của-role-exclude-khi-user-có-nhiều-role) trước khi thiết kế hoặc kiểm thử loại rule này.
 
 ```text
-Không có rule active:  effectiveActions = quyền qua cổng Role trên mọi record
-Có rule active:        effectiveActions(record, field) = quyền qua cổng Role
-                       ∩ ánh xạ action từ hợp scope của mọi active rule khớp user và record
+Cổng chưa có rule active:  effectiveActions = quyền qua cổng Role trên mọi record (cổng đó)
+Cổng đã có rule active:    effectiveActions(record, field) = quyền qua cổng Role
+                           ∩ ánh xạ action từ hợp scope của mọi active rule cùng họ khớp user và record
 ```
 
 Ví dụ: Role A cấp `view`, Role B cấp `edit` và `delete` trên `object_a`; hai active rule cùng khớp user và record X: rule 1 đọc mọi field, sửa `amount`, `delete: no`; rule 2 sửa `status`, `delete: yes`. Trên X, user xem mọi field, sửa `amount` và `status`, được xoá (`delete: no` của rule 1 không huỷ `delete: yes` của rule 2). Trên record Y không khớp rule nào, user không có quyền dù Role đã có `view`, `edit`, `delete`.
@@ -96,20 +104,20 @@ Dùng Role khi user cần tạo, xem, sửa hoặc xoá toàn bộ records của
 
 1. Tạo hoặc cập nhật Role với permission `functionCode: "record"`, `groupSlug: "object"`, `actions` cần cấp, `valueOption: 1` (chỉ áp dụng cho các Object trong `values`) và `values` gồm `id` + `slug` của Object đã resolve (schema: [Permission schema](references/api-roles.md#permission-schema)). Gán Role cho user.
 2. Liệt kê toàn bộ security rules của Object không lọc trạng thái. Không có rule active → dừng ở Role; `roleActions` áp dụng cho mọi record.
-3. Có rule active → Role một mình chưa đủ; tạo hoặc cập nhật active rule phạm vi rộng cho user/Role đích: rule `type: 1` scope `create` toàn bộ field khi cần tạo; các rule `type: 2` riêng cho View, Edit, Delete với `filter.conditions: []` khi cần quyền trên mọi record hiện có, scope không phải mục đích của rule đặt `none`/`no`. Chỉ cấp action đã có trong `roleActions`.
+3. Có rule active → Role một mình chưa đủ; tạo hoặc cập nhật active rule phạm vi rộng cho user/Role đích: rule `type: 1` scope `create` toàn bộ field với `filter.conditions: []` khi cần tạo với mọi dữ liệu; các rule `type: 2` riêng cho View, Edit, Delete với `filter.conditions: []` khi cần quyền trên mọi record hiện có, scope không phải mục đích của rule đặt `none`/`no`. Chỉ cấp action đã có trong `roleActions`.
 
 Mẫu Role Ticket ([sample-customer-service-role.json](references/sample-customer-service-role.json)) mô tả "Xem/sửa/xoá…" nhưng `permissions[0].actions` chỉ là `["view"]`: `actions` là nguồn sự thật, không suy ra quyền từ tên hoặc mô tả; muốn cấp xem/sửa/xoá phải gửi đủ `["view", "edit", "delete"]`.
 
 ### 3. Phân quyền chi tiết theo record hoặc field
 
-Dùng Object Security Rule khi cần giới hạn đến từng record, nhóm record hoặc từng field, hoặc khi Object đã có rule active (mọi quyền record của mọi user, kể cả Super Admin, phải đi qua lớp này).
+Dùng Object Security Rule khi cần giới hạn đến từng record, nhóm record hoặc từng field, hoặc khi cổng tương ứng của Object đã có rule active (quyền của mọi user ở cổng đó, kể cả Super Admin, phải đi qua lớp này).
 
 1. Với action cần cấp, user phải đã có Role cấp quyền records ở mức Object; rule là lớp chi tiết bổ sung, không thay thế Role. Không cấp thêm Role cho action đang muốn chặn hoặc khi chỉ tạo rule giữ chỗ.
 2. Mỗi rule một mục đích cấp quyền chính. Yêu cầu đủ create/view/edit/delete → tối thiểu bốn rule độc lập:
 
    | Rule | `type` | `scopes` | Ghi chú |
    |---|---|---|---|
-   | Create | `1` | `create`: fields được nhập | Ai được tạo qua `personnelFilters`; vẫn gửi `filter` rỗng `{"logicType":"AND","logic":"","conditions":[]}` vì server bắt buộc, không dùng để lọc record |
+   | Create | `1` | `create`: fields được nhập | Ai được tạo qua `personnelFilters`; `filter` bắt buộc và được đánh giá trên dữ liệu gửi lên khi tạo: `{"logicType":"AND","logic":"","conditions":[]}` cho phép mọi dữ liệu, có điều kiện thì chỉ record thoả điều kiện mới được tạo |
    | View | `2` | `read`: fields được xem; `edit: none`, `delete: no` | Records được xem qua `filter` |
    | Edit | `2` | `edit`: fields được sửa; `read: none`, `delete: no` | Records được sửa qua `filter` |
    | Delete | `2` | `delete: yes`; `read: none`, `edit: none` | `delete` chỉ nhận `yes`/`no`, không nhận field ID |
@@ -126,10 +134,10 @@ Object do backend quản lý là bảng dữ liệu cho logic ứng dụng; ngư
 
 1. Chốt ma trận quyền theo từng action: audience được thao tác trực tiếp, phạm vi record/field, action chỉ backend thực hiện. Khi phối hợp `$cogover-custom-module` tạo Object mới: bộ mặc định bốn rule riêng Create/View/Edit/Delete, action bị chặn vẫn có một rule giữ chỗ; chỉ thêm rule cùng action khi cần audience/filter/field scope khác; không gộp action.
 2. Action không cấp cho bất kỳ người dùng nào: rule active (`status: 1`) có audience duy nhất `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]`. Gửi JSON `null` thật, không phải chuỗi `"null"`, ID giả hay mảng rỗng; `type: 1` của personnel filter độc lập với `type` của rule. `type`, `filter`, `scopes` theo action lấy từ bảng ở [Rule giữ chỗ không chọn nhân sự](references/api-object-security-rules.md#rule-giữ-chỗ-không-chọn-nhân-sự); mọi rule, kể cả slot Create `type: 1`, phải gửi `filter` (rỗng `{"logicType":"AND","logic":"","conditions":[]}` khi không lọc record), thiếu thì server trả `r: 600` bọc 422 `logicType required` và không tạo rule.
-3. Rule giữ chỗ giữ slot action để cấu hình sau và kích hoạt/duy trì mặc định từ chối; audience không khớp ai, kể cả Super Admin, nên không cấp quyền cho ai. Rule không phải lệnh cấm có ưu tiên: active rule khác vẫn có thể cộng quyền. Đọc toàn bộ rules để chắc không rule nào khác cấp action đang muốn chặn; không thêm audience khác vào rule giữ chỗ.
-4. Ví dụ Object "Lượt khuyến mãi đã sử dụng": View rule cấp đọc theo audience và phạm vi đã chốt; Create/Edit/Delete là ba rule giữ chỗ active. Chỉ backend đọc và ghi → cả bốn rule dùng audience giữ chỗ. Không biểu diễn chặn bằng cách bỏ hết hoặc tắt hết rules: không còn rule active thì quyền qua cổng Role lại áp dụng trên mọi record/field.
+3. Rule giữ chỗ giữ slot action để cấu hình sau và kích hoạt/duy trì mặc định từ chối của cổng tương ứng (slot Create là rule type 1 giữ cổng tạo; slot View/Edit/Delete là rule type 2 giữ cổng record); audience không khớp ai, kể cả Super Admin, nên không cấp quyền cho ai. Rule không phải lệnh cấm có ưu tiên: active rule khác vẫn có thể cộng quyền. Đọc toàn bộ rules để chắc không rule nào khác cấp action đang muốn chặn; không thêm audience khác vào rule giữ chỗ.
+4. Ví dụ Object "Lượt khuyến mãi đã sử dụng": View rule cấp đọc theo audience và phạm vi đã chốt; Create/Edit/Delete là ba rule giữ chỗ active. Chỉ backend đọc và ghi → cả bốn rule dùng audience giữ chỗ. Không biểu diễn chặn bằng cách bỏ hết hoặc tắt hết rules: một họ rule không còn rule active thì quyền qua cổng Role lại áp dụng cho cổng đó trên mọi record/field. Chặn tạo bắt buộc có rule type 1 active; ba rule type 2 không đóng cổng tạo.
 5. Không cần thêm Role để rule giữ chỗ hoạt động. Backend dùng quyền caller vẫn chịu quyền của caller; rule giữ chỗ không cấp quyền cho backend. Với Custom Backend Module, phối hợp `$cogover-custom-module` dùng `data.asSystem()` cùng project policy giới hạn đúng Object/action và kiểm tra quyền nghiệp vụ của caller.
-6. Sau khi ghi: đọc lại từng rule và danh sách không lọc trạng thái; xác minh `status: 1`, audience chỉ có bộ giá trị trên, scope đúng action và không có grant xung đột ở rule khác. Báo rõ tác động nếu đây là rule active đầu tiên. Không tắt/xoá rule active cuối cùng khi mục tiêu vẫn là mặc định từ chối. Khi mở một slot cho user: cập nhật audience/filter/scopes theo quyền được yêu cầu rồi tính lại quyền cộng dồn.
+6. Sau khi ghi: đọc lại từng rule và danh sách không lọc trạng thái; xác minh `status: 1`, audience chỉ có bộ giá trị trên, scope đúng action và không có grant xung đột ở rule khác. Báo rõ tác động nếu đây là rule active đầu tiên của họ rule đó. Không tắt/xoá rule active cuối cùng khi mục tiêu vẫn là mặc định từ chối. Khi mở một slot cho user: cập nhật audience/filter/scopes theo quyền được yêu cầu rồi tính lại quyền cộng dồn.
 7. Kiểm thử CRUD trực tiếp bằng danh tính phù hợp theo [Kiểm thử quyền runtime](#kiểm-thử-quyền-runtime), gồm Super Admin khi cần chứng minh không bypass; tách ca backend được phép thực hiện nghiệp vụ khỏi ca người dùng bị chặn. Chưa có backend hoặc thiếu credential/fixture hợp lệ → báo cấu hình đã xác minh và các ca runtime còn chờ; readback không phải PASS end-to-end. Không mở tạm CRUD cho người dùng chỉ để tạo fixture; dùng đường hệ thống đã được phép khi sẵn sàng.
 
 ### Đặt tên và mô tả security rule
@@ -157,8 +165,8 @@ Theo [references/api-roles.md](references/api-roles.md): xem danh sách và chi 
 2. Xoá user: xác định `is_delete_personnel`; mặc định an toàn là `false` khi người dùng chỉ muốn gỡ khỏi Workspace.
 3. Xoá Role: kiểm tra user đang được gán và ảnh hưởng mất quyền; không xoá Role quản trị cao nhất hoặc làm Workspace mất quản trị viên cuối cùng.
 4. Xoá Object Security Rule là vĩnh viễn; dùng `status: 0` nếu mục tiêu chỉ là tạm dừng.
-5. Tạo hoặc bật rule active đầu tiên của một Object: cảnh báo toàn Object chuyển từ quyền cấp Object áp dụng trên mọi record sang mặc định từ chối; mọi user, kể cả Super Admin, có thể mất quyền nếu chưa được active rules bao phủ.
-6. Xoá hoặc tắt rule active cuối cùng: cảnh báo lớp bảo mật chi tiết sẽ tắt dù Object vẫn còn rule inactive; quyền qua cổng Role lại áp dụng cho toàn bộ records và có thể làm tăng quyền ngoài ý muốn.
+5. Tạo hoặc bật rule active đầu tiên của một họ rule (`type: 1` hoặc `type: 2`): cảnh báo cổng tương ứng (tạo, hoặc xem/sửa/xoá) chuyển từ quyền cấp Object áp dụng trên mọi record sang mặc định từ chối; mọi user, kể cả Super Admin, có thể mất quyền ở cổng đó nếu chưa được active rules bao phủ. Cổng còn lại không đổi.
+6. Xoá hoặc tắt rule active cuối cùng của một họ rule: cảnh báo cổng tương ứng sẽ mở lại dù Object vẫn còn rule inactive; quyền qua cổng Role lại áp dụng cho toàn bộ records ở cổng đó và có thể làm tăng quyền ngoài ý muốn.
 7. Sửa rule gộp hiện có: đánh giá tách thành các rule theo action; giữ nguyên quyền hiệu lực trong quá trình chuyển đổi và xác minh runtime trước khi xoá rule cũ.
 8. Timeout khi tạo/gán: đọc lại trạng thái trước khi thử lại để tránh tạo trùng hoặc kết luận sai.
 
@@ -169,7 +177,7 @@ Kiểm thử quyền thực tế trên records là bước xác minh quan trọn
 ### Xác minh cấu hình đã lưu
 
 - Sau create/update Role gọi `roles/view` (response update có thể chứa trạng thái cũ). Sau add/remove Role gọi `users/view` và đối chiếu trường `role`. Sau create/update rule gọi endpoint chi tiết và đối chiếu `filter`, `personnelFilters`, `scopes`, `status`, `type`.
-- Tính lại trạng thái Super Admin, `roleActions` đã hợp nhất, Object có rule active hay không, các active rule khớp từng user/record và scope hiệu lực cuối cùng. Không loại Super Admin khỏi bước đánh giá security rule.
+- Tính lại trạng thái Super Admin, `roleActions` đã hợp nhất, từng cổng (tạo; xem/sửa/xoá) của Object có rule active hay không, các active rule khớp từng user/record và scope hiệu lực cuối cùng. Không loại Super Admin khỏi bước đánh giá security rule.
 
 ### Kiểm thử quyền runtime
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.3 - 2026-09-16
+
+- Cập nhật `user-permission` 1.1.4: mô tả lại Object Security Rules thành hai cổng độc lập theo họ rule: rule `type: 1` giữ cổng tạo record, rule `type: 2` giữ cổng xem/sửa/xoá; mỗi cổng chỉ chuyển sang mặc định từ chối khi họ rule của nó có rule active, cổng còn lại không đổi (chặn tạo bắt buộc có rule type 1 active; rule View một mình đã khoá sửa/xoá). `filter` của rule type 1 được đánh giá trên dữ liệu gửi lên khi tạo (`conditions: []` là mọi dữ liệu; có điều kiện thì chỉ record thoả điều kiện mới được tạo). Sửa mục mô hình đánh giá quyền, bảng bốn rule, rule giữ chỗ, cảnh báo an toàn khi bật/tắt rule, reference API và ma trận kiểm thử. Kiểm chứng trên Workspace ngày 2026-09-16.
+
 ## 4.5.2 - 2026-09-16
 
 - Cập nhật `cogover-custom-module` 1.4.2: mọi request `/api/v1/ts-projects/...` (service `3` production, `4` quản lý, `6` preview) phải gửi `x-req-type: 6` cùng `x-req-service`; thiếu `x-req-type: 6` thì service `4` bị Authorization Server xử lý như logout (`deletedTokens`, thu hồi phiên), service `3` trả `r: 5000`, service `6` trả `r: 5001`. Bổ sung header vào mọi ví dụ HTTP/cURL của hai API reference, quick start backend và `cli-session-and-delivery.md`. Kiểm chứng trên Workspace ngày 2026-09-16. Bước 2A ghi rõ rule Create `type: 1` vẫn gửi `filter` rỗng.
