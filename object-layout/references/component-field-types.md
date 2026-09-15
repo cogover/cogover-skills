@@ -1,6 +1,6 @@
 # Thuộc tính component theo fieldType
 
-Bổ sung cho các trường chung ở [layout-json-structure.md#component](layout-json-structure.md#component). Object Field giữ `id` thật và `fieldMetaData`; component đặc biệt (`report`, `dashboard`, `tracking_history`, `path_component`, `display_box`, `related_list`, `button_group`, `workflow_button`, `up_next_task`) dùng `id` UUID v4, `slug` theo prefix của loại (quy tắc trong [SKILL.md](../SKILL.md)) và không cần `fieldMetaData`.
+Bổ sung cho các trường chung ở [layout-json-structure.md#component](layout-json-structure.md#component). Object Field giữ `id` thật và `fieldMetaData`; component đặc biệt (`report`, `dashboard`, `tracking_history`, `path_component`, `display_box`, `related_list`, `button_group`, `workflow_button`, `up_next_task`, `federation_component`) dùng `id` UUID v4, `slug` theo prefix của loại (quy tắc trong [SKILL.md](../SKILL.md)) và không cần `fieldMetaData`.
 
 ## lookup_normal và lookup_dependency
 
@@ -378,6 +378,37 @@ Dùng khi người dùng không chỉ định vị trí: prepend Row này vào �
   ]
 }
 ```
+
+## federation_component
+
+Nhúng custom component của Custom Frontend Module (dạng custom component, phát triển và publish theo `$cogover-custom-module`) vào layout; nền tảng truyền `formBuilder` cho component để thao tác form qua `execScript`. Quy trình resolve, merge và verify: mục "Đưa Federation component vào layout" trong [SKILL.md](../SKILL.md).
+
+Schema quan sát từ Layouts V2 `view` trên layout Xem/sửa (`functionLayout: 2`) do layout editor tạo; `PUT` payload allowlist chứa nguyên component này đã kiểm chứng trả `r: 0` và view lại giữ nguyên `content` (ngày `2026-09-15`):
+
+```json
+{
+  "id": "<uuid-v4>",
+  "fieldType": "federation_component",
+  "status": 1,
+  "slug": "federation_component_promotion_code_checker",
+  "name": "Federation component",
+  "label": "Federation component",
+  "uiSlug": "federation_component_promotion_code_checker_1",
+  "federationUrl": "_cm_2/Components/PromotionCodeChecker"
+}
+```
+
+| Trường | Kiểu | Mô tả |
+|---|---|---|
+| `id` | String | UUID v4 riêng của layout component; không dùng Object Field ID hay Project ID |
+| `fieldType` | String | `"federation_component"` |
+| `federationUrl` | String | **Bắt buộc.** `{slugSlot}/Components/<TênComponent>`: `slugSlot` (`_cm_N`) của Custom Frontend Module đang active, phần sau khớp chữ hoa/thường với khóa expose `./Components/<TênComponent>` của module. Không có `/` đầu, không kèm origin. URL `http://localhost:5101/#./Components/<Tên>` chỉ dùng khi debug local, phải thay trước khi bàn giao |
+| `slug` | String | Identity của layout component, prefix `federation_component_`, unique toàn hệ thống; layout editor sinh dạng `federation_component_<timestamp>` và giữ nguyên khi đã có, tạo qua API dùng tên có nghĩa |
+| `uiSlug` | String | `{slug}_{số thứ tự}` |
+| `name` / `label` | String | Quan sát `"Federation component"`; đổi `label` khi người dùng yêu cầu tên hiển thị khác |
+| `status` | Number | `1` |
+
+Không có `fieldMetaData`, `useLayouts`, `required`, `readOnly`; layout không cấu hình props hay input cho component. Vị trí quan sát: Group `numberOfColumns: "1"` (giá trị chuỗi do layout editor sinh, giữ nguyên khi merge), không border, không hiện tên, đặt ngay trên `related_list` mà component thao tác trong cùng cột. Chưa xác minh trên layout `functionLayout: 1`/`3`.
 
 ## display_box
 

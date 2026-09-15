@@ -37,9 +37,18 @@ export default defineConfig({
 
 API frontend được gọi bằng quyền người dùng đang đăng nhập; ẩn nút trên UI không thay thế kiểm tra quyền. Render dữ liệu Workspace bằng `textContent` hoặc cơ chế escape của framework.
 
+## Frontend theo template gọi backend
+
+Áp dụng cho custom component và Federation Page dựng từ `custom-frontend-module-template`; quy ước chi tiết theo skill `custom-module-api` trong `.agents/skills` của template đã clone.
+
+- Mọi request đi qua HTTP client chung `src/apis/apiBase.ts` của template với path tương đối `/api/v1/ts-projects/<BACKEND_PROJECT_SLUG>/<ROUTE>`; header routing đặt bằng `createServiceHeader({ service: 3, type: 6 })`, không hardcode `x-req-service`/`x-req-type` tại call-site. Client chung đã xử lý credentials, CSRF, app slug và retry; feature không tự thêm các header này và không gọi `fetch`/`axios.create` riêng.
+- Server state dùng TanStack Query theo query-key factory của template; mutation ghi dữ liệu kèm `Idempotency-Key` riêng theo mục Production ở trên. Transport envelope, status và mã nghiệp vụ kiểm tra như mục Production; lỗi trả về caller, page/component quyết định cách hiển thị.
+- Local: dev server của template proxy `/api`, `/files`, `/websocket`, `/static` tới origin Workspace theo `VITE_WORKSPACE_NAME`, nên mặc định frontend local gọi backend **đã publish và activate** trên Workspace đó. Cần gọi backend đang chạy local qua Cogover Dev CLI: thêm rule proxy riêng cho `/api/v1/ts-projects/<BACKEND_PROJECT_SLUG>` tới `http://127.0.0.1:<COGOVER_LOCAL_PORT>` đặt trước rule `/api` chung trong `vite.config.ts`, kiểm chứng request thực sự tới local runner; rule chỉ ảnh hưởng dev server, không vào bundle, nhưng phải ghi rõ trong bàn giao.
+- Custom component chạy debug qua `npm run preview` được trang Cogover thật tải về, nên API của component luôn gọi cùng origin Workspace; backend local không tiếp cận được theo đường này, publish backend trước khi test component với dữ liệu thật.
+
 ## Kiểm thử trên Workspace
 
-- Mở đúng `https://<WORKSPACE_DOMAIN>/<SLUG_SLOT>/index.html`; không dùng project slug hoặc project ID thay `slugSlot`.
+- Single page app: mở đúng `https://<WORKSPACE_DOMAIN>/<SLUG_SLOT>/index.html`; không dùng project slug hoặc project ID thay `slugSlot`. Custom component: mở form của Object đã gắn item Federation component `<SLUG_SLOT>/Components/<Tên>`. Federation Page: mở `https://<WORKSPACE_DOMAIN>/<APP_SLUG>/c<N>/<PATH>`.
 - Kiểm tra đăng nhập, tải dữ liệu, thao tác ghi được phép và đọc lại record đã thay đổi; dùng caller có/không có quyền nếu yêu cầu phân quyền.
 - Refresh/deep-link: static hosting không có SPA fallback; dùng hash routing hoặc URL file tồn tại. Asset có content hash tránh cache version cũ.
 - Xác minh frontend và backend đang chạy đúng version đã kiểm thử; thành công một phía chưa chứng minh toàn luồng.

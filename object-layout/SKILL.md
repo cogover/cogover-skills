@@ -1,17 +1,17 @@
 ---
 name: object-layout
-description: "Quản lý layout Cogover Object qua Layouts V2 API `/bapi/v1/layouts_v2`: tạo, xem, cập nhật, xoá layout; tạo layout `isForm: 1` khi $object-form gọi; thiết kế row/column/section/tab/group/component; lấy/cập nhật `pageSettings.script`; đặt Object Button vào `pageSettings.buttons.listButton` và Path Component vào layout xem/sửa."
+description: "Quản lý layout Cogover Object qua Layouts V2 API `/bapi/v1/layouts_v2`: tạo, xem, cập nhật, xoá layout; tạo layout `isForm: 1` khi $object-form gọi; thiết kế row/column/section/tab/group/component; lấy/cập nhật `pageSettings.script`; đặt Object Button vào `pageSettings.buttons.listButton`, Path Component và Federation component (custom component) vào layout xem/sửa."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.1.0"
 ---
 
 # Object Layout
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-09-15`
 
-Skill này được `$object-form` gọi như sub-skill khi Object chưa có layout `isForm` hợp lệ, được `$layout-scripting` dùng để lấy/ghi `pageSettings.script`, và phối hợp với `$object-button`, `$document-template`, `$object-path-component` khi cần đặt Object Button hoặc Path Component lên layout xem/sửa.
+Skill này được `$object-form` gọi như sub-skill khi Object chưa có layout `isForm` hợp lệ, được `$layout-scripting` dùng để lấy/ghi `pageSettings.script`, và phối hợp với `$object-button`, `$document-template`, `$object-path-component` khi cần đặt Object Button hoặc Path Component lên layout xem/sửa. `$cogover-custom-module` gọi skill này để nhúng custom component của Custom Frontend Module (item Federation component) vào layout.
 
 ## Chuẩn bị
 
@@ -22,7 +22,7 @@ Skill này được `$object-form` gọi như sub-skill khi Object chưa có lay
 | Khi làm gì | Đọc |
 |---|---|
 | Dựng hoặc sửa `content` (schema row/column/section/tab/group/component) | [references/layout-json-structure.md](references/layout-json-structure.md) và mẫu thật `assets/sample_layout_1.json` |
-| Cấu hình component theo `fieldType` (lookup, file, related_list, display_box, report, dashboard, button_group, path_component...) | [references/component-field-types.md](references/component-field-types.md) |
+| Cấu hình component theo `fieldType` (lookup, file, related_list, display_box, report, dashboard, button_group, path_component, federation_component...) | [references/component-field-types.md](references/component-field-types.md) |
 | Dựng `pageSettings` | [references/page-settings.md](references/page-settings.md) |
 | Cần ví dụ cây bố cục Lead/Đơn hàng khi thiết kế | [references/layout-design-examples.md](references/layout-design-examples.md), `assets/sample_layout_create_order.json` |
 | Dựng payload `PUT` (mẫu curl, jq cho script) | [references/layout-update-payload.md](references/layout-update-payload.md) |
@@ -53,7 +53,7 @@ Quy tắc cho mọi `PUT`:
 - View lại layout ngay trước khi sửa và dựng payload từ `data` mới nhất để không ghi đè thay đổi của người khác.
 - Payload chỉ gồm allowlist: `name`, `objectTypeSlug`, `status`, `type`, `updateRecordMode`, `accessControls`, `hasComponentPath`, `content`, `title`, `pageSettings`, `functionLayout`, `isWeb`, `isMobile`. Không gửi raw `data` của response view (chứa trường server-managed `id`, `slug`, `created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`, `objectTypeId`, `contentCompiled` mà API update không nhận). Không gửi payload rút gọn chỉ có `pageSettings.script` hoặc chỉ `name`, `content`, `pageSettings`.
 - Giữ nguyên mọi giá trị không được yêu cầu thay đổi, kể cả `hasComponentPath` (có thể là `null`); không tự dựng lại `content` khi chỉ sửa script, button hoặc thêm một component.
-- Sau `PUT`, view lại và so với payload. Không khớp: báo dữ liệu chưa được lưu đúng và dừng.
+- Sau `PUT`, view lại và so với payload. So `accessControls` theo `functions`, `option`, `items`, `type`: server cấp lại `id`, `created`, `updated` của từng entry ở mỗi lần `PUT` dù quyền không đổi (đã quan sát). Không khớp: báo dữ liệu chưa được lưu đúng và dừng.
 
 ## Phân loại layout
 
@@ -103,6 +103,7 @@ Layout tham khảo chỉ dùng để học cấu trúc. Trước khi tái sử d
 - Path Component: chỉ layout `functionLayout: 2` quyền `VIEW_EDIT`. Không chỉ định vị trí → Row đầu tiên, Row 1 Column (`numberOfColumns: 1`, `colSpan: 1`), Group `numberOfColumns: 1`, Section không border và không hiện tên. Đây là gợi ý UI, không phải ràng buộc schema; có thể đặt Row/Column khác nếu người dùng yêu cầu hoặc bố cục đủ rộng. Quy trình: mục "Đưa Path Component vào layout Xem/sửa".
 - Related list editable trên xem/sửa: như layout tạo, nhưng `showingColumns` có thể thêm cột tính toán (`subtotal`); `_action_column` không cần trong `showingColumns` khi đã ở `pinnedColumns.right`; `orderBy: "created"` thay vì `"updated"` để giữ thứ tự dòng; đặt trong section riêng trên cột chính, lookup liên quan phía trên (Bảng giá trên bảng Sản phẩm).
 - Record-level Object Button nằm ở `pageSettings.buttons.listButton`, không phải trong `content`. Quy trình: mục "Đặt Object Button lên layout xem/sửa".
+- Federation component (custom component của Custom Frontend Module): Group 1 cột không border, không hiện tên, đặt ngay trên Related List hoặc field mà component thao tác. Quy trình: mục "Đưa Federation component vào layout".
 
 **Mọi loại layout**
 
@@ -125,7 +126,7 @@ Quy tắc bắt buộc; sai sẽ gây lỗi UI "Cannot read properties of undefi
 2. Phần tử con nằm trong `children` (row → column → section → tab → group); không dùng `layoutColumns`, `sections`, `tabs`, `groups`.
 3. Group chứa field trong `components`, không phải `children`.
 4. Field nằm trực tiếp trong `components`; không bọc dạng `{"component": {...}, "fieldType": "component"}`.
-5. `id` của Object Field là Object Field ID (`OF...`), không phải UUID. Component đặc biệt không phải Object Field (`path_component`, `display_box`, `related_list`, `report`...) dùng UUID v4 riêng và không cần `fieldMetaData`.
+5. `id` của Object Field là Object Field ID (`OF...`), không phải UUID. Component đặc biệt không phải Object Field (`path_component`, `display_box`, `related_list`, `report`, `federation_component`...) dùng UUID v4 riêng và không cần `fieldMetaData`.
 6. `id` của layoutRow, layoutColumn, section, tab, group là UUID v4.
 7. Field và component bắt buộc nằm trong Group; không đặt trực tiếp vào section hoặc tab.
 
@@ -137,7 +138,7 @@ Tên và slug:
 
 - `name` layout bắt buộc tiếng Anh, ngắn, theo chức năng (`Create`, `View/Edit`, `Create Order`); đầu vào ngôn ngữ khác thì dịch trước khi gọi API, không có ngoại lệ. Không gửi `Tạo`, `Xem`, `Chỉnh sửa`.
 - UUID v4 cho `id` của mọi container và component đặc biệt không phải Object Field.
-- Slug sinh mới: `{type_prefix}_{meaningful_name}`, tiếng Anh, chữ thường, `snake_case`, bất kể ngôn ngữ của tên layout/tên hiển thị. Prefix đúng loại: `layout_row_`, `layout_column_`, `section_`, `tab_`, `group_`, `related_list_`, `display_box_`, `report_`, `dashboard_`, `button_group_`, `path_component_`, `workflow_button_`. Đặt theo chức năng/nội dung hoặc suy từ vai trò, vị trí, field bên trong (`layout_column_contact_sidebar`, `section_system_information`, `group_address_fields`); tránh `section_1`, `group_new`; không thêm timestamp.
+- Slug sinh mới: `{type_prefix}_{meaningful_name}`, tiếng Anh, chữ thường, `snake_case`, bất kể ngôn ngữ của tên layout/tên hiển thị. Prefix đúng loại: `layout_row_`, `layout_column_`, `section_`, `tab_`, `group_`, `related_list_`, `display_box_`, `report_`, `dashboard_`, `button_group_`, `path_component_`, `workflow_button_`, `federation_component_`. Đặt theo chức năng/nội dung hoặc suy từ vai trò, vị trí, field bên trong (`layout_column_contact_sidebar`, `section_system_information`, `group_address_fields`); tránh `section_1`, `group_new`; không thêm timestamp.
 - Slug phải unique trên **toàn hệ thống**, không chỉ trong một layout: kiểm tra với slug đã có và mọi slug trong payload đang dựng. Chỉ thêm hậu tố khi trùng thật, dùng số nhỏ nhất chưa dùng (`group_address_fields`, `group_address_fields_2`, `_3`...). API báo slug đã tồn tại → tăng hậu tố và gọi lại.
 - `uiSlug`: Object Field `{field_slug}_{số thứ tự}` (`name_1`, `status_1`); component sinh mới `{component_slug}_{số thứ tự}` (`display_box_contact_summary_1`).
 - Không dịch hoặc đổi slug tham chiếu có sẵn: Object Field slug, `originSlug`, `dashboardSlug`, `pathComponentSlug`.
@@ -246,6 +247,26 @@ Quy trình:
 3. Dựng component. Không chỉ định vị trí → dựng Row mặc định và prepend vào `content`; có vị trí → merge component vào Group đích, không dựng lại phần còn lại.
 4. Kiểm tra hierarchy không rỗng, UUID và slug unique, mỗi `pathComponentSlug` mục tiêu chỉ xuất hiện một lần.
 5. Payload theo allowlist, `PUT`, view lại. Thành công khi: layout vẫn `functionLayout: 2`; có đúng một component active `fieldType: "path_component"` với `pathComponentSlug` mục tiêu, nằm đúng vị trí; Row/component cũ và top-level setting không đổi ngoài diff dự kiến.
+
+## Đưa Federation component vào layout
+
+Dùng khi Custom Frontend Module dạng custom component (phát triển theo `$cogover-custom-module`) đã publish và activate, cần hiển thị trên màn hình bản ghi. Schema: [references/component-field-types.md#federation_component](references/component-field-types.md#federation_component). Schema quan sát từ `view` một layout Xem/sửa do layout editor tạo và đã kiểm chứng `PUT` payload allowlist chứa component này trả `r: 0`, view lại giữ nguyên `content` (ngày `2026-09-15`); sau `PUT` vẫn bắt buộc view lại và mở form thật để xác nhận component tải được.
+
+Ràng buộc:
+
+- `federationUrl` = `{slugSlot}/Components/<TênComponent>`: `slugSlot` (`_cm_N`) lấy từ project frontend đang `ACTIVE` qua API Custom Frontend Module trong `$cogover-custom-module`, không đoán; `<TênComponent>` khớp chữ hoa/thường với khóa expose `./Components/<TênComponent>` trong `vite.config.ts` của module. Không có `/` đầu, không kèm origin. URL `localhost` do `npm run preview` in ra chỉ dùng khi người dùng đang debug local và phải thay trước khi bàn giao.
+- Đã quan sát trên layout Xem/sửa (`functionLayout: 2`, `VIEW_EDIT`); layout `1`/`3` chưa xác minh, chỉ thêm khi người dùng yêu cầu và báo rõ chưa kiểm chứng.
+- `id` là UUID v4 mới; không cần `fieldMetaData`, `useLayouts`. Slug mới: `federation_component_<name>` tiếng Anh `snake_case`, unique toàn hệ thống, sinh `uiSlug` tương ứng. Component có sẵn: giữ nguyên `id`, `slug`, `uiSlug`, kể cả slug dạng timestamp do layout editor sinh.
+- Duyệt đệ quy `content`: đã có component cùng `federationUrl` → idempotent, chỉ đổi vị trí hoặc `label` khi được yêu cầu; không tự xoá hay thay thế component khác.
+- Component thao tác form qua `formBuilder.execScript` bằng slug item trên layout (`related_list` `slug`, field `slug`), không phải slug Object hay Related List: cung cấp các slug này cho người phát triển module. Component cần Related List → đặt trong cùng cột, ngay trên Group chứa `related_list` đó.
+
+Quy trình:
+
+1. View layout mới nhất; xác minh `content` hợp lệ; thu thập `id`, `slug`, `uiSlug` hiện có và slug các item mà component cần.
+2. Xác định `federationUrl` từ `slugSlot` và expose key đã xác minh.
+3. Dựng component. Không chỉ định vị trí → Group 1 cột không border, không hiện tên, ngay trên Related List liên quan hoặc đầu cột chính khi không có Related List; có vị trí → merge vào Group đích, không dựng lại phần còn lại.
+4. Kiểm tra hierarchy không rỗng, UUID và slug unique, mỗi `federationUrl` mục tiêu chỉ xuất hiện một lần.
+5. Payload theo allowlist, `PUT`, view lại. Thành công khi có đúng một component `fieldType: "federation_component"` với `federationUrl` mục tiêu ở đúng vị trí và phần còn lại không đổi ngoài diff dự kiến. Mở form bản ghi trong browser đã đăng nhập: component không tải → kiểm tra module đã activate, `slugSlot` và expose key theo `$cogover-custom-module` bước 9; không sửa layout thêm để che lỗi module.
 
 ## Xử lý lỗi đặc thù
 

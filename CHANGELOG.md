@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.5.0 - 2026-09-15
+
+- Cập nhật `cogover-custom-module` 1.4.0: Custom Frontend Module có ba dạng single page app, custom component (nhúng layout Object qua item Federation component, thao tác form bằng `formBuilder.execScript`) và Federation Page (trang trong ứng dụng tại `/{APP_SLUG}/c{N}/{PATH}`, gắn được vào menu); thêm `get-started-custom-module.md` với bảng chọn nhanh và câu hỏi xác định dạng.
+- Thêm bước 1A: agent trình bày lựa chọn loại module/dạng frontend kèm lý do, phương án thay thế và tác động, chờ người dùng xác nhận rõ ràng trước khi tạo Project, clone template hoặc code; đổi dạng giữa chừng phải xác nhận lại.
+- Thêm `get-started-custom-component.md` và `get-started-federation-page.md` (snapshot tài liệu sản phẩm ngày 2026-09-15). Với hai dạng này, sub-agent frontend bắt buộc clone `custom-frontend-module-template` và đọc các skill trong `.agents/skills` của template trước khi code; bước 4, 7–10 và `full-stack-integration.md` bổ sung khởi tạo, kiểm thử local, cấu hình layout/menu, gọi backend qua HTTP client của template và bàn giao theo từng dạng.
+- Cập nhật `object-layout` 1.1.0: bổ sung component `federation_component` (item Federation component nhúng custom component của Custom Frontend Module, trường `federationUrl` dạng `{slugSlot}/Components/<Tên>`) vào schema, danh mục component đặc biệt, prefix slug và quy trình "Đưa Federation component vào layout"; schema quan sát từ Layouts V2 `view` trên layout Xem/sửa và đã kiểm chứng `PUT` giữ nguyên component. `cogover-custom-module` bước 9 và quick start custom component trỏ sang quy trình này.
+
 ## 4.4.1 - 2026-09-14
 
 - Cập nhật `process-creator` 1.3.1: bổ sung định dạng link một lượt chạy `https://{WORKSPACE_DOMAIN}/process/process-instances/{INSTANCE_ID}?processId={PROCESS_ID}&processInfoId={PROCESS_INFO_ID}` (mục 4.3, `api-process-runtime.md`); báo cáo kiểm thử và `runtime-validation.md` yêu cầu kèm link từng lượt chạy bên cạnh link process và instance ID.

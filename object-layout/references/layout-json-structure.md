@@ -180,6 +180,7 @@ content[]
 | `tracking_history` | Lịch sử thay đổi/hoạt động của bản ghi |
 | `up_next_task` | Task tiếp theo cần thực hiện |
 | `path_component` | Lộ trình trạng thái (pipeline stages) của bản ghi |
+| `federation_component` | Custom component của Custom Frontend Module nhúng qua Module Federation; `federationUrl` = `{slugSlot}/Components/<Tên>` (xem [component-field-types.md#federation_component](component-field-types.md#federation_component)) |
 | `smart_paste` | Dán thông minh từ clipboard vào các trường |
 | `workflow_button` | Nút kích hoạt workflow |
 | `display_text` | Nội dung text tĩnh |
