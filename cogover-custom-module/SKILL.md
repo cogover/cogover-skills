@@ -3,13 +3,13 @@ name: cogover-custom-module
 description: "Điều phối vòng đời Cogover Custom Module: khảo sát App/Object, chọn backend/frontend và dạng frontend (single page app, custom component, Federation Page), người dùng xác nhận trước khi code, schema duyệt bằng Excel, security rules, Process, Project/policy/key, code/test theo template, publish qua Dev CLI, bàn giao. Không thay skill cấu hình Object/Process đơn lẻ."
 metadata:
   author: cogover
-  version: "1.4.1"
+  version: "1.4.2"
 ---
 
 # Cogover Custom Module
 
-- **Phiên bản:** `1.4.1`
-- **Ngày phát hành:** `2026-09-15`
+- **Phiên bản:** `1.4.2`
+- **Ngày phát hành:** `2026-09-16`
 
 ## Tổng quan và phạm vi
 
@@ -32,7 +32,7 @@ Môi trường cần sub-agent, shell/HTTP, công cụ build/test và trình duy
 ## Đầu vào
 
 - `WORKSPACE_DOMAIN`: hostname đầy đủ hoặc HTTPS origin. Chấp nhận tên viết nhầm `WORKSAPCE_DOMAIN` và chuẩn hóa về `WORKSPACE_DOMAIN`; không tự nối domain suffix, không giữ path/query trong origin.
-- Workspace API Key. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill dùng cả `/bapi/v1` (API Key Bearer: tạo phiên, metadata) lẫn `/api/v1` (phiên Web App: App, quản lý Project, gọi module); ngoại lệ riêng: quản lý TS Project dùng `POST` với `x-req-service: 4` cho cả đọc/list và trả object trực tiếp, không bắt buộc envelope `r: 0`. Cogover Dev CLI đọc key theo tên `COGOVER_API_KEY` với thứ tự nguồn credential riêng: [CLI, session và bàn giao](references/cli-session-and-delivery.md).
+- Workspace API Key. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill dùng cả `/bapi/v1` (API Key Bearer: tạo phiên, metadata) lẫn `/api/v1` (phiên Web App: App, quản lý Project, gọi module); ngoại lệ riêng: mọi request `/api/v1/ts-projects/...` gửi cả `x-req-type: 6` lẫn `x-req-service` (`3` production, `4` quản lý, `6` preview), thiếu `x-req-type: 6` thì service `4` bị Authorization Server xử lý như logout và thu hồi phiên; quản lý TS Project dùng `POST` cho cả đọc/list và trả object trực tiếp, không bắt buộc envelope `r: 0`. Cogover Dev CLI đọc key theo tên `COGOVER_API_KEY` với thứ tự nguồn credential riêng: [CLI, session và bàn giao](references/cli-session-and-delivery.md).
 - Yêu cầu người dùng: luồng nghiệp vụ, người sử dụng, dữ liệu vào/ra, thao tác đọc/ghi, UI, trigger/lịch/tích hợp, kết quả mong đợi. Chỉ làm rõ phần chưa biết có ảnh hưởng thiết kế.
 - Sửa dự án: tra project ID/slug, thư mục source và version đang active; resolve đúng project trước khi sửa.
 - Không ghi key/secret vào source, `cogover.json`, frontend bundle, archive, log hay báo cáo. Không hardcode credential tích hợp kể cả trong source backend; chỉ dùng cơ chế secret được tài liệu sản phẩm hỗ trợ. Backend không mặc nhiên có mọi API của Node.js.
@@ -114,7 +114,7 @@ Agent chính xác định có cần bổ sung schema. Nếu cần, giao sub-agen
 Bắt buộc khi bước 2 tạo Object mới; giao một sub-agent Security riêng. Chỉ tái sử dụng Object hoặc bổ sung field thì không tự tạo lại bộ rules hay đổi quyền ngoài phạm vi yêu cầu; đánh giá quyền hiện có và xử lý delta được yêu cầu bằng `$user-permission`.
 
 1. Agent chính giao mapping Object/field đã đọc lại, ma trận quyền đã chốt, phạm vi thao tác được phép và cách truy cập credential an toàn. Sub-agent đọc bản hiện tại của `$user-permission` (mục “Object do backend quản lý và rule giữ chỗ”), [Rule giữ chỗ không chọn nhân sự](../user-permission/references/api-object-security-rules.md#rule-giữ-chỗ-không-chọn-nhân-sự) và `$cogover-api-auth`; đọc rules/Role liên quan trước khi ghi để tránh trùng khi retry và phát hiện quyền đã được cấp. Không tự mở rộng Role để làm test thành công.
-2. Mỗi Object mới có bộ mặc định **bốn rules riêng: một Create, một View, một Edit, một Delete**, kể cả action không cho người dùng thực hiện trực tiếp; không gộp action, chỉ bổ sung rule cùng action khi audience, điều kiện record hoặc field scope khác nhau. Create dùng `type: 1` với duy nhất scope `create`; ba action còn lại dùng `type: 2`, chỉ cấp scope của action chính, các scope khác `none`/`no`. Action chỉ backend được thực hiện: rule giữ chỗ active (`status: 1`) với đúng `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]` và scope hợp lệ của action. Audience này không khớp nhân sự nào: rule giữ slot action và duy trì mặc định từ chối nhưng không ghi đè quyền do active rule khác cấp, nên phải rà mọi active rule để chắc không rule nào cấp lại action đang muốn chặn. Không bỏ rule, thay `null` bằng ID giả hoặc tắt rule giữ chỗ để biểu diễn chặn.
+2. Mỗi Object mới có bộ mặc định **bốn rules riêng: một Create, một View, một Edit, một Delete**, kể cả action không cho người dùng thực hiện trực tiếp; không gộp action, chỉ bổ sung rule cùng action khi audience, điều kiện record hoặc field scope khác nhau. Create dùng `type: 1` với duy nhất scope `create` và vẫn gửi `filter` rỗng theo `$user-permission` (server bắt buộc); ba action còn lại dùng `type: 2`, chỉ cấp scope của action chính, các scope khác `none`/`no`. Action chỉ backend được thực hiện: rule giữ chỗ active (`status: 1`) với đúng `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]` và scope hợp lệ của action. Audience này không khớp nhân sự nào: rule giữ slot action và duy trì mặc định từ chối nhưng không ghi đè quyền do active rule khác cấp, nên phải rà mọi active rule để chắc không rule nào cấp lại action đang muốn chặn. Không bỏ rule, thay `null` bằng ID giả hoặc tắt rule giữ chỗ để biểu diễn chặn.
 3. Sub-agent tạo rules trong phạm vi được phép; đọc lại danh sách không lọc trạng thái và detail của từng rule. Bàn giao mapping Object ID/slug → rule ID/action/type/status/audience/filter/scopes, đối chiếu ma trận quyền, kết quả kiểm thử trực tiếp theo `$user-permission` và phần chưa kiểm thử. Request dở dang: đọc lại trước retry, không tạo bốn rule mới chồng lên bộ đã có.
 4. **Agent chính chờ sub-agent hoàn tất và nghiệm thu trước khi chuyển sang bước 7–8:** mọi Object mới đủ bốn slot action active, rule giữ chỗ có `personnelId` là JSON `null`, phạm vi quyền khớp thiết kế, không có grant ngoài ý muốn từ rule khác và có bằng chứng đọc lại. Thiếu rule, cấu hình sai, thao tác lỗi hoặc sub-agent chưa hoàn tất thì chưa được code; không có công cụ sub-agent thì báo rõ dependency và dừng trước bước code. Kiểm tra cấu hình không thay thế kiểm thử runtime: thiếu credential/fixture thì ghi rõ giới hạn và theo dõi ca test còn thiếu. Ca backend dùng quyền hệ thống chạy sau khi backend sẵn sàng ở bước 8–9; không yêu cầu backend tồn tại để hoàn tất bước cấu hình này.
 

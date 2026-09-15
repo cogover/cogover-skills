@@ -23,13 +23,15 @@ Cookie: HttpSessionId=<session-id>; AuthToken=<workspace-auth-token>
 X-Csrf-Token: <csrf-token>
 ```
 
-Gửi thêm routing header theo nhóm API:
+Gửi thêm hai routing header: `x-req-type: 6` cho mọi nhóm, và `x-req-service` theo nhóm API:
 
 | Nhóm API | Header | Quyền bắt buộc |
 |---|---|---|
 | Gọi production | `x-req-service: 3` | Người dùng Workspace đã xác thực; module phải có active version |
 | Quản lý module, version, policy và key | `x-req-service: 4` | TypeScript Project SuperAdmin |
 | Preview chính xác một version | `x-req-service: 6` | TypeScript Project SuperAdmin |
+
+Thiếu `x-req-type: 6` thì request service `4` bị Authorization Server xử lý như lệnh logout, trả `{"data":{"deletedTokens":N}}` và thu hồi phiên; service `3` trả `{"msg":"Error","r":5000}`; service `6` trả `r: 5001` (`Can not found processor for request: service=6`).
 
 Giá trị CSRF thường được cấp cùng phiên đăng nhập Cogover. Không đặt `HttpSessionId`, `AuthToken` hoặc CSRF token trong URL hay JSON body.
 
@@ -115,6 +117,7 @@ Tất cả endpoint trong bảng này yêu cầu `x-req-service: 4` và quyền 
 
 ```http
 POST /api/v1/ts-projects
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -152,6 +155,7 @@ HTTP `201` trả về module object:
 
 ```http
 POST /api/v1/ts-projects/list
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -180,6 +184,7 @@ Content-Type: application/json
 
 ```http
 POST /api/v1/ts-projects/{projectId}
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -192,6 +197,7 @@ Response là module object ở trên.
 
 ```http
 POST /api/v1/ts-projects/{projectId}/update
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -209,6 +215,7 @@ Gửi ít nhất một trong hai field `name` hoặc `description`. `description
 
 ```http
 POST /api/v1/ts-projects/{projectId}/delete
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -225,6 +232,7 @@ Trước tiên upload ZIP private qua API upload file của Cogover. Archive ph�
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -278,6 +286,7 @@ Các build state có thể có: `PENDING`, `DOWNLOADING`, `VALIDATING`, `COMPILI
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/list
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -290,6 +299,7 @@ Response là JSON array các version object.
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/{versionId}
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -302,6 +312,7 @@ Response là một version object.
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/{versionId}/activate
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -314,6 +325,7 @@ Version phải ở trạng thái `READY` và đã được giữ lại. Activate
 
 ```http
 POST /api/v1/ts-projects/{projectId}/deactivate
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -326,6 +338,7 @@ Module trả về có `status: "DRAFT"` và `activeVersionId: null`. Các versio
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/{versionId}/delete
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -373,6 +386,7 @@ Selector mode gồm `ALL`, `ALL_EXCEPT` và `ONLY`. Operation được hỗ tr�
 
 ```http
 POST /api/v1/ts-projects/{projectId}/identity-policy
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -383,6 +397,7 @@ Mọi lần lưu đều đưa editable policy về `DRAFT`. Revision chỉ tăng
 
 ```http
 POST /api/v1/ts-projects/{projectId}/identity-policy/get
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -411,6 +426,7 @@ Gửi `{}` tới một trong hai endpoint:
 ```http
 POST /api/v1/ts-projects/{projectId}/identity-policy/activate
 POST /api/v1/ts-projects/{projectId}/identity-policy/disable
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -421,6 +437,7 @@ Response là editable policy object có `status` bằng `ACTIVE` hoặc `DISABLE
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/{versionId}/identity-policy/approve
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -449,6 +466,7 @@ Version phải `READY` và editable policy phải tồn tại. Response:
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/{versionId}/identity-policy/get
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -459,6 +477,7 @@ Endpoint tương thích dưới đây trước tiên lưu policy được gửi 
 
 ```http
 POST /api/v1/ts-projects/{projectId}/versions/{versionId}/identity-policy
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -473,6 +492,7 @@ Project key cấp quyền phát triển local cho một module và một caller 
 
 ```http
 POST /api/v1/ts-projects/{projectId}/keys
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -526,6 +546,7 @@ HTTP `201` trả Project-key object có thêm `projectKey`:
 ```http
 POST /api/v1/ts-projects/{projectId}/keys/list
 POST /api/v1/ts-projects/{projectId}/keys/{keyId}
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -538,6 +559,7 @@ List trả `{ "items": [...], "total": 1 }`. Hai endpoint này không trả `pro
 
 ```http
 POST /api/v1/ts-projects/{projectId}/keys/{keyId}/update
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -562,6 +584,7 @@ Gửi ít nhất một field. Không thể thay đổi `callerPersonnelId`. Thay
 ```http
 POST /api/v1/ts-projects/{projectId}/keys/{keyId}/rotate
 POST /api/v1/ts-projects/{projectId}/keys/{keyId}/revoke
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -582,6 +605,7 @@ Gọi active version bằng module slug và route tùy chọn:
 
 ```http
 POST /api/v1/ts-projects/order_automation/orders/create?notify=true
+x-req-type: 6
 x-req-service: 3
 Cookie: HttpSessionId=<session-id>; AuthToken=<workspace-auth-token>
 X-Csrf-Token: <csrf-token>
@@ -607,6 +631,7 @@ SuperAdmin có thể chạy một version bất biến cụ thể mà không tha
 
 ```http
 POST /api/v1/ts-projects/order_automation/orders/test
+x-req-type: 6
 x-req-service: 6
 Cookie: HttpSessionId=<session-id>; AuthToken=<workspace-auth-token>
 X-Csrf-Token: <csrf-token>

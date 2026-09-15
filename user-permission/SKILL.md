@@ -3,13 +3,13 @@ name: user-permission
 description: "Quản lý user, Personnel/Department/Position, Role và quyền dữ liệu Cogover Workspace qua `/bapi/v1` (Users, Roles, Personnels, Departments, Positions, Object Security Rules, API Keys): mời/xoá user, gán/gỡ Role, cấp quyền tính năng và quyền record/field, rule giữ chỗ cho Object do backend quản lý, kiểm thử quyền runtime bằng persona test."
 metadata:
   author: cogover
-  version: "1.1.2"
+  version: "1.1.3"
 ---
 
 # User Permission
 
-- **Phiên bản:** `1.1.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.3`
+- **Ngày phát hành:** `2026-09-16`
 
 Quản lý người dùng, Role, cơ cấu nhân sự (Personnel, Department, Position, quan hệ phòng ban–vị trí) và quyền dữ liệu trong một Cogover Workspace. Phân loại yêu cầu trước để chọn đúng API cơ cấu hoặc lớp phân quyền. Role ở mức Object chỉ đủ khi Object không có security rule active; có ít nhất một rule active thì mọi quyền record của mọi user, kể cả Super Admin, còn phải được rule phù hợp cấp.
 
@@ -61,7 +61,7 @@ Liệt kê rules của Object không lọc `status`, kiểm tra trạng thái t�
 
 ### 4. Hợp nhất các security rule phù hợp
 
-Chỉ đưa rule vào tập tính quyền khi rule active và khớp đầy đủ: `type: 1` → user khớp `personnelFilters` (không dùng record filter); `type: 2` → user khớp `personnelFilters` và record khớp `filter`.
+Chỉ đưa rule vào tập tính quyền khi rule active và khớp đầy đủ: `type: 1` → user khớp `personnelFilters` (payload vẫn phải gửi `filter` rỗng, server không dùng nó để lọc record); `type: 2` → user khớp `personnelFilters` và record khớp `filter`.
 
 Nhiều rule đồng thời khớp user + record thì cộng quyền:
 
@@ -109,7 +109,7 @@ Dùng Object Security Rule khi cần giới hạn đến từng record, nhóm re
 
    | Rule | `type` | `scopes` | Ghi chú |
    |---|---|---|---|
-   | Create | `1` | `create`: fields được nhập | Ai được tạo qua `personnelFilters`; không dùng `filter` |
+   | Create | `1` | `create`: fields được nhập | Ai được tạo qua `personnelFilters`; vẫn gửi `filter` rỗng `{"logicType":"AND","logic":"","conditions":[]}` vì server bắt buộc, không dùng để lọc record |
    | View | `2` | `read`: fields được xem; `edit: none`, `delete: no` | Records được xem qua `filter` |
    | Edit | `2` | `edit`: fields được sửa; `read: none`, `delete: no` | Records được sửa qua `filter` |
    | Delete | `2` | `delete: yes`; `read: none`, `edit: none` | `delete` chỉ nhận `yes`/`no`, không nhận field ID |
@@ -125,7 +125,7 @@ Dùng Object Security Rule khi cần giới hạn đến từng record, nhóm re
 Object do backend quản lý là bảng dữ liệu cho logic ứng dụng; người dùng không được thao tác trực tiếp một phần hoặc toàn bộ Create/View/Edit/Delete. Đây là phân loại nghiệp vụ, không phải Object nền tảng có sẵn hay giá trị `isStandard`.
 
 1. Chốt ma trận quyền theo từng action: audience được thao tác trực tiếp, phạm vi record/field, action chỉ backend thực hiện. Khi phối hợp `$cogover-custom-module` tạo Object mới: bộ mặc định bốn rule riêng Create/View/Edit/Delete, action bị chặn vẫn có một rule giữ chỗ; chỉ thêm rule cùng action khi cần audience/filter/field scope khác; không gộp action.
-2. Action không cấp cho bất kỳ người dùng nào: rule active (`status: 1`) có audience duy nhất `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]`. Gửi JSON `null` thật, không phải chuỗi `"null"`, ID giả hay mảng rỗng; `type: 1` của personnel filter độc lập với `type` của rule. `type`, `filter`, `scopes` theo action lấy từ bảng ở [Rule giữ chỗ không chọn nhân sự](references/api-object-security-rules.md#rule-giữ-chỗ-không-chọn-nhân-sự).
+2. Action không cấp cho bất kỳ người dùng nào: rule active (`status: 1`) có audience duy nhất `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]`. Gửi JSON `null` thật, không phải chuỗi `"null"`, ID giả hay mảng rỗng; `type: 1` của personnel filter độc lập với `type` của rule. `type`, `filter`, `scopes` theo action lấy từ bảng ở [Rule giữ chỗ không chọn nhân sự](references/api-object-security-rules.md#rule-giữ-chỗ-không-chọn-nhân-sự); mọi rule, kể cả slot Create `type: 1`, phải gửi `filter` (rỗng `{"logicType":"AND","logic":"","conditions":[]}` khi không lọc record), thiếu thì server trả `r: 600` bọc 422 `logicType required` và không tạo rule.
 3. Rule giữ chỗ giữ slot action để cấu hình sau và kích hoạt/duy trì mặc định từ chối; audience không khớp ai, kể cả Super Admin, nên không cấp quyền cho ai. Rule không phải lệnh cấm có ưu tiên: active rule khác vẫn có thể cộng quyền. Đọc toàn bộ rules để chắc không rule nào khác cấp action đang muốn chặn; không thêm audience khác vào rule giữ chỗ.
 4. Ví dụ Object "Lượt khuyến mãi đã sử dụng": View rule cấp đọc theo audience và phạm vi đã chốt; Create/Edit/Delete là ba rule giữ chỗ active. Chỉ backend đọc và ghi → cả bốn rule dùng audience giữ chỗ. Không biểu diễn chặn bằng cách bỏ hết hoặc tắt hết rules: không còn rule active thì quyền qua cổng Role lại áp dụng trên mọi record/field.
 5. Không cần thêm Role để rule giữ chỗ hoạt động. Backend dùng quyền caller vẫn chịu quyền của caller; rule giữ chỗ không cấp quyền cho backend. Với Custom Backend Module, phối hợp `$cogover-custom-module` dùng `data.asSystem()` cùng project policy giới hạn đúng Object/action và kiểm tra quyền nghiệp vụ của caller.

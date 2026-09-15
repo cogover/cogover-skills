@@ -23,7 +23,7 @@ Workspace được lấy từ token; không gửi Workspace ID riêng.
 
 | `type` | Mục đích | `filter` | Personnel type | Scope bắt buộc |
 |---|---|---|---|---|
-| `1` | Ai được tạo record và được nhập field nào | Không dùng | `1`–`5` | Chỉ `create` |
+| `1` | Ai được tạo record và được nhập field nào | Bắt buộc gửi, để rỗng (`conditions: []`); server không dùng để lọc record | `1`–`5` | Chỉ `create` |
 | `2` | Ai được xem/sửa/xoá records phù hợp | Bắt buộc | `1`–`10` | Đủ `read`, `edit`, `delete` |
 
 - Không thể đổi `type` sau khi tạo.
@@ -35,7 +35,7 @@ Workspace được lấy từ token; không gửi Workspace ID riêng.
 
 ## Filter chọn records
 
-Chỉ dùng cho `type: 2`:
+Mọi payload tạo rule đều phải có `filter` vì server tạo một Filter record kèm theo rule. Thiếu `filter`: rule `type: 2` bị `r: 406` `Record filter is empty`; rule `type: 1` bị `r: 600` bọc 422 `logicType required` từ Filters API. Chỉ `type: 2` dùng `filter` để chọn records; filter rỗng `{"logicType":"AND","logic":"","conditions":[]}` hợp lệ cho cả hai loại và với `type: 2` nghĩa là mọi record hiện có (đã kiểm chứng: list trả đủ records). Ví dụ filter có điều kiện:
 
 ```json
 {
@@ -113,7 +113,7 @@ Dùng `personnelFilters: [{"type": 1, "op": "include", "personnelId": null}]` kh
 
 | Slot action | `type` của rule | `scopes` | `filter` |
 |---|---|---|---|
-| Create | `1` | `create: all` | Không dùng |
+| Create | `1` | `create: all` | `{"logicType":"AND","logic":"","conditions":[]}` (bắt buộc gửi, server không dùng để lọc) |
 | View | `2` | `read: all`, `edit: none`, `delete: no` | `{"logicType":"AND","logic":"","conditions":[]}` |
 | Edit | `2` | `read: none`, `edit: all`, `delete: no` | Như View |
 | Delete | `2` | `read: none`, `edit: none`, `delete: yes` | Như View |
@@ -131,6 +131,7 @@ Ví dụ payload hoàn chỉnh giữ chỗ Create cho Object “Lượt khuyến
       "name": "[App] - Create Promotion Usage - Placeholder",
       "description": "Reserves the create slot for backend-managed promotion usage. Matches no personnel and keeps detailed security active. Grants no direct user access and does not override other rules.",
       "status": 1,
+      "filter": {"logicType": "AND", "logic": "", "conditions": []},
       "personnelFilters": [
         {"type": 1, "op": "include", "personnelId": null}
       ],
@@ -402,7 +403,7 @@ Trước khi tắt hoặc xoá rule active cuối cùng, cảnh báo rằng lớ
 | `400` | Object ID thiếu/sai |
 | `402` | Field lookup trong personnel filter thiếu/sai |
 | `405` | Rule ID thiếu/sai |
-| `406` | Filter record thiếu/sai |
+| `406` | Rule `type: 2` thiếu `filter` (`Record filter is empty`) hoặc filter sai; gửi filter rỗng khi không lọc record |
 | `407` | Tên rule sai hoặc trùng |
 | `408` | Personnel filters sai |
 | `409` | Scopes sai/thiếu |
@@ -416,5 +417,6 @@ Trước khi tắt hoặc xoá rule active cuối cùng, cảnh báo rằng lớ
 | `524` | Object đạt giới hạn 50 rules |
 | `525`–`527` | Không tìm thấy personnel/department/position/role |
 | `528` | Object không cho tạo custom security rule |
+| `600` | Lỗi chuyển tiếp từ Filters API (msg chứa `422 Unprocessable Entity ... /api/v1/filters`, `logicType: required`): rule `type: 1` thiếu `filter`; gửi filter rỗng rồi tạo lại |
 
 Luôn báo HTTP status, `r`, `msg` và `requestId`; không để lộ token.

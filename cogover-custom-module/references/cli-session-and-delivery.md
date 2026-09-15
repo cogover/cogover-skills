@@ -38,7 +38,7 @@ Frontend đổi `projectType` thành `frontend` và dùng Project ID frontend. K
 
 CLI chỉ publish/activate project đã tồn tại. Khảo sát App và tạo Project/policy/key trước bước khởi tạo local: dùng [$cogover-api-auth](../../cogover-api-auth/SKILL.md) đổi Workspace API key qua `POST /bapi/v1/auth-token`, giữ session trong tiến trình thực hiện request; xác minh Workspace và hạn dùng theo auth reference. Không cần Project key cho thao tác quản lý này.
 
-TS Project management dùng **POST** với service `4`, kể cả đọc/list; không áp method đó cho App/Object API. API trả project/version object trực tiếp không bắt buộc có envelope `r: 0`: kiểm tra đúng HTTP status, shape và ID theo từng reference. Nếu deployment trả transport envelope, kiểm tra lỗi ở cả envelope lẫn body rồi đối chiếu body với contract.
+Mọi request `/api/v1/ts-projects/...` qua Authorization Server gửi `x-req-type: 6` cùng `x-req-service` tương ứng (thiếu `x-req-type: 6` thì service `4` bị Authorization Server xử lý như logout, trả `deletedTokens` và thu hồi phiên, service `3` trả `r: 5000`, service `6` trả `r: 5001`). TS Project management dùng **POST** với service `4`, kể cả đọc/list; không áp method đó cho App/Object API. API trả project/version object trực tiếp không bắt buộc có envelope `r: 0`: kiểm tra đúng HTTP status, shape và ID theo từng reference. Nếu deployment trả transport envelope, kiểm tra lỗi ở cả envelope lẫn body rồi đối chiếu body với contract.
 
 ## Lệnh local và publish
 
@@ -91,7 +91,7 @@ curl --silent --show-error --include \
 ```
 
 - Không dùng `--location`, `--verbose` hoặc `--trace` cho request này (chuyển tiếp/lộ credential).
-- Routing không nằm trong file export, truyền theo endpoint: `x-req-service` `3` cho production active version, `4` cho quản lý project/version/policy/key, `6` cho preview chính xác version. `x-req-type: 6` không phải `x-req-service: 6`; request production giữ service `3`.
+- Routing không nằm trong file export, truyền theo endpoint: `x-req-service` `3` cho production active version, `4` cho quản lý project/version/policy/key, `6` cho preview chính xác version. `x-req-type: 6` bắt buộc với cả ba service và không phải `x-req-service: 6`; request production giữ service `3`.
 - Quick start mô tả kết quả production qua transport envelope có `body`; không tự bọc `body` vào request production. Preview dùng envelope riêng gồm `input`, `versionId`, `mode`, `showDebugData` theo Backend API Reference.
 - Route ghi dữ liệu: thêm `Idempotency-Key` riêng cho từng thao tác, giữ key khi retry cùng thao tác và dùng key mới cho thao tác khác; ghi rõ mẫu cURL ghi dữ liệu thật và output dự kiến. GET dùng query/params theo contract route, không gửi POST/body mẫu một cách máy móc. Response text/binary: bàn giao cách đọc/lưu đúng content type.
 - Bàn giao cả lệnh tạo session và lệnh cURL, không bàn giao file session chứa credential. Backend đã deploy không cần chạy local server hoặc đăng nhập Project key để dùng cURL production.

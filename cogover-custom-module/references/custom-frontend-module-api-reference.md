@@ -17,11 +17,14 @@ Chỉ các path, header, request field và response field public được mô t�
 Mọi request quản lý đều yêu cầu Cogover Workspace session đã xác thực và quyền TypeScript Project SuperAdmin:
 
 ```http
+x-req-type: 6
 x-req-service: 4
 Cookie: HttpSessionId=<session-id>; AuthToken=<workspace-auth-token>
 X-Csrf-Token: <csrf-token>
 Content-Type: application/json
 ```
+
+Thiếu `x-req-type: 6` thì request service `4` bị Authorization Server xử lý như lệnh logout, trả `{"data":{"deletedTokens":N}}` và thu hồi phiên; service `3` trả `{"msg":"Error","r":5000}`; service `6` trả `r: 5001` (`Can not found processor for request: service=6`).
 
 Giá trị CSRF thường được cấp cùng phiên đăng nhập Cogover. Không đặt `HttpSessionId`, `AuthToken` hoặc CSRF token trong URL hay JSON body.
 
@@ -99,6 +102,7 @@ Project status:
 
 ```http
 POST /api/v1/ts-projects/frontend
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -119,6 +123,7 @@ HTTP `201` trả project object.
 
 ```http
 POST /api/v1/ts-projects/frontend/list
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -147,6 +152,7 @@ Content-Type: application/json
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -159,6 +165,7 @@ Response là project object.
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/update
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -176,6 +183,7 @@ Gửi ít nhất một trong hai field `name` hoặc `description`. `description
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/delete
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -225,6 +233,7 @@ Chỉ file bên trong `dist/` được publish. Archive không được chứa s
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/versions
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 ```
@@ -252,6 +261,7 @@ HTTP `202` trả version object; quá trình publish tiếp tục bất đồng 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/versions/list
 POST /api/v1/ts-projects/frontend/{projectId}/versions/{versionId}
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -264,6 +274,7 @@ List trả JSON array các version object. Detail trả một version object.
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/versions/{versionId}/activate
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -276,6 +287,7 @@ Version phải đã được giữ lại và ở trạng thái `READY`. Project 
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/deactivate
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 
@@ -288,6 +300,7 @@ Project trả về có `status: "DRAFT"` và `activeVersionId: null`. Asset path
 
 ```http
 POST /api/v1/ts-projects/frontend/{projectId}/versions/{versionId}/delete
+x-req-type: 6
 x-req-service: 4
 Content-Type: application/json
 

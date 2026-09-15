@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.5.2 - 2026-09-16
+
+- Cập nhật `cogover-custom-module` 1.4.2: mọi request `/api/v1/ts-projects/...` (service `3` production, `4` quản lý, `6` preview) phải gửi `x-req-type: 6` cùng `x-req-service`; thiếu `x-req-type: 6` thì service `4` bị Authorization Server xử lý như logout (`deletedTokens`, thu hồi phiên), service `3` trả `r: 5000`, service `6` trả `r: 5001`. Bổ sung header vào mọi ví dụ HTTP/cURL của hai API reference, quick start backend và `cli-session-and-delivery.md`. Kiểm chứng trên Workspace ngày 2026-09-16. Bước 2A ghi rõ rule Create `type: 1` vẫn gửi `filter` rỗng.
+- Cập nhật `user-permission` 1.1.3: mọi payload tạo security rule phải có `filter`, kể cả rule Create `type: 1` và rule giữ chỗ Create (server tạo Filter record kèm rule; thiếu thì `r: 600` bọc 422 `logicType required`). Sửa bảng chọn loại rule, bảng bốn rule, bảng slot giữ chỗ và payload mẫu giữ chỗ Create sang `filter: {"logicType":"AND","logic":"","conditions":[]}`; thêm mã lỗi `600`. Kiểm chứng trên hai Workspace ngày 2026-09-16 (rule giữ chỗ active chặn tạo record trực tiếp `r: 36`).
+
 ## 4.5.1 - 2026-09-15
 
 - Cập nhật `cogover-custom-module` 1.4.1: đổi tên `api-reference.md` thành `cogover-sdk-api-reference.md` để phân biệt với hai API reference HTTP; thêm `cogover-sdk-usage-guide.md` (hướng dẫn sử dụng `@cogover/sdk` 0.5.0: bắt đầu nhanh, filter/sort, fetch, state, lock, chọn danh tính, TypeScript config, router) và yêu cầu sub-agent backend đọc trước khi code.

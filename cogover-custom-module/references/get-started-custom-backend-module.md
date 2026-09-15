@@ -276,6 +276,7 @@ Dùng Preview của Cogover với method `POST`, route `/` và input `{"leadId":
 
 ```bash
 curl -X POST 'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/{PROJECT_SLUG}' \
+  -H 'x-req-type: 6' \
   -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' \
   -H 'x-csrf-token: {CSRF_TOKEN}' \
