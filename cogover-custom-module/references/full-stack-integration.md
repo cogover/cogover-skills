@@ -1,6 +1,6 @@
 # Kết nối frontend và backend
 
-Tổng hợp phần kết nối từ hướng dẫn sản phẩm `build-full-stack-custom-module.md`; dùng cùng [Backend quick start](get-started-custom-backend-module.md), [Frontend quick start](get-started-custom-frontend-module.md) và [SDK API reference](api-reference.md). Route, field và port trong ví dụ chỉ minh họa; thay bằng contract dự án đã xác minh.
+Tổng hợp phần kết nối từ hướng dẫn sản phẩm `build-full-stack-custom-module.md`; dùng cùng [Backend quick start](get-started-custom-backend-module.md), [Frontend quick start](get-started-custom-frontend-module.md) và [SDK API reference](cogover-sdk-api-reference.md). Route, field và port trong ví dụ chỉ minh họa; thay bằng contract dự án đã xác minh.
 
 ## Local
 

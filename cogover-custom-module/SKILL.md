@@ -3,12 +3,12 @@ name: cogover-custom-module
 description: "Điều phối vòng đời Cogover Custom Module: khảo sát App/Object, chọn backend/frontend và dạng frontend (single page app, custom component, Federation Page), người dùng xác nhận trước khi code, schema duyệt bằng Excel, security rules, Process, Project/policy/key, code/test theo template, publish qua Dev CLI, bàn giao. Không thay skill cấu hình Object/Process đơn lẻ."
 metadata:
   author: cogover
-  version: "1.4.0"
+  version: "1.4.1"
 ---
 
 # Cogover Custom Module
 
-- **Phiên bản:** `1.4.0`
+- **Phiên bản:** `1.4.1`
 - **Ngày phát hành:** `2026-09-15`
 
 ## Tổng quan và phạm vi
@@ -48,7 +48,7 @@ Môi trường cần sub-agent, shell/HTTP, công cụ build/test và trình duy
 | Thiết kế quyền, tạo security rules cho Object mới | [$user-permission](../user-permission/SKILL.md) và [Object Security Rules API](../user-permission/references/api-object-security-rules.md), gồm rule giữ chỗ không chọn nhân sự |
 | Quản lý backend, policy, key, version, production/preview | [Custom Backend Module API Reference](references/custom-backend-module-api-reference.md) |
 | Quản lý frontend, version và asset URL | [Custom Frontend Module API Reference](references/custom-frontend-module-api-reference.md) |
-| Viết hoặc sửa code backend, chọn API đặc biệt | [SDK API reference](references/api-reference.md): nền tảng handler/router/request/response, errors và các mục capability đang dùng |
+| Viết hoặc sửa code backend, chọn API đặc biệt | [SDK usage guide](references/cogover-sdk-usage-guide.md) đọc trước khi code (mẫu handler, filter, fetch, state, lock, danh tính, TypeScript config, router), rồi [SDK API reference](references/cogover-sdk-api-reference.md): nền tảng handler/router/request/response, errors và các mục capability đang dùng |
 | Khởi tạo/code/test backend local | [Backend quick start](references/get-started-custom-backend-module.md) |
 | Khởi tạo/build/test frontend single page app | [Frontend quick start](references/get-started-custom-frontend-module.md) |
 | Khởi tạo/code/test custom component nhúng layout | [Custom component quick start](references/get-started-custom-component.md) cùng `README.vi.md`, `.agents/skills/custom-module-foundation`, `.agents/skills/custom-module-form-builder` và `src/types/form-builder.d.ts` trong template đã clone |
@@ -56,7 +56,7 @@ Môi trường cần sub-agent, shell/HTTP, công cụ build/test và trình duy
 | Frontend gọi backend | [Full-stack integration](references/full-stack-integration.md) |
 | Preview/apply, ghi hàng loạt, decimal hoặc concurrency | [Batch writes và checkpoint](references/batch-writes-and-checkpoints.md), cùng contract state/locks/records trong SDK |
 
-Hai API reference là nguồn chuẩn cho HTTP contract; quick start chỉ là cách làm với CLI và sample. Tất cả là snapshot tài liệu sản phẩm tiếng Việt ngày `2026-09-06`, riêng ba tài liệu về các dạng frontend, custom component và Federation Page ngày `2026-09-15`; SDK reference theo `@cogover/sdk` `0.5.0`, SDK cài đặt khác phiên bản thì đối chiếu thêm tài liệu public đi kèm package. Với custom component và Federation Page, các skill trong `.agents/skills` của template đã clone là nguồn chuẩn cho quy ước code (expose, routing, `Link`, asset, API client, i18n); skill này quyết định workflow, phê duyệt, kiểm thử và publish. Template thay đổi thì theo bản đã clone, không theo trích dẫn trong quick start. ID, field slug, policy và dữ liệu mẫu chỉ minh họa, không thay dữ liệu thật của Workspace. Không suy ra API từ tên gọi hoặc dùng API không được hỗ trợ.
+Hai API reference là nguồn chuẩn cho HTTP contract; quick start chỉ là cách làm với CLI và sample. Tất cả là snapshot tài liệu sản phẩm tiếng Việt ngày `2026-09-06`, riêng ba tài liệu về các dạng frontend, custom component và Federation Page ngày `2026-09-15`; SDK usage guide và SDK API reference theo `@cogover/sdk` `0.5.0` (snapshot ngày `2026-09-15`), SDK cài đặt khác phiên bản thì đối chiếu thêm tài liệu public đi kèm package. Với custom component và Federation Page, các skill trong `.agents/skills` của template đã clone là nguồn chuẩn cho quy ước code (expose, routing, `Link`, asset, API client, i18n); skill này quyết định workflow, phê duyệt, kiểm thử và publish. Template thay đổi thì theo bản đã clone, không theo trích dẫn trong quick start. ID, field slug, policy và dữ liệu mẫu chỉ minh họa, không thay dữ liệu thật của Workspace. Không suy ra API từ tên gọi hoặc dùng API không được hỗ trợ.
 
 ## Workflow
 
@@ -164,7 +164,7 @@ Bắt buộc khi bước 2 tạo Object mới; giao một sub-agent Security ri�
 Sub-agent backend và frontend làm phần của mình, viết unit tests cùng lúc code và tự sửa lỗi tới khi đạt điều kiện bên dưới; agent chính phối hợp kiểm thử xuyên hai project.
 
 1. Code theo contract nghiệp vụ và schema đã xác minh. Backend:
-   - Dùng public `@cogover/sdk`, chỉ import package được hỗ trợ và local source; không đưa Node built-in, local runner, dynamic import hoặc `require()` vào code publish. Đọc [SDK API reference](references/api-reference.md) cho router, data, identity và API tích hợp thực sự sử dụng.
+   - Dùng public `@cogover/sdk`, chỉ import package được hỗ trợ và local source; không đưa Node built-in, local runner, dynamic import hoặc `require()` vào code publish. Đọc [SDK usage guide](references/cogover-sdk-usage-guide.md) rồi [SDK API reference](references/cogover-sdk-api-reference.md) cho router, data, identity và API tích hợp thực sự sử dụng; TypeScript config theo mục khuyến nghị trong usage guide.
    - Sinh `workspace.d.ts` từ metadata Workspace theo mục Khai báo Workspace; sinh lại sau mỗi thay đổi schema. SDK Schema API chỉ đọc; tạo/sửa schema vẫn qua `$object-info`.
    - HTTP ngoài: ưu tiên import `fetch` từ SDK để local không âm thầm dùng native fetch. Project state không dùng lưu secret. Cần checkpoint hoặc concurrency thì đọc mục state/locks; lock không tạo transaction hay exactly-once.
    - Dùng caller identity mặc định, kiểm tra input, chỉ đọc field cần thiết, xử lý kết quả thiếu/null, phân trang và lỗi từng phần. Không tin `personnelId` do client gửi để tự nâng quyền. Thông báo API trả client dùng tiếng Anh.

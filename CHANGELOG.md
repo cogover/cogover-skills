@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.1 - 2026-09-15
+
+- Cập nhật `cogover-custom-module` 1.4.1: đổi tên `api-reference.md` thành `cogover-sdk-api-reference.md` để phân biệt với hai API reference HTTP; thêm `cogover-sdk-usage-guide.md` (hướng dẫn sử dụng `@cogover/sdk` 0.5.0: bắt đầu nhanh, filter/sort, fetch, state, lock, chọn danh tính, TypeScript config, router) và yêu cầu sub-agent backend đọc trước khi code.
+
 ## 4.5.0 - 2026-09-15
 
 - Cập nhật `cogover-custom-module` 1.4.0: Custom Frontend Module có ba dạng single page app, custom component (nhúng layout Object qua item Federation component, thao tác form bằng `formBuilder.execScript`) và Federation Page (trang trong ứng dụng tại `/{APP_SLUG}/c{N}/{PATH}`, gắn được vào menu); thêm `get-started-custom-module.md` với bảng chọn nhanh và câu hỏi xác định dạng.

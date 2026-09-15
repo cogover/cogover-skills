@@ -1,6 +1,6 @@
 # Ghi hàng loạt, số thập phân và checkpoint
 
-Đọc khi nghiệp vụ có preview/apply, ghi nhiều record, retry hoặc nhiều request đồng thời. Contract nền tảng: [SDK API reference](api-reference.md), các mục Project state, Distributed locks, Record API và errors. Đây là hướng dẫn thiết kế ứng dụng, không phải cam kết transaction của nền tảng.
+Đọc khi nghiệp vụ có preview/apply, ghi nhiều record, retry hoặc nhiều request đồng thời. Contract nền tảng: [SDK API reference](cogover-sdk-api-reference.md), các mục Project state, Distributed locks, Record API và errors. Đây là hướng dẫn thiết kế ứng dụng, không phải cam kết transaction của nền tảng.
 
 ## Số thập phân
 
