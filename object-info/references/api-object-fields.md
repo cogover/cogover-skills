@@ -48,6 +48,20 @@ Quy ước HTTP status:
 - `manual_modify_allow` là Boolean nghiêm ngặt, phải gửi `true` hoặc `false`.
 - `status`: `0` = inactive, `1` = active, `2` = pending delete. Khi tạo, mặc định là `1`.
 
+### Cờ tạo và sửa thủ công
+
+Hai cờ độc lập, ứng với hai checkbox trên trang cấu hình field và đã kiểm chứng trên Workspace ngày 2026-09-16:
+
+| Checkbox | Tham số | Chặn gì | Không chặn gì |
+|---|---|---|---|
+| Cho phép tạo thủ công | `creatable` `1`/`0` | `0`: request public tạo record có gửi field → `r: 47` `Field ["slug"] is not creatable.` | Tạo record không gửi field (field để trống); mọi ghi nội bộ |
+| Cho phép sửa thủ công | `manual_modify_allow` `true`/`false` | `false`: request public cập nhật chạm field → `r: 47` `Field ["slug"] is not editable.` | Cập nhật field khác trên cùng record; mọi ghi nội bộ |
+
+- Request public là ghi từ giao diện Web App hoặc `/bapi/v1/records`. Ghi nội bộ gồm Custom Backend Module (`data.asSystem()`) và Process; hai cờ không tác động tới các đường này.
+- Field chỉ backend ghi: đặt `creatable: 0` và `manual_modify_allow: false`. Chỉ đặt một cờ khi nghiệp vụ cho phép nhập lúc tạo nhưng cấm sửa sau, hoặc ngược lại.
+- `editable` được server đồng bộ theo `manual_modify_allow` khi không gửi; `read_only` là cờ riêng cho field tính toán. Không dùng hai cột này thay cho hai cờ trên.
+- Đọc lại: `objects/list` chỉ trả `manualModifyAllow` và `readOnly`, không có endpoint bapi trả `creatable`; xác minh `creatable` bằng trang cấu hình field hoặc một lần tạo thử record có gửi field đó.
+
 ### `meta_data` là JSON string
 
 `meta_data` không phải JSON object trực tiếp mà là một chuỗi chứa JSON hợp lệ:
@@ -107,11 +121,11 @@ Alias tương đương: `POST /bapi/v1/object-fields/create`.
 | `multiple` | Integer | Không | `0` | `1` cho phép nhiều giá trị, `0` một giá trị |
 | `unique` | Integer | Không | `0` | Bật ràng buộc unique |
 | `default_value` | String/Number/null | Không | `""` | Giá trị mặc định; định dạng phụ thuộc `type` |
-| `manual_modify_allow` | Boolean | Không | `false` | Cho phép người dùng sửa giá trị thủ công |
-| `creatable` | Integer | Không | `1` | Có cho phép nhập field khi tạo record hay không |
-| `editable` | Integer | Không | `1` khi lưu | Có cho phép sửa field hay không |
+| `manual_modify_allow` | Boolean | Không | `false` | Cho phép người dùng sửa giá trị thủ công qua giao diện hoặc `/bapi/v1/records`; `false` thì update public chạm field trả `r: 47` |
+| `creatable` | Integer | Không | `1` | Cho phép người dùng nhập field khi tạo thủ công; `0` thì create public có gửi field trả `r: 47` |
+| `editable` | Integer | Không | `1` khi lưu | Có cho phép sửa field hay không; bỏ qua thì server đồng bộ theo `manual_modify_allow` |
 | `viewable` | Integer | Không | `1` khi lưu | Có cho phép xem field hay không |
-| `read_only` | Integer | Không | `0` | Cờ chỉ đọc |
+| `read_only` | Integer | Không | `0` | Cờ chỉ đọc dành cho field tính toán; không thay cho `creatable`/`manual_modify_allow` |
 | `is_standard` | Integer | Không | `0` | Field chuẩn (`1`) hay custom (`0`) |
 | `is_display` | Integer | Không | `1` | Field có hiển thị hay không |
 | `quickSearch` | Integer | Không | `0` khi lưu | Tham gia quick search. Tên key phân biệt hoa/thường |

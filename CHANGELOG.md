@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.5.6 - 2026-09-16
+
+- Cập nhật `object-info` 1.0.4: mục "Cờ tạo và sửa thủ công" trong `api-object-fields.md`: `creatable` (checkbox Cho phép tạo thủ công) chặn request public tạo record có gửi field, `manual_modify_allow` (checkbox Cho phép sửa thủ công) chặn request public cập nhật chạm field, đều `r: 47`; hai cờ độc lập và không tác động ghi nội bộ (`data.asSystem()`, Process); field chỉ backend ghi đặt `creatable: 0` và `manual_modify_allow: false`; `editable` được đồng bộ theo `manual_modify_allow`; `objects/list` không trả `creatable`. Mặc định khi tạo field gửi thêm `creatable: 1`. Kiểm chứng trên Workspace ngày 2026-09-16.
+- Cập nhật `cogover-custom-module` 1.4.4: bước ghi schema tạo field chỉ backend ghi với `creatable: 0` và `manual_modify_allow: false`, không thay bằng security rule `exclude`.
+
 ## 4.5.5 - 2026-09-16
 
 - Cập nhật `cogover-custom-module` 1.4.3: production trả đúng HTTP status handler đã chọn (`400`, `404`, `409`, `422`...) như local, body lỗi trong transport envelope có `r` bằng HTTP status và `code`; `cli-session-and-delivery.md` (mục xử lý lỗi) và `batch-writes-and-checkpoints.md` bỏ mô tả cũ về việc production trả HTTP 400 cho mọi lỗi handler hoặc 200 cho custom status. Status khác 200 chỉ đi qua production khi body là một JSON object. Kiểm chứng trên Workspace ngày 2026-09-16.

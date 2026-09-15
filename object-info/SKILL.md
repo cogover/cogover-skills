@@ -3,12 +3,12 @@ name: object-info
 description: "Xem Object Cogover cùng fields, options, metadata, related lists và nhận diện Object đặc biệt của Workspace; tạo, cập nhật, xoá mềm/khôi phục/xoá thực tế Object và field qua `/bapi/v1`, gồm options và Formula (kiểm tra cú pháp, chạy thử trên record trước khi lưu). Dùng khi cần Object/field ID, slug, schema hoặc metadata cho skill khác."
 metadata:
   author: cogover
-  version: "1.0.3"
+  version: "1.0.4"
 ---
 
 # Object Info
 
-- **Phiên bản:** `1.0.3`
+- **Phiên bản:** `1.0.4`
 - **Ngày phát hành:** `2026-09-16`
 
 Xem và quản lý cấu trúc Object Cogover qua `/bapi/v1` (API Key Bearer): xem Object cùng fields, options, metadata, related lists; tạo, sửa, xoá mềm, khôi phục, xoá thực tế Object hoặc field; tạo/cập nhật options của field lựa chọn; viết và kiểm tra Formula. Skill khác gọi `$object-info` để lấy Object ID, field slug, `fieldType`, options, metadata hoặc quan hệ trước khi dựng payload nghiệp vụ. Object phổ biến: Lead, Quote, Order, Product, Personnel, Contact, Account, Opportunity, Task.
@@ -44,7 +44,7 @@ Chỉ yêu cầu phần cần dùng để giảm response:
 Từ `items[]` trích tối thiểu:
 
 - Object: `id`, `name`, `slug`, `nameTranslations`, mô tả nếu có.
-- Field: `id`, `name`, `slug`, `fieldType`, `nameTranslations`, `required`, `status`, `description`, `multiple`, `readOnly`, `manualModifyAllow`, `defaultValue`, options, metadata.
+- Field: `id`, `name`, `slug`, `fieldType`, `nameTranslations`, `required`, `status`, `description`, `multiple`, `readOnly`, `manualModifyAllow`, `defaultValue`, options, metadata. `objects/list` không trả `creatable`/`editable`; cần xác minh `creatable` thì xem trang cấu hình field (checkbox "Cho phép tạo thủ công") hoặc tạo thử một record có gửi field đó.
 - Option của field lựa chọn: `id`, `value`, `slug`, `isDefault`, trạng thái, màu/icon, bản dịch.
 - Related list: `id`, `name`, `slug`, `status`, `sort`, `displayColumn`, `minRecord`, `maxRecord`, Object/field nguồn, Object lookup, `lookupType`.
 
@@ -100,7 +100,9 @@ Ví dụ người dùng yêu cầu field `Số tiền`:
 
 ### Mặc định khi tạo field
 
-Khi người dùng không chỉ định khác và type không có ràng buộc đặc thù, gửi tường minh thay vì để server tự áp dụng: `manual_modify_allow: true` (tôn trọng ngoại lệ của API, ví dụ `auto_number` luôn bị đặt `false`), `description: ""` khi không có mô tả, `translations[]` có ít nhất `en-US` và locale nguồn nếu khác tiếng Anh.
+Khi người dùng không chỉ định khác và type không có ràng buộc đặc thù, gửi tường minh thay vì để server tự áp dụng: `manual_modify_allow: true` (tôn trọng ngoại lệ của API, ví dụ `auto_number` luôn bị đặt `false`), `creatable: 1`, `description: ""` khi không có mô tả, `translations[]` có ít nhất `en-US` và locale nguồn nếu khác tiếng Anh.
+
+Field chỉ backend ghi (bộ đếm, snapshot, trạng thái do Custom Backend Module hoặc Process cập nhật): gửi `creatable: 0` và `manual_modify_allow: false`. Hai cờ độc lập, chỉ chặn request public (giao diện, `/bapi/v1/records`); ghi nội bộ như `data.asSystem()` không bị ảnh hưởng, nên không dùng security rule `exclude` thay cho hai cờ này. Chi tiết tại [Cờ tạo và sửa thủ công](references/api-object-fields.md#cờ-tạo-và-sửa-thủ-công).
 
 #### Định dạng hiển thị số theo Workspace
 

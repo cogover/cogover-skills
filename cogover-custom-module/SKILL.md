@@ -3,12 +3,12 @@ name: cogover-custom-module
 description: "Điều phối vòng đời Cogover Custom Module: khảo sát App/Object, chọn backend/frontend và dạng frontend (single page app, custom component, Federation Page), người dùng xác nhận trước khi code, schema duyệt bằng Excel, security rules, Process, Project/policy/key, code/test theo template, publish qua Dev CLI, bàn giao. Không thay skill cấu hình Object/Process đơn lẻ."
 metadata:
   author: cogover
-  version: "1.4.3"
+  version: "1.4.4"
 ---
 
 # Cogover Custom Module
 
-- **Phiên bản:** `1.4.3`
+- **Phiên bản:** `1.4.4`
 - **Ngày phát hành:** `2026-09-16`
 
 ## Tổng quan và phạm vi
@@ -106,7 +106,7 @@ Agent chính xác định có cần bổ sung schema. Nếu cần, giao sub-agen
 3. Schema đã đủ: sub-agent báo lại kết luận và lý do, không tạo workbook rỗng. Cần bổ sung: dùng [$create-cogover-objects](../create-cogover-objects/SKILL.md) tạo workbook `.xlsx` theo hướng dẫn spreadsheet và validator của skill đó, sửa mọi lỗi trước khi bàn giao; phân biệt Object mới với delta trên Object hiện có, chỉ rõ lookup tới Object đã tồn tại để không tạo trùng. Bàn giao file `.xlsx` tại đường dẫn agent chính truy cập được, tóm tắt delta/lý do/tác động, ma trận quyền, mapping lookup, kết quả kiểm tra và các điểm còn cần quyết định; không tạo hoặc sửa schema trên Workspace.
 4. Mỗi Object có đúng một record-name slug `name`, type Short text hoặc Auto number; tiền dạng số dùng Decimal. Giữ slug/ID tham chiếu thật, không tạo lại field hệ thống.
 5. Agent chính mở workbook, đối chiếu với yêu cầu, metadata đã khảo sát và bằng chứng kiểm tra; giao lại sub-agent thiết kế sửa nếu thiếu hoặc sai. **Bắt buộc đưa file Excel đã rà soát cùng tóm tắt delta và ma trận quyền để người dùng duyệt trước khi ghi schema**; yêu cầu chung “tạo module” không thay thế duyệt này. Trong lúc chờ chỉ hoàn thiện thiết kế và kế hoạch test, chưa tạo Object/field hoặc viết code.
-6. Sau khi workbook được duyệt: dùng `$object-info` đọc lại state mới nhất, tạo Object/field theo dependency và đúng bản đã duyệt; quan hệ vòng thì tạo Object trước rồi thêm lookup sau khi có ID. Delta thay đổi do Workspace đã đổi thì chỉ xin duyệt lại phần thay đổi thực chất.
+6. Sau khi workbook được duyệt: dùng `$object-info` đọc lại state mới nhất, tạo Object/field theo dependency và đúng bản đã duyệt; quan hệ vòng thì tạo Object trước rồi thêm lookup sau khi có ID. Field chỉ backend ghi (bộ đếm, snapshot, trạng thái do backend cập nhật) tạo với `creatable: 0` và `manual_modify_allow: false` theo mục Cờ tạo và sửa thủ công của `$object-info`; backend ghi bằng `data.asSystem()`, không dùng security rule `exclude` thay cho hai cờ này. Delta thay đổi do Workspace đã đổi thì chỉ xin duyệt lại phần thay đổi thực chất.
 7. Đọc lại toàn bộ schema đã ghi, so với workbook; ghi mapping ID/slug/options dùng cho code và Process. Thao tác dở dang: liệt kê phần đã tạo, tra lại trước retry, không tự xóa để làm lại.
 
 ### 2A. Tạo security rules cho từng Object mới trước khi code
