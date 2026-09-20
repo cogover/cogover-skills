@@ -34,7 +34,9 @@ get-lead/
 ├── tsconfig.json
 ├── local/
 │   ├── cli.ts
-│   └── local-server.ts
+│   ├── local-server.ts
+│   ├── trigger-runner.ts
+│   └── trigger-runner.test.ts
 └── src/
     ├── lead-script.ts
     ├── main.ts
@@ -42,7 +44,7 @@ get-lead/
 ```
 
 - `src/`: code chạy trên Cogover, là thư mục sẽ được upload.
-- `local/`: HTTP runner dành riêng cho máy local; không được import từ `src/` và không được upload.
+- `local/`: HTTP runner và runner chạy record trigger dành riêng cho máy local; không được import từ `src/` và không được upload.
 - `cogover.json`: metadata Project, không chứa Project key hoặc credential.
 
 Cài Cogover Dev CLI và dependency của starter:
@@ -62,13 +64,14 @@ Tự dựng starter thay vì tải về thì cài `npm install @cogover/sdk` và
     "prestart": "npm run typecheck",
     "start": "node --import tsx local/cli.ts --entry ./src/main.ts",
     "dev": "nodemon --watch src --watch local --ext ts --signal SIGTERM --exec \"./node_modules/.bin/tsc -p tsconfig.json --noEmit && node --import tsx local/cli.ts --entry ./src/main.ts || exit 1\"",
+    "test": "node --import tsx --test local/*.test.ts",
     "build": "npm run typecheck",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }
 }
 ```
 
-`npm run dev` typecheck trước khi mở port và tự restart khi file trong `src/` hoặc `local/` thay đổi.
+`npm run dev` typecheck trước khi mở port và tự restart khi file trong `src/` hoặc `local/` thay đổi. `npm test` chạy test của bộ công cụ local.
 
 ## 3. Cấu hình Project local
 
@@ -232,6 +235,17 @@ API local không cần cookie, CSRF token hoặc `x-req-service`; Cogover Dev CL
 ```
 
 `403`: kiểm tra Project và caller có quyền `RECORD_READ` trên Object `lead` cùng 5 field đã chọn. `404`: kiểm tra lại `LEAD_ID`.
+
+Nếu Project cũng export record trigger (kết quả `defineTrigger` trong named export `triggers`), chạy thử một trigger trên cùng server local:
+
+```bash
+curl -s -X POST \
+  'http://127.0.0.1:{PORT}/__cogover/triggers/{TRIGGER_KEY}' \
+  -H 'Content-Type: application/json' \
+  --data '{"operation":"update","recordId":"{RECORD_ID}","changes":{"status":"confirmed"}}'
+```
+
+Runner đọc record qua Development Session, dựng `record.old` và `record.new` giống Cogover rồi trả về `changes`, `errors` và `warnings` của handler. Handler chỉ chạy khi được gọi: Cogover chỉ gửi sự kiện thay đổi record thật tới version đã publish và đang active. Định dạng request, giới hạn của runner và cách kiểm thử trigger sau khi activate: [Bắt đầu với Record Trigger](get-started-record-trigger.md).
 
 ## 8. Build, đóng gói và upload
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.6.0 - 2026-09-21
+
+- Cập nhật `cogover-custom-module` 1.5.0: bổ sung record trigger của Custom Backend Module (`@cogover/sdk` 0.6.0, Dev CLI 0.10.0): thêm `get-started-record-trigger.md` (khai báo `defineTrigger` và export `triggers`, chạy trigger local qua `/__cogover/triggers/<key>`, publish/activate, kiểm thử bằng thay đổi bản ghi thật với `r: 70` `BEFORE_CHANGE_TRIGGER_REJECTED`, `meta`/`messages`, `$record`, `503` `BEFORE_CHANGE_TRIGGER_FAILED`, `TRIGGER_MANIFEST_INVALID`); cập nhật SDK usage guide và SDK API reference lên 0.6.0 (mục Record trigger, trigger filter, quy tắc before-change chỉ đọc/fail-closed, after-change best-effort/idempotent/`RetryableError`, `records.getMany`, mã lỗi `RETRYABLE`); Backend quick start thêm `trigger-runner.ts`, `npm test` và lệnh chạy thử trigger local.
+- `SKILL.md`: bước 3 đổi thành chọn record trigger (quy tắc áp cho mọi nguồn ghi, trước/sau khi lưu) hay Process (luồng có người tham gia, chờ/hẹn giờ, thông báo, AI Agent, lịch); bước 1 chốt contract từng trigger; bước 2 cho phép trigger before-change gán field chỉ backend ghi qua `writableFields`; bước 5 danh tính handler và `allowInternalSystem`; bước 6–8 điều kiện SDK/CLI, quy tắc code trigger, chạy trigger local; bước 9 validate manifest, phạm vi ảnh hưởng khi activate, kiểm thử bằng bản ghi thật và rollback; bước 10 bàn giao bảng trigger.
+
 ## 4.5.6 - 2026-09-16
 
 - Cập nhật `object-info` 1.0.4: mục "Cờ tạo và sửa thủ công" trong `api-object-fields.md`: `creatable` (checkbox Cho phép tạo thủ công) chặn request public tạo record có gửi field, `manual_modify_allow` (checkbox Cho phép sửa thủ công) chặn request public cập nhật chạm field, đều `r: 47`; hai cờ độc lập và không tác động ghi nội bộ (`data.asSystem()`, Process); field chỉ backend ghi đặt `creatable: 0` và `manual_modify_allow: false`; `editable` được đồng bộ theo `manual_modify_allow`; `objects/list` không trả `creatable`. Mặc định khi tạo field gửi thêm `creatable: 1`. Kiểm chứng trên Workspace ngày 2026-09-16.
