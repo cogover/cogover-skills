@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.6.0` ngày `2026-09-21`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, state, lock, chọn danh tính, record trigger (before-change và after-change), TypeScript config và router; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.7.0` ngày `2026-09-21`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, state, lock, chọn danh tính, record trigger (before-change và after-change), push message (làm mới record, toast, message ngầm), TypeScript config và router; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -12,7 +12,8 @@ dựng giao diện người dùng.
 
 Custom Backend Module được viết bằng TypeScript. `@cogover/sdk` cung cấp type và
 API để làm việc với execution hiện tại, dữ liệu Workspace, schema metadata,
-logging, outbound HTTPS request, state và distributed lock. Cogover thực thi
+logging, outbound HTTPS request, state, distributed lock và push message tới web
+client. Cogover thực thi
 module theo quyền và giới hạn tài nguyên đã cấu hình cho project.
 
 Quy trình phát triển thông thường:
@@ -207,6 +208,31 @@ dài, kiểm tra `expiresAt` và gọi `renew()` trước khi hết hạn. Dùng
 hệ thống đích nếu có thể để chặn writer cũ. Lock không thay thế idempotency hay
 bảo đảm exactly-once.
 
+## Yêu cầu trang record đang mở tải lại
+
+```typescript
+export default defineTrigger({
+  key: "recalculate_totals",
+  object: "order",
+  timing: "afterChange",
+  operations: ["update"],
+  fields: ["subtotal", "tax"],
+}, async ({ records, data, push }) => {
+  const items = records.flatMap(record => record.id === null ? [] : [{
+    id: record.id,
+    fields: { total: (record.new.subtotal ?? 0) + (record.new.tax ?? 0) },
+  }]);
+  await data.object("order").records.batchUpdate(items);
+  // Mọi người đang mở một trong các đơn hàng này sẽ tải lại, kể cả người vừa lưu.
+  await push.refreshRecords("order", items.map(item => item.id));
+});
+```
+
+`push` còn hiển thị toast (`push.toast`) hoặc gửi message ngầm (`push.message`) tới
+những người đang xem record chỉ định hoặc tới danh sách personnel ID (`recipients`);
+`exclude: ["actor"]` bỏ qua người gây ra execution. Gửi là best-effort và mỗi lời gọi
+tính một capability call. API reference liệt kê giới hạn và các trường của message.
+
 ## Chọn danh tính cho thao tác record
 
 Tiếp tục dùng `data.object("order")` để kế thừa danh tính người gọi. Khi quản trị
@@ -355,10 +381,10 @@ Không đọc dữ liệu bên trong vòng lặp. Hãy gom các ID, gọi `recor
 rồi tra cứu kết quả từ một `Map` như ví dụ trên.
 
 **Chỉ đọc.** Trigger before-change được đọc record và schema. Thao tác ghi record,
-`fetch`, lock và ghi state bị từ chối bằng `PermissionDeniedError`
+`fetch`, lock, ghi state và push message bị từ chối bằng `PermissionDeniedError`
 (`details.reason === "TRIGGER_READ_ONLY"`) với mọi danh tính. Trigger context có
-`records`, `trigger`, `invocation`, `data`, `schema` và `log`; không có `request`,
-`response`, `state` hay `locks`.
+`records`, `trigger`, `invocation`, `data`, `schema`, `log` và `push`; không có
+`request`, `response`, `state` hay `locks`.
 
 **Danh tính.** `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi, với
 quyền của người đó, nên một lời gọi đọc có thể không trả về record mà người này không

@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.7.0 - 2026-09-21
+
+- Cập nhật `cogover-custom-module` 1.6.0: bổ sung push message của `@cogover/sdk` 0.7.0 (`push.refreshRecords` làm mới record đang mở, `push.toast`, `push.message` ngầm; người nhận `"viewers"` hoặc personnel ID, `exclude: ["actor"]`; best-effort, không thu hồi, một capability call mỗi lời gọi, bị từ chối trong trigger before-change và Development Session chỉ đọc, `PUSH_DISABLED`). SDK usage guide và SDK API reference lên 0.7.0 (mục Push message, `push` trong context script/route/trigger); Record trigger quick start theo bản tài liệu mới nhất (response mẫu `objects/list`, ghi chú số thứ tự version, bỏ mục xử lý sự cố `trigger-runner.test.ts`).
+- `SKILL.md`: bảng chọn loại module, bảng tài liệu theo nhánh và điều kiện phiên bản SDK nêu push message; bước 8 thêm quy tắc dùng push (after-change gọi `refreshRecords` sau khi sửa record, giới hạn người nhận khi thử trên local, không suy đoán API lắng nghe phía client); bước 9 xác minh push trên trình duyệt; bước 10 bàn giao nơi gọi/loại message/người nhận.
+
 ## 4.6.0 - 2026-09-21
 
 - Cập nhật `cogover-custom-module` 1.5.0: bổ sung record trigger của Custom Backend Module (`@cogover/sdk` 0.6.0, Dev CLI 0.10.0): thêm `get-started-record-trigger.md` (khai báo `defineTrigger` và export `triggers`, chạy trigger local qua `/__cogover/triggers/<key>`, publish/activate, kiểm thử bằng thay đổi bản ghi thật với `r: 70` `BEFORE_CHANGE_TRIGGER_REJECTED`, `meta`/`messages`, `$record`, `503` `BEFORE_CHANGE_TRIGGER_FAILED`, `TRIGGER_MANIFEST_INVALID`); cập nhật SDK usage guide và SDK API reference lên 0.6.0 (mục Record trigger, trigger filter, quy tắc before-change chỉ đọc/fail-closed, after-change best-effort/idempotent/`RetryableError`, `records.getMany`, mã lỗi `RETRYABLE`); Backend quick start thêm `trigger-runner.ts`, `npm test` và lệnh chạy thử trigger local.

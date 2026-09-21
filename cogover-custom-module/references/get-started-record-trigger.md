@@ -337,7 +337,7 @@ Typecheck Project trước khi đi tiếp:
 npm run typecheck
 ```
 
-TypeScript đối chiếu slug Object, slug field và giá trị field với `workspace.d.ts`: ví dụ gán một grade không thuộc bốn option, hoặc dùng một slug field chưa khai báo ở đó, sẽ được báo tại đây. Nếu bước kiểm tra báo lỗi trong `local/trigger-runner.test.ts` mà không có lỗi trong `src/`, xem mục Xử lý sự cố trước khi tiếp tục; local server ở mục 6 chạy cùng bước kiểm tra này. TypeScript không kiểm tra danh sách `fields` của trigger: field mà handler đọc nhưng không liệt kê trong `fields` chỉ đơn giản là vắng mặt lúc chạy. `defineTrigger` cũng validate cấu hình khi module được nạp, nên `key`, `order` hoặc `timeoutMs` không hợp lệ sẽ ném `ValidationError` ở bước 6 hoặc lúc publish.
+TypeScript đối chiếu slug Object, slug field và giá trị field với `workspace.d.ts`: ví dụ gán một grade không thuộc bốn option, hoặc dùng một slug field chưa khai báo ở đó, sẽ được báo tại đây. TypeScript không kiểm tra danh sách `fields` của trigger: field mà handler đọc nhưng không liệt kê trong `fields` chỉ đơn giản là vắng mặt lúc chạy. `defineTrigger` cũng validate cấu hình khi module được nạp, nên `key`, `order` hoặc `timeoutMs` không hợp lệ sẽ ném `ValidationError` ở bước 6 hoặc lúc publish.
 
 ## 6. Chạy trigger trên local
 
@@ -463,7 +463,7 @@ Lần này `results` mang grade mà handler đã điền:
 
 Với `update` và `delete`, truyền `recordId` của một review có sẵn. Runner đọc bản ghi đó qua Development Session, giới hạn theo `fields` của trigger, vào `record.old`; với `update`, nó phủ `changes` lên trên để tạo `record.new`.
 
-Bước này cần một review đang tồn tại trong Workspace với status `completed`. Tạo review đó trên giao diện web Cogover, hoặc bằng Records API: đặt Workspace API key vào `.env` ngay bây giờ như mô tả ở mục 7, chạy hai lệnh shell nạp key ở đầu mục 8, tạo review bằng lệnh ở bước 8.3 và đặt status thành `completed` bằng lệnh ở bước 8.5. Chưa có trigger nào active nên cả hai đều là thao tác ghi bình thường. Lưu ID làm `{RECORD_ID}` và xoá review này ở cuối bằng hai lệnh của bước 8.7. Chạy trigger chặn xoá cho bản ghi đó:
+Bước này cần một review đang tồn tại trong Workspace với status `completed`. Tạo review đó trên giao diện web Cogover, hoặc bằng Records API: đặt Workspace API key vào `.env` ngay bây giờ như mô tả ở mục 7, chạy hai lệnh shell nạp key ở đầu mục 8, tạo review bằng lệnh ở bước 8.3 và đặt status thành `completed` bằng lệnh ở bước 8.5. Chưa có trigger nào active nên cả hai đều là thao tác ghi bình thường. Lưu ID làm `{RECORD_ID}` và xoá review này ở cuối bằng hai lệnh của bước 8.7 (mục 7 và 8 giải thích các lệnh đó; lệnh liệt kê ở bước 8.3 xác nhận `status` đã là `completed`). Chạy trigger chặn xoá cho bản ghi đó:
 
 ```bash
 curl -s -X POST 'http://127.0.0.1:3100/__cogover/triggers/block_delete_completed' \
@@ -516,7 +516,7 @@ Không truyền key trên command line hoặc ghi vào source.
 
 CLI tạo ZIP từ thư mục `src/`, upload, tạo version và chờ đến khi version chuyển sang `READY` hoặc `FAILED`. Khi build version, Cogover evaluate export `triggers`, ghi cấu hình của từng trigger thành trigger manifest của version và validate: Object cùng mọi slug field phải tồn tại trong Workspace, `writableFields` không được chứa field chỉ đọc, và key không được trùng. Vi phạm làm version kết thúc ở `FAILED` với build error code `TRIGGER_MANIFEST_INVALID` và message nêu key hoặc slug sai; sửa code rồi publish lại.
 
-Khi version đã `READY`, `publish` in ra version ID và lệnh activate tương ứng. Số thứ tự version tăng sau mỗi lần publish của Project, kể cả các version bị xoá về sau:
+Khi version đã `READY`, `publish` in ra version ID và lệnh activate tương ứng. Số thứ tự version tăng sau mỗi lần publish của Project, kể cả các version bị xoá về sau, nên version đầu tiên bạn publish không nhất thiết là version 1:
 
 ```text
 Published version {N} ({VERSION_ID}) is READY.
@@ -557,7 +557,11 @@ curl -s -X POST "https://$WORKSPACE_DOMAIN/bapi/v1/objects/list" \
   --data '{"slugs":["review"]}'
 ```
 
-Lưu `items[0].id` làm `{OBJECT_ID}`.
+Khác các lệnh gọi còn lại của mục này, response không có `r` hay `msg`; lưu `items[0].id` làm `{OBJECT_ID}`:
+
+```json
+{ "totalItems": 1, "items": [ { "id": "REPLACE_WITH_OBJECT_ID", "slug": "review", "name": "Review" } ] }
+```
 
 ### 8.2. Grade quá cao bị từ chối
 
@@ -701,7 +705,6 @@ Muốn đổi quy tắc, sửa code, publish version mới và activate; trigger
 
 ## Xử lý sự cố
 
-- **`npm run typecheck` báo lỗi trong `local/trigger-runner.test.ts`.** Bản starter của bạn có trước thay đổi làm cho test của starter không phụ thuộc `workspace.d.ts`. Cho tới khi bản starter bạn tải về có test đã cập nhật, thêm `"exclude": ["local/**/*.test.ts"]` ở cấp cao nhất, cạnh `include`, trong `tsconfig.json`; `npm run typecheck`, `npm run dev` và `npm test` khi đó đều chạy được.
 - **Version ở trạng thái `FAILED` với `TRIGGER_MANIFEST_INVALID`.** Build error message nêu key hoặc slug sai: slug Object hoặc field không tồn tại trong Workspace, field chỉ đọc hoặc field hệ thống trong `writableFields`, hoặc hai trigger trùng key. Đối chiếu slug với Object trên Workspace rồi publish lại.
 - **Thao tác ghi trả HTTP `400` với `r: 70` và `BEFORE_CHANGE_TRIGGER_REJECTED`.** Một trigger before-change đã chủ động từ chối bản ghi; `data.trigger.key` cho biết trigger nào và `meta` liệt kê mã lỗi.
 - **Thao tác ghi trả HTTP `503` với `BEFORE_CHANGE_TRIGGER_FAILED`.** Handler before-change ném lỗi, hết thời gian, hoặc cố ghi dữ liệu, gọi `fetch` hay một thao tác bị từ chối khác. Trigger before-change fail-closed, nên thao tác ghi bị từ chối cho đến khi code được sửa và version mới được activate.

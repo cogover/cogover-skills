@@ -35,6 +35,7 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
   readonly response: ResponseApi;
   readonly state: ProjectState;
   readonly locks: DistributedLocks;
+  readonly push: PushApi<Schema>;
 }
 ```
 
@@ -42,13 +43,13 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
 quả ném lỗi nếu input không phải JSON hợp lệ hoặc output không serialize được sang
 JSON. Trả `null` tạo kết quả null; trả `undefined` là không hợp lệ.
 
-Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`, chờ kết
+Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`, `push`, chờ kết
 quả async và serialize output thành JSON.
 
 ## HTTP router và request context
 
 `ScriptContext<TInput, TSchema>` cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`,
-`log`, `state` và `locks` cho cả script handler lẫn route handler. `input` giữ input invocation hiện có.
+`log`, `state`, `locks` và `push` cho cả script handler lẫn route handler. `input` giữ input invocation hiện có.
 Nên dùng `request.body` cho dữ liệu nghiệp vụ: body không chứa invocation metadata
 và các field transport/xác thực đã được Cogover loại bỏ.
 
@@ -461,6 +462,7 @@ interface TriggerContext<
   readonly data: DataApi<Schema>;
   readonly schema: SchemaApi<Schema>;
   readonly log: ScriptLogger;
+  readonly push: PushApi<Schema>;
 }
 
 interface TriggerInfo<Operation extends TriggerOperation = TriggerOperation> {
@@ -496,8 +498,9 @@ nên batch write hoặc import gọi handler một lần cho mỗi nhóm record 
 cho từng record. Hãy giữ `fields` ngắn gọn và đọc dữ liệu liên quan cho cả danh sách
 bằng một lời gọi `records.getMany` thay vì đọc riêng cho từng record.
 
-`data`, `schema`, `log` và `invocation` là chính các API mà script nhận được. Trigger
-context không có `input`, `request`, `response`, `state` hay `locks`.
+`data`, `schema`, `log`, `push` và `invocation` là chính các API mà script nhận được.
+Trigger context không có `input`, `request`, `response`, `state` hay `locks`; `push` bị
+từ chối trong trigger before-change.
 `trigger.operation` là operation của lần gọi hiện tại, `trigger.id` định danh đăng ký
 của trigger và `trigger.changeId` định danh thay đổi record đã gây ra lần gọi.
 
@@ -572,7 +575,7 @@ lại field formula và rollup, merge record chạy nền, cascade delete — kh
 trigger before-change; request chỉ validate input mà không lưu cũng vậy.
 
 - **Chỉ đọc.** Trigger before-change được đọc record và schema, nhưng mọi thao tác
-  ghi record, `fetch`, lock và ghi state đều bị từ chối bằng `PermissionDeniedError`
+  ghi record, `fetch`, lock, ghi state và push message đều bị từ chối bằng `PermissionDeniedError`
   có `details.reason` là `"TRIGGER_READ_ONLY"`. Quy tắc này áp dụng cho mọi danh
   tính, kể cả `data.asSystem()`.
 - **Danh tính.** `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi,
@@ -638,7 +641,8 @@ export const triggers = [
 - **Được ghi và gọi ra ngoài.** Ghi record và `fetch` hoạt động như trong script,
   với cùng các giới hạn runtime. `data.object()` thực hiện dưới danh tính người đã
   tạo ra thay đổi, và các quy tắc danh tính khác của trigger before-change cũng được
-  áp dụng. Context của trigger không có `state` và `locks`.
+  áp dụng. Context của trigger không có `state` và `locks`; `push` có sẵn và là cách thông
+  thường để làm mới các record handler đã sửa cho mọi người đang mở chúng.
 - **Best-effort.** Cogover không bảo đảm handler after-change chạy đúng một lần.
   Handler đôi khi có thể chạy nhiều hơn một lần cho cùng một thay đổi, hoặc không
   chạy. Hãy viết mọi handler theo kiểu idempotent: `trigger.changeId` cùng với
@@ -1178,6 +1182,113 @@ Lock chỉ bảo đảm một lease hợp lệ tại một thời điểm; timeo
 thể làm execution cũ tiếp tục sau khi lease hết hạn. Khi hệ thống đích hỗ trợ,
 hãy lưu/kiểm tra `fencingToken` và từ chối token cũ. Lock không thay thế idempotency,
 không tạo exactly-once và không gộp Record API với state thành một transaction.
+
+## Push message
+
+`push` gửi message tới web client của workspace: yêu cầu tải lại record, một toast,
+hoặc một message chạy ngầm mà client tự xử lý. Đây là cùng cơ chế với action
+"Push Message" của Workflow, nên trang record chuẩn phản ứng mà không cần code
+client. Gửi là best-effort: lời gọi hoàn tất khi message đã được bàn giao cho
+Cogover, không phải khi client nhận được.
+
+```typescript
+type PushRecipients = "viewers" | readonly string[];
+
+interface PushOptions {
+  readonly recipients?: PushRecipients;
+  readonly exclude?: readonly string[];
+}
+
+type ToastPosition = "TOP_LEFT" | "TOP_CENTER" | "TOP_RIGHT"
+  | "BOTTOM_LEFT" | "BOTTOM_CENTER" | "BOTTOM_RIGHT";
+type ToastSize = "SMALL" | "MEDIUM" | "LARGE";
+
+interface ToastLink {
+  readonly label: string;
+  readonly url: string;
+}
+
+interface ToastMessage<ObjectSlug extends string = string> {
+  readonly title?: string;
+  readonly content?: string;
+  readonly links?: readonly ToastLink[];
+  readonly position?: ToastPosition;
+  readonly size?: ToastSize;
+  readonly durationSeconds?: number;
+  readonly object?: ObjectSlug;
+  readonly recordIds?: readonly string[];
+}
+
+type BackgroundContentType = "text" | "template";
+
+interface BackgroundMessage<ObjectSlug extends string = string> {
+  readonly content: string;
+  readonly contentType?: BackgroundContentType;
+  readonly object?: ObjectSlug;
+  readonly recordIds?: readonly string[];
+}
+
+interface PushApi<Schema extends object = EffectiveWorkspaceObjects> {
+  refreshRecords(object: StringKeyOf<Schema>, recordIds: readonly string[],
+    options?: PushOptions): Promise<void>;
+  toast(message: ToastMessage<StringKeyOf<Schema>>, options?: PushOptions): Promise<void>;
+  message(message: BackgroundMessage<StringKeyOf<Schema>>, options?: PushOptions): Promise<void>;
+}
+```
+
+```typescript
+// Trigger after-change: handler đã sửa record nên mọi người đang mở record phải tải
+// lại, kể cả người vừa lưu và làm trigger chạy.
+await data.object("order").records.batchUpdate(items);
+await push.refreshRecords("order", items.map(item => item.id));
+```
+
+### Người nhận
+
+Mọi method nhận cùng `options`. `recipients` mặc định là `"viewers"`: mọi người đang
+mở một trong các record đích sẽ nhận message, vì vậy `object` và `recordIds` là bắt
+buộc. Danh sách personnel ID gửi tới đúng những người đó dù họ đang ở đâu trong
+workspace; khi đó `object` và `recordIds` là tuỳ chọn với `toast` và `message`, và nếu
+có thì cho client biết message nói về record nào. `exclude` liệt kê personnel ID không
+bao giờ nhận message; giá trị đặc biệt `"actor"` là người dùng có hành động khởi đầu
+execution hiện tại (người gọi HTTP script, người lưu record làm trigger chạy).
+Execution hệ thống không có actor nên `"actor"` không loại ai. Personnel chưa có tài
+khoản người dùng được bỏ qua; personnel ID hoặc object slug không tồn tại ném
+`NotFoundError` trước khi gửi bất kỳ message nào. Mỗi lời gọi nhận tối đa 200 record
+ID và 200 personnel ID; ID trùng được loại bỏ.
+
+### `push.refreshRecords(object, recordIds, options?): Promise<void>`
+
+Yêu cầu các client đang hiển thị những record này tải lại chúng. Trang record của
+web app tự xử lý yêu cầu. `recordIds` nhận 1 đến 200 ID.
+
+### `push.toast(message, options?): Promise<void>`
+
+Hiển thị một thông báo ngắn. Cần ít nhất một trong `title` (tối đa 200 ký tự) và
+`content` (tối đa 4.000 ký tự). `links` chứa tối đa 5 mục với `url` là URL tuyệt đối
+`http` hoặc `https`. `position` mặc định `"TOP_RIGHT"`, `size` mặc định `"MEDIUM"` và
+`durationSeconds` mặc định 5 (từ 1 đến 60). Khi có `object` và `recordIds`, client chỉ
+hiển thị toast trong lúc một trong các record đó đang mở.
+
+### `push.message(message, options?): Promise<void>`
+
+Gửi một message mà client xử lý không kèm thông báo hiển thị, ví dụ một custom
+component đang lắng nghe. `content` là bắt buộc (tối đa 16.384 ký tự); `contentType`
+là `"text"` (mặc định) hoặc `"template"`.
+
+### Quy tắc
+
+- Mỗi lời gọi tốn một capability call bất kể số record hay người nhận; khi người nhận
+  là `"viewers"`, mỗi record được gửi một message.
+- Input được SDK kiểm tra và Cogover kiểm tra lại; input không hợp lệ ném
+  `ValidationError` trước khi gửi bất kỳ message nào.
+- `push` có trong script, route, trigger after-change và Development Session. Trigger
+  before-change là chỉ đọc và nhận `PermissionDeniedError` với reason
+  `TRIGGER_READ_ONLY`; Development Session chỉ đọc cũng từ chối.
+- Khi deployment tắt push message, mọi lời gọi ném `CogoverApiError` với code
+  `PUSH_DISABLED`.
+- Message đã gửi không thể thu hồi, và chạy lại một execution thất bại có thể gửi
+  lại message.
 
 ## Schema API
 
