@@ -1,6 +1,6 @@
 # Ghi hàng loạt, số thập phân và checkpoint
 
-Đọc khi nghiệp vụ có preview/apply, ghi nhiều record, retry hoặc nhiều request đồng thời. Contract nền tảng: [SDK API reference](cogover-sdk-api-reference.md), các mục Project state, Distributed locks, Record API và errors. Đây là hướng dẫn thiết kế ứng dụng, không phải cam kết transaction của nền tảng.
+Đọc khi nghiệp vụ có preview/apply, ghi nhiều record, retry hoặc nhiều request đồng thời. Contract nền tảng: [SDK API reference](cogover-sdk-api-reference.md), các mục Project state, Distributed locks, Record API, Background job và errors. Đây là hướng dẫn thiết kế ứng dụng, không phải cam kết transaction của nền tảng. "Job" trong mục preview/apply bên dưới là job nghiệp vụ của ứng dụng (snapshot có ID, checkpoint trong state), khác background job của SDK dùng để chạy việc nền.
 
 ## Số thập phân
 
@@ -28,7 +28,7 @@ CAS chỉ bảo vệ state; lock chỉ bảo vệ các execution tuân thủ cù
 1. Giữ job ID, version và response đã loại credential; đọc checkpoint và record thật trước mọi quyết định retry. Invocation lỗi không chứng minh các side effect đã rollback. Execution bị ngắt trước cleanup thì lock có thể còn hiệu lực tới lúc lease hết hạn; không đổi namespace hoặc nới quyền để lách lock đang giữ.
 2. Giảm roundtrip khi contract hỗ trợ: đọc nhiều record bằng `records.list` với filter ID và đúng phân trang; dùng `records.batchUpdate` cho nhóm ghi thay vì đọc/ghi/checkpoint từng dòng không giới hạn. Giới hạn SDK 1–200 dòng mỗi batch không bảo đảm mọi batch hoàn tất trong một invocation; test kích thước thực tế của bài toán trên production.
 3. Lưu CAS claim/checkpoint trước batch. Batch là best-effort: ánh xạ từng `results` bằng `referenceId` (index đầu vào dạng chuỗi), kiểm tra thành công từng dòng rồi batch read-back. Response HTTP thành công hoặc aggregate `success` không phải bằng chứng mọi giá trị đúng; không nhận được kết quả thì giữ trạng thái chưa xác minh, không tự gửi lại ghi.
-4. Chia nhiều invocation thì lưu tiến độ bền vững và dùng cơ chế tiếp tục được hỗ trợ; không dựa vào timer trình duyệt cho công việc phải tự chạy. Nghiệp vụ nền/định kỳ cần quay lại bước Process. Chưa có cơ chế tiếp tục phù hợp thì báo phần chưa hoàn tất.
+4. Chia nhiều invocation thì lưu tiến độ bền vững và tiếp tục bằng background job (`@cogover/sdk` từ `0.8.0`, Workspace đã bật job): route kiểm tra input rồi `jobs.enqueue` và trả `202` với `runId`; mỗi run xử lý một trang (tối đa 200 record, sắp xếp ổn định) trong `timeoutMs` rồi `jobs.enqueue` chính nó với cursor và idempotency key `${job.id}:next`, có điều kiện dừng; handler idempotent vì run có thể chạy lại. Xem [Background job quick start](get-started-background-jobs.md). Không dựa vào timer trình duyệt cho công việc phải tự chạy. Nghiệp vụ định kỳ dùng `schedule` của job; luồng cần người tham gia, thông báo hoặc AI Agent quay lại bước Process. Workspace chưa bật job và không có cơ chế tiếp tục phù hợp thì báo phần chưa hoàn tất.
 5. Publish bản sửa, xác nhận active version, chạy lại local và production cho apply/read-back, replay, concurrency, stale và browser. Chỉ ghi workaround thành công sau kiểm chứng; giữ sự cố version cũ trong báo cáo. Không thay đổi nghĩa atomicity hoặc exactly-once để che giới hạn nền tảng.
 
 ## Bằng chứng nghiệm thu

@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.7.0` ngày `2026-09-21`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, state, lock, chọn danh tính, record trigger (before-change và after-change), push message (làm mới record, toast, message ngầm), TypeScript config và router; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.8.0` ngày `2026-09-22`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), chọn danh tính, record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -12,9 +12,9 @@ dựng giao diện người dùng.
 
 Custom Backend Module được viết bằng TypeScript. `@cogover/sdk` cung cấp type và
 API để làm việc với execution hiện tại, dữ liệu Workspace, schema metadata,
-logging, outbound HTTPS request, state, distributed lock và push message tới web
-client. Cogover thực thi
-module theo quyền và giới hạn tài nguyên đã cấu hình cho project.
+logging, outbound HTTPS request, state, distributed lock, push message tới web
+client, background job, secret, mã hoá và inbound webhook. Cogover thực thi module
+theo quyền và giới hạn tài nguyên đã cấu hình cho project.
 
 Quy trình phát triển thông thường:
 
@@ -161,6 +161,48 @@ và không cho cấu hình proxy, dispatcher, agent, DNS hoặc TLS. Request và
 đều có giới hạn. Với thao tác ghi ra API ngoài, dùng idempotency key của API đích;
 timeout hoặc mất response không chứng minh remote chưa xử lý request.
 
+## Dùng secret và credential
+
+Không đặt API token trong source code hay trong input của request. Quản trị viên
+lưu chúng cho project qua management API của Cogover, dưới một trong hai dạng:
+
+- **Credential** chỉ dùng cho `fetch`. Ghi tên vào `credential` và Cogover thêm
+  header xác thực — `Authorization: Bearer …`, `Authorization: Basic …` hoặc một
+  header tuỳ chỉnh — vào request. Code không bao giờ thấy giá trị, và credential chỉ
+  được gửi tới các host mà quản trị viên cho phép.
+- **Secret** được đọc bằng `secrets.get` khi code cần chính giá trị đó, ví dụ để
+  tạo chữ ký hoặc header không chuẩn.
+
+```typescript
+import { defineScript, fetch } from "@cogover/sdk";
+
+export default defineScript<{ orderId: string }>(async ({ input, secrets, crypto }) => {
+  // Nên dùng: token do Cogover thêm vào và không bao giờ đi vào code.
+  const response = await fetch("https://erp.example.com/v1/orders", {
+    method: "POST",
+    credential: "erp_api",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: input.orderId }),
+  });
+
+  // Khi cần chính giá trị, đọc secret và ký bằng nó.
+  const body = await response.text();
+  const signature = await crypto.hmacSha256({ secret: "partner_signing_key" }, body);
+  const apiKey = await secrets.get("partner_api_key");
+  await fetch("https://partner.example.com/events", {
+    method: "POST",
+    headers: { "x-api-key": apiKey, "x-signature": signature },
+    body,
+  });
+  return { status: response.status };
+});
+```
+
+`crypto.hmacSha256({ secret: name }, data)` ký bằng secret mà không cần đọc giá
+trị, đủ cho hầu hết chữ ký. Không bao giờ ghi secret vào log, record, state hay
+response, và ưu tiên credential thay vì `secrets.get` mỗi khi giá trị chỉ cần cho
+một HTTP header. Secret và credential không dùng được trong trigger before-change.
+
 ## Quyền và giới hạn
 
 - Thông tin xác thực của Cogover không được đưa vào code của module; quyền truy cập
@@ -232,6 +274,95 @@ export default defineTrigger({
 những người đang xem record chỉ định hoặc tới danh sách personnel ID (`recipients`);
 `exclude: ["actor"]` bỏ qua người gây ra execution. Gửi là best-effort và mỗi lời gọi
 tính một capability call. API reference liệt kê giới hạn và các trường của message.
+## Chạy việc nền bằng job
+
+HTTP route hoặc trigger có thời gian rất ngắn. Hãy chuyển việc dài hơn — duyệt
+nhiều record, gọi API ngoài chậm, bảo trì hằng đêm — vào **background job**. Khai
+báo job bằng `defineJob` và liệt kê trong named export `jobs`; enqueue một lần chạy
+từ route, trigger hoặc job khác bằng `jobs.enqueue`, hoặc để `schedule` cron khởi
+chạy.
+
+```typescript
+import { defineJob } from "@cogover/sdk";
+
+interface RecalcPayload {
+  cursor?: string;
+}
+
+// Xử lý một trang mỗi lần chạy và tự enqueue lại với cursor kế tiếp.
+export const recalcTotals = defineJob<RecalcPayload>({
+  key: "recalc_totals",
+  timeoutMs: 60_000,
+}, async ({ payload, data, jobs, log }) => {
+  const orders = data.object("order");
+  const page = await orders.records.list({
+    fields: ["subtotal", "tax"],
+    limit: 200,
+    ...(payload?.cursor ? { cursor: payload.cursor } : {}),
+  });
+  for (const order of page.items) {
+    await orders.records.update(order.id, {
+      total: (order.fields.subtotal ?? 0) + (order.fields.tax ?? 0),
+    });
+  }
+  if (page.nextCursor) {
+    await jobs.enqueue("recalc_totals", { cursor: page.nextCursor });
+    return;
+  }
+  log.info("Order totals recalculated");
+});
+
+// Chạy hằng đêm lúc 02:00 theo múi giờ đã cho, không có payload.
+export const cancelStaleOrders = defineJob({
+  key: "cancel_stale_orders",
+  schedule: { cron: "0 2 * * *", timezone: "Asia/Ho_Chi_Minh" },
+}, async ({ data }) => {
+  const orders = data.object("order");
+  const stale = await orders.records.list({
+    where: orders.fields.status.eq("new"),
+    fields: ["status"],
+    limit: 200,
+  });
+  for (const order of stale.items) {
+    await orders.records.update(order.id, { status: "cancelled" });
+  }
+});
+
+export const jobs = [recalcTotals, cancelStaleOrders];
+```
+
+Khởi chạy batch từ một route:
+
+```typescript
+router.post("/recalculate", async ({ jobs, response }) => {
+  const { runId } = await jobs.enqueue("recalc_totals", {}, { idempotencyKey: "recalc:daily" });
+  return response.json({ runId }, { status: 202 });
+});
+```
+
+- Job handler nhận `job` (run ID, key, lần thử, nguồn), `payload` đã truyền cho
+  `enqueue` (hoặc `null`) và cùng các API `data`, `schema`, `log`, `state`,
+  `locks`, `jobs`, `secrets`, `crypto` như script. Giá trị trả về bị bỏ qua.
+- Lần chạy được enqueue từ route hoặc trigger thực hiện dưới danh tính người dùng
+  của lời gọi đó. Lần chạy theo lịch không có người dùng: `data.object()` chỉ hoạt
+  động khi identity policy cho phép danh tính system, nên hãy duyệt
+  `allowInternalSystem` cho project có lịch.
+- Lần chạy được giao ít nhất một lần: lần chạy bị gián đoạn do restart sẽ được bắt
+  đầu lại, và lỗi tạm thời báo bằng `RetryableError` (hoặc timeout) được thử lại với
+  thời gian chờ tăng dần tối đa `maxAttempts` lần. Hãy viết handler idempotent và
+  dùng `job.id` hoặc một key nghiệp vụ làm idempotency key cho các lời gọi ra ngoài.
+  Mọi lỗi khác làm lần chạy thất bại mà không retry.
+- Mỗi lần thử phải hoàn tất trong `timeoutMs` (tối đa 60 giây). Chia việc dài hơn
+  thành từng trang và enqueue trang kế tiếp như ví dụ: enqueue không tiêu tốn ngân
+  sách tự động hoá, nên chuỗi chỉ bị giới hạn bởi điều kiện dừng của chính handler.
+  Thao tác ghi record do job thực hiện vẫn dùng ngân sách và chạy trigger như mọi
+  thao tác ghi khác.
+- `idempotencyKey` làm lần enqueue lặp lại trả về lần chạy hiện có với
+  `duplicate: true`; `delayMs` hoặc `runAt` hoãn lần chạy tối đa 30 ngày. Payload là
+  JSON tối đa 64 KiB.
+
+Xem [tài liệu tham chiếu background job](cogover-sdk-api-reference.md#background-job) để biết
+mọi tuỳ chọn và quy tắc.
 
 ## Chọn danh tính cho thao tác record
 
@@ -402,7 +533,7 @@ có kết quả xác định. Xem [tham chiếu record trigger](cogover-sdk-api-
 Đặt `timing: "afterChange"` để chạy code sau khi thay đổi đã được lưu. Handler chạy
 bất đồng bộ, ngay sau thao tác ghi: bên ghi không chờ handler, và handler không thể
 từ chối hay sửa thay đổi đã lưu. Khác với trigger before-change, handler được ghi
-record và gọi `fetch` như một script.
+record, gọi `fetch`, đọc secret và enqueue background job như một script.
 
 ```typescript
 import { defineTrigger, fetch, RetryableError } from "@cogover/sdk";
@@ -514,3 +645,65 @@ Các helper `response.json`, `text`, `bytes`, `empty`, `redirect` cho phép đ�
 response header an toàn và body text/binary. Route thiếu trả 404; method không hỗ trợ
 trả 405. Project `defineScript()` cũ tiếp tục chạy tại `/`. Cần validate mọi input
 nghiệp vụ. Xem [router API reference](cogover-sdk-api-reference.md#http-router-và-request-context).
+
+## Nhận webhook
+
+Hệ thống bên ngoài có thể gọi một route mà không cần phiên người dùng Cogover thông
+qua **inbound access** do quản trị viên tạo cho project. Quản trị viên đưa cho hệ
+thống bên ngoài URL có dạng
+`https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/{projectSlug}/hooks/{inboundId}/{route}`
+cùng với một inbound key hoặc một HMAC signing secret. Cogover xác thực từng lời
+gọi và từ chối lời gọi không hợp lệ trước khi module chạy; module thấy lời gọi tại
+`/hooks/{route}` với `invocation.identity === "inbound"`.
+
+```typescript
+import { createRouter, defineJob } from "@cogover/sdk";
+
+interface PaymentEvent { id: string; orderId: string; status: "succeeded" | "failed" }
+
+const router = createRouter();
+router.post("/hooks/payments", async ({ request, invocation, crypto, jobs, response }) => {
+  if (invocation.identity !== "inbound") return response.empty({ status: 403 });
+
+  // Tuỳ chọn: nhà cung cấp này còn ký "<timestamp>.<raw body>" bằng secret riêng của họ.
+  const timestamp = request.headers["x-payment-timestamp"] ?? "";
+  const expected = await crypto.hmacSha256(
+    { secret: "payment_signing_secret" }, `${timestamp}.${request.rawBody ?? ""}`);
+  if (!crypto.timingSafeEqual(`sha256=${expected}`, request.headers["x-payment-signature"] ?? "")) {
+    return response.empty({ status: 401 });
+  }
+
+  const event = request.body as Partial<PaymentEvent>;
+  if (typeof event.id !== "string" || typeof event.orderId !== "string") {
+    return response.json({ error: "Invalid event" }, { status: 400 });
+  }
+  await jobs.enqueue("sync_payment", event, { idempotencyKey: `payment:${event.id}` });
+  return response.json({ received: true }, { status: 202 });
+});
+export default router.toHandler();
+
+export const jobs = [
+  defineJob<PaymentEvent>({ key: "sync_payment" }, async ({ payload, data }) => {
+    if (!payload) return;
+    // ID từ bên ngoài là chuỗi thường: đọc record trước, rồi cập nhật qua ID của chính record.
+    const orders = data.object("order");
+    const order = await orders.records.get(payload.orderId, { fields: ["status"] });
+    if (!order) return;
+    await orders.records.update(order.id, {
+      status: payload.status === "succeeded" ? "processed" : "cancelled",
+    });
+  }),
+];
+```
+
+- `request.rawBody` là body đúng như đã nhận và `request.contentType` là content
+  type của nó, nên handler có thể kiểm tra chữ ký của bên gửi hoặc parse body không
+  phải JSON. `request.body` chứa JSON object đã parse, hoặc `{}` với body dạng khác.
+- Lời gọi inbound không có người dùng. `data.object()` dùng danh tính system và chỉ
+  hoạt động khi identity policy cho phép; `data.asUser()` và `data.asSystem()` tuân
+  theo policy như thông thường. Nên xác nhận nhanh rồi enqueue job — job cũng chạy
+  dưới danh tính system.
+- Nhà cung cấp gửi lại webhook không nhận được trả lời 2xx, nên hãy dùng ID riêng
+  của sự kiện làm `idempotencyKey` của job.
+
+Xem [Inbound webhook](cogover-sdk-api-reference.md#inbound-webhook) để biết đầy đủ quy tắc.

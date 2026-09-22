@@ -10,7 +10,7 @@ cogover-dev --version
 cogover-dev --help
 ```
 
-Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
+Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
 
 ```json
 {
@@ -28,10 +28,12 @@ Frontend đổi `projectType` thành `frontend` và dùng Project ID frontend. K
 |---|---|
 | Backend `login`, `doctor`, `run` | Project key gắn project và caller personnel |
 | Backend/frontend `publish`, `activate`, `auth session` | Workspace API key |
+| Backend `secrets`, `inbound`, `jobs` | Workspace API key của người dùng có quyền Workspace SuperAdmin; Project key không đủ |
 | HTTP `/api/v1/ts-projects/...` | Workspace session, CSRF/XSRF và routing header |
+| HTTP `/api/v1/ts-projects/{slug}/hooks/{inboundId}/...` | Inbound key hoặc chữ ký HMAC của inbound access; không session, không routing header |
 | HTTP `/bapi/v1/...` | Workspace API key Bearer |
 
-- `publish`/`activate`/`auth session` tìm `COGOVER_API_KEY` trong `.env` của project, rồi native credential store (service `cogover.api-key`, account là hostname Workspace), rồi prompt ẩn nếu chưa có. Biến môi trường do helper bên ngoài cung cấp không mặc nhiên được CLI đọc như `.env`. Có credential store thì dùng key đã lưu; không ghi đè `.env` có sẵn, không in giá trị để kiểm tra. Khi thực sự cần fallback `.env`: giữ file riêng tư, ignored và ngoài artifact.
+- `publish`/`activate`/`auth session`/`secrets`/`inbound`/`jobs` tìm `COGOVER_API_KEY` trong `.env` của project, rồi native credential store (service `cogover.api-key`, account là hostname Workspace), rồi prompt ẩn nếu chưa có; `auth logout` xoá key đã lưu ở cả hai nơi. Biến môi trường do helper bên ngoài cung cấp không mặc nhiên được CLI đọc như `.env`. Có credential store thì dùng key đã lưu; không ghi đè `.env` có sẵn, không in giá trị để kiểm tra. Khi thực sự cần fallback `.env`: giữ file riêng tư, ignored và ngoài artifact.
 - `login --profile <PROFILE>` nhận Project key qua prompt ẩn, ưu tiên native store; không có native store thì CLI dùng entry riêng cho profile trong `.env`, đặt quyền hạn chế và thêm `/.env` vào `.gitignore`. Không truyền raw key qua argv. Không có kênh nhập ẩn phù hợp: chuẩn bị xong cấu hình rồi hướng dẫn bước nhập credential cụ thể, không yêu cầu paste secret vào chat.
 
 ## Quản lý Project trước khi có cấu hình local
@@ -61,6 +63,31 @@ cogover-dev activate <VERSION_ID_FROM_PUBLISH>
 ```
 
 Backend starter `build` chỉ typecheck; publish tự đóng gói `src/`. Frontend `build` phải sinh `dist/index.html`; CLI tự đóng gói `dist/`, không build hộ. CLI giới hạn ZIP upload 10 MiB, archive tự tạo còn giới hạn 10 MiB uncompressed; server có thể có ràng buộc bổ sung. Publish chờ `READY`/`FAILED`, không tự activate. Archive chỉ có source backend cần thiết hoặc static asset frontend, không có key, session, `.env`, `node_modules`, `local/` hay source map.
+
+## Lệnh secrets, inbound và jobs
+
+Ba nhóm lệnh thao tác trên backend Project của `cogover.json` gần nhất, cần Workspace API key có quyền SuperAdmin và Workspace đã bật tính năng tương ứng (`SECRETS_DISABLED`, `JOBS_DISABLED` thì báo dependency). Cách dùng đầy đủ: [Secrets và credentials quick start](get-started-secrets-and-credentials.md), [Inbound webhook quick start](get-started-inbound-webhooks.md), [Background job quick start](get-started-background-jobs.md).
+
+```bash
+cogover-dev secrets set <name> [--kind opaque|bearer|basic|header] [--header-name <Header>] [--allowed-host <host>]... [--value-stdin | --value-file <path>]
+cogover-dev secrets list [--json]
+cogover-dev secrets delete <name> [--yes]
+
+cogover-dev inbound create <name> [--mode key|hmac] [--route-prefix /hooks/<route>] [--expires-at <ISO-8601>] \
+  [--hmac-header <Header> --hmac-prefix <prefix> --hmac-timestamp-header <Header> --hmac-tolerance <seconds> --hmac-encoding hex|base64 --hmac-secret-stdin] [--json]
+cogover-dev inbound list [--json]
+cogover-dev inbound rotate <inbound-id>
+cogover-dev inbound revoke <inbound-id> [--yes]
+
+cogover-dev jobs runs [--job <key>] [--status PENDING|RUNNING|SUCCEEDED|FAILED] [--page <n>] [--page-size <n>] [--json]
+cogover-dev jobs run <run-id> [--json]
+cogover-dev jobs enqueue <key> [--payload-file <path>] [--delay-ms <n>] [--idempotency-key <key>]
+cogover-dev jobs schedules [--json]
+```
+
+- Giá trị secret và HMAC secret chỉ đi qua prompt ẩn, stdin hoặc file; không có option truyền giá trị trên dòng lệnh và không in ra. `secrets set` tạo mới hoặc cập nhật giá trị của mục cùng tên (tăng `valueVersion`, giữ thiết lập không truyền); `list` chỉ trả metadata.
+- `inbound create` in URL webhook; ở chế độ `key`, `inboundKey` chỉ hiển thị đúng một lần khi create/rotate (dạng JSON với `--json`). Không thu vào tool log, chat hay báo cáo; chuyển cho bên gửi qua kênh an toàn. `revoke` là vĩnh viễn.
+- `jobs enqueue` tạo run thật trên version active; `jobs runs`/`jobs run` chỉ trả metadata và kích thước payload, không trả nội dung payload. Thêm `--json` khi cần xử lý kết quả bằng chương trình.
 
 ## Tạo session cho cURL
 

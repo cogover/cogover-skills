@@ -36,6 +36,9 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
   readonly state: ProjectState;
   readonly locks: DistributedLocks;
   readonly push: PushApi<Schema>;
+  readonly jobs: JobsApi;
+  readonly secrets: SecretsApi;
+  readonly crypto: CryptoApi;
 }
 ```
 
@@ -43,15 +46,15 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
 quả ném lỗi nếu input không phải JSON hợp lệ hoặc output không serialize được sang
 JSON. Trả `null` tạo kết quả null; trả `undefined` là không hợp lệ.
 
-Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`, `push`, chờ kết
-quả async và serialize output thành JSON.
+Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`,
+`push`, `jobs`, `secrets`, `crypto`, chờ kết quả async và serialize output thành JSON.
 
 ## HTTP router và request context
 
 `ScriptContext<TInput, TSchema>` cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`,
-`log`, `state`, `locks` và `push` cho cả script handler lẫn route handler. `input` giữ input invocation hiện có.
-Nên dùng `request.body` cho dữ liệu nghiệp vụ: body không chứa invocation metadata
-và các field transport/xác thực đã được Cogover loại bỏ.
+`log`, `state`, `locks`, `push`, `jobs`, `secrets` và `crypto` cho cả script handler lẫn route handler. `input`
+giữ input invocation hiện có. Nên dùng `request.body` cho dữ liệu nghiệp vụ: body không chứa invocation
+metadata và các field transport/xác thực đã được Cogover loại bỏ.
 
 ```typescript
 type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -66,6 +69,8 @@ interface ScriptRequest<TBody = unknown> {
   readonly query: ScriptQuery;
   readonly headers: ScriptHeaders;
   readonly body: TBody;
+  readonly rawBody?: string;      // Chỉ có với lời gọi webhook
+  readonly contentType?: string;  // Chỉ có với lời gọi webhook
 }
 ```
 
@@ -76,6 +81,11 @@ thường; credential như `authorization` và `cookie` không bao giờ lộ v�
 Path param được percent-decode sau khi route an toàn đã khớp. Kiểu TypeScript không
 validate input nghiệp vụ lúc chạy.
 
+`rawBody` và `contentType` chỉ có mặt với lời gọi đi vào project qua inbound webhook
+(xem [Inbound webhook](#inbound-webhook)): `rawBody` là request body đúng như đã
+nhận, dưới dạng chuỗi UTF-8, và `contentType` là header `Content-Type` của request.
+Với mọi lời gọi khác, cả hai field đều vắng mặt.
+
 ## Danh tính invocation và workspace hiện tại
 
 `context.invocation` là snapshot đồng bộ, bất biến được tạo từ metadata mà Cogover
@@ -83,7 +93,7 @@ validate input nghiệp vụ lúc chạy.
 cầu tới Data API.
 
 ```typescript
-type InvocationContext = UserInvocationContext | SystemInvocationContext;
+type InvocationContext = UserInvocationContext | SystemInvocationContext | InboundInvocationContext;
 
 interface CurrentWorkspace {
   readonly id: string;
@@ -124,15 +134,35 @@ interface SystemInvocationContext {
   readonly workspace: CurrentWorkspace;
   readonly user: null;
 }
+
+interface InboundInvocationContext {
+  readonly identity: "inbound";
+  readonly workspace: CurrentWorkspace;
+  readonly user: null;
+  readonly inbound: {
+    readonly id: string;             // Nằm trong URL webhook
+    readonly name: string;
+    readonly mode: "KEY" | "HMAC";   // Cách lời gọi đã được xác thực
+  };
+}
 ```
 
 Mọi field đều readonly. Các field profile/workspace optional có thể không tồn tại,
 vì vậy script không được giả định chúng luôn có giá trị.
 
+`identity` là `"user"` với lời gọi của người dùng Workspace đã xác thực, `"system"`
+với lần thực thi không có người dùng, ví dụ job chạy theo lịch, và `"inbound"` với
+lời gọi webhook được xác thực bằng một inbound access của project (xem
+[Inbound webhook](#inbound-webhook)). Invocation inbound không có user; `inbound`
+định danh inbound access đã xác thực lời gọi.
+
 ```typescript
 export default defineScript(({ invocation }) => {
   if (invocation.identity === "system") {
     return {workspaceId: invocation.workspace.id, user: null};
+  }
+  if (invocation.identity === "inbound") {
+    return {workspaceId: invocation.workspace.id, inbound: invocation.inbound.name};
   }
   return {
     workspaceId: invocation.workspace.id,
@@ -143,8 +173,9 @@ export default defineScript(({ invocation }) => {
 ```
 
 Cogover bỏ qua invocation metadata do caller tự gửi và dựng snapshot từ request
-context đã xác thực. Raw authentication data, token và credential không được đưa
-vào. Handler gọi bên ngoài Cogover không có invocation snapshot đã xác thực.
+context đã xác thực. Raw authentication data, token, inbound key và credential
+không được đưa vào. Handler gọi bên ngoài Cogover không có invocation snapshot đã
+xác thực.
 
 ### `createRouter<TSchema = EffectiveWorkspaceObjects>(): ScriptRouter<TSchema>`
 
@@ -463,6 +494,9 @@ interface TriggerContext<
   readonly schema: SchemaApi<Schema>;
   readonly log: ScriptLogger;
   readonly push: PushApi<Schema>;
+  readonly jobs: JobsApi;
+  readonly secrets: SecretsApi;
+  readonly crypto: CryptoApi;
 }
 
 interface TriggerInfo<Operation extends TriggerOperation = TriggerOperation> {
@@ -498,11 +532,11 @@ nên batch write hoặc import gọi handler một lần cho mỗi nhóm record 
 cho từng record. Hãy giữ `fields` ngắn gọn và đọc dữ liệu liên quan cho cả danh sách
 bằng một lời gọi `records.getMany` thay vì đọc riêng cho từng record.
 
-`data`, `schema`, `log`, `push` và `invocation` là chính các API mà script nhận được.
-Trigger context không có `input`, `request`, `response`, `state` hay `locks`; `push` bị
-từ chối trong trigger before-change.
-`trigger.operation` là operation của lần gọi hiện tại, `trigger.id` định danh đăng ký
-của trigger và `trigger.changeId` định danh thay đổi record đã gây ra lần gọi.
+`data`, `schema`, `log`, `invocation`, `push`, `jobs`, `secrets` và `crypto` là chính
+các API mà script nhận được. Trigger context không có `input`, `request`, `response`,
+`state` hay `locks`; `push` bị từ chối trong trigger before-change. `trigger.operation`
+là operation của lần gọi hiện tại, `trigger.id` định danh đăng ký của trigger và
+`trigger.changeId` định danh thay đổi record đã gây ra lần gọi.
 
 Mỗi `TriggerRecord` mô tả một record:
 
@@ -575,9 +609,12 @@ lại field formula và rollup, merge record chạy nền, cascade delete — kh
 trigger before-change; request chỉ validate input mà không lưu cũng vậy.
 
 - **Chỉ đọc.** Trigger before-change được đọc record và schema, nhưng mọi thao tác
-  ghi record, `fetch`, lock, ghi state và push message đều bị từ chối bằng `PermissionDeniedError`
-  có `details.reason` là `"TRIGGER_READ_ONLY"`. Quy tắc này áp dụng cho mọi danh
-  tính, kể cả `data.asSystem()`.
+  ghi record, `fetch`, lock, ghi state, push message, `jobs.enqueue`, `secrets.get` và
+  `crypto.hmacSha256` với key `{ secret }` đều bị từ chối bằng
+  `PermissionDeniedError` có `details.reason` là `"TRIGGER_READ_ONLY"`. Quy tắc này
+  áp dụng cho mọi danh tính, kể cả `data.asSystem()`. `crypto.sha256`,
+  `crypto.hmacSha256` với key tường minh, `crypto.randomBytes`, `crypto.randomUUID`
+  và `crypto.timingSafeEqual` vẫn dùng được.
 - **Danh tính.** `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi,
   với quyền của người đó, và `invocation` mô tả chính người này. Khi thay đổi không
   có người dùng, `invocation.identity` là `"system"` và `data.object()` chỉ hoạt động
@@ -638,11 +675,13 @@ export const triggers = [
 - **Giá trị đã lưu.** `record.id` luôn có giá trị. `record.new` chứa giá trị đúng như
   đã lưu, gồm record ID và các giá trị được gán trong lúc lưu, ví dụ auto number. Với
   record bị xoá, `record.new` là `null` và `record.old` chứa giá trị cuối cùng.
-- **Được ghi và gọi ra ngoài.** Ghi record và `fetch` hoạt động như trong script,
-  với cùng các giới hạn runtime. `data.object()` thực hiện dưới danh tính người đã
-  tạo ra thay đổi, và các quy tắc danh tính khác của trigger before-change cũng được
-  áp dụng. Context của trigger không có `state` và `locks`; `push` có sẵn và là cách thông
-  thường để làm mới các record handler đã sửa cho mọi người đang mở chúng.
+- **Được ghi và gọi ra ngoài.** Ghi record, `fetch`, `push`, `jobs.enqueue`,
+  `secrets.get` và `crypto` hoạt động như trong script, với cùng các giới hạn runtime.
+  `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi, và các quy tắc
+  danh tính khác của trigger before-change cũng được áp dụng. Context của trigger
+  không có `state` và `locks`; `push` là cách thông thường để làm mới các record
+  handler đã sửa cho mọi người đang mở chúng, còn việc dài hơn, hoặc việc cần
+  `state`/`locks`, thì enqueue một [background job](#background-job).
 - **Best-effort.** Cogover không bảo đảm handler after-change chạy đúng một lần.
   Handler đôi khi có thể chạy nhiều hơn một lần cho cùng một thay đổi, hoặc không
   chạy. Hãy viết mọi handler theo kiểu idempotent: `trigger.changeId` cùng với
@@ -667,6 +706,277 @@ export const triggers = [
   giữa chúng. Lần gọi được retry có thể chạy sau khi một thay đổi mới hơn của cùng
   record đã được xử lý, vì vậy hãy đọc lại record khi cần giá trị mới nhất.
 
+## Background job
+
+Background job chạy code của project ngoài một HTTP request: được enqueue bởi
+script, trigger, job khác hoặc quản trị viên, hoặc được khởi chạy theo lịch cron.
+Khai báo từng job bằng `defineJob` và liệt kê kết quả trong named export `jobs`
+của project. Default export vẫn là HTTP handler và trở thành tuỳ chọn với project
+chỉ khai báo job và trigger.
+
+Ví dụ này giả định `workspace.d.ts` đã khai báo Object `order` và các field được
+sử dụng bên dưới.
+
+```typescript
+import { defineJob } from "@cogover/sdk";
+
+interface RecalcPayload {
+  cursor?: string;
+}
+
+export const jobs = [
+  // Được enqueue từ route hoặc trigger; duyệt toàn bộ order, mỗi lần chạy một trang.
+  defineJob<RecalcPayload>({
+    key: "recalc_totals",
+    name: "Recalculate order totals",
+    timeoutMs: 60_000,
+  }, async ({ payload, data, jobs, log }) => {
+    const orders = data.object("order");
+    const page = await orders.records.list({
+      fields: ["subtotal", "tax"],
+      limit: 200,
+      ...(payload?.cursor ? { cursor: payload.cursor } : {}),
+    });
+    for (const order of page.items) {
+      await orders.records.update(order.id, {
+        total: (order.fields.subtotal ?? 0) + (order.fields.tax ?? 0),
+      });
+    }
+    if (page.nextCursor) {
+      // Tiếp tục trang kế tiếp trong một lần chạy mới thay vì một lần chạy dài.
+      await jobs.enqueue("recalc_totals", { cursor: page.nextCursor });
+      return;
+    }
+    log.info("Order totals recalculated");
+  }),
+
+  // Chạy hằng ngày lúc 02:00 theo múi giờ đã cho.
+  defineJob({
+    key: "cancel_stale_orders",
+    schedule: { cron: "0 2 * * *", timezone: "Asia/Ho_Chi_Minh" },
+  }, async ({ data }) => {
+    const orders = data.object("order");
+    const stale = await orders.records.list({
+      where: orders.fields.status.eq("new"),
+      fields: ["status"],
+      limit: 200,
+    });
+    for (const order of stale.items) {
+      await orders.records.update(order.id, { status: "cancelled" });
+    }
+  }),
+];
+```
+
+Cogover đọc cấu hình job khi một version của project được publish và áp dụng cấu
+hình đó trong thời gian version ấy đang active: `jobs.enqueue` chỉ nhận các key do
+version active khai báo, và lịch chỉ chạy khi version của nó đang active. Deactivate
+project sẽ gỡ các lịch của project. Một project khai báo tối đa 50 job.
+
+### `defineJob(config, handler): JobDefinition`
+
+```typescript
+function defineJob<
+  Payload = unknown,
+  Schema extends object = EffectiveWorkspaceObjects,
+>(config: JobConfig, handler: JobHandler<Payload, Schema>): JobDefinition;
+```
+
+`Payload` là kiểu của giá trị truyền cho `jobs.enqueue`; giá trị này không được
+validate lúc chạy, nên hãy xử lý payload như input của request. `defineJob`
+validate cấu hình ngay lập tức và ném `ValidationError` với mọi vi phạm, với key cấu
+hình không xác định hoặc với handler không phải function. Hàm trả về một
+`JobDefinition` đã freeze.
+
+```typescript
+interface JobConfig {
+  readonly key: string;
+  readonly name?: string;
+  readonly timeoutMs?: number;
+  readonly maxAttempts?: number;
+  readonly schedule?: JobSchedule;
+}
+
+interface JobSchedule {
+  readonly cron: string;
+  readonly timezone?: string;
+}
+```
+
+| Tuỳ chọn | Bắt buộc | Quy tắc và ý nghĩa |
+|---|---|---|
+| `key` | Có | Định danh job trong project. Bắt đầu bằng chữ cái ASCII, chứa chữ cái, chữ số hoặc `_`; tối đa 100 ký tự; duy nhất trong project không phân biệt hoa thường. Giữ key ổn định giữa các version: key mới là một job khác. |
+| `name` | Không | Tên hiển thị tối đa 250 ký tự. Mặc định là `key`. |
+| `timeoutMs` | Không | Số nguyên từ 1000 đến 60000; mặc định `30000`. Thời gian cho một lần thử. |
+| `maxAttempts` | Không | Số nguyên từ 1 đến 10; mặc định `5`. Tổng số lần thử của một lần chạy, tính cả lần đầu. |
+| `schedule` | Không | Chạy job tự động. `cron` có năm trường — phút, giờ, ngày trong tháng, tháng, thứ — và `timezone` là IANA time zone ID tối đa 64 ký tự, mặc định `"UTC"`. |
+
+Một trường cron là `*`, một số, khoảng `a-b`, danh sách `a,b`, bước `*/n` hoặc
+khoảng có bước `a-b/n`; các trường nhận phút 0–59, giờ 0–23, ngày 1–31, tháng 1–12
+và thứ 0–7 trong đó cả 0 và 7 đều là Chủ nhật. Tên như `MON`, các ký tự `L`, `W`,
+`#`, `?` và macro như `@daily` không được hỗ trợ. Chu kỳ ngắn nhất là một phút.
+Khoảng trắng giữa các trường được chuẩn hoá thành một dấu cách trong manifest.
+
+### `JobDefinition` và `JobManifest`
+
+```typescript
+interface JobManifest {
+  readonly key: string;
+  readonly name?: string;
+  readonly timeoutMs: number;
+  readonly maxAttempts: number;
+  readonly schedule?: { readonly cron: string; readonly timezone: string };
+}
+
+interface JobDefinition {
+  readonly key: string;
+  readonly config: JobManifest;
+  readonly __cogoverJobHandler: SandboxHandler;
+}
+```
+
+`config` là cấu hình đã chuẩn hoá dưới dạng JSON thuần được deep-freeze, với mọi
+giá trị mặc định đã áp dụng: `timeoutMs: 30000`, `maxAttempts: 5` và
+`schedule.timezone: "UTC"`. Các thiết lập tuỳ chọn không được cung cấp sẽ vắng mặt.
+`config` tách khỏi object đã truyền cho `defineJob`, nên sửa object đó về sau không
+có tác dụng. `__cogoverJobHandler` dành riêng cho Cogover; code của project không
+gọi nó.
+
+### Context của job handler
+
+```typescript
+type JobHandler<
+  Payload = unknown,
+  Schema extends object = EffectiveWorkspaceObjects,
+> = (context: JobContext<Payload, Schema>) => void | Promise<void>;
+
+interface JobContext<Payload = unknown, Schema extends object = EffectiveWorkspaceObjects> {
+  readonly job: JobInfo;
+  readonly payload: Payload | null;
+  readonly invocation: InvocationContext;
+  readonly data: DataApi<Schema>;
+  readonly schema: SchemaApi<Schema>;
+  readonly log: ScriptLogger;
+  readonly state: ProjectState;
+  readonly locks: DistributedLocks;
+  readonly jobs: JobsApi;
+  readonly secrets: SecretsApi;
+  readonly crypto: CryptoApi;
+}
+
+interface JobInfo {
+  readonly id: string;
+  readonly key: string;
+  readonly attempt: number;
+  readonly maxAttempts: number;
+  readonly source: "enqueue" | "schedule";
+  readonly runAt: number;
+  readonly enqueuedAt?: number;
+}
+```
+
+Handler có thể đồng bộ hoặc bất đồng bộ; giá trị trả về bị bỏ qua. `data`,
+`schema`, `log`, `invocation`, `state`, `locks`, `jobs`, `secrets` và `crypto` là
+chính các API mà script nhận được. Job context không có `input`, `request` hay
+`response`.
+
+- `job.id` định danh lần chạy và không đổi qua các lần thử; dùng nó làm idempotency
+  key cho các lời gọi ra ngoài. `job.attempt` bắt đầu từ 1.
+- `job.source` là `"enqueue"` với lần chạy do `jobs.enqueue` hoặc quản trị viên tạo
+  và `"schedule"` với lần chạy do lịch của job tạo. `job.runAt` là thời điểm lần
+  chạy đến hạn và `job.enqueuedAt` là thời điểm được enqueue; cả hai là Unix
+  millisecond, và `enqueuedAt` vắng mặt với lần chạy theo lịch.
+- `payload` là giá trị JSON đã truyền cho `jobs.enqueue`, hoặc `null` khi không
+  truyền gì hoặc lần chạy theo lịch. Đây là dữ liệu thuần, có thể sửa.
+
+### `jobs.enqueue(jobKey, payload?, options?): Promise<EnqueueResult>`
+
+```typescript
+interface JobsApi {
+  enqueue(jobKey: string, payload?: unknown, options?: EnqueueOptions): Promise<EnqueueResult>;
+}
+
+interface EnqueueOptions {
+  readonly delayMs?: number;
+  readonly runAt?: number;
+  readonly idempotencyKey?: string;
+}
+
+interface EnqueueResult {
+  readonly runId: string;
+  readonly duplicate: boolean;
+}
+```
+
+```typescript
+const { runId, duplicate } = await jobs.enqueue("sync_order", { orderId: order.id }, {
+  delayMs: 60_000,
+  idempotencyKey: `sync_order:${order.id}:${order.system.updatedAt}`,
+});
+```
+
+`jobKey` phải là job do version active khai báo; nếu không, Cogover ném
+`ValidationError`. `payload` là giá trị JSON bất kỳ, tối đa 65.536 byte UTF-8 sau
+khi serialize; `undefined` và `null` enqueue lần chạy không có payload. Giá trị mà
+JSON sẽ âm thầm thay đổi, như `NaN` hoặc instance của class, bị từ chối bằng
+`ValidationError`. `delayMs` là số nguyên từ 0 đến 2.592.000.000 (30 ngày) và
+`runAt` là thời điểm Unix millisecond không quá 30 ngày tới; truyền một trong hai
+hoặc không truyền, không truyền cả hai. `idempotencyKey` bắt đầu bằng chữ cái hoặc
+chữ số, chứa chữ cái, chữ số, `.`, `_`, `:` hoặc `-`, tối đa 128 ký tự: lần enqueue
+thứ hai của cùng job với cùng key khi lần chạy trước còn được lưu sẽ trả về lần
+chạy đó với `duplicate: true` thay vì tạo thêm. Lịch sử lần chạy được giữ 7 ngày.
+
+`enqueue` hoạt động trong script và route, trigger after-change, job và lời gọi
+inbound webhook. Trigger before-change bị từ chối bằng `PermissionDeniedError`
+(`details.reason === "TRIGGER_READ_ONLY"`), phiên phát triển local không có quyền
+ghi cũng vậy (`"DEVELOPMENT_SESSION_READ_ONLY"`). Một invocation enqueue tối đa
+50 lần chạy, và một project có tối đa 10.000 lần chạy đang chờ hoặc đang chạy; vượt
+quá sẽ ném `RateLimitError`. Khi job chưa được bật cho Workspace, lỗi là
+`CogoverApiError` với `code: "JOBS_DISABLED"`.
+
+### Quy tắc thực thi job
+
+- **Danh tính.** Lần chạy được enqueue từ script, route hoặc trigger chạy dưới danh
+  tính người dùng của invocation đó: `invocation` mô tả người dùng ấy và
+  `data.object()` thực hiện với quyền của người ấy. Lần chạy theo lịch, lần chạy do
+  quản trị viên enqueue và lần chạy được enqueue từ lời gọi inbound webhook không có
+  người dùng: `invocation.identity` là `"system"`, và `data.object()` chỉ hoạt động
+  nếu identity policy đã duyệt của project đặt `allowInternalSystem: true`; nếu
+  không, các lời gọi của nó ném `PermissionDeniedError` có `details.reason` là
+  `"IDENTITY_NOT_GRANTED"`. `data.asUser()` và `data.asSystem()` tuân theo identity
+  policy như thông thường.
+- **Capability.** Job làm được mọi việc script làm được: đọc và ghi record, gọi
+  `fetch`, dùng `state` và `locks`, enqueue job, đọc secret và dùng `crypto`, trong
+  giới hạn runtime của làn job.
+- **Thời gian.** Mỗi lần thử phải hoàn tất trong `timeoutMs`. Việc cần lâu hơn phải
+  được chia nhỏ: xử lý một trang, lưu cursor và enqueue lại chính job đó với cursor
+  trong payload, như ví dụ ở trên.
+- **Ít nhất một lần.** Cogover không bảo đảm một lần chạy được thực thi đúng một
+  lần: lần thử bị gián đoạn, ví dụ do restart, sẽ được bắt đầu lại. Hãy viết mọi
+  handler theo kiểu idempotent. `job.id` định danh lần chạy qua các lần thử, và
+  `idempotencyKey` của `enqueue` ngăn tạo lần chạy trùng.
+- **Retry.** Ném `RetryableError` khi handler thất bại vì lý do tạm thời, ví dụ dịch
+  vụ bên ngoài không sẵn sàng. Cogover sẽ thử lại sau, mỗi lần chờ lâu hơn, từ vài
+  giây đến khoảng nửa giờ, cho đến khi đã thử đủ `maxAttempts` lần. Lần thử vượt
+  `timeoutMs`, hoặc lần thử Cogover không chạy được vì lý do tạm thời, cũng được thử
+  lại theo cách đó. Mọi lỗi khác kết thúc lần chạy với trạng thái thất bại: lỗi được
+  ghi log và handler không chạy lại cho lần chạy đó.
+- **Thứ tự và đồng thời.** Các lần chạy thực thi không theo thứ tự bảo đảm, và hai
+  lần chạy của cùng project, kể cả cùng job, có thể thực thi cùng lúc. Dùng `locks`
+  khi một đoạn không được chạy đồng thời, và trì hoãn bằng `delayMs` hoặc `runAt`
+  thay vì chờ bên trong handler.
+- **Vòng lặp luôn kết thúc.** Thao tác ghi record do một lần chạy thực hiện mang
+  ngân sách tự động hoá của invocation đã enqueue nó (lần chạy theo lịch và lần
+  enqueue của quản trị viên bắt đầu với đủ ngân sách 10 bước), nên chuỗi job và
+  trigger khởi phát từ thao tác ghi record kết thúc giống chuỗi trigger. Enqueue job
+  không dùng bước nào: job tự enqueue chính nó phải tự dừng, ví dụ khi hết cursor.
+
+Job theo lịch tạo một lần chạy cho mỗi thời điểm lịch khớp, theo múi giờ của lịch;
+lần chạy có thể bắt đầu muộn hơn phút đã lên lịch một chút khi tải cao. Thời điểm bị
+bỏ lỡ trong lúc project không active sẽ không được chạy bù. Lần chạy vẫn được tạo
+khi lần chạy theo lịch trước đó chưa xong, nên lịch có việc có thể kéo dài hơn chu kỳ
+của nó nên tự bảo vệ bằng lock.
+
 ## Outbound HTTP `fetch`
 
 ```typescript
@@ -677,6 +987,7 @@ interface CogoverFetchInit {
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: string;
   readonly timeoutMs?: number;
+  readonly credential?: string;
 }
 
 interface CogoverFetchHeaders {
@@ -735,6 +1046,179 @@ Lỗi được ném dưới dạng `CogoverApiError` với code `FETCH_DISABLED`
 `FETCH_FAILED`; quota dùng `RateLimitError`. Với POST/PUT/PATCH/DELETE bị timeout
 hoặc mất response, remote server có thể đã xử lý request. Hãy dùng idempotency key
 của API đích và không retry mù.
+
+### Xác thực bằng credential
+
+`credential` là tên một credential mà quản trị viên đã lưu cho project (xem
+[Secret và credential](#secret-và-credential)). Cogover thêm header xác thực của
+credential vào request, nên code của project không bao giờ chạm tới giá trị:
+
+```typescript
+const response = await fetch("https://erp.example.com/v1/orders", {
+  method: "POST",
+  credential: "erp_api",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ id: "ORD-1" }),
+});
+```
+
+Tuỳ cách credential được tạo, Cogover gửi `Authorization: Bearer <value>`,
+`Authorization: Basic <base64 của value>` hoặc một header với tên đã cấu hình. Tên
+phải bắt đầu bằng chữ cái và chứa tối đa 64 chữ cái, chữ số hoặc dấu gạch dưới.
+Credential chỉ được gửi tới các host mà quản trị viên cho phép; request tới host
+khác, request tự đặt cùng header, hoặc tên không phải credential đang active sẽ
+thất bại với `FETCH_BLOCKED`. Redirect không bao giờ được follow, nên credential
+không bao giờ rời khỏi host được phép.
+
+## Secret và credential
+
+Quản trị viên lưu secret cho project qua management API của Cogover. Mỗi secret
+hoặc là **secret** có giá trị được code đọc bằng `secrets.get`, hoặc là
+**credential** chỉ dùng cho `fetch` (xem
+[Xác thực bằng credential](#xác-thực-bằng-credential)); giá trị của credential
+không bao giờ đọc được từ code. Giá trị được lưu mã hoá và không bao giờ được
+management API trả về, ghi log hay đưa vào thông báo lỗi.
+
+```typescript
+interface SecretsApi {
+  get(name: string): Promise<string>;
+}
+```
+
+```typescript
+const token = await secrets.get("erp_token");
+const response = await fetch("https://erp.example.com/v1/orders", {
+  headers: { authorization: `Bearer ${token}` },
+});
+```
+
+### `secrets.get(name): Promise<string>`
+
+Trả về giá trị hiện tại của secret. `name` bắt đầu bằng chữ cái và chứa tối đa 64
+chữ cái, chữ số hoặc dấu gạch dưới; tên khác ném `ValidationError` trước khi gọi.
+Secret không tồn tại hoặc đã bị disable ném `ValidationError` với thông báo
+`Secret '<name>' is not available`, còn credential ném `ValidationError` với
+`Secret '<name>' is a credential and cannot be read`.
+
+`secrets.get` hoạt động trong script và route, trigger after-change, job và lời gọi
+inbound webhook. Trigger before-change bị từ chối bằng `PermissionDeniedError`
+(`details.reason === "TRIGGER_READ_ONLY"`); phiên phát triển local chỉ đọc được
+secret khi quản trị viên cho phép, nếu không reason là `"SECRETS_NOT_ALLOWED"`.
+Một invocation đọc tối đa 20 secret; đọc lại cùng tên trong cùng invocation trả về
+giá trị đã cache. Khi secret chưa được bật cho Workspace, lỗi là `CogoverApiError`
+với `code: "SECRETS_DISABLED"`. Không bao giờ ghi giá trị secret vào log, record,
+state hay response. Để ký dữ liệu bằng secret mà không đọc giá trị, dùng
+`crypto.hmacSha256({ secret: name }, data)`.
+
+## Mã hoá và chữ ký
+
+`crypto` cung cấp hash, message authentication và số ngẫu nhiên qua implementation
+do Cogover quản lý. Import từ `@cogover/sdk` hoặc đọc từ `context.crypto`; cả hai là
+cùng một object đã freeze.
+
+```typescript
+const crypto: CryptoApi;
+
+interface CryptoApi {
+  sha256(data: string | Uint8Array, encoding?: "hex" | "base64"): Promise<string>;
+  hmacSha256(
+    key: string | Uint8Array | { readonly secret: string },
+    data: string | Uint8Array,
+    encoding?: "hex" | "base64",
+  ): Promise<string>;
+  randomBytes(length: number): Promise<Uint8Array>;
+  randomUUID(): Promise<string>;
+  timingSafeEqual(a: string | Uint8Array, b: string | Uint8Array): boolean;
+}
+```
+
+```typescript
+import { crypto } from "@cogover/sdk";
+
+const digest = await crypto.sha256(JSON.stringify(payload));
+const signature = await crypto.hmacSha256({ secret: "webhook_secret" }, request.rawBody ?? "");
+if (!crypto.timingSafeEqual(signature, request.headers["x-signature"] ?? "")) {
+  return response.empty({ status: 401 });
+}
+const token = await crypto.randomUUID();
+```
+
+- `sha256(data, encoding?)` trả về digest SHA-256 của `data`. Chuỗi được hash dưới
+  dạng UTF-8; `Uint8Array` được hash nguyên trạng. `encoding` là `"hex"` (mặc định)
+  hoặc `"base64"`.
+- `hmacSha256(key, data, encoding?)` trả về HMAC-SHA256 của `data`. Key là chuỗi
+  không rỗng (UTF-8), `Uint8Array` không rỗng, hoặc `{ secret: name }` để dùng một
+  secret của project mà không đọc giá trị; secret được đặt tên phải đọc được bằng
+  `secrets.get` trong cùng context và được tính là một lần đọc secret.
+- `randomBytes(length)` trả về `length` byte ngẫu nhiên an toàn cho mật mã;
+  `length` là số nguyên từ 1 đến 1024.
+- `randomUUID()` trả về UUID version 4 ngẫu nhiên như
+  `"00000000-0000-4000-8000-000000000000"`.
+- `timingSafeEqual(a, b)` so sánh hai chuỗi hoặc hai mảng byte trong thời gian
+  hằng và trả về `false` khi độ dài khác nhau. Chuỗi được so sánh dưới dạng byte
+  UTF-8. Dùng hàm này cho mọi phép so sánh chữ ký, token hoặc key.
+
+`data` và key tường minh giới hạn 256 KiB; giá trị lớn hơn và đối số không hợp lệ
+ném `ValidationError` trước khi gọi. Mọi thao tác trừ `timingSafeEqual` là một
+capability call và được tính vào giới hạn của invocation. Các thao tác hoạt động
+trong mọi context, kể cả trigger before-change, ngoại trừ key `{ secret }` tuân theo
+quy tắc của `secrets.get`. Phiên bản này chỉ hỗ trợ SHA-256.
+
+## Inbound webhook
+
+Quản trị viên có thể tạo **inbound access** cho project để một hệ thống bên ngoài
+gọi route mà không cần phiên người dùng Cogover. Hệ thống bên ngoài nhận URL có dạng
+
+```text
+https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/{projectSlug}/hooks/{inboundId}/{route}
+```
+
+và xác thực mỗi lời gọi bằng inbound key hoặc chữ ký HMAC đã cấu hình cho inbound
+access. Cogover kiểm tra key hoặc chữ ký, áp dụng rate limit và từ chối lời gọi
+trước khi bất kỳ code nào của project chạy. Route handler thấy lời gọi như vậy với
+`request.path === "/hooks/{route}"`: đăng ký route webhook dưới `/hooks/`, và
+inbound ID không nằm trong path.
+
+```typescript
+import { createRouter } from "@cogover/sdk";
+
+const router = createRouter();
+router.post("/hooks/payments", async ({ request, invocation, crypto, jobs, response }) => {
+  if (invocation.identity !== "inbound") return response.empty({ status: 403 });
+
+  // Tuỳ chọn: kiểm tra chữ ký riêng của hệ thống bên ngoài trên raw body.
+  const expected = await crypto.hmacSha256({ secret: "payment_signing_secret" }, request.rawBody ?? "");
+  if (!crypto.timingSafeEqual(expected, request.headers["x-payment-signature"] ?? "")) {
+    return response.empty({ status: 401 });
+  }
+
+  const event = request.body as { id: string; orderId: string };
+  await jobs.enqueue("sync_payment", event, { idempotencyKey: `payment:${event.id}` });
+  return response.json({ received: true }, { status: 202 });
+});
+export default router.toHandler();
+```
+
+- **Danh tính.** `invocation.identity` là `"inbound"`, `invocation.user` là `null`
+  và `invocation.inbound` chứa `id`, `name` và `mode` xác thực của inbound access.
+  `data.object()` thực hiện dưới danh tính system và chỉ hoạt động nếu identity
+  policy đã duyệt của project đặt `allowInternalSystem: true`; nếu không, các lời
+  gọi của nó ném `PermissionDeniedError` có `details.reason` là
+  `"IDENTITY_NOT_GRANTED"`. `data.asUser()` và `data.asSystem()` tuân theo identity
+  policy như thông thường.
+- **Body.** Request body giới hạn 256 KiB. Khi body là JSON object, nó là
+  `request.body`; body dạng form, text hoặc dạng khác để `request.body` rỗng (`{}`).
+  `request.rawBody` luôn chứa body đúng như đã nhận, dưới dạng chuỗi UTF-8, và
+  `request.contentType` là `Content-Type` của request, nên handler có thể kiểm tra
+  chữ ký hoặc tự parse định dạng khác.
+- **Response.** Giá trị trả về của handler và các helper `response` hoạt động như
+  với mọi route. Giữ handler ngắn: xác nhận sự kiện rồi enqueue một job cho việc
+  thực sự, để hệ thống bên ngoài nhận trả lời nhanh và các lần retry không chồng
+  lên xử lý chậm.
+- **Retry.** Hệ thống bên ngoài thường gửi lại webhook không nhận được response
+  2xx, nên handler có thể thấy cùng một sự kiện nhiều lần. Dùng định danh riêng của
+  sự kiện làm `idempotencyKey` cho job được enqueue, hoặc làm key trong state.
+  Header `Idempotency-Key` hoạt động như với mọi route.
 
 ## Record API
 
@@ -1395,11 +1879,17 @@ Các lỗi dịch vụ được SDK map sang các error trên. Các error giữ:
 - `error.message`: thông báo gốc; `error.details` giữ chi tiết kèm theo, gồm `r`.
 
 `RetryableError` (`code: "RETRYABLE"`) do code của project ném, SDK không bao giờ tự
-ném. Handler của trigger after-change ném lỗi này để báo một lỗi tạm thời, và Cogover
-sẽ chạy lại handler sau (xem
-[Quy tắc thực thi after-change](#quy-tắc-thực-thi-after-change)). Ở những nơi khác
-lỗi này không có ý nghĩa đặc biệt: script để lỗi thoát ra sẽ trả HTTP 422, và trigger
-before-change ném lỗi này sẽ làm thao tác ghi bị từ chối như mọi lỗi khác.
+ném. Handler của trigger after-change hoặc job handler ném lỗi này để báo một lỗi
+tạm thời, và Cogover sẽ chạy lại handler sau (xem
+[Quy tắc thực thi after-change](#quy-tắc-thực-thi-after-change) và
+[Quy tắc thực thi job](#quy-tắc-thực-thi-job)). Ở những nơi khác lỗi này không có
+ý nghĩa đặc biệt: script để lỗi thoát ra sẽ trả HTTP 422, và trigger before-change
+ném lỗi này sẽ làm thao tác ghi bị từ chối như mọi lỗi khác.
+
+`jobs.enqueue`, `secrets.get` và `crypto` thất bại với `ValidationError`,
+`PermissionDeniedError` hoặc `RateLimitError` như mô tả trong mục của chúng, và với
+`CogoverApiError` có `code` là `JOBS_DISABLED` hoặc `SECRETS_DISABLED` khi tính
+năng chưa được bật cho Workspace.
 
 Script có thể bắt lỗi và tự chọn mã/thông báo trả cho client, không cần forward lỗi gốc.
 Thông báo public trong `msg`, `message` và các field tương tự luôn phải viết bằng
