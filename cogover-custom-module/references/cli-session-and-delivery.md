@@ -10,7 +10,7 @@ cogover-dev --version
 cogover-dev --help
 ```
 
-Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
+Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`). Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
 
 ```json
 {

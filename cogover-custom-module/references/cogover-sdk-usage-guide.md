@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.9.0` ngày `2026-09-23`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), chọn danh tính, record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.10.0` ngày `2026-09-24`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -91,6 +91,39 @@ export default defineScript(({ invocation }) => {
 Chỉ dùng Record API khi cần các field nghiệp vụ Personnel đầy đủ và mới nhất như
 phòng ban, chức danh, quản lý hoặc custom field. Snapshot chỉ chứa các field đã
 được tài liệu hoá, không chứa thông tin xác thực thô hay credential của Cogover.
+
+### Cho phép thao tác theo role trong Workspace
+
+`invocation.user.membership` còn cho biết người gọi có phải Super Admin của
+Workspace hiện tại hay không và đang giữ những role nào trong Workspace đó. Ví dụ,
+chỉ cho phép duyệt khi người dùng là Super Admin hoặc có role người duyệt:
+
+```typescript
+const APPROVER_ROLE_ID = "RO0000000001";
+
+export default defineScript(({ invocation }) => {
+  const user = invocation.user;
+  const canApprove = user !== null && (user.membership.isSuperAdmin
+    || user.membership.roles.some((role) => role.id === APPROVER_ROLE_ID));
+  if (!canApprove) {
+    return {approved: false, reason: "Only approvers can approve this order"};
+  }
+  return {approved: true};
+});
+```
+
+- Các giá trị mô tả role của người gọi trong Workspace hiện tại. Mỗi role chỉ có
+  `id` và `name`; quyền của role không được cung cấp.
+- So sánh role theo `id`, không theo tên: role có thể được đổi tên và `id` của
+  role khác nhau giữa các Workspace.
+- Cogover vẫn kiểm soát quyền truy cập record và field theo danh tính của người
+  dùng. Hãy dùng các field này cho quy tắc nghiệp vụ, không thay thế cho quy tắc
+  bảo mật.
+- Invocation HTTP phản ánh role tại thời điểm gửi request. Record trigger và
+  background job có thể nhận thay đổi role chậm tối đa khoảng một phút.
+- Khi phát triển local bằng Cogover Dev CLI, các giá trị được lấy lúc development
+  session bắt đầu. Hãy khởi động lại `cogover-dev` để nhận thay đổi role.
+- Invocation `system` và `inbound` có `user: null` nên không có membership.
 
 ## Lọc và sắp xếp record
 

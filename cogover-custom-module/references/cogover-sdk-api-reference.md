@@ -106,10 +106,17 @@ interface CurrentWorkspace {
   readonly numberFormat?: string;
 }
 
+interface CurrentWorkspaceRole {
+  readonly id: string;
+  readonly name: string;
+}
+
 interface CurrentWorkspaceMembership {
   readonly personnelId?: string;
   readonly language?: string;
   readonly timezone?: string;
+  readonly isSuperAdmin: boolean;                  // Có role Super Admin của workspace
+  readonly roles: readonly CurrentWorkspaceRole[]; // Sắp xếp theo tên
 }
 
 interface CurrentUser {
@@ -176,6 +183,38 @@ Cogover bỏ qua invocation metadata do caller tự gửi và dựng snapshot t�
 context đã xác thực. Raw authentication data, token, inbound key và credential
 không được đưa vào. Handler gọi bên ngoài Cogover không có invocation snapshot đã
 xác thực.
+
+### Role của người dùng hiện tại trong Workspace
+
+`user.membership` mô tả tư cách thành viên của người gọi trong Workspace hiện tại:
+
+- `isSuperAdmin` là `true` khi một trong các role của người dùng là role quản trị
+  cao nhất (Super Admin) của Workspace, ngược lại là `false`.
+- `roles` liệt kê các role được gán cho người dùng trong Workspace hiện tại, sắp
+  xếp theo tên. Mỗi `CurrentWorkspaceRole` chỉ có `id` và `name`; danh sách rỗng
+  khi người dùng không có role nào. Quyền của role không được cung cấp.
+
+So sánh role theo `id`: role có thể được đổi tên, và cùng một tên role có `id`
+khác nhau ở mỗi Workspace. Quyền truy cập record và field vẫn do Cogover kiểm soát
+theo danh tính của người dùng, vì vậy hãy dùng các field này cho quy tắc nghiệp
+vụ, chẳng hạn ai được duyệt đơn hàng, chứ không thay thế cho quy tắc bảo mật.
+
+```typescript
+const APPROVER_ROLE_ID = "RO0000000001";
+
+export default defineScript(({ invocation }) => {
+  const user = invocation.user;
+  const canApprove = user !== null && (user.membership.isSuperAdmin
+    || user.membership.roles.some((role) => role.id === APPROVER_ROLE_ID));
+  return {canApprove};
+});
+```
+
+Invocation HTTP phản ánh role của người dùng tại thời điểm gửi request. Record
+trigger và background job có thể nhận thay đổi role chậm tối đa khoảng một phút.
+Khi phát triển local bằng Cogover Dev CLI, các giá trị được lấy lúc development
+session bắt đầu; hãy khởi động lại `cogover-dev` để nhận thay đổi role. Invocation
+`system` hoặc `inbound` có `user: null` nên không có membership.
 
 ### `createRouter<TSchema = EffectiveWorkspaceObjects>(): ScriptRouter<TSchema>`
 
