@@ -610,11 +610,11 @@ trigger before-change; request chỉ validate input mà không lưu cũng vậy.
 
 - **Chỉ đọc.** Trigger before-change được đọc record và schema, nhưng mọi thao tác
   ghi record, `fetch`, lock, ghi state, push message, `jobs.enqueue`, `secrets.get` và
-  `crypto.hmacSha256` với key `{ secret }` đều bị từ chối bằng
+  mọi thao tác `crypto` với key `{ secret }` đều bị từ chối bằng
   `PermissionDeniedError` có `details.reason` là `"TRIGGER_READ_ONLY"`. Quy tắc này
-  áp dụng cho mọi danh tính, kể cả `data.asSystem()`. `crypto.sha256`,
-  `crypto.hmacSha256` với key tường minh, `crypto.randomBytes`, `crypto.randomUUID`
-  và `crypto.timingSafeEqual` vẫn dùng được.
+  áp dụng cho mọi danh tính, kể cả `data.asSystem()`. Mọi thao tác `crypto` với key
+  truyền trực tiếp trong lời gọi vẫn dùng được, cùng với `crypto.sha256`,
+  `crypto.randomBytes`, `crypto.randomUUID` và `crypto.timingSafeEqual`.
 - **Danh tính.** `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi,
   với quyền của người đó, và `invocation` mô tả chính người này. Khi thay đổi không
   có người dùng, `invocation.identity` là `"system"` và `data.object()` chỉ hoạt động
@@ -1107,17 +1107,29 @@ secret khi quản trị viên cho phép, nếu không reason là `"SECRETS_NOT_A
 Một invocation đọc tối đa 20 secret; đọc lại cùng tên trong cùng invocation trả về
 giá trị đã cache. Khi secret chưa được bật cho Workspace, lỗi là `CogoverApiError`
 với `code: "SECRETS_DISABLED"`. Không bao giờ ghi giá trị secret vào log, record,
-state hay response. Để ký dữ liệu bằng secret mà không đọc giá trị, dùng
-`crypto.hmacSha256({ secret: name }, data)`.
+state hay response. Để ký, mã hoá hoặc giải mã bằng secret mà không đọc giá trị,
+truyền `{ secret: name }` làm key của một thao tác [`crypto`](#mã-hoá-và-chữ-ký).
 
 ## Mã hoá và chữ ký
 
-`crypto` cung cấp hash, message authentication và số ngẫu nhiên qua implementation
-do Cogover quản lý. Import từ `@cogover/sdk` hoặc đọc từ `context.crypto`; cả hai là
-cùng một object đã freeze.
+`crypto` cung cấp hash, message authentication, số ngẫu nhiên, mã hoá AES và RSA,
+cùng chữ ký RSA và ECDSA qua implementation do Cogover quản lý. Import từ
+`@cogover/sdk` hoặc đọc từ `context.crypto`; cả hai là cùng một object đã freeze.
 
 ```typescript
 const crypto: CryptoApi;
+
+type BinaryEncoding = "base64" | "base64url" | "hex";
+type DecryptOutput = "utf8" | "bytes" | BinaryEncoding;
+
+interface SecretKeyReference {
+  readonly secret: string;
+}
+type AesKey =
+  | string
+  | Uint8Array
+  | (SecretKeyReference & { readonly encoding?: "utf8" | "base64" | "hex" });
+type AsymmetricKey = string | SecretKeyReference;
 
 interface CryptoApi {
   sha256(data: string | Uint8Array, encoding?: "hex" | "base64"): Promise<string>;
@@ -1129,8 +1141,40 @@ interface CryptoApi {
   randomBytes(length: number): Promise<Uint8Array>;
   randomUUID(): Promise<string>;
   timingSafeEqual(a: string | Uint8Array, b: string | Uint8Array): boolean;
+
+  aesEncrypt(key: AesKey, data: string | Uint8Array, options?: AesEncryptOptions): Promise<AesEncryptResult>;
+  aesDecrypt(key: AesKey, ciphertext: string | Uint8Array, options: AesDecryptOptions): Promise<string>;
+  aesDecrypt(
+    key: AesKey,
+    ciphertext: string | Uint8Array,
+    options: AesDecryptOptions & { readonly output: "bytes" },
+  ): Promise<Uint8Array>;
+  rsaEncrypt(publicKey: AsymmetricKey, data: string | Uint8Array, options?: RsaEncryptOptions): Promise<string>;
+  rsaDecrypt(privateKey: AsymmetricKey, ciphertext: string | Uint8Array, options?: RsaDecryptOptions): Promise<string>;
+  rsaDecrypt(
+    privateKey: AsymmetricKey,
+    ciphertext: string | Uint8Array,
+    options: RsaDecryptOptions & { readonly output: "bytes" },
+  ): Promise<Uint8Array>;
+  sign(
+    algorithm: SignatureAlgorithm,
+    privateKey: AsymmetricKey,
+    data: string | Uint8Array,
+    options?: SignatureOptions,
+  ): Promise<string>;
+  verify(
+    algorithm: SignatureAlgorithm,
+    publicKey: AsymmetricKey,
+    data: string | Uint8Array,
+    signature: string | Uint8Array,
+    options?: SignatureOptions,
+  ): Promise<boolean>;
 }
 ```
+
+`aesDecrypt` và `rsaDecrypt` trả về chuỗi, trừ khi `output` là `"bytes"`; khi
+`output` chỉ được biết là một `DecryptOutput`, kiểu kết quả là
+`string | Uint8Array`.
 
 ```typescript
 import { crypto } from "@cogover/sdk";
@@ -1143,13 +1187,14 @@ if (!crypto.timingSafeEqual(signature, request.headers["x-signature"] ?? "")) {
 const token = await crypto.randomUUID();
 ```
 
+### Hash, HMAC và số ngẫu nhiên
+
 - `sha256(data, encoding?)` trả về digest SHA-256 của `data`. Chuỗi được hash dưới
   dạng UTF-8; `Uint8Array` được hash nguyên trạng. `encoding` là `"hex"` (mặc định)
   hoặc `"base64"`.
 - `hmacSha256(key, data, encoding?)` trả về HMAC-SHA256 của `data`. Key là chuỗi
   không rỗng (UTF-8), `Uint8Array` không rỗng, hoặc `{ secret: name }` để dùng một
-  secret của project mà không đọc giá trị; secret được đặt tên phải đọc được bằng
-  `secrets.get` trong cùng context và được tính là một lần đọc secret.
+  secret của project mà không đọc giá trị.
 - `randomBytes(length)` trả về `length` byte ngẫu nhiên an toàn cho mật mã;
   `length` là số nguyên từ 1 đến 1024.
 - `randomUUID()` trả về UUID version 4 ngẫu nhiên như
@@ -1158,11 +1203,214 @@ const token = await crypto.randomUUID();
   hằng và trả về `false` khi độ dài khác nhau. Chuỗi được so sánh dưới dạng byte
   UTF-8. Dùng hàm này cho mọi phép so sánh chữ ký, token hoặc key.
 
-`data` và key tường minh giới hạn 256 KiB; giá trị lớn hơn và đối số không hợp lệ
-ném `ValidationError` trước khi gọi. Mọi thao tác trừ `timingSafeEqual` là một
-capability call và được tính vào giới hạn của invocation. Các thao tác hoạt động
-trong mọi context, kể cả trigger before-change, ngoại trừ key `{ secret }` tuân theo
-quy tắc của `secrets.get`. Phiên bản này chỉ hỗ trợ SHA-256.
+### Key
+
+Mọi key có thể truyền trực tiếp trong lời gọi hoặc dưới dạng `{ secret: name }`.
+Key từ secret do Cogover resolve và giá trị không bao giờ tới code của project;
+secret được đặt tên phải đọc được bằng `secrets.get` trong cùng context và được
+tính là một lần đọc secret. Hãy lưu mọi private key và mọi AES key thành secret của
+project; key viết trong source code hiển thị với mọi người đọc được project.
+
+- **AES key** dài 16, 24 hoặc 32 byte (AES-128, AES-192, AES-256). Chuỗi được dùng
+  theo byte UTF-8 của nó, `Uint8Array` được dùng nguyên trạng. Với secret,
+  `encoding` cho biết giá trị secret chứa key ra sao: `"utf8"` (mặc định) dùng chính
+  văn bản đó, còn `"base64"` hoặc `"hex"` giải mã trước, bỏ qua khoảng trắng ở hai
+  đầu.
+- **RSA key và EC key** (`AsymmetricKey`) là văn bản PEM, hoặc phần thân base64 của
+  PEM không có các dòng `-----BEGIN` (DER dạng `PUBLIC KEY` cho public key và dạng
+  `PRIVATE KEY` cho private key). Văn bản đứng trước khối PEM và khối
+  `EC PARAMETERS` được bỏ qua.
+
+| Key | Loại PEM được chấp nhận |
+|---|---|
+| Public key (`rsaEncrypt`, `verify`) | `PUBLIC KEY` (SubjectPublicKeyInfo), `RSA PUBLIC KEY` (PKCS #1), `CERTIFICATE` (X.509; chỉ dùng public key của nó) |
+| Private key (`rsaDecrypt`, `sign`) | `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `EC PRIVATE KEY` (SEC1) |
+
+RSA key phải dài 2048 đến 4096 bit. EC key phải dùng curve P-256, P-384 hoặc P-521.
+Private key đã mã hoá (`ENCRYPTED PRIVATE KEY`, hoặc PEM có header `Proc-Type`) và
+key OpenSSH không được hỗ trợ; hãy lưu private key PKCS #8 chưa mã hoá thành secret.
+Văn bản key giới hạn 16.384 ký tự. Certificate không được kiểm tra hạn dùng, thu hồi
+hay bên phát hành: nó chỉ là vật chứa public key.
+
+### `crypto.aesEncrypt(key, data, options?): Promise<AesEncryptResult>`
+
+```typescript
+type AesMode = "GCM" | "CBC";
+
+interface AesEncryptOptions {
+  readonly mode?: AesMode;              // Mặc định "GCM"
+  readonly iv?: string | Uint8Array;    // Mặc định: ngẫu nhiên
+  readonly aad?: string | Uint8Array;   // Chỉ GCM
+  readonly separateTag?: boolean;       // Chỉ GCM, mặc định false
+  readonly encoding?: BinaryEncoding;   // Mặc định "base64"
+}
+
+interface AesEncryptResult {
+  readonly ciphertext: string;
+  readonly iv: string;
+  readonly tag?: string;                // Chỉ khi có separateTag
+}
+```
+
+Mã hoá `data` (chuỗi được mã hoá dạng UTF-8) và trả về ciphertext cùng IV theo
+`encoding`.
+
+- `"GCM"` (mặc định) là mã hoá có xác thực: khi giải mã sẽ phát hiện mọi thay đổi
+  của ciphertext, IV, tag hoặc `aad`. `ciphertext` là dữ liệu đã mã hoá, nối tiếp
+  bởi authentication tag 16 byte, đúng dạng mà Java, .NET và Web Crypto dùng. Với
+  `separateTag: true`, tag được trả riêng trong `tag`, như các hệ thống xây trên
+  Node.js hoặc OpenSSL thường yêu cầu.
+- `"CBC"` dùng padding PKCS #7. Mode này không phát hiện thay đổi của ciphertext;
+  chỉ dùng khi hệ thống bên ngoài bắt buộc, và xác thực ciphertext bằng cách khác,
+  ví dụ `hmacSha256`.
+- Khi không truyền `iv`, một IV ngẫu nhiên được tạo: 12 byte cho GCM và 16 byte cho
+  CBC. `iv` truyền vào phải dài 12 đến 16 byte với GCM và đúng 16 byte với CBC;
+  `iv` dạng chuỗi được giải mã theo `encoding`. **Không bao giờ dùng lại cùng một IV
+  với cùng một key GCM**: việc đó phá vỡ cả tính bảo mật lẫn khả năng xác thực.
+  Chỉ truyền IV khi hệ thống bên ngoài quy định.
+- `aad` là dữ liệu bổ sung được xác thực nhưng không mã hoá, ví dụ ID của record;
+  chuỗi được mã hoá dạng UTF-8. Khi giải mã phải truyền đúng `aad` đó.
+
+### `crypto.aesDecrypt(key, ciphertext, options): Promise<string | Uint8Array>`
+
+```typescript
+interface AesDecryptOptions {
+  readonly mode?: AesMode;              // Mặc định "GCM"
+  readonly iv: string | Uint8Array;
+  readonly tag?: string | Uint8Array;   // Chỉ GCM, khi tag không nối vào ciphertext
+  readonly aad?: string | Uint8Array;   // Chỉ GCM
+  readonly encoding?: BinaryEncoding;   // Của ciphertext, iv và tag dạng chuỗi; mặc định "base64"
+  readonly output?: DecryptOutput;      // Mặc định "utf8"
+}
+```
+
+Giải mã một ciphertext AES. `iv` là bắt buộc. Ở mode GCM, 16 byte cuối của
+`ciphertext` là tag, trừ khi truyền `tag`. `output` chọn dạng kết quả: `"utf8"`
+(mặc định) giải mã plaintext thành văn bản UTF-8 và ném `ValidationError` nếu nó
+không phải UTF-8 hợp lệ, `"bytes"` trả về `Uint8Array`, còn `"base64"`,
+`"base64url"` hoặc `"hex"` trả về byte của plaintext theo encoding đó.
+
+Sai key, IV, tag hoặc `aad`, ciphertext bị sửa, hoặc padding CBC không hợp lệ đều
+ném `CogoverApiError` với `code: "DECRYPTION_FAILED"`. Lỗi giống nhau cho mọi
+nguyên nhân để kết quả không làm lộ thông tin về key hay plaintext.
+
+```typescript
+import { crypto, CogoverApiError, defineScript } from "@cogover/sdk";
+
+export default defineScript(async ({ request }) => {
+  const { data, iv, tag } = request.body as { data: string; iv: string; tag: string };
+  try {
+    const json = await crypto.aesDecrypt({ secret: "partner_aes_key", encoding: "base64" }, data, { iv, tag });
+    return { payment: JSON.parse(json) };
+  } catch (error) {
+    if (error instanceof CogoverApiError && error.code === "DECRYPTION_FAILED") {
+      return { r: 1001, msg: "The payload could not be decrypted." };
+    }
+    throw error;
+  }
+});
+```
+
+### `crypto.rsaEncrypt(publicKey, data, options?)` và `crypto.rsaDecrypt(privateKey, ciphertext, options?)`
+
+```typescript
+type RsaPadding = "OAEP-SHA256" | "OAEP-SHA1" | "PKCS1";
+
+interface RsaEncryptOptions {
+  readonly padding?: RsaPadding;        // Mặc định "OAEP-SHA256"
+  readonly encoding?: BinaryEncoding;   // Của ciphertext; mặc định "base64"
+}
+
+interface RsaDecryptOptions {
+  readonly padding?: RsaPadding;        // Mặc định "OAEP-SHA256"
+  readonly encoding?: BinaryEncoding;   // Của ciphertext dạng chuỗi; mặc định "base64"
+  readonly output?: DecryptOutput;      // Mặc định "utf8"
+}
+```
+
+`rsaEncrypt` mã hoá `data` (chuỗi được mã hoá dạng UTF-8) bằng RSA public key và
+trả về ciphertext theo `encoding`. `rsaDecrypt` giải mã bằng private key tương ứng
+và trả về plaintext theo `output`, giống `aesDecrypt`.
+
+- `"OAEP-SHA256"` (mặc định) là RSA-OAEP với SHA-256, và hàm sinh mask MGF1 cũng
+  dùng SHA-256, như Web Crypto, Node.js và OpenSSL. `"OAEP-SHA1"` dùng SHA-1 cho
+  cả hai. Một số code Java viết `OAEPWithSHA-256AndMGF1Padding` vẫn để MGF1 dùng
+  SHA-1 và không tương thích với cả hai lựa chọn; hãy hỏi hệ thống bên kia MGF1 của
+  họ dùng digest nào.
+- `"PKCS1"` là padding PKCS #1 v1.5. Chỉ dùng khi hệ thống bên ngoài bắt buộc.
+- RSA chỉ mã hoá được lượng dữ liệu nhỏ: tối đa bằng kích thước key tính theo byte
+  trừ 66 byte với `"OAEP-SHA256"`, trừ 42 với `"OAEP-SHA1"` và trừ 11 với
+  `"PKCS1"` — tức 190, 214 và 245 byte với key 2048 bit. Dữ liệu lớn hơn ném
+  `ValidationError`. Để gửi nhiều hơn, mã hoá dữ liệu bằng `aesEncrypt` với một key
+  ngẫu nhiên từ `randomBytes(32)` và chỉ mã hoá key đó bằng `rsaEncrypt`.
+- Giải mã thất bại vì bất kỳ lý do nào đều ném `CogoverApiError` với
+  `code: "DECRYPTION_FAILED"`.
+
+```typescript
+const cardToken = await crypto.rsaEncrypt({ secret: "bank_public_key" }, "4111111111111111");
+const plain = await crypto.rsaDecrypt({ secret: "our_private_key" }, request.body.data as string);
+```
+
+### `crypto.sign(algorithm, privateKey, data, options?)` và `crypto.verify(algorithm, publicKey, data, signature, options?)`
+
+```typescript
+type SignatureAlgorithm =
+  | "RSA-SHA1" | "RSA-SHA256" | "RSA-SHA384" | "RSA-SHA512"
+  | "RSA-PSS-SHA256" | "RSA-PSS-SHA384" | "RSA-PSS-SHA512"
+  | "ECDSA-SHA256" | "ECDSA-SHA384" | "ECDSA-SHA512";
+
+interface SignatureOptions {
+  readonly encoding?: BinaryEncoding;                // Của chữ ký; mặc định "base64"
+  readonly signatureFormat?: "der" | "ieee-p1363";   // Chỉ ECDSA; mặc định "der"
+}
+```
+
+`sign` ký `data` (chuỗi được mã hoá dạng UTF-8) bằng private key và trả về chữ ký
+theo `encoding`. `verify` trả về `true` khi `signature` là chữ ký hợp lệ của `data`
+với public key, và `false` trong mọi trường hợp khác, kể cả khi chữ ký không giải
+mã được hoặc sai độ dài; chữ ký thường đến từ chính bên cần xác minh nên chữ ký sai
+định dạng không phải là lỗi. Key hoặc thuật toán không hợp lệ vẫn ném
+`ValidationError`.
+
+- `RSA-SHA*` là RSASSA-PKCS1-v1_5 và cần RSA key. `RSA-SHA1` chỉ để xác minh chữ ký
+  của các hệ thống còn dùng nó; không dùng cho chữ ký mới.
+- `RSA-PSS-SHA*` là RSASSA-PSS với MGF1 cùng digest và salt dài bằng digest (32, 48
+  hoặc 64 byte), và cần RSA key.
+- `ECDSA-SHA*` cần EC key. `signatureFormat` là `"der"` (ASN.1, dùng bởi OpenSSL và
+  Java) hoặc `"ieee-p1363"` (dạng `r || s` độ dài cố định, dùng bởi JWT và Web
+  Crypto); tuỳ chọn này bị từ chối với thuật toán RSA.
+
+| JWT `alg` | `algorithm` | Options |
+|---|---|---|
+| `RS256`, `RS384`, `RS512` | `RSA-SHA256`, `RSA-SHA384`, `RSA-SHA512` | `{ encoding: "base64url" }` |
+| `PS256`, `PS384`, `PS512` | `RSA-PSS-SHA256`, `RSA-PSS-SHA384`, `RSA-PSS-SHA512` | `{ encoding: "base64url" }` |
+| `ES256`, `ES384`, `ES512` | `ECDSA-SHA256`, `ECDSA-SHA384`, `ECDSA-SHA512` | `{ encoding: "base64url", signatureFormat: "ieee-p1363" }` |
+
+```typescript
+// Xác minh JWT ES256 do đối tác phát hành. Kiểm tra thêm claim (exp, iss, aud) trước khi tin cậy.
+const [header, payload, signature] = token.split(".");
+const valid = await crypto.verify("ECDSA-SHA256", { secret: "partner_jwt_public_key" },
+  `${header}.${payload}`, signature ?? "", { encoding: "base64url", signatureFormat: "ieee-p1363" });
+if (!valid) return response.empty({ status: 401 });
+
+// Ký request gửi ngân hàng yêu cầu SHA256withRSA dạng base64.
+const body = JSON.stringify(order);
+const bankSignature = await crypto.sign("RSA-SHA256", { secret: "bank_signing_key" }, body);
+```
+
+### Giới hạn và phạm vi sử dụng
+
+`data`, `aad` và HMAC key tường minh giới hạn 256 KiB, ciphertext giới hạn 256 KiB
+cộng tag; giá trị lớn hơn và đối số không hợp lệ ném `ValidationError` trước khi
+gọi. Các lỗi về key, thuật toán và tuỳ chọn do Cogover phát hiện, như key sai kích
+thước hoặc sai loại, cũng ném `ValidationError`. Mọi thao tác trừ `timingSafeEqual`
+là một capability call và được tính vào giới hạn của invocation.
+
+Các thao tác hoạt động trong mọi context, kể cả trigger before-change, khi key được
+truyền trực tiếp trong lời gọi. Key `{ secret }` tuân theo quy tắc của
+`secrets.get`: trigger before-change bị từ chối bằng `PermissionDeniedError`
+(`details.reason === "TRIGGER_READ_ONLY"`), còn phiên phát triển local không có
+quyền đọc secret bị từ chối với `details.reason === "SECRETS_NOT_ALLOWED"`.
 
 ## Inbound webhook
 
@@ -1889,7 +2137,8 @@ ném lỗi này sẽ làm thao tác ghi bị từ chối như mọi lỗi khác.
 `jobs.enqueue`, `secrets.get` và `crypto` thất bại với `ValidationError`,
 `PermissionDeniedError` hoặc `RateLimitError` như mô tả trong mục của chúng, và với
 `CogoverApiError` có `code` là `JOBS_DISABLED` hoặc `SECRETS_DISABLED` khi tính
-năng chưa được bật cho Workspace.
+năng chưa được bật cho Workspace. `crypto.aesDecrypt` và `crypto.rsaDecrypt` ném
+`CogoverApiError` với `code: "DECRYPTION_FAILED"` khi không giải mã được ciphertext.
 
 Script có thể bắt lỗi và tự chọn mã/thông báo trả cho client, không cần forward lỗi gốc.
 Thông báo public trong `msg`, `message` và các field tương tự luôn phải viết bằng

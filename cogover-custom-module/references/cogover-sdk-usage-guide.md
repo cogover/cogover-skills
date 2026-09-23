@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.8.0` ngày `2026-09-22`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), chọn danh tính, record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.9.0` ngày `2026-09-23`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), chọn danh tính, record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -202,6 +202,58 @@ export default defineScript<{ orderId: string }>(async ({ input, secrets, crypto
 trị, đủ cho hầu hết chữ ký. Không bao giờ ghi secret vào log, record, state hay
 response, và ưu tiên credential thay vì `secrets.get` mỗi khi giá trị chỉ cần cho
 một HTTP header. Secret và credential không dùng được trong trigger before-change.
+
+## Mã hoá, giải mã và ký dữ liệu
+
+`crypto` còn mã hoá và ký bằng các key nằm trong secret của project. Truyền
+`{ secret: name }` làm key: Cogover resolve key đó và giá trị không bao giờ đi vào
+code.
+
+```typescript
+import { createRouter, crypto, fetch } from "@cogover/sdk";
+
+const router = createRouter();
+router.post("/payments", async ({ request, response }) => {
+  // AES-256-GCM với IV ngẫu nhiên; đối tác nhận ciphertext và IV.
+  const aesKey = { secret: "partner_aes_key", encoding: "base64" } as const;
+  const sealed = await crypto.aesEncrypt(aesKey, JSON.stringify(request.body));
+
+  // RSA: mã hoá giá trị nhỏ bằng public key của đối tác, ký bằng private key của mình.
+  const cardToken = await crypto.rsaEncrypt({ secret: "partner_public_key" }, "4111111111111111");
+  const body = JSON.stringify({ ...sealed, cardToken });
+  const signature = await crypto.sign("RSA-SHA256", { secret: "our_signing_key" }, body);
+  const reply = await fetch("https://partner.example.com/payments", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-signature": signature },
+    body,
+  });
+
+  // Xác minh chữ ký ECDSA của đối tác trước khi tin phản hồi.
+  const replyBody = await reply.text();
+  const valid = await crypto.verify("ECDSA-SHA256", { secret: "partner_public_key_ec" }, replyBody,
+    reply.headers.get("x-signature") ?? "");
+  return valid ? response.json(JSON.parse(replyBody)) : response.empty({ status: 502 });
+});
+export default router.toHandler();
+```
+
+- `aesEncrypt`/`aesDecrypt` mặc định dùng AES-GCM; `mode: "CBC"` dành cho các hệ
+  thống bắt buộc dùng nó. Không truyền `iv` để mỗi lần mã hoá dùng một IV ngẫu
+  nhiên mới.
+- `rsaEncrypt`/`rsaDecrypt` mặc định dùng RSA-OAEP với SHA-256 và chỉ mã hoá được
+  tối đa vài trăm byte; dữ liệu lớn hơn hãy mã hoá bằng AES và chỉ mã hoá AES key
+  bằng RSA.
+- `sign`/`verify` hỗ trợ RSA (PKCS #1 v1.5 và PSS) và ECDSA, kể cả dạng `base64url`
+  và `ieee-p1363` mà JWT dùng. `verify` trả về `false` với chữ ký sai định dạng thay
+  vì ném lỗi.
+- Giải mã thất bại ném `CogoverApiError` với `code: "DECRYPTION_FAILED"`.
+- Key là văn bản PEM lưu trong secret: private key lưu chưa mã hoá ở dạng PKCS #8,
+  PKCS #1 hoặc SEC1; public key có thể là certificate. RSA key phải dài 2048 đến
+  4096 bit, EC key dùng P-256, P-384 hoặc P-521.
+
+Khi key lấy từ secret, các thao tác này tuân theo quy tắc của secret và không dùng
+được trong trigger before-change. API reference mô tả mọi tuỳ chọn và tên thuật
+toán JWT tương ứng.
 
 ## Quyền và giới hạn
 

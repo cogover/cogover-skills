@@ -196,6 +196,9 @@ Sau khi thử xong, xóa `.cogover-session.curl`. Nếu secret chỉ dùng cho v
 | `randomBytes(length)` | Tạo token, nonce khó đoán | Trả `Uint8Array`; nhận từ 1 đến 1.024 byte. |
 | `randomUUID()` | Tạo ID để theo dõi yêu cầu | Trả UUID phiên bản 4. Dùng lại cùng ID qua các lần retry. |
 | `timingSafeEqual(a, b)` | So sánh chữ ký hoặc hash của token | Đồng bộ; khác giá trị hoặc độ dài thì trả `false`. |
+| `aesEncrypt(key, data, options?)` / `aesDecrypt(key, ciphertext, options)` | Mã hóa dữ liệu bằng khóa dùng chung | Mặc định AES-GCM, AES-CBC khi yêu cầu. Cần SDK 0.9.0 trở lên. |
+| `rsaEncrypt(publicKey, data, options?)` / `rsaDecrypt(privateKey, ciphertext, options?)` | Mã hóa giá trị nhỏ cho bên giữ cặp khóa | Mặc định RSA-OAEP với SHA-256. Cần SDK 0.9.0 trở lên. |
+| `sign(algorithm, privateKey, data, options?)` / `verify(algorithm, publicKey, data, signature, options?)` | Chữ ký khóa công khai, như API ngân hàng hoặc JWT | RSA, RSA-PSS và ECDSA. Cần SDK 0.9.0 trở lên. |
 
 Lấy `crypto` từ context của handler hoặc `import { crypto } from "@cogover/sdk"`. Mọi thao tác trừ `timingSafeEqual` đều cần `await`. Chuỗi được xử lý theo UTF-8; mảng byte được dùng nguyên trạng. Sandbox không cung cấp `Buffer` hay `node:crypto` của Node.js.
 
@@ -209,13 +212,13 @@ HMAC hợp lệ chứng minh thông điệp khớp với khóa dùng chung; bả
 
 Với token truy cập, tạo byte ngẫu nhiên, chỉ lưu hash kèm thời hạn và so sánh hash bằng `timingSafeEqual`. Với token dùng một lần, cần kiểm tra và vô hiệu hóa token trong cùng một thao tác, ví dụ xóa state có kiểm tra version, để hai yêu cầu đồng thời không cùng sử dụng được.
 
-Hash nội dung giúp nhận diện dữ liệu trùng, nhưng lưu dấu vân tay và cập nhật record là hai thao tác riêng. Cần có cách khôi phục nếu lỗi xảy ra giữa chúng. SHA-256 thuần không che được giá trị dễ đoán như địa chỉ email và không phải thuật toán lưu mật khẩu. API này hỗ trợ băm và HMAC, không có thao tác mã hóa hay giải mã.
+Hash nội dung giúp nhận diện dữ liệu trùng, nhưng lưu dấu vân tay và cập nhật record là hai thao tác riêng. Cần có cách khôi phục nếu lỗi xảy ra giữa chúng. SHA-256 thuần không che được giá trị dễ đoán như địa chỉ email và không phải thuật toán lưu mật khẩu. Để giữ bí mật một giá trị, hãy mã hóa bằng `aesEncrypt` hoặc `rsaEncrypt`; [tài liệu tham chiếu mã hoá của SDK](cogover-sdk-api-reference.md#mã-hoá-và-chữ-ký) mô tả khóa, mode và định dạng chữ ký JWT.
 
 ### Giới hạn và nơi được dùng
 
 SDK nhận tối đa 256 KiB dữ liệu hoặc byte của khóa truyền trực tiếp mỗi lần gọi. Giới hạn request của runtime có thể từ chối đầu vào nhỏ hơn sau khi encode, đặc biệt với mảng byte. Kiểm tra dữ liệu lớn trên version đã publish; không mặc định máy chủ local áp dụng cùng giới hạn. Băm các digest của từng phần là một cách tính khác với SHA-256 của thông điệp gốc.
 
-HMAC với khóa truyền trực tiếp, phép băm và tạo số ngẫu nhiên dùng được trong trigger before-change. `{ secret: "name" }` cần secret `OPAQUE` đang active và bị từ chối trong trigger before-change. Development Session mặc định không được đọc secret. Mỗi lần `secrets.get` hoặc HMAC dùng secret đều tính vào giới hạn 20 thao tác secret mỗi invocation, kể cả khi đã đọc tên đó trước đó.
+Mọi thao tác với khóa truyền trực tiếp, phép băm và tạo số ngẫu nhiên dùng được trong trigger before-change. `{ secret: "name" }` cần secret `OPAQUE` đang active và bị từ chối trong trigger before-change. Development Session mặc định không được đọc secret. Mỗi lần `secrets.get` hoặc thao tác `crypto` dùng secret đều tính vào giới hạn 20 thao tác secret mỗi invocation, kể cả khi đã đọc tên đó trước đó.
 
 ## Xử lý sự cố
 

@@ -982,6 +982,7 @@ và cấu trúc response cũ không thay đổi.
 | `POST` | `/api/v1/ts-projects/jobs/runs/list` | `200` |
 | `POST` | `/api/v1/ts-projects/jobs/schedules/list` | `200` |
 | `POST` | `/api/v1/ts-projects/triggers/list` | `200` |
+| `POST` | `/api/v1/ts-projects/inbound/list` | `200` |
 
 Mọi bộ lọc đều tùy chọn và kết hợp bằng AND. Bỏ field hoặc gửi `null` có cùng ý nghĩa;
 chuỗi rỗng không hợp lệ. `projectId` là ID 15 ký tự chữ hoa hoặc chữ số; bỏ qua để liệt kê
@@ -989,7 +990,7 @@ mọi project trong Workspace đã xác thực. Không chọn Workspace qua body
 nhưng không tồn tại hoặc ngoài phạm vi truy cập trả danh sách rỗng.
 Field lạ và bộ lọc không hợp lệ trả `400`.
 
-Cả ba endpoint nhận số nguyên dương `page` (mặc định 1), `pageSize` (mặc định 20,
+Cả bốn endpoint nhận số nguyên dương `page` (mặc định 1), `pageSize` (mặc định 20,
 tối đa 200). Offset lớn hơn 2.147.483.647 bị từ chối bằng `400`. Response có cấu trúc:
 
 ```json
@@ -1068,7 +1069,24 @@ Activate/deactivate có thể chưa phản ánh ngay vì đăng ký cần đồn
 của version vẫn là nguồn khai báo chỉ đọc riêng; enum `beforeChange`/`afterChange` của
 manifest khác enum đăng ký chữ hoa phía trên.
 
-Cả ba API đọc trả `401`/`403` khi thiếu/bị từ chối xác thực hoặc không đủ quyền, `503`
+### Inbound access toàn workspace
+
+`POST /api/v1/ts-projects/inbound/list` nhận `projectId?`, `authMode?`, `status?`,
+`page?`, `pageSize?`. `authMode` là `KEY` hoặc `HMAC`. `status` là trạng thái hiệu lực
+`ACTIVE`, `EXPIRED` hoặc `REVOKED`: dòng `ACTIVE` đã qua `expiresAt` được liệt kê và lọc
+như `EXPIRED`.
+
+```json
+{"projectId":"TSP000000000001","authMode":"KEY","status":"ACTIVE","page":1,"pageSize":20}
+```
+
+Item có cùng field với danh sách inbound access theo project, gồm `url`, `secretHint`,
+`hmac`, `lastUsedAt`, `revokedAt`, cộng ba field project ở trên. `url` là `null` khi
+metadata project không khả dụng. Sắp xếp `created DESC, inboundId DESC`. Không bao giờ trả
+`inboundKey`, hash của key hay HMAC secret. Tạo, cập nhật, rotate và revoke vẫn là thao tác
+theo project.
+
+Cả bốn API đọc trả `401`/`403` khi thiếu/bị từ chối xác thực hoặc không đủ quyền, `503`
 khi kho dữ liệu theo dõi không khả dụng. Cấu hình trigger đã lưu không hợp lệ trả `500`
 với `msg: "Stored trigger configuration is invalid"`.
 
