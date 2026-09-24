@@ -331,7 +331,7 @@ Một run có thể thực thi nhiều lần, kể cả sau khi bị gián đo�
 | Lịch hoặc inbound webhook | Danh tính system |
 | Code local qua `cogover-dev run` | Người dùng của Project key |
 
-Với job theo lịch hoặc webhook có đọc/ghi record, cấu hình **Identity policy** của Project với `allowInternalSystem: true` và grant giới hạn vào các Object, thao tác cần dùng. Duyệt policy cho từng version mới publish trước khi activate. `data.asSystem()` và `data.asUser()` cũng cần grant đã duyệt. Xem [tài liệu identity policy](custom-backend-module-api-reference.md#identity-policy).
+Với job theo lịch hoặc webhook có đọc/ghi record, cấu hình **Identity policy** của Project với `allowInternalSystem: true` và grant giới hạn vào các Object, thao tác cần dùng. Duyệt policy cho từng version mới publish trước khi activate. `data.asSystem()` và `data.asUser()` cũng cần grant đã duyệt. Xem [tài liệu identity policy](custom-backend-module-api-reference.md#identity-policy-1).
 
 ### Xử lý nhiều bản ghi và chạy đồng thời
 

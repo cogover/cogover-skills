@@ -389,7 +389,7 @@ Không dựng lại body đã ký bằng `JSON.stringify(request.body)`: khoản
 
 ### Truy cập record và xử lý việc dài
 
-Lời gọi inbound không có người dùng. Để truy cập record, cấu hình **Identity policy** của Project với `allowInternalSystem: true` và grant giới hạn vào các Object, thao tác cần dùng. Duyệt policy cho từng version mới publish. Chỉ activate version thì chưa cấp quyền truy cập record. Xem [tài liệu identity policy](custom-backend-module-api-reference.md#identity-policy).
+Lời gọi inbound không có người dùng. Để truy cập record, cấu hình **Identity policy** của Project với `allowInternalSystem: true` và grant giới hạn vào các Object, thao tác cần dùng. Duyệt policy cho từng version mới publish. Chỉ activate version thì chưa cấp quyền truy cập record. Xem [tài liệu identity policy](custom-backend-module-api-reference.md#identity-policy-1).
 
 Giữ handler ngắn: kiểm tra, lưu hoặc enqueue, rồi xác nhận đã nhận. Với việc dài, khai báo và activate một [background job](get-started-background-jobs.md), rồi enqueue bằng event ID ổn định làm idempotency key. Job này chạy với danh tính system và cần cùng policy nếu truy cập record.
 

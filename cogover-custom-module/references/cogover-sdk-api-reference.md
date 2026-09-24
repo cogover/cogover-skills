@@ -36,9 +36,12 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
   readonly state: ProjectState;
   readonly locks: DistributedLocks;
   readonly push: PushApi<Schema>;
+  readonly notifications: NotificationsApi;
+  readonly email: EmailApi<Schema>;
   readonly jobs: JobsApi;
   readonly secrets: SecretsApi;
   readonly crypto: CryptoApi;
+  readonly org: OrgApi;
 }
 ```
 
@@ -47,12 +50,14 @@ quả ném lỗi nếu input không phải JSON hợp lệ hoặc output không 
 JSON. Trả `null` tạo kết quả null; trả `undefined` là không hợp lệ.
 
 Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`,
-`push`, `jobs`, `secrets`, `crypto`, chờ kết quả async và serialize output thành JSON.
+`push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, chờ kết quả async và serialize output thành
+JSON.
 
 ## HTTP router và request context
 
 `ScriptContext<TInput, TSchema>` cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`,
-`log`, `state`, `locks`, `push`, `jobs`, `secrets` và `crypto` cho cả script handler lẫn route handler. `input`
+`log`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`, `secrets`, `crypto` và `org` cho cả script
+handler lẫn route handler. `input`
 giữ input invocation hiện có. Nên dùng `request.body` cho dữ liệu nghiệp vụ: body không chứa invocation
 metadata và các field transport/xác thực đã được Cogover loại bỏ.
 
@@ -533,9 +538,12 @@ interface TriggerContext<
   readonly schema: SchemaApi<Schema>;
   readonly log: ScriptLogger;
   readonly push: PushApi<Schema>;
+  readonly notifications: NotificationsApi;
+  readonly email: EmailApi<Schema>;
   readonly jobs: JobsApi;
   readonly secrets: SecretsApi;
   readonly crypto: CryptoApi;
+  readonly org: OrgApi;
 }
 
 interface TriggerInfo<Operation extends TriggerOperation = TriggerOperation> {
@@ -571,9 +579,10 @@ nên batch write hoặc import gọi handler một lần cho mỗi nhóm record 
 cho từng record. Hãy giữ `fields` ngắn gọn và đọc dữ liệu liên quan cho cả danh sách
 bằng một lời gọi `records.getMany` thay vì đọc riêng cho từng record.
 
-`data`, `schema`, `log`, `invocation`, `push`, `jobs`, `secrets` và `crypto` là chính
-các API mà script nhận được. Trigger context không có `input`, `request`, `response`,
-`state` hay `locks`; `push` bị từ chối trong trigger before-change. `trigger.operation`
+`data`, `schema`, `log`, `invocation`, `push`, `notifications`, `email`, `jobs`, `secrets`,
+`crypto` và `org` là chính các API mà script nhận được. Trigger context không có `input`,
+`request`, `response`, `state` hay `locks`; `push`, `notifications` và `email` bị từ chối trong
+trigger before-change. `trigger.operation`
 là operation của lần gọi hiện tại, `trigger.id` định danh đăng ký của trigger và
 `trigger.changeId` định danh thay đổi record đã gây ra lần gọi.
 
@@ -648,12 +657,14 @@ lại field formula và rollup, merge record chạy nền, cascade delete — kh
 trigger before-change; request chỉ validate input mà không lưu cũng vậy.
 
 - **Chỉ đọc.** Trigger before-change được đọc record và schema, nhưng mọi thao tác
-  ghi record, `fetch`, lock, ghi state, push message, `jobs.enqueue`, `secrets.get` và
-  mọi thao tác `crypto` với key `{ secret }` đều bị từ chối bằng
+  ghi record, `fetch`, lock, ghi state, push message, notification, email (kể cả
+  `email.senders()`), `jobs.enqueue`, `secrets.get` và mọi thao tác `crypto` với key
+  `{ secret }` đều bị từ chối bằng
   `PermissionDeniedError` có `details.reason` là `"TRIGGER_READ_ONLY"`. Quy tắc này
   áp dụng cho mọi danh tính, kể cả `data.asSystem()`. Mọi thao tác `crypto` với key
   truyền trực tiếp trong lời gọi vẫn dùng được, cùng với `crypto.sha256`,
-  `crypto.randomBytes`, `crypto.randomUUID` và `crypto.timingSafeEqual`.
+  `crypto.randomBytes`, `crypto.randomUUID`, `crypto.timingSafeEqual` và mọi thao tác
+  đọc [`org`](#cơ-cấu-tổ-chức).
 - **Danh tính.** `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi,
   với quyền của người đó, và `invocation` mô tả chính người này. Khi thay đổi không
   có người dùng, `invocation.identity` là `"system"` và `data.object()` chỉ hoạt động
@@ -714,8 +725,9 @@ export const triggers = [
 - **Giá trị đã lưu.** `record.id` luôn có giá trị. `record.new` chứa giá trị đúng như
   đã lưu, gồm record ID và các giá trị được gán trong lúc lưu, ví dụ auto number. Với
   record bị xoá, `record.new` là `null` và `record.old` chứa giá trị cuối cùng.
-- **Được ghi và gọi ra ngoài.** Ghi record, `fetch`, `push`, `jobs.enqueue`,
-  `secrets.get` và `crypto` hoạt động như trong script, với cùng các giới hạn runtime.
+- **Được ghi và gọi ra ngoài.** Ghi record, `fetch`, `push`, `notifications`, `email`,
+  `jobs.enqueue`, `secrets.get` và `crypto` hoạt động như trong script, với cùng các giới
+  hạn runtime.
   `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi, và các quy tắc
   danh tính khác của trigger before-change cũng được áp dụng. Context của trigger
   không có `state` và `locks`; `push` là cách thông thường để làm mới các record
@@ -898,9 +910,12 @@ interface JobContext<Payload = unknown, Schema extends object = EffectiveWorkspa
   readonly log: ScriptLogger;
   readonly state: ProjectState;
   readonly locks: DistributedLocks;
+  readonly notifications: NotificationsApi;
+  readonly email: EmailApi<Schema>;
   readonly jobs: JobsApi;
   readonly secrets: SecretsApi;
   readonly crypto: CryptoApi;
+  readonly org: OrgApi;
 }
 
 interface JobInfo {
@@ -915,9 +930,9 @@ interface JobInfo {
 ```
 
 Handler có thể đồng bộ hoặc bất đồng bộ; giá trị trả về bị bỏ qua. `data`,
-`schema`, `log`, `invocation`, `state`, `locks`, `jobs`, `secrets` và `crypto` là
-chính các API mà script nhận được. Job context không có `input`, `request` hay
-`response`.
+`schema`, `log`, `invocation`, `state`, `locks`, `notifications`, `email`, `jobs`,
+`secrets`, `crypto` và `org` là chính các API mà script nhận được. Job context không có
+`input`, `request`, `response` hay `push`.
 
 - `job.id` định danh lần chạy và không đổi qua các lần thử; dùng nó làm idempotency
   key cho các lời gọi ra ngoài. `job.attempt` bắt đầu từ 1.
@@ -984,9 +999,9 @@ quá sẽ ném `RateLimitError`. Khi job chưa được bật cho Workspace, l�
   không, các lời gọi của nó ném `PermissionDeniedError` có `details.reason` là
   `"IDENTITY_NOT_GRANTED"`. `data.asUser()` và `data.asSystem()` tuân theo identity
   policy như thông thường.
-- **Capability.** Job làm được mọi việc script làm được: đọc và ghi record, gọi
-  `fetch`, dùng `state` và `locks`, enqueue job, đọc secret và dùng `crypto`, trong
-  giới hạn runtime của làn job.
+- **Capability.** Job được đọc và ghi record, gọi `fetch`, dùng `state` và `locks`,
+  gửi notification và email, enqueue job, đọc secret và dùng `crypto`, trong giới hạn
+  runtime của làn job.
 - **Thời gian.** Mỗi lần thử phải hoàn tất trong `timeoutMs`. Việc cần lâu hơn phải
   được chia nhỏ: xử lý một trang, lưu cursor và enqueue lại chính job đó với cursor
   trong payload, như ví dụ ở trên.
@@ -2061,6 +2076,602 @@ là `"text"` (mặc định) hoặc `"template"`.
 - Message đã gửi không thể thu hồi, và chạy lại một execution thất bại có thể gửi
   lại message.
 
+## Notification
+
+`notifications` lưu một notification vào danh sách thông báo (biểu tượng chuông) của
+từng người nhận và gửi nó trong web app, qua web push, mobile push và một bản sao
+email, theo các kênh thông báo (notification channel) của workspace. Khác với
+[push message](#push-message), notification vẫn nằm trong danh sách sau khi đã được
+gửi, nên phù hợp với việc một người cần xử lý sau, ví dụ yêu cầu phê duyệt. Việc gửi
+diễn ra bất đồng bộ và là best-effort: lời gọi hoàn tất khi Cogover đã tiếp nhận
+notification, không phải khi nó tới thiết bị hay hộp thư.
+
+```typescript
+type NotificationContentType = "text" | "html";
+type NotificationDisplay = "SIMPLE" | "FULL";
+type NotificationSender = "workspace" | "actor";
+type NotificationLinkTarget = "SAME_TAB" | "NEW_TAB";
+
+interface NotificationLink {
+  readonly url: string;
+  readonly openIn?: NotificationLinkTarget;
+}
+
+interface NotificationMessage {
+  readonly to: readonly string[];
+  readonly exclude?: readonly string[];
+  readonly title: string;
+  readonly content: string;
+  readonly contentType?: NotificationContentType;
+  readonly subtitle?: string;
+  readonly display?: NotificationDisplay;
+  readonly link?: NotificationLink;
+  readonly sender?: NotificationSender;
+  readonly channel?: string;
+  readonly email?: boolean;
+  readonly idempotencyKey?: string;
+}
+
+interface NotificationResult {
+  readonly requestId: string;
+  readonly notified: number;
+  readonly skippedPersonnelIds: readonly string[];
+  readonly duplicate: boolean;
+}
+
+interface NotificationsApi {
+  send(message: NotificationMessage): Promise<NotificationResult>;
+}
+```
+
+```typescript
+const result = await notifications.send({
+  to: approverIds,
+  exclude: ["actor"],
+  title: "Leave request waiting for your approval",
+  content: "A leave request of 3 days was submitted and needs your decision.",
+  link: { url: `/app/leave_request/${recordId}` },
+  channel: approvalChannelId,
+  idempotencyKey: `leave-approval:${recordId}`,
+});
+// result.notified: số tài khoản được gửi; result.skippedPersonnelIds: personnel chưa có tài khoản
+```
+
+### `notifications.send(message): Promise<NotificationResult>`
+
+**Người nhận.** `to` liệt kê từ 1 đến 200 personnel ID; ID trùng được loại bỏ.
+Notification được gửi tới tài khoản người dùng của từng personnel. Personnel chưa có
+tài khoản người dùng được bỏ qua và trả về trong `skippedPersonnelIds`, còn
+`notified` là số tài khoản được gửi sau khi đã loại trừ. `exclude` liệt kê personnel ID
+không bao giờ nhận notification; giá trị đặc biệt `"actor"` là người dùng có hành động
+khởi đầu execution hiện tại (người gọi HTTP route, người lưu record làm trigger chạy,
+người có lời gọi đã enqueue lần chạy job). Execution không có người dùng thì không có
+actor, nên `"actor"` không loại ai. Personnel ID trong `to` không tồn tại ném
+`NotFoundError` với `resource` là `"personnel"` trước khi gửi bất cứ gì. Khi mọi người
+nhận đều bị loại trừ hoặc bỏ qua, không có gì được gửi và `notified` là `0`.
+
+**Nội dung và cách hiển thị.**
+
+- `title` (bắt buộc, tối đa 200 ký tự) là tiêu đề của notification và là subject của
+  bản sao email.
+- `content` (bắt buộc, tối đa 16.384 ký tự) là nội dung. Với `contentType: "text"`
+  (mặc định), đây là văn bản thuần. Với `"html"`, nội dung được rút gọn về định dạng
+  cơ bản trước khi lưu — đoạn văn, tiêu đề, danh sách, bảng, liên kết và nhấn mạnh;
+  script, style và hình ảnh bị loại bỏ — và vẫn phải còn chữ hiển thị được, nếu không
+  sẽ ném `ValidationError`.
+- `subtitle` (tối đa 200 ký tự) chỉ hiển thị ở chế độ `"FULL"`. `display` mặc định là
+  `"FULL"` khi có subtitle và `"SIMPLE"` khi không có; subtitle đi kèm
+  `display: "SIMPLE"` ném `ValidationError`.
+- `link` là trang được mở khi người nhận bấm vào notification. `url` là một path của
+  web app Cogover bắt đầu bằng `/`, hoặc một URL tuyệt đối `http` hay `https`, tối đa
+  2.048 ký tự. `openIn` là `"SAME_TAB"` hoặc `"NEW_TAB"`; mặc định `"SAME_TAB"` với
+  path và `"NEW_TAB"` với URL tuyệt đối.
+- `sender` là `"workspace"` (mặc định) hoặc `"actor"`, hiển thị tên và ảnh đại diện
+  của người dùng có hành động khởi đầu execution. `"actor"` trong execution không có
+  người dùng ném `ValidationError`.
+
+**Kênh thông báo và bản sao email.** `channel` là record ID của một notification
+channel của workspace. Kênh quyết định hình thức gửi nào được bật — trong web app,
+web push, mobile push và email — và mỗi người dùng có thể ghi đè lựa chọn đó trong
+cài đặt thông báo của riêng mình. Không có `channel` thì mọi hình thức gửi đều được
+bật. Kênh không tồn tại ném `NotFoundError` với `resource` là `"notificationChannel"`;
+workspace chưa thiết lập notification ném `NotFoundError` với `resource` là
+`"object"` và `resourceId` là `"notification_channel"`.
+
+`email: false` bỏ bản sao email kể cả khi kênh bật email. Bản sao dùng `title` làm
+subject và `content` làm nội dung, được gửi từ một địa chỉ thông báo của Cogover chứ
+không phải từ hộp thư của workspace, và được tính vào hạn mức email thông báo hằng
+ngày theo gói của workspace. Để gửi email từ hộp thư của workspace, dùng
+[`email.send`](#email).
+
+**Idempotency.** `idempotencyKey` bắt đầu bằng chữ cái hoặc chữ số và chứa tối đa 128
+chữ cái, chữ số, `.`, `_`, `:` hoặc `-`. Lời gọi có key mà project đã dùng cho một
+notification trong 7 ngày gần nhất sẽ không gửi gì và trả về kết quả của lời gọi đầu
+tiên với `duplicate: true`. Lời gọi thực hiện trong lúc lời gọi đầu tiên cùng key vẫn
+đang gửi ném `CogoverApiError` với `code: "DUPLICATE_IN_PROGRESS"`; hãy thử lại sau
+giây lát. Lời gọi thất bại không giữ key, nên có thể thử lại. Key thuộc về project và
+tách biệt với key của `email.send`. Trong trigger after-change hoặc job, vốn có thể
+chạy nhiều hơn một lần, hãy tạo key từ `trigger.changeId` và `record.id`, hoặc từ
+`job.id` hay một key nghiệp vụ.
+
+### Quy tắc
+
+- `notifications` có trong script, route, trigger after-change, background job, lời
+  gọi inbound webhook và Development Session có quyền ghi. Trigger before-change là
+  chỉ đọc và nhận `PermissionDeniedError` có `details.reason` là
+  `"TRIGGER_READ_ONLY"`; preview chỉ đọc và Development Session chỉ đọc cũng từ chối.
+- Notification không cần grant trong identity policy: project được gửi notification
+  tới mọi personnel của workspace.
+- Mặc định mỗi project được gửi tới tối đa 5.000 người nhận mỗi giờ. Lời gọi làm vượt
+  hạn mức này ném `RateLimitError` và không gửi gì.
+- Input được SDK kiểm tra và Cogover kiểm tra lại; input không hợp lệ ném
+  `ValidationError` trước khi gửi bất cứ gì. Mỗi lời gọi tính một capability call.
+- Khi deployment tắt notification, mọi lời gọi ném `CogoverApiError` với code
+  `NOTIFICATIONS_DISABLED`.
+- Notification đã gửi không thể thu hồi. Chạy lại một execution thất bại có thể gửi
+  lại notification nếu lời gọi không dùng `idempotencyKey`.
+
+## Email
+
+`email` gửi email từ hộp thư của workspace: một hộp thư dùng chung của workspace, hoặc
+hộp thư cá nhân mặc định của người dùng có hành động khởi đầu execution. Identity
+policy đã duyệt của Project quyết định project được dùng những hộp thư nào. Khi có
+`record`, email còn được ghi nhận là một hoạt động email trên timeline của record đó,
+giống email gửi từ trang record. Việc gửi diễn ra bất đồng bộ: lời gọi hoàn tất khi
+Cogover đã tiếp nhận email để gửi, và lỗi gửi xảy ra sau đó không được báo lại cho
+script.
+
+```typescript
+type EmailSender = { readonly mailbox: string } | "actor";
+
+type EmailRecipient =
+  | string
+  | { readonly email: string; readonly name?: string }
+  | { readonly personnelId: string };
+
+interface EmailRecordLink<ObjectSlug extends string = string> {
+  readonly object: ObjectSlug;
+  readonly recordId: string;
+}
+
+interface EmailAttachment<ObjectSlug extends string = string> {
+  readonly object: ObjectSlug;
+  readonly recordId: string;
+  readonly field: string;
+}
+
+type EmailMessage<ObjectSlug extends string = string> = {
+  readonly from: EmailSender;
+  readonly to?: readonly EmailRecipient[];
+  readonly cc?: readonly EmailRecipient[];
+  readonly bcc?: readonly EmailRecipient[];
+  readonly subject: string;
+  readonly record?: EmailRecordLink<ObjectSlug>;
+  readonly recordEmailFields?: readonly string[];
+  readonly attachments?: readonly EmailAttachment<ObjectSlug>[];
+  readonly appendSignature?: boolean;
+  readonly idempotencyKey?: string;
+} & (
+  | { readonly html: string; readonly text?: never }
+  | { readonly text: string; readonly html?: never }
+);
+
+type EmailDelivery = "activity" | "direct";
+
+interface EmailSendResult {
+  readonly requestId: string;
+  readonly delivery: EmailDelivery;
+  readonly recipients: number;
+  readonly duplicate: boolean;
+}
+
+type EmailSenderKind = "workspace" | "actor";
+
+interface EmailSenderInfo {
+  readonly id: string;
+  readonly kind: EmailSenderKind;
+  readonly email: string;
+  readonly displayName: string;
+}
+
+interface EmailApi<Schema extends object = EffectiveWorkspaceObjects> {
+  send(message: EmailMessage<StringKeyOf<Schema>>): Promise<EmailSendResult>;
+  senders(): Promise<readonly EmailSenderInfo[]>;
+}
+```
+
+```typescript
+const result = await email.send({
+  from: { mailbox: "EMWXXXXXXXXXXXX" },
+  bcc: ["sales-archive@example.com"],
+  subject: `Quote ${quote.fields.code}`,
+  html: "<p>Dear customer,</p><p>Please find our quote attached.</p>",
+  record: { object: "quote", recordId: quote.id },
+  recordEmailFields: ["contact_email"],
+  attachments: [{ object: "quote", recordId: quote.id, field: "quote_pdf" }],
+  idempotencyKey: `quote-email:${quote.id}`,
+});
+// result.delivery === "activity": email xuất hiện trên timeline của báo giá.
+```
+
+### `email.send(message): Promise<EmailSendResult>`
+
+**Người gửi.** `from: { mailbox: id }` gửi từ một hộp thư dùng chung của workspace;
+`from: "actor"` gửi từ hộp thư cá nhân mặc định của người dùng có hành động khởi đầu
+execution. Người gửi phải được phép trong mục `email` của identity policy đã duyệt
+của Project: `workspaceMailboxIds` liệt kê các hộp thư dùng chung và
+`allowActorMailbox` cho phép `"actor"`. Giống phần còn lại của policy, mục này chỉ áp
+dụng cho các caller được chọn trong `callerPersonnelIds`, và cho execution không có
+người dùng chỉ khi policy đặt `allowInternalSystem: true`. Project có policy không có
+mục `email` thì không gửi được email. Người gửi không được phép ném
+`PermissionDeniedError` có `details.reason` là `"EMAIL_SENDER_NOT_GRANTED"`; bước kiểm
+tra này diễn ra trước mọi bước tra cứu khác. Hộp thư không tồn tại hoặc đã bị vô hiệu
+hoá, và actor không có hộp thư cá nhân đang hoạt động, ném `NotFoundError` với
+`resource` là `"mailbox"`. `"actor"` trong execution không có người dùng ném
+`ValidationError`.
+
+**Người nhận.**
+
+- `to`, `cc` và `bcc` nhận một chuỗi địa chỉ, `{ email, name? }` hoặc
+  `{ personnelId }`. Personnel được đổi thành email công việc của họ, hoặc email của
+  tài khoản người dùng khi không có email công việc; personnel không có cả hai ném
+  `ValidationError`, và personnel không tồn tại ném `NotFoundError` với `resource` là
+  `"personnel"`.
+- Địa chỉ trùng được loại bỏ trong từng danh sách, không phân biệt hoa thường. Ba danh
+  sách cộng lại nhận tối đa 50 người nhận. `name` là một dòng, tối đa 200 ký tự.
+- `to` phải có ít nhất một người nhận, trừ khi có `recordEmailFields`.
+
+**Nội dung.** `subject` là bắt buộc: một dòng, tối đa 255 ký tự. Cung cấp đúng một
+trong `html` và `text`; nội dung tối đa 192 KB (196.608 byte) theo UTF-8.
+
+**Record.** `record: { object, recordId }` ghi nhận email là một hoạt động email trên
+timeline của record đó: Cogover theo dõi lượt mở và lượt bấm liên kết, gom các thư
+trả lời vào cùng luồng, và `result.delivery` là `"activity"`. Record phải đọc được
+bằng danh tính mặc định của execution, nếu không sẽ ném `NotFoundError` với
+`resource` là `"record"`. Không có `record` thì email chỉ được gửi từ hộp thư và
+`delivery` là `"direct"`. Các tuỳ chọn sau cần `record`; thiếu `record` chúng ném
+`ValidationError`:
+
+- `recordEmailFields` liệt kê tối đa 20 field email của record đó, địa chỉ trong các
+  field này được thêm vào `to`. Field không phải field email ném `ValidationError`.
+- `attachments` đính kèm mọi file lưu trong file field `field` của từng record được
+  liệt kê: tối đa 10 file và tổng cộng 20 MB. Các record phải đọc được bằng danh tính
+  mặc định; field không phải file field ném `ValidationError`.
+- `appendSignature: true` thêm chữ ký email mặc định của người gửi. Tuỳ chọn này cần
+  hộp thư cá nhân, tức `from: "actor"`; nếu không sẽ ném `ValidationError`.
+
+**Kết quả.** `requestId` định danh lần gửi. `recipients` đếm các địa chỉ trong `to`,
+`cc` và `bcc` sau khi loại trùng; địa chỉ của `recordEmailFields` được xác định sau
+nên không được đếm. `duplicate` là `true` khi một lời gọi trước đó cùng
+`idempotencyKey` đã gửi email.
+
+**Idempotency.** `idempotencyKey` theo cùng quy tắc với
+[notification](#notification): lời gọi lặp lại cùng key trong 7 ngày trả về kết quả
+đầu tiên với `duplicate: true` thay vì gửi lại, và lời gọi lặp lại trong lúc lời gọi
+đầu tiên vẫn đang gửi ném `CogoverApiError` với `code: "DUPLICATE_IN_PROGRESS"`. Key
+của email tách biệt với key của notification.
+
+### `email.senders(): Promise<readonly EmailSenderInfo[]>`
+
+Trả về các hộp thư đang hoạt động mà execution này được dùng để gửi: một mục
+`kind: "workspace"` cho mỗi hộp thư dùng chung đang hoạt động được policy áp dụng liệt
+kê trong `workspaceMailboxIds`, dùng dưới dạng `{ mailbox: id }`, và, khi policy đặt
+`allowActorMailbox` và actor có hộp thư cá nhân đang hoạt động, tối đa một mục
+`kind: "actor"` mô tả hộp thư mà `from: "actor"` sử dụng. Danh sách rỗng khi policy
+không cấp người gửi nào cho execution này. Dùng method này để hiển thị các người gửi
+khả dụng hoặc chọn người gửi theo địa chỉ `email` thay vì hard-code ID. Method không
+gửi gì, nên cũng dùng được trong preview chỉ đọc và Development Session chỉ đọc.
+
+### Quy tắc
+
+- `email` có trong script, route, trigger after-change, background job, lời gọi
+  inbound webhook và Development Session. Trigger before-change nhận
+  `PermissionDeniedError` có `details.reason` là `"TRIGGER_READ_ONLY"` với cả hai
+  method; preview chỉ đọc và Development Session chỉ đọc từ chối `email.send`.
+- Mặc định mỗi project được gửi tối đa 500 email mỗi giờ; vượt quá sẽ ném
+  `RateLimitError` và không gửi gì. Một lời gọi là một email, bất kể có bao nhiêu
+  người nhận.
+- Input được SDK kiểm tra và Cogover kiểm tra lại; input không hợp lệ ném
+  `ValidationError` trước khi gửi bất cứ gì. Mỗi lời gọi tính một capability call.
+- Khi deployment tắt email, mọi lời gọi ném `CogoverApiError` với code
+  `EMAIL_DISABLED`.
+- Email đã gửi không thể thu hồi. Chạy lại một execution thất bại có thể gửi lại email
+  nếu lời gọi không dùng `idempotencyKey`.
+
+## Cơ cấu tổ chức
+
+`org` đọc phòng ban, vị trí và nhân sự của workspace: ai thuộc phòng ban nào, vị trí
+nào áp dụng ở đâu và ai quản lý ai. Mọi method đều chỉ đọc. Câu trả lời về cấu trúc
+được lấy từ bản sao cơ cấu tổ chức đã cache nên rất nhanh; thay đổi thực hiện trong
+Cogover sẽ có hiệu lực sau vài giây. Thêm `withDisplay: true` để nhận thêm tên phòng
+ban, vị trí theo ngôn ngữ và, với nhân sự, tên hiển thị, email, avatar và mã nhân sự.
+Các field khác của nhân sự như số điện thoại hay custom field được đọc bằng
+`data.object("personnel")`, nơi quyền record được áp dụng.
+
+```typescript
+interface OrgApi {
+  readonly personnel: OrgPersonnelApi;
+  readonly departments: OrgDepartmentsApi;
+  readonly positions: OrgPositionsApi;
+  me(options?: OrgReadOptions): Promise<OrgPersonnel | null>;
+  isInDepartment(personnelId: string, departmentId: string,
+    options?: OrgIsInDepartmentOptions): Promise<boolean>;
+  isManagerOf(managerId: string, personnelId: string,
+    options?: OrgIsManagerOfOptions): Promise<boolean>;
+}
+
+interface OrgPersonnelApi {
+  get(id: string, options?: OrgReadOptions): Promise<OrgPersonnel | null>;
+  getMany(ids: readonly string[], options?: OrgReadOptions):
+    Promise<OrgGetManyResult<OrgPersonnel>>;
+  managerChain(id: string, options?: OrgPersonnelChainOptions):
+    Promise<readonly OrgManagerChain[]>;
+}
+
+interface OrgDepartmentsApi {
+  get(id: string, options?: OrgReadOptions): Promise<OrgDepartment | null>;
+  tree(options?: OrgTreeOptions): Promise<readonly OrgDepartmentNode[]>;
+  ancestors(id: string, options?: OrgReadOptions): Promise<readonly OrgDepartment[]>;
+  members(id: string, options?: OrgDepartmentMembersOptions): Promise<OrgPage<OrgMember>>;
+  managers(id: string, options?: OrgManagerOptions): Promise<readonly OrgManagerTier[]>;
+  managerChain(id: string, options?: OrgManagerOptions): Promise<OrgManagerChain>;
+}
+
+interface OrgPositionsApi {
+  list(options?: OrgReadOptions): Promise<readonly OrgPosition[]>;
+  get(id: string, options?: OrgReadOptions): Promise<OrgPosition | null>;
+  members(id: string, options?: OrgPositionMembersOptions): Promise<OrgPage<OrgMember>>;
+}
+```
+
+Mọi method trả dữ liệu đều có overload thứ hai: khi `options.withDisplay` là literal
+`true`, kiểu kết quả là biến thể `<true>` của các kiểu bên dưới và các field hiển thị
+luôn có mặt. Khi không có option này, các field hiển thị không tồn tại trên kiểu.
+
+```typescript
+interface OrgReadOptions {
+  readonly withDisplay?: boolean;
+  readonly language?: string;       // ví dụ "vi-VN"; mặc định là ngôn ngữ của invocation
+}
+
+interface OrgPageOptions extends OrgReadOptions {
+  readonly includeSubDepartments?: boolean;
+  readonly accountOnly?: boolean;
+  readonly limit?: number;          // mặc định 500, tối đa 2000; 200 khi có withDisplay
+  readonly cursor?: string;
+}
+interface OrgDepartmentMembersOptions extends OrgPageOptions { readonly positionId?: string; }
+interface OrgPositionMembersOptions extends OrgPageOptions { readonly departmentId?: string; }
+interface OrgManagerOptions extends OrgReadOptions { readonly accountOnly?: boolean; }
+interface OrgPersonnelChainOptions extends OrgManagerOptions { readonly departmentId?: string; }
+interface OrgTreeOptions extends OrgReadOptions {
+  readonly rootId?: string;
+  readonly depth?: number;          // 1 đến 100; mặc định lấy mọi cấp
+}
+interface OrgIsInDepartmentOptions { readonly includeSubDepartments?: boolean; }
+interface OrgIsManagerOfOptions {
+  readonly departmentId?: string;
+  readonly directOnly?: boolean;
+}
+
+interface OrgPersonnelDisplay {
+  readonly name: string;
+  readonly email: string | null;
+  readonly avatar: string | null;   // URL công khai
+  readonly code: string | null;
+}
+interface OrgNameDisplay { readonly name: string; }
+
+type OrgMembership<D extends boolean = false> = {
+  readonly personnelId: string;
+  readonly departmentId: string;
+  readonly positionId: string | null;
+  readonly level: number;           // 0 nhân viên, 1 cấp quản lý cao nhất, 2 cao nhì, ...
+  readonly primary: boolean;
+} & (D extends true
+  ? { readonly departmentName: string | null; readonly positionName: string | null }
+  : {});
+
+type OrgPersonnel<D extends boolean = false> = {
+  readonly id: string;
+  readonly accountId: string | null;          // null: chưa có tài khoản workspace
+  readonly memberships: readonly OrgMembership<D>[];
+} & (D extends true ? { readonly display: OrgPersonnelDisplay | null } : {});
+
+type OrgMember<D extends boolean = false> = OrgMembership<D> & {
+  readonly accountId: string | null;
+} & (D extends true ? { readonly display: OrgPersonnelDisplay | null } : {});
+
+type OrgDepartment<D extends boolean = false> = {
+  readonly id: string;
+  readonly parentId: string | null;
+  readonly level: number;                     // 1 với phòng ban gốc
+  readonly childIds: readonly string[];
+  readonly positionIds: readonly string[];
+} & (D extends true ? { readonly display: OrgNameDisplay | null } : {});
+
+type OrgDepartmentNode<D extends boolean = false> = OrgDepartment<D> & {
+  readonly children: readonly OrgDepartmentNode<D>[];
+};
+
+type OrgPosition<D extends boolean = false> = {
+  readonly id: string;
+  readonly departmentOnly: boolean;
+  readonly departmentIds: readonly string[];
+  readonly excludedDepartmentIds: readonly string[];
+} & (D extends true ? { readonly display: OrgNameDisplay | null } : {});
+
+type OrgManagerTier<D extends boolean = false> = {
+  readonly departmentId: string;
+  readonly level: number;
+  readonly distance: number;                  // 0 phòng xuất phát, 1 phòng cha, ...
+  readonly personnelIds: readonly string[];
+} & (D extends true ? {
+  readonly departmentName: string | null;
+  readonly personnel: readonly { readonly id: string; readonly display: OrgPersonnelDisplay | null }[];
+} : {});
+
+interface OrgManagerChain<D extends boolean = false> {
+  readonly fromDepartmentId: string;
+  readonly personnelLevel: number;
+  readonly tiers: readonly OrgManagerTier<D>[];
+  readonly vacantDepartmentIds: readonly string[];
+  readonly truncated: boolean;
+}
+
+interface OrgPage<T> {
+  readonly items: readonly T[];
+  readonly total: number;
+  readonly nextCursor?: string;
+}
+
+interface OrgGetManyResult<T> {
+  readonly items: readonly T[];
+  readonly missingIds: readonly string[];
+}
+```
+
+```typescript
+export default defineScript(async ({ org, input }) => {
+  const order = input as { ownerId: string; departmentId: string };
+  // Chỉ cần cấu trúc: trả lời mà không đọc record.
+  const [chain] = await org.personnel.managerChain(order.ownerId, {
+    departmentId: order.departmentId,
+    accountOnly: true,
+  });
+  const approverIds = chain?.tiers[0]?.personnelIds ?? [];
+
+  // Cần tên để hiển thị: thêm tối đa một lần đọc cho mỗi loại dữ liệu.
+  const me = await org.me({ withDisplay: true });
+  return {
+    approverIds,
+    greeting: me?.display?.name,
+    departments: me?.memberships.map(m => m.departmentName) ?? [],
+  };
+});
+```
+
+### Dữ liệu hiển thị
+
+- `withDisplay` thêm `display` vào nhân sự, phòng ban và vị trí, và thêm
+  `departmentName`/`positionName` vào membership. Giá trị là `null` khi không đọc
+  được record tương ứng, ví dụ record vừa bị xoá.
+- `language` chọn bản dịch tên phòng ban và vị trí, ví dụ `"vi-VN"` hoặc `"en-US"`;
+  tag không có vùng (`"vi"`) khớp với bản dịch đầu tiên của ngôn ngữ đó. Mặc định là
+  ngôn ngữ trong membership của user thực hiện invocation, sau đó đến ngôn ngữ của
+  user, rồi của workspace; nếu không có bản dịch phù hợp thì dùng tên đã lưu.
+- `name` của nhân sự là họ tên đầy đủ mà workspace hiển thị; `email` là email tài
+  khoản, nếu không có thì là email công việc; `avatar` là URL ảnh công khai.
+- Dữ liệu hiển thị chỉ gồm các field trên và mọi thành viên workspace đều xem được,
+  giống như trong ô chọn người dùng. Mỗi lần gọi tốn tối đa một lần đọc cho mỗi loại
+  dữ liệu và mỗi 200 ID; các giá trị vừa đọc được cache.
+
+### `org.me(options?)`
+
+Trả nhân sự của user thực hiện invocation, hoặc `null` với invocation `system` hay
+`inbound`. Method này tương đương `org.personnel.get` với
+`invocation.user.membership.personnelId`.
+
+### `org.personnel.get(id, options?)` và `org.personnel.getMany(ids, options?)`
+
+`get` trả một nhân sự đang hoạt động kèm mọi membership phòng ban, phòng ban chính
+đứng đầu, hoặc `null` khi ID không phải nhân sự đang hoạt động của workspace.
+`getMany` đọc tối đa 200 ID trong một lời gọi: ID trùng được gộp, `items` giữ thứ tự
+request và ID không tồn tại được liệt kê trong `missingIds`. Nhân sự chưa có tài
+khoản workspace có `accountId: null`; người đã rời workspace không được trả về.
+
+### `org.departments.get(id, options?)`, `tree(options?)` và `ancestors(id, options?)`
+
+- `get` trả một phòng ban đang hoạt động hoặc `null`. `childIds` theo thứ tự hiển thị;
+  `positionIds` là các vị trí áp dụng cho phòng ban.
+- `tree` trả các phòng ban gốc (hoặc chỉ `rootId`) kèm phòng ban con. `depth: 1` chỉ
+  trả phòng gốc; dưới độ sâu yêu cầu, `children` rỗng nhưng `childIds` vẫn liệt kê
+  phòng con. Cây có hơn 5000 phòng ban sẽ ném `ValidationError`; hãy thu hẹp bằng
+  `rootId` hoặc `depth`.
+- `ancestors` trả phòng cha trước, phòng gốc sau cùng.
+- Phòng ban có phòng cha đã ngừng hoạt động hoặc đã xoá được trả như phòng gốc
+  (`parentId: null`).
+
+### `org.departments.members(id, options?)` và `org.positions.members(id, options?)`
+
+Trả một trang membership: quản lý trước theo cấp, sau đó đến nhân viên. Nhân sự thuộc
+nhiều phòng ban trong phạm vi được liệt kê một lần cho mỗi phòng ban.
+`includeSubDepartments` thêm mọi phòng con theo thứ tự cây, `positionId` chỉ giữ
+người giữ vị trí đó, `departmentId` giới hạn người giữ vị trí trong một phòng ban, và
+`accountOnly` chỉ giữ nhân sự có tài khoản workspace. Truyền `nextCursor` làm
+`cursor` để đọc trang tiếp; `total` đếm mọi trang. Kích thước trang mặc định 500 và
+tối đa 2000, hoặc tối đa 200 khi có `withDisplay`.
+
+### `org.positions.list(options?)` và `org.positions.get(id, options?)`
+
+Trả các vị trí đang hoạt động, vị trí tạo trước đứng trước. Vị trí chỉ áp dụng cho
+phòng ban riêng (`departmentOnly: true`) áp dụng cho `departmentIds`; vị trí còn lại
+áp dụng cho mọi phòng ban trừ `excludedDepartmentIds`.
+
+### Quản lý và chuỗi quản lý
+
+`level` của membership đánh dấu quản lý: `0` là nhân viên, `1` là cấp quản lý cao
+nhất của phòng ban, `2` là cấp cao nhì, và cứ thế tiếp. Nhiều người có thể cùng cấp.
+
+- `org.departments.managers(id, options?)` trả quản lý của riêng phòng ban đó, mỗi
+  cấp một tier, cấp `1` đứng đầu.
+- `org.departments.managerChain(id, options?)` trả các quản lý phía trên một nhân
+  viên của phòng ban, gần nhất trước, đến tận phòng ban gốc.
+- `org.personnel.managerChain(id, options?)` trả một chuỗi cho mỗi phòng ban của nhân
+  sự, phòng ban chính đứng đầu; `departmentId` chỉ giữ chuỗi bắt đầu từ phòng ban đó.
+  Kết quả rỗng với nhân sự không tồn tại.
+
+Chuỗi được tạo theo các quy tắc:
+
+1. Trong phòng ban xuất phát, quản lý của nhân sự là những người có số cấp nhỏ hơn cấp
+   của chính nhân sự đó (mọi quản lý nếu là nhân viên), gần nhất trước: cấp `3`, rồi
+   `2`, rồi `1`. Trưởng phòng không có quản lý trong phòng của mình.
+2. Sau đó mỗi phòng cha đến tận phòng gốc thêm mọi quản lý của mình, số cấp lớn nhất
+   trước. Mọi quản lý của phòng cha đều đứng trên mọi quản lý của các phòng con.
+3. Mỗi nhân sự chỉ xuất hiện một lần, ở tier gần nhất, và nhân sự xuất phát không bao
+   giờ được liệt kê.
+4. `accountOnly: true` bỏ qua nhân sự chưa có tài khoản workspace, ví dụ khi chuỗi
+   dùng để chọn người duyệt.
+5. `vacantDepartmentIds` liệt kê các phòng ban đi qua mà không có quản lý hợp lệ nào;
+   chuỗi tiếp tục với phòng cha của chúng. Phòng của chính trưởng phòng không bị coi
+   là trống.
+6. `truncated` là `true` khi một phòng cha đã ngừng hoạt động, nên chuỗi dừng trước
+   phòng gốc thực sự.
+
+Ví dụ, với ban lãnh đạo công ty (CEO cấp `1`, phó CEO cấp `2`), khối Kỹ thuật bên
+dưới (giám đốc cấp `1`) và phòng Kiểm thử thuộc khối Kỹ thuật (trưởng phòng `1`, phó
+phòng `2`, trưởng nhóm `3`), chuỗi của một tester là: trưởng nhóm, phó phòng, trưởng
+phòng, giám đốc khối, phó CEO, CEO. Chuỗi của phó phòng Kiểm thử là: trưởng phòng,
+giám đốc khối, phó CEO, CEO.
+
+### `org.isInDepartment(personnelId, departmentId, options?)` và `org.isManagerOf(managerId, personnelId, options?)`
+
+`isInDepartment` cho biết nhân sự có thuộc phòng ban, hoặc một phòng con của nó khi
+có `includeSubDepartments`. `isManagerOf` cho biết `managerId` có xuất hiện trong một
+chuỗi quản lý của `personnelId` hay không; `departmentId` chỉ xét chuỗi bắt đầu từ
+phòng ban đó và `directOnly` chỉ xét tier gần nhất. Cả hai trả `false` với ID không
+tồn tại.
+
+### Quy tắc
+
+- `org` dùng được trong script, route, record trigger ở cả hai thời điểm, background
+  job và Development Session.
+- `org` đi theo danh tính mặc định của lần thực thi: lần thực thi có user hoặc danh
+  tính system đều đọc được. Lần thực thi không có user (background job, inbound
+  webhook, hoặc record trigger do một thao tác ghi của hệ thống gây ra) chỉ đọc được
+  khi identity policy đã duyệt của project đặt `allowInternalSystem: true`; nếu không,
+  mọi lời gọi ném `PermissionDeniedError` có `details.reason` là
+  `"IDENTITY_NOT_GRANTED"`.
+- Mọi lời gọi trong cùng một lần thực thi đọc cùng một phiên bản cơ cấu tổ chức.
+- ID được SDK kiểm tra và Cogover kiểm tra lại; ID hoặc option không hợp lệ ném
+  `ValidationError`. Các method `get` trả `null` với ID không tồn tại; `members`,
+  `managers`, `managerChain`, `ancestors` và `tree({ rootId })` ném `NotFoundError`
+  với `resource` là `"department"` hoặc `"position"`.
+- Khi không đọc được cơ cấu tổ chức, lời gọi ném `CogoverApiError` với code
+  `ORGANIZATION_UNAVAILABLE`.
+- Dùng `getMany` hoặc `members` thay vì gọi `get` trong vòng lặp: mỗi lời gọi là một
+  capability call.
+
 ## Schema API
 
 `SchemaApi<Schema>.object(slug)` đọc metadata Object và trả:
@@ -2179,6 +2790,14 @@ ném lỗi này sẽ làm thao tác ghi bị từ chối như mọi lỗi khác.
 năng chưa được bật cho Workspace. `crypto.aesDecrypt` và `crypto.rsaDecrypt` ném
 `CogoverApiError` với `code: "DECRYPTION_FAILED"` khi không giải mã được ciphertext.
 
+`notifications.send` và `email.send` thất bại với `ValidationError`, `NotFoundError`,
+`PermissionDeniedError` hoặc `RateLimitError` như mô tả trong mục của chúng, với
+`CogoverApiError` có `code` là `NOTIFICATIONS_DISABLED` hoặc `EMAIL_DISABLED` khi tính
+năng bị tắt, và với `CogoverApiError` có `code` là `DUPLICATE_IN_PROGRESS` trong lúc
+một lời gọi trước đó cùng `idempotencyKey` vẫn đang gửi. Hộp thư gửi không được
+Project policy cho phép được báo bằng `PermissionDeniedError` có `details.reason` là
+`"EMAIL_SENDER_NOT_GRANTED"`.
+
 Script có thể bắt lỗi và tự chọn mã/thông báo trả cho client, không cần forward lỗi gốc.
 Thông báo public trong `msg`, `message` và các field tương tự luôn phải viết bằng
 tiếng Anh, kể cả khi tài liệu hoặc giao diện sử dụng ngôn ngữ khác.
@@ -2212,6 +2831,7 @@ status, `code` và `msg` an toàn:
 | `LOCK_LOST` | 409 |
 | `STATE_SERVICE_UNAVAILABLE` | 503 |
 | `LOCK_SERVICE_UNAVAILABLE` | 503 |
+| `ORGANIZATION_UNAVAILABLE` | 503 |
 | `FETCH_DISABLED` | 503 |
 | `FETCH_BLOCKED` | 400 |
 | `FETCH_REQUEST_TOO_LARGE` | 413 |

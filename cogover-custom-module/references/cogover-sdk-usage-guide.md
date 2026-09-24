@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.10.0` ngày `2026-09-24`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.12.0` ngày `2026-09-24`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -88,8 +88,8 @@ export default defineScript(({ invocation }) => {
 });
 ```
 
-Chỉ dùng Record API khi cần các field nghiệp vụ Personnel đầy đủ và mới nhất như
-phòng ban, chức danh, quản lý hoặc custom field. Snapshot chỉ chứa các field đã
+Dùng [`org`](#đọc-phòng-ban-vị-trí-và-quản-lý) cho phòng ban, vị trí và quản lý;
+chỉ dùng Record API khi cần các field Personnel mới nhất khác như custom field. Snapshot chỉ chứa các field đã
 được tài liệu hoá, không chứa thông tin xác thực thô hay credential của Cogover.
 
 ### Cho phép thao tác theo role trong Workspace
@@ -124,6 +124,53 @@ export default defineScript(({ invocation }) => {
 - Khi phát triển local bằng Cogover Dev CLI, các giá trị được lấy lúc development
   session bắt đầu. Hãy khởi động lại `cogover-dev` để nhận thay đổi role.
 - Invocation `system` và `inbound` có `user: null` nên không có membership.
+
+## Đọc phòng ban, vị trí và quản lý
+
+`org` trả lời các câu hỏi về cơ cấu mà không cần đọc record: ai thuộc phòng ban nào,
+vị trí nào được áp dụng và ai quản lý ai. Thêm `withDisplay: true` khi cần cả tên, ví
+dụ để hiển thị lên màn hình.
+
+```typescript
+export default defineScript(async ({ org, invocation, input }) => {
+  const { ownerId, departmentId } = input as { ownerId: string; departmentId: string };
+  const callerId = invocation.user?.membership.personnelId;
+  if (callerId === undefined) {
+    return { approved: false, reason: "Only a user can approve this order" };
+  }
+  // Chỉ quản lý của người phụ trách đơn, trong phòng ban của đơn, mới được duyệt.
+  if (!await org.isManagerOf(callerId, ownerId, { departmentId })) {
+    return { approved: false, reason: "Only a manager of the owner can approve this order" };
+  }
+  return { approved: true };
+});
+```
+
+Lấy danh sách người duyệt của một nhân sự, gần nhất trước, kèm tên:
+
+```typescript
+const [chain] = await org.personnel.managerChain(ownerId, {
+  departmentId,
+  accountOnly: true,   // người duyệt cần có tài khoản
+  withDisplay: true,
+});
+const approvers = chain?.tiers.flatMap(tier =>
+  tier.personnel.map(person => ({ id: person.id, name: person.display?.name }))) ?? [];
+```
+
+- `level` đánh dấu quản lý: `0` là nhân viên, `1` là cấp quản lý cao nhất của phòng
+  ban, `2` là cấp cao nhì. Chuỗi quản lý đi từ phòng ban của nhân sự lên phòng gốc, và
+  mọi quản lý của phòng cha đều đứng trên quản lý của các phòng con.
+  `vacantDepartmentIds` cho biết những phòng ban không có quản lý.
+- Câu trả lời về cấu trúc được lấy từ bộ nhớ và phản ánh thay đổi sau vài giây.
+  `withDisplay` tốn tối đa thêm một lần đọc cho mỗi loại dữ liệu; tên theo ngôn ngữ
+  của người gọi, trừ khi bạn truyền `language`.
+- Đọc nhiều nhân sự bằng `org.personnel.getMany` hoặc một trang
+  `org.departments.members` thay vì gọi `get` trong vòng lặp.
+- `org` dùng được trong script, trigger (kể cả before-change) và job. Lần thực thi
+  không có user cần `allowInternalSystem: true` trong identity policy của project.
+- Với các field nhân sự khác như custom field, dùng `data.object("personnel")`, nơi
+  quyền record được áp dụng.
 
 ## Lọc và sắp xếp record
 
@@ -427,7 +474,8 @@ router.post("/recalculate", async ({ jobs, response }) => {
 
 - Job handler nhận `job` (run ID, key, lần thử, nguồn), `payload` đã truyền cho
   `enqueue` (hoặc `null`) và cùng các API `data`, `schema`, `log`, `state`,
-  `locks`, `jobs`, `secrets`, `crypto` như script. Giá trị trả về bị bỏ qua.
+  `locks`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org` như script.
+  Giá trị trả về bị bỏ qua.
 - Lần chạy được enqueue từ route hoặc trigger thực hiện dưới danh tính người dùng
   của lời gọi đó. Lần chạy theo lịch không có người dùng: `data.object()` chỉ hoạt
   động khi identity policy cho phép danh tính system, nên hãy duyệt
@@ -448,6 +496,198 @@ router.post("/recalculate", async ({ jobs, response }) => {
 
 Xem [tài liệu tham chiếu background job](cogover-sdk-api-reference.md#background-job) để biết
 mọi tuỳ chọn và quy tắc.
+
+## Gửi notification và email
+
+`notifications.send` đưa một notification vào danh sách thông báo (biểu tượng chuông)
+của người nhận và, theo notification channel của workspace, gửi thêm qua web push,
+mobile push và một bản sao email. `email.send` gửi email thật từ một hộp thư dùng
+chung của workspace hoặc từ hộp thư cá nhân của người dùng đã khởi đầu execution, và
+có thể ghi nhận email trên timeline của một record. Cả hai dùng được trong script,
+route, trigger after-change và job; trigger before-change không dùng được.
+
+### Yêu cầu phê duyệt
+
+```typescript
+import { defineTrigger } from "@cogover/sdk";
+
+// Record ID của notification channel "Phê duyệt" trong workspace.
+const APPROVAL_CHANNEL = "NCHXXXXXXXXXXXX";
+
+export const triggers = [
+  defineTrigger({
+    key: "leave_request_submitted",
+    object: "leave_request",
+    timing: "afterChange",
+    operations: ["create", "update"],
+    fields: ["status", "days"],
+    changedFields: ["status"],
+    when: { op: "=", field: "status", params: "submitted" },
+    runWhen: "onEnter",
+  }, async ({ records, trigger, invocation, org, notifications }) => {
+    const requesterId = invocation.user?.membership.personnelId;
+    if (requesterId === undefined) return;
+    // Quản lý gần nhất của người gửi yêu cầu là người phê duyệt.
+    const [chain] = await org.personnel.managerChain(requesterId, { accountOnly: true });
+    const approverIds = chain?.tiers[0]?.personnelIds ?? [];
+    if (approverIds.length === 0) return;
+
+    for (const record of records) {
+      await notifications.send({
+        to: approverIds,
+        exclude: ["actor"],
+        sender: "actor",
+        title: "Leave request waiting for your approval",
+        subtitle: `${record.new.days} day(s)`,
+        content: "A leave request was submitted and needs your decision.",
+        link: { url: `/app/leave_request/${record.id}` },
+        channel: APPROVAL_CHANNEL,
+        // Cùng một thay đổi của cùng một record luôn tạo ra cùng một key.
+        idempotencyKey: `leave-approval:${trigger.changeId}:${record.id}`,
+      });
+    }
+  }),
+];
+```
+
+- `to` nhận từ 1 đến 200 personnel ID. Personnel chưa có tài khoản người dùng được bỏ
+  qua và trả về trong `skippedPersonnelIds`; `exclude: ["actor"]` bỏ qua người gây ra
+  execution, còn `sender: "actor"` hiển thị người đó là người gửi.
+- `channel` là record ID của một notification channel của workspace. Kênh quyết định
+  hình thức gửi nào (trong web app, web push, mobile push, email) được bật, và mỗi
+  người dùng có thể ghi đè; không có kênh thì mọi hình thức đều được bật. Truyền
+  `email: false` để không bao giờ gửi bản sao email. Bản sao được gửi từ một địa chỉ
+  thông báo của Cogover và được tính vào hạn mức email thông báo hằng ngày theo gói
+  của workspace.
+- `link.url` là path của web app bắt đầu bằng `/` hoặc URL tuyệt đối `http(s)`.
+  `contentType: "html"` chỉ giữ định dạng cơ bản như đoạn văn, danh sách, bảng và
+  liên kết.
+- Notification không cần được duyệt trong identity policy.
+
+### Gửi báo giá từ hộp thư dùng chung
+
+```typescript
+import { createRouter, NotFoundError } from "@cogover/sdk";
+
+const router = createRouter();
+
+router.post("/quotes/:id/send", async ({ request, data, email, response }) => {
+  const quotes = data.object("quote");
+  const quote = await quotes.records.get(request.params.id, { fields: ["code"] });
+  if (!quote) throw new NotFoundError("quote", request.params.id);
+
+  // Chọn hộp thư theo địa chỉ thay vì hard-code ID.
+  const sales = (await email.senders()).find(sender => sender.email === "sales@example.com");
+  if (!sales) {
+    return response.json({ msg: "The sales mailbox is not available to this module." }, { status: 409 });
+  }
+
+  const result = await email.send({
+    from: { mailbox: sales.id },
+    subject: `Quote ${quote.fields.code}`,
+    html: "<p>Dear customer,</p><p>Please find our quote attached.</p>",
+    // Ghi nhận email trên timeline của báo giá, có theo dõi lượt mở và lượt bấm.
+    record: { object: "quote", recordId: quote.id },
+    // Địa chỉ của khách hàng lấy từ field email của báo giá.
+    recordEmailFields: ["contact_email"],
+    attachments: [{ object: "quote", recordId: quote.id, field: "quote_pdf" }],
+    // Bấm hai lần hoặc request bị gửi lại cũng không gửi báo giá hai lần.
+    idempotencyKey: `quote-email:${quote.id}`,
+  });
+  return response.json({ requestId: result.requestId, duplicate: result.duplicate }, { status: 202 });
+});
+
+export default router.toHandler();
+```
+
+- `from` là `{ mailbox: id }` với hộp thư dùng chung của workspace hoặc `"actor"` với
+  hộp thư cá nhân mặc định của người dùng đã khởi đầu execution. Người nhận là địa
+  chỉ, `{ email, name }` hoặc `{ personnelId }`, tổng cộng tối đa 50 trong `to`, `cc`
+  và `bcc`. Cung cấp đúng một trong `html` và `text`.
+- `recordEmailFields`, `attachments` (tối đa 10 file và tổng cộng 20 MB) và
+  `appendSignature` cần `record`; `appendSignature` còn cần `from: "actor"`. Các
+  record phải đọc được bằng danh tính mặc định của execution.
+- Không có `record` thì email chỉ được gửi từ hộp thư (`delivery: "direct"`).
+
+### Cho phép module gửi email
+
+Module chỉ gửi được email từ các hộp thư mà quản trị viên đã cho phép. Quản trị viên
+thêm mục `email` vào identity policy của Project và duyệt policy cho version bạn
+publish:
+
+```json
+{
+  "email": {
+    "workspaceMailboxIds": ["EMWXXXXXXXXXXXX"],
+    "allowActorMailbox": false
+  }
+}
+```
+
+`workspaceMailboxIds` liệt kê các hộp thư dùng chung mà module được gửi từ đó, và
+`allowActorMailbox: true` cho phép `from: "actor"`. Mục này tuân theo phần còn lại
+của policy: áp dụng cho các caller được chọn trong `callerPersonnelIds`, và cho
+execution không có người dùng (job theo lịch, inbound webhook) chỉ khi policy đặt
+`allowInternalSystem: true`. Policy có thể chỉ gồm mục `email`. Mọi người gửi khác
+bị từ chối bằng `PermissionDeniedError` với
+`details.reason === "EMAIL_SENDER_NOT_GRANTED"`; `email.senders()` cho biết các hộp
+thư mà execution hiện tại được dùng.
+
+### Gửi theo kiểu best-effort
+
+- Lời gọi thành công nghĩa là Cogover đã tiếp nhận notification hoặc email. Việc gửi
+  diễn ra sau đó, và lỗi xảy ra muộn hơn, ví dụ địa chỉ bị từ chối, không được báo
+  cho script. Hãy ghi "đã gửi" trong dữ liệu của bạn với nghĩa "đã được tiếp nhận để
+  gửi", không phải bằng chứng đã tới nơi.
+- Notification hoặc email đã gửi không thể thu hồi.
+- Mặc định mỗi project được gửi notification tới 5.000 người nhận và gửi 500 email
+  mỗi giờ; vượt quá thì lời gọi ném `RateLimitError` và không gửi gì. Hãy chia đợt
+  gửi lớn qua nhiều lần chạy job.
+
+### Dùng `idempotencyKey` trong job và trigger
+
+Job được giao ít nhất một lần và trigger after-change có thể chạy nhiều hơn một lần,
+nên lần chạy lại sẽ gửi notification hoặc email thêm lần nữa. Hãy gán cho mỗi message
+một `idempotencyKey` không đổi qua các lần thử: lời gọi thứ hai cùng key trong 7 ngày
+trả về kết quả đầu tiên với `duplicate: true` và không gửi gì.
+
+```typescript
+import { defineJob } from "@cogover/sdk";
+
+const BILLING_MAILBOX = "EMWXXXXXXXXXXXX";
+
+export const overdueReminders = defineJob({
+  key: "overdue_invoice_reminders",
+  schedule: { cron: "0 8 * * *", timezone: "Asia/Ho_Chi_Minh" },
+}, async ({ job, data, email }) => {
+  const invoices = data.object("invoice");
+  const overdue = await invoices.records.list({
+    where: invoices.fields.status.eq("overdue"),
+    fields: ["code"],
+    limit: 200,
+  });
+  for (const invoice of overdue.items) {
+    await email.send({
+      from: { mailbox: BILLING_MAILBOX },
+      subject: `Invoice ${invoice.fields.code} is overdue`,
+      text: "Our records show that this invoice is overdue. Please arrange payment.",
+      record: { object: "invoice", recordId: invoice.id },
+      recordEmailFields: ["billing_email"],
+      // job.id không đổi qua các lần thử, nên lần chạy lại bỏ qua các email đã gửi.
+      idempotencyKey: `${job.id}:${invoice.id}`,
+    });
+  }
+});
+
+export const jobs = [overdueReminders];
+```
+
+Lần chạy theo lịch không có người dùng, nên job này cần `allowInternalSystem: true`
+trong identity policy cho cả `data.object()` lẫn grant hộp thư, và không dùng được
+`from: "actor"`. Lời gọi thực hiện trong lúc một lời gọi trước đó cùng key vẫn đang
+gửi ném `CogoverApiError` với `code: "DUPLICATE_IN_PROGRESS"`; hãy để lần chạy thất
+bại bằng `RetryableError` hoặc thử lại sau. Xem [Notification](cogover-sdk-api-reference.md#notification)
+và [Email](cogover-sdk-api-reference.md#email) trong API reference để biết mọi tuỳ chọn và lỗi.
 
 ## Chọn danh tính cho thao tác record
 
@@ -597,10 +837,10 @@ Không đọc dữ liệu bên trong vòng lặp. Hãy gom các ID, gọi `recor
 rồi tra cứu kết quả từ một `Map` như ví dụ trên.
 
 **Chỉ đọc.** Trigger before-change được đọc record và schema. Thao tác ghi record,
-`fetch`, lock, ghi state và push message bị từ chối bằng `PermissionDeniedError`
-(`details.reason === "TRIGGER_READ_ONLY"`) với mọi danh tính. Trigger context có
-`records`, `trigger`, `invocation`, `data`, `schema`, `log` và `push`; không có
-`request`, `response`, `state` hay `locks`.
+`fetch`, lock, ghi state, push message, notification và email bị từ chối bằng
+`PermissionDeniedError` (`details.reason === "TRIGGER_READ_ONLY"`) với mọi danh tính.
+Trigger context có `records`, `trigger`, `invocation`, `data`, `schema`, `log`, `push`,
+`notifications` và `email`; không có `request`, `response`, `state` hay `locks`.
 
 **Danh tính.** `data.object()` thực hiện dưới danh tính người đã tạo ra thay đổi, với
 quyền của người đó, nên một lời gọi đọc có thể không trả về record mà người này không
@@ -618,7 +858,8 @@ có kết quả xác định. Xem [tham chiếu record trigger](cogover-sdk-api-
 Đặt `timing: "afterChange"` để chạy code sau khi thay đổi đã được lưu. Handler chạy
 bất đồng bộ, ngay sau thao tác ghi: bên ghi không chờ handler, và handler không thể
 từ chối hay sửa thay đổi đã lưu. Khác với trigger before-change, handler được ghi
-record, gọi `fetch`, đọc secret và enqueue background job như một script.
+record, gọi `fetch`, đọc secret, gửi notification và email, và enqueue background job
+như một script.
 
 ```typescript
 import { defineTrigger, fetch, RetryableError } from "@cogover/sdk";

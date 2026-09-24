@@ -3,13 +3,13 @@ name: cogover-overview
 description: "Tổng quan Cogover Platform: kiến trúc 3 tầng, tính năng chuẩn của Sales, Finance, Inventory, Manufacture, Omni Channel, Custom Frontend/Backend Module và bản đồ skill chuyên trách. Dùng khi hỏi Cogover/App chuẩn làm được gì hoặc cần chọn skill. Tạo/sửa Custom Module: $cogover-custom-module; dự án App end-to-end từ BRD/SRS: $build-cogover-app."
 metadata:
   author: cogover
-  version: "1.1.3"
+  version: "1.2.0"
 ---
 
 # Tổng quan Cogover Platform
 
-- **Phiên bản:** `1.1.3`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-09-24`
 
 Điểm vào và bản đồ điều phối cho mọi bài toán Cogover: xác định yêu cầu thuộc tầng nào, đọc reference tương ứng, rồi gọi skill chuyên trách để đọc state thật, thực hiện thay đổi và xác minh.
 
@@ -28,7 +28,7 @@ Cogover là nền tảng low-code/no-code để số hoá và quản lý hoạt 
 | Tầng | Vai trò | Module / khả năng |
 |---|---|---|
 | **1 — Object Manager** | Nền tảng cốt lõi: biến mọi dữ liệu thành Object có cấu trúc, tương tự Database nhưng kèm giao diện trực quan, phân quyền sẵn và module quản trị | Object & Field (20+ loại field; Formula bằng Cogover Scripting); Layout Builder; Hành động & Chuỗi hành động; UI Rules; Data Security Rules; Transition Rules; Duplicate Rules; Field Change History |
-| **2 — Business Logic** | Xử lý nghiệp vụ trên dữ liệu và giao diện của Tầng 1 | Object Process (BPMN, 5 loại Flow); Quản lý ứng dụng (App/menu); Vai trò & phân quyền; Thông báo; Mẫu văn bản; Assignment Rules; Tích hợp email; Report & Dashboard; Cogover API; Custom Backend Module |
+| **2 — Business Logic** | Xử lý nghiệp vụ trên dữ liệu và giao diện của Tầng 1 | Object Process (BPMN, 5 loại Flow); Quản lý ứng dụng (App/menu); Vai trò & phân quyền; Thông báo; Mẫu văn bản; Assignment Rules; Tích hợp email; Report & Dashboard; Cogover API; Custom Backend Module (API riêng, record trigger, background job/lịch, inbound webhook, notification/email) |
 | **3 — Application** | Miền ứng dụng lắp ghép từ hai tầng dưới, cấu hình theo workspace | Sales (CRM), Inventory (WMS), People (HRM), Process (BPM), Omni Channel, Finance, Service (Contact Center, Call Center), Manufacture, Goal; miền mở rộng (Order, Warranty, Reseller, E-Commerce, Purchasing, Ticket, Task Management); Custom Frontend Module |
 
 Liên kết giữa các tầng:
@@ -49,7 +49,7 @@ Liên kết giữa các tầng:
 
 Layout bản ghi có thể thiết kế **riêng cho Web**, **riêng cho Mobile** hoặc **dùng chung cho cả hai**; cấu hình phạm vi nền tảng và bố cục bằng `$object-layout`.
 
-Node **Send Notification** của Process gửi được đến ứng dụng mobile khi **Loại thông báo** là **All** hoặc **In app** (hai bản ghi của Object `notification_channel` với các trường kênh tương ứng được tick; khi **mobile push** được tick, người nhận nhận thêm push notification mà không cần mở ứng dụng). Resolve kênh theo [Thông báo ở Tầng 2](references/tang2-business-logic.md#thông-báo) trước khi cấu hình Process.
+Node **Send Notification** của Process gửi được đến ứng dụng mobile khi **Loại thông báo** là **All** hoặc **In app** (hai bản ghi của Object `notification_channel` với các trường kênh tương ứng được tick; khi **mobile push** được tick, người nhận nhận thêm push notification mà không cần mở ứng dụng). Custom Backend Module gửi notification qua cùng các kênh này bằng `notifications.send` với record ID của `notification_channel` (theo `$cogover-custom-module`). Resolve kênh theo [Thông báo ở Tầng 2](references/tang2-business-logic.md#thông-báo) trước khi cấu hình Process hoặc code backend.
 
 ## Khi nào đọc file reference nào
 
@@ -77,12 +77,13 @@ Bổ sung phần nghiệp vụ mà Object, Process hoặc chức năng chuẩn c
 | Loại | Chọn khi | Ví dụ |
 |---|---|---|
 | **Custom Frontend Module** | Cần màn hình riêng; API hiện có đã đáp ứng dữ liệu và logic với quyền người dùng | Màn hình tra cứu, biểu mẫu hoặc báo cáo tùy chỉnh |
-| **Custom Backend Module** | Cần logic phía server, tổng hợp/ghi Object, API riêng hoặc tích hợp có thông tin bí mật | Tính giá, đồng bộ dữ liệu, API tổng hợp tồn kho |
+| **Custom Backend Module** | Cần logic phía server, tổng hợp/ghi Object, API riêng, tích hợp có thông tin bí mật (secret/credential, ký và mã hoá), quy tắc kiểm tra/điều chỉnh record trước khi lưu áp cho mọi nguồn ghi và xử lý tiếp sau khi lưu (record trigger), việc nền có retry hoặc chạy theo lịch (background job), nhận webhook từ hệ thống ngoài (inbound webhook), gửi notification/email hoặc làm mới record đang mở, quy tắc theo cơ cấu tổ chức hay role của người gọi | Tính giá, đồng bộ ERP hằng đêm, API tổng hợp tồn kho, chặn xoá đơn đã hoàn thành, nhận sự kiện từ cổng thanh toán, báo quản lý trực tiếp khi có yêu cầu duyệt, gửi báo giá từ hộp thư dùng chung |
 | **Frontend + Backend** | Màn hình riêng cần gọi logic riêng phía backend | Màn hình xử lý đơn hàng gọi API tính giá và cập nhật đơn |
 
 - [$cogover-custom-module](../cogover-custom-module/SKILL.md) là nguồn chuẩn cho toàn bộ vòng đời module và bàn giao link frontend hoặc cURL backend.
 - Khảo sát chức năng chuẩn trên Workspace trước khi chọn phần custom; nếu chỉ cần cấu hình Object/Layout/Process đã được hỗ trợ, dùng skill chuyên trách tương ứng. Người dùng yêu cầu rõ trải nghiệm riêng: vẫn thiết kế phần custom cần thiết.
-- Không đặt secret trong frontend; backend không mặc định vượt quyền dữ liệu. Cần chạy theo sự kiện record hoặc theo lịch: phối hợp `$process-creator` theo contract được hỗ trợ.
+- Không đặt secret trong frontend; secret/credential tích hợp lưu ở Project backend, không trong source. Backend mặc định chạy với quyền của người gọi; quyền hệ thống, quyền ủy quyền và hộp thư gửi email phải được quản trị viên duyệt trong identity policy của Project cho từng version.
+- Chạy theo sự kiện record, theo lịch hoặc gửi thông báo: chọn giữa Custom Backend Module và Process theo [Custom Backend Module ở Tầng 2](references/tang2-business-logic.md#custom-backend-module). Tóm tắt: quy tắc phải áp cho mọi nguồn ghi, xử lý bằng code sau khi lưu, việc nền có retry, lịch do code quản lý, webhook có xác thực và thông báo/email mà người nhận hoặc nội dung do logic backend quyết định dùng Custom Backend Module; luồng nhiều bước có người duyệt (User Task), AI Agent hoặc automation người dùng muốn tự cấu hình trên giao diện dùng `$process-creator`. Không dùng cả hai cho cùng một quy tắc, lịch hoặc thông báo.
 
 ## Bản đồ điều phối skill
 

@@ -414,7 +414,7 @@ Không thể xóa active version. Hãy activate version khác hoặc deactivate 
 
 ## Identity policy
 
-Identity policy kiểm soát caller nào được dùng quyền ủy quyền `data.asSystem()` hoặc `data.asUser()` từ Custom Backend Module. Policy không chặn việc chạy module thông thường hoặc truy cập dữ liệu theo quyền mặc định của caller. Policy đang chỉnh sửa của module và snapshot bất biến đã duyệt cho version là hai resource riêng. Cập nhật policy đang chỉnh sửa không làm thay đổi snapshot đã duyệt trước đó.
+Identity policy kiểm soát caller nào được dùng quyền ủy quyền `data.asSystem()` hoặc `data.asUser()` từ Custom Backend Module, và module được gửi email bằng `email.send()` từ những hộp thư nào. Policy không chặn việc chạy module thông thường hoặc truy cập dữ liệu theo quyền mặc định của caller. Policy đang chỉnh sửa của module và snapshot bất biến đã duyệt cho version là hai resource riêng. Cập nhật policy đang chỉnh sửa không làm thay đổi snapshot đã duyệt trước đó.
 
 Hỗ trợ policy schema version `2`:
 
@@ -439,6 +439,10 @@ Hỗ trợ policy schema version `2`:
       "personnelIds": ["PERYXXXXXXXXXX"]
     },
     "operations": ["RECORD_READ"]
+  },
+  "email": {
+    "workspaceMailboxIds": ["EMWXXXXXXXXXXXX"],
+    "allowActorMailbox": true
   }
 }
 ```
@@ -446,6 +450,40 @@ Hỗ trợ policy schema version `2`:
 Selector mode gồm `ALL`, `ALL_EXCEPT` và `ONLY`. Operation được hỗ trợ gồm `RECORD_READ`, `RECORD_CREATE`, `RECORD_UPDATE` và `RECORD_DELETE`. Tên JSON key chính xác là `data.asSystem` và `data.asUser`; không chuyển thành object `data` lồng nhau. Field lạ sẽ bị từ chối.
 
 `callerPersonnelIds` chọn public caller đủ điều kiện dùng delegated grant. `data.asSystem` chọn object và operation được phép. `data.asUser` chọn personnel đích và operation được phép; user đích vẫn phải có quyền thực tế trên dữ liệu được yêu cầu. Bỏ grant nào thì identity mode đó bị cấm.
+
+Policy phải có ít nhất một trong `data.asSystem`, `data.asUser` và `email`.
+
+### Người gửi email
+
+Mục `email` (không bắt buộc) chọn các hộp thư mà module được gửi email từ đó bằng `email.send()`:
+
+| Field | Kiểu | Ý nghĩa |
+|---|---|---|
+| `workspaceMailboxIds` | mảng string | ID của các hộp thư dùng chung của workspace mà module được gửi từ đó, tối đa 50. Mỗi ID khớp `[A-Za-z0-9_-]{1,64}`; ID trùng được bỏ qua. Mặc định `[]`; giá trị `null` bị từ chối. |
+| `allowActorMailbox` | boolean | Cho phép gửi từ hộp thư cá nhân mặc định của người dùng có hành động khởi đầu execution (`from: "actor"`). Mặc định `false`. |
+
+- Mục này phải cấp ít nhất một quyền: `workspaceMailboxIds` không rỗng, `allowActorMailbox: true`, hoặc cả hai. Object `email` không cấp quyền nào bị từ chối với HTTP `400`.
+- Bỏ `email` nghĩa là module không gửi được email. Gửi notification không cần grant.
+- Mục này tuân theo cùng quy tắc với phần còn lại của policy: chỉ có hiệu lực qua version snapshot đã duyệt, chỉ áp dụng cho caller được chọn trong `callerPersonnelIds`, và chỉ áp dụng cho execution không có người dùng khi `allowInternalSystem` là `true`.
+- Khi lưu policy, backend không kiểm tra các hộp thư được liệt kê có tồn tại hay không. Việc hộp thư có tồn tại và đang hoạt động hay không được kiểm tra mỗi lần module gửi; hộp thư có trong danh sách nhưng đã bị vô hiệu hoá sẽ bị từ chối tại thời điểm đó.
+- Module gửi từ hộp thư mà policy đã duyệt không cho phép nhận `PermissionDeniedError` có `details.reason` là `"EMAIL_SENDER_NOT_GRANTED"`.
+
+Policy có thể chỉ gồm mục `email`:
+
+```json
+{
+  "schemaVersion": 2,
+  "callerPersonnelIds": {
+    "mode": "ALL",
+    "personnelIds": []
+  },
+  "allowInternalSystem": true,
+  "email": {
+    "workspaceMailboxIds": ["EMWXXXXXXXXXXXX"],
+    "allowActorMailbox": false
+  }
+}
+```
 
 ### Lưu hoặc đọc policy đang chỉnh sửa
 
