@@ -290,7 +290,7 @@ Dùng Preview của Cogover với method `POST`, route `/` và input `{"leadId":
 
 ```bash
 curl -X POST 'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/{PROJECT_SLUG}' \
-  -H 'x-req-type: 6' \
+  -H 'x-req-type: 9' \
   -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' \
   -H 'x-csrf-token: {CSRF_TOKEN}' \
@@ -317,34 +317,28 @@ Chạy từ cùng thư mục; thay `{WORKSPACE_DOMAIN}` bằng hostname đúng v
 ```bash
 curl -i --config .cogover-session.curl \
   -X POST 'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/{PROJECT_SLUG}' \
-  -H 'x-req-type: 6' \
+  -H 'x-req-type: 9' \
   -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' \
   --data '{"leadId":"{LEAD_ID}"}'
 ```
 
-`--config` nạp trọn bộ cookie/header xác thực; không thêm lại các placeholder cookie/CSRF từ mẫu thủ công. Caller của session phải có quyền đọc Object `lead`, bản ghi và các field được yêu cầu. Khác với API local ở mục 7, response production được bọc trong transport envelope và kết quả của handler nằm tại `body` (giá trị metadata của envelope chỉ minh họa, có thể khác theo request):
+`--config` nạp trọn bộ cookie/header xác thực; không thêm lại các placeholder cookie/CSRF từ mẫu thủ công. Caller của session phải có quyền đọc Object `lead`, bản ghi và các field được yêu cầu. Giống API local ở mục 7, response production chính là kết quả của handler, với status và header do handler chọn:
 
 ```json
 {
-  "serviceVersion": 1,
-  "service": 3,
-  "id": 123,
-  "type": 6,
-  "body": {
-    "lead": {
-      "id": "REPLACE_WITH_LEAD_ID",
-      "fields": {
-        "name": "Nguyen An",
-        "first_name": "An",
-        "last_name": "Nguyen",
-        "status": "new",
-        "emails": ["an.nguyen@example.com"]
-      },
-      "system": {
-        "createdAt": 1788023000000,
-        "updatedAt": 1788023000000
-      }
+  "lead": {
+    "id": "REPLACE_WITH_LEAD_ID",
+    "fields": {
+      "name": "Nguyen An",
+      "first_name": "An",
+      "last_name": "Nguyen",
+      "status": "new",
+      "emails": ["an.nguyen@example.com"]
+    },
+    "system": {
+      "createdAt": 1788023000000,
+      "updatedAt": 1788023000000
     }
   }
 }

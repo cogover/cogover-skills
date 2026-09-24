@@ -3,13 +3,13 @@ name: cogover-custom-module
 description: "Điều phối vòng đời Cogover Custom Module: khảo sát App/Object, chọn backend/frontend và dạng frontend (single page app, custom component, Federation Page), người dùng xác nhận trước khi code, schema duyệt bằng Excel, security rules, quy tắc nghiệp vụ theo Super Admin/role của người gọi, record trigger before/after-change, background job (enqueue, lịch cron, retry) hoặc Process, push message (làm mới record, toast), gửi notification và email từ hộp thư được grant, đọc cơ cấu tổ chức (phòng ban, vị trí, chuỗi quản lý người duyệt), secret/credential cho fetch, crypto (SHA-256, HMAC, mã hoá AES/RSA, chữ ký RSA/ECDSA), inbound webhook (KEY/HMAC), Project/policy/key, code/test theo template, publish qua Dev CLI, bàn giao. Không thay skill cấu hình Object/Process đơn lẻ."
 metadata:
   author: cogover
-  version: "1.10.0"
+  version: "1.11.0"
 ---
 
 # Cogover Custom Module
 
-- **Phiên bản:** `1.10.0`
-- **Ngày phát hành:** `2026-09-24`
+- **Phiên bản:** `1.11.0`
+- **Ngày phát hành:** `2026-09-25`
 
 ## Tổng quan và phạm vi
 
@@ -32,7 +32,7 @@ Môi trường cần sub-agent, shell/HTTP, công cụ build/test và trình duy
 ## Đầu vào
 
 - `WORKSPACE_DOMAIN`: hostname đầy đủ hoặc HTTPS origin. Chấp nhận tên viết nhầm `WORKSAPCE_DOMAIN` và chuẩn hóa về `WORKSPACE_DOMAIN`; không tự nối domain suffix, không giữ path/query trong origin.
-- Workspace API Key. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill dùng cả `/bapi/v1` (API Key Bearer: tạo phiên, metadata) lẫn `/api/v1` (phiên Web App: App, quản lý Project, gọi module); ngoại lệ riêng: mọi request `/api/v1/ts-projects/...` gửi cả `x-req-type: 6` lẫn `x-req-service` (`3` production, `4` quản lý, `6` preview), thiếu `x-req-type: 6` thì service `4` bị Authorization Server xử lý như logout và thu hồi phiên; quản lý TS Project dùng `POST` cho cả đọc/list và trả object trực tiếp, không bắt buộc envelope `r: 0`. Cogover Dev CLI đọc key theo tên `COGOVER_API_KEY` với thứ tự nguồn credential riêng: [CLI, session và bàn giao](references/cli-session-and-delivery.md).
+- Workspace API Key. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill dùng cả `/bapi/v1` (API Key Bearer: tạo phiên, metadata) lẫn `/api/v1` (phiên Web App: App, quản lý Project, gọi module); ngoại lệ riêng: mọi request `/api/v1/ts-projects/...` gửi cả `x-req-type: 9` lẫn `x-req-service` (`3` production, `4` quản lý, `6` preview), thiếu `x-req-type: 9` thì service `4` bị Authorization Server xử lý như logout và thu hồi phiên; quản lý TS Project dùng `POST` cho cả đọc/list và trả object trực tiếp, không bắt buộc envelope `r: 0`; với `x-req-type: 9` response là nguyên status/header/body của Runtime, không bọc `{serviceVersion, service, id, type, body}`, lỗi do Authorization Server sinh ra có header `x-proxy-error: 1`. Cogover Dev CLI đọc key theo tên `COGOVER_API_KEY` với thứ tự nguồn credential riêng: [CLI, session và bàn giao](references/cli-session-and-delivery.md).
 - Yêu cầu người dùng: luồng nghiệp vụ, người sử dụng, dữ liệu vào/ra, thao tác đọc/ghi, UI, trigger/lịch/tích hợp, kết quả mong đợi. Chỉ làm rõ phần chưa biết có ảnh hưởng thiết kế.
 - Sửa dự án: tra project ID/slug, thư mục source và version đang active; resolve đúng project trước khi sửa.
 - Không ghi key/secret vào source, `cogover.json`, frontend bundle, archive, log hay báo cáo. Không hardcode credential tích hợp kể cả trong source backend; chỉ dùng secret/credential của Project (bước 6A) và đọc qua `fetch({ credential })`, `secrets.get` hoặc key `{ secret: name }` của thao tác `crypto` (HMAC, AES, RSA, `sign`); AES key và private key luôn lưu thành secret, không viết trong source. Giá trị secret, inbound key và HMAC secret do người dùng/quản trị viên nhập qua prompt ẩn hoặc stdin của CLI, không qua chat. Backend không mặc nhiên có mọi API của Node.js.

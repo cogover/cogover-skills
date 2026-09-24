@@ -342,21 +342,21 @@ Tạo file Workspace session bằng CLI, rồi gọi `/me` trên version đang a
 cogover-dev auth session --format curl --output .cogover-session.curl
 curl -s --config .cogover-session.curl \
   'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/org_demo/me' \
-  -H 'x-req-type: 6' -H 'x-req-service: 3' | jq '.body'
+  -H 'x-req-type: 9' -H 'x-req-service: 3' | jq '.'
 ```
 
-Response được bọc trong một envelope, kết quả của route nằm trong `body`. Các field giống bước 3, nhưng thứ tự có thể khác. Session thuộc về người dùng của Workspace API key, nên `/me` hiển thị nhân sự của người dùng đó. Nhân sự này có thể khác nhân sự được cấp Project key.
+Response chính là kết quả của route, với các field giống bước 3. Session thuộc về người dùng của Workspace API key, nên `/me` hiển thị nhân sự của người dùng đó. Nhân sự này có thể khác nhân sự được cấp Project key.
 
 Chạy kiểm tra quyền duyệt dưới danh tính người dùng đó. Thay `{PERSONNEL_ID}`:
 
 ```bash
 curl -s --config .cogover-session.curl -X POST \
   'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/org_demo/approvals/check' \
-  -H 'x-req-type: 6' -H 'x-req-service: 3' \
-  -H 'Content-Type: application/json' --data '{"ownerId":"{PERSONNEL_ID}"}' | jq '.body'
+  -H 'x-req-type: 9' -H 'x-req-service: 3' \
+  -H 'Content-Type: application/json' --data '{"ownerId":"{PERSONNEL_ID}"}' | jq '.'
 ```
 
-Kết quả có các field như ở bước 5, có thể theo thứ tự khác, với `approverId` là nhân sự của người dùng trong session.
+Kết quả có các field như ở bước 5, với `approverId` là nhân sự của người dùng trong session.
 
 ### 8. Dọn dữ liệu thử
 

@@ -115,17 +115,17 @@ cogover-dev auth session --format curl --output .cogover-session.curl
 DEMO_BASE='https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/crypto_demo'
 ```
 
-Thay `{WORKSPACE_DOMAIN}` trước khi chạy. Không đưa file session vào Git. Khi gọi qua domain Workspace, kết quả của route nằm trong `body` của response.
+Thay `{WORKSPACE_DOMAIN}` trước khi chạy. Không đưa file session vào Git. Khi gọi qua domain Workspace, response chính là kết quả của route.
 
 ## 4. Băm và ký thông điệp
 
 ```bash
 curl -s --config .cogover-session.curl "$DEMO_BASE/hash" \
-  -H 'x-req-type: 6' -H 'x-req-service: 3' \
+  -H 'x-req-type: 9' -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' --data '{"text":"hello"}'
 ```
 
-Kết quả mong đợi trong `body`:
+Kết quả mong đợi:
 
 ```json
 {
@@ -138,7 +138,7 @@ Tiếp theo, ký cùng chuỗi đó:
 
 ```bash
 curl -s --config .cogover-session.curl "$DEMO_BASE/sign" \
-  -H 'x-req-type: 6' -H 'x-req-service: 3' \
+  -H 'x-req-type: 9' -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' --data '{"text":"hello"}'
 ```
 
@@ -146,7 +146,7 @@ Sao chép `body.signature` vào `{SIGNATURE}` bên dưới:
 
 ```bash
 curl -s --config .cogover-session.curl "$DEMO_BASE/verify" \
-  -H 'x-req-type: 6' -H 'x-req-service: 3' \
+  -H 'x-req-type: 9' -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' \
   --data '{"text":"hello","signature":"{SIGNATURE}"}'
 ```
@@ -157,7 +157,7 @@ Kết quả là `body: {"valid":true}`. Giữ nguyên chữ ký và đổi `hell
 
 ```bash
 curl -s --config .cogover-session.curl "$DEMO_BASE/random" \
-  -H 'x-req-type: 6' -H 'x-req-service: 3'
+  -H 'x-req-type: 9' -H 'x-req-service: 3'
 ```
 
 `body.hex` có 64 ký tự hex, biểu diễn 32 byte ngẫu nhiên. `body.uuid` là UUID phiên bản 4. Gọi lại để nhận giá trị mới. Route chỉ tạo giá trị; nó chưa cấp hay lưu token truy cập.

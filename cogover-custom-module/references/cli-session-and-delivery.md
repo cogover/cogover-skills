@@ -10,7 +10,7 @@ cogover-dev --version
 cogover-dev --help
 ```
 
-Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
+Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
 
 ```json
 {
@@ -40,7 +40,7 @@ Frontend đổi `projectType` thành `frontend` và dùng Project ID frontend. K
 
 CLI chỉ publish/activate project đã tồn tại. Khảo sát App và tạo Project/policy/key trước bước khởi tạo local: dùng [$cogover-api-auth](../../cogover-api-auth/SKILL.md) đổi Workspace API key qua `POST /bapi/v1/auth-token`, giữ session trong tiến trình thực hiện request; xác minh Workspace và hạn dùng theo auth reference. Không cần Project key cho thao tác quản lý này.
 
-Mọi request `/api/v1/ts-projects/...` qua Authorization Server gửi `x-req-type: 6` cùng `x-req-service` tương ứng (thiếu `x-req-type: 6` thì service `4` bị Authorization Server xử lý như logout, trả `deletedTokens` và thu hồi phiên, service `3` trả `r: 5000`, service `6` trả `r: 5001`). TS Project management dùng **POST** với service `4`, kể cả đọc/list; không áp method đó cho App/Object API. API trả project/version object trực tiếp không bắt buộc có envelope `r: 0`: kiểm tra đúng HTTP status, shape và ID theo từng reference. Nếu deployment trả transport envelope, kiểm tra lỗi ở cả envelope lẫn body rồi đối chiếu body với contract.
+Mọi request `/api/v1/ts-projects/...` qua Authorization Server gửi `x-req-type: 9` cùng `x-req-service` tương ứng (thiếu `x-req-type: 9` thì service `4` bị Authorization Server xử lý như logout, trả `deletedTokens` và thu hồi phiên, service `3` trả `r: 5000`, service `6` trả `r: 5001`). TS Project management dùng **POST** với service `4`, kể cả đọc/list; không áp method đó cho App/Object API. API trả project/version object trực tiếp không bắt buộc có envelope `r: 0`: kiểm tra đúng HTTP status, shape và ID theo từng reference. Với `x-req-type: 9`, response là nguyên HTTP status, header và body của Runtime, không có transport envelope; lỗi do chính Authorization Server sinh ra (phiên, định tuyến, Runtime không phản hồi) có header `x-proxy-error: 1` và body `{"r", "msg"}`.
 
 ## Lệnh local và publish
 
@@ -111,15 +111,15 @@ cogover-dev auth session --format curl --output .cogover-session.curl
 curl --silent --show-error --include \
   --config .cogover-session.curl \
   --request POST 'https://<WORKSPACE_DOMAIN>/api/v1/ts-projects/<PROJECT_SLUG>/lookup' \
-  --header 'x-req-type: 6' \
+  --header 'x-req-type: 9' \
   --header 'x-req-service: 3' \
   --header 'Content-Type: application/json' \
   --data-binary @request.json
 ```
 
 - Không dùng `--location`, `--verbose` hoặc `--trace` cho request này (chuyển tiếp/lộ credential).
-- Routing không nằm trong file export, truyền theo endpoint: `x-req-service` `3` cho production active version, `4` cho quản lý project/version/policy/key, `6` cho preview chính xác version. `x-req-type: 6` bắt buộc với cả ba service và không phải `x-req-service: 6`; request production giữ service `3`.
-- Quick start mô tả kết quả production qua transport envelope có `body`; không tự bọc `body` vào request production. Preview dùng envelope riêng gồm `input`, `versionId`, `mode`, `showDebugData` theo Backend API Reference.
+- Routing không nằm trong file export, truyền theo endpoint: `x-req-service` `3` cho production active version, `4` cho quản lý project/version/policy/key, `6` cho preview chính xác version. `x-req-type: 9` bắt buộc với cả ba service và không phải `x-req-service: 6`; request production giữ service `3`.
+- Production (`x-req-type: 9`) trả trực tiếp kết quả handler như local, không có transport envelope; không tự bọc `body` vào request production. Preview dùng envelope riêng gồm `input`, `versionId`, `mode`, `showDebugData` theo Backend API Reference.
 - Route ghi dữ liệu: thêm `Idempotency-Key` riêng cho từng thao tác, giữ key khi retry cùng thao tác và dùng key mới cho thao tác khác; ghi rõ mẫu cURL ghi dữ liệu thật và output dự kiến. GET dùng query/params theo contract route, không gửi POST/body mẫu một cách máy móc. Response text/binary: bàn giao cách đọc/lưu đúng content type.
 - Bàn giao cả lệnh tạo session và lệnh cURL, không bàn giao file session chứa credential. Backend đã deploy không cần chạy local server hoặc đăng nhập Project key để dùng cURL production.
 
@@ -132,6 +132,6 @@ curl --silent --show-error --include \
 - `409`: đọc project/version/idempotency state; không lặp create/publish vô hạn hoặc thay key để né xung đột chưa rõ.
 - `READY` nhưng invocation thất bại: kiểm tra active version, route/method, identity approval, input và SDK capability.
 - Timeout hoặc `writesMayHaveCompleted`: đối chiếu bản ghi/hiệu ứng bên ngoài trước retry; HTTP lỗi không bảo đảm chưa ghi. Idempotency không tạo transaction cho nhiều writes.
-- HTTP status và mã lỗi body: production trả đúng HTTP status handler đã chọn (`400`, `404`, `409`, `422`...) như local; body lỗi nằm trong `body` của transport envelope, có `r` bằng HTTP status và `code` (ví dụ `NOT_FOUND`, `VALIDATION_ERROR`). Kiểm tra cả HTTP status lẫn `body.code`, không xử lý body lỗi như dữ liệu thành công. Status khác `200` chỉ đi qua production khi body là một JSON object; body text, bytes, mảng hoặc rỗng kèm status khác `200` chưa mang được status, nên response lỗi và custom status dùng JSON object.
-- Custom response cũng cần kiểm chứng: `response.json(body, { status })` giữ status trên production như local khi body là JSON object. `response.ok` của HTTP client chưa đủ xác định thành công: kiểm tra thêm contract nghiệp vụ đã định nghĩa sau khi unwrap đúng transport envelope; không coi mọi field tên `ok` hoặc `code` trong dữ liệu bất kỳ là quy tắc lỗi chung.
-- Local khác production: kiểm tra SDK/CLI version, caller, mode và response envelope trước khi kết luận lỗi nghiệp vụ.
+- HTTP status và mã lỗi body: production trả đúng HTTP status handler đã chọn (`400`, `404`, `409`, `422`...) như local; body lỗi là body của response, có `r` bằng HTTP status và `code` (ví dụ `NOT_FOUND`, `VALIDATION_ERROR`). Kiểm tra cả HTTP status lẫn `code`, không xử lý body lỗi như dữ liệu thành công; `x-proxy-error: 1` nghĩa là lỗi của Authorization Server, không phải của handler. Với `x-req-type: 9`, status, header và body text, bytes, mảng hoặc rỗng đều tới client nguyên vẹn như local.
+- Custom response cũng cần kiểm chứng: `response.json(body, { status })` giữ status trên production như local khi body là JSON object. `response.ok` của HTTP client chưa đủ xác định thành công: kiểm tra thêm contract nghiệp vụ đã định nghĩa; không coi mọi field tên `ok` hoặc `code` trong dữ liệu bất kỳ là quy tắc lỗi chung.
+- Local khác production: kiểm tra SDK/CLI version, caller, mode và header routing (`x-req-type: 9`) trước khi kết luận lỗi nghiệp vụ.

@@ -135,10 +135,10 @@ Nếu trạng thái còn là `PENDING` hoặc `RUNNING`, kiểm tra lại sau v�
 cogover-dev auth session --format curl --output .cogover-session.curl
 curl -s --config .cogover-session.curl \
   'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/job_demo/results/{RUN_ID}' \
-  -H 'x-req-type: 6' -H 'x-req-service: 3'
+  -H 'x-req-type: 9' -H 'x-req-service: 3'
 ```
 
-Phần `body` của response chứa:
+Response chứa:
 
 ```json
 { "result": { "message": "My first background job", "attempt": 1 } }
@@ -151,11 +151,11 @@ Bạn cũng có thể khởi chạy job qua route POST:
 ```bash
 curl -s --config .cogover-session.curl -X POST \
   'https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/job_demo/hello' \
-  -H 'x-req-type: 6' -H 'x-req-service: 3' \
+  -H 'x-req-type: 9' -H 'x-req-service: 3' \
   -H 'Content-Type: application/json' --data '{"message":"Started from a route"}'
 ```
 
-Route trả HTTP `202`, với `runId` và `duplicate` trong `body`. Mỗi lần gọi route này tạo một run mới vì code không truyền idempotency key.
+Route trả HTTP `202`, với `runId` và `duplicate`. Mỗi lần gọi route này tạo một run mới vì code không truyền idempotency key.
 
 ## 5. Tự chạy lại khi gặp lỗi tạm thời (retry)
 
@@ -358,7 +358,7 @@ curl -s -X POST 'http://127.0.0.1:3100/api/v1/ts-projects/job_demo/hello' \
   -H 'Content-Type: application/json' --data '{"message":"Started locally"}'
 ```
 
-Route chạy trên máy bạn. Lệnh `jobs.enqueue()` của nó tạo một run thật trên Cogover, nơi code job của version đã publish đang active được thực thi. Khi sửa handler của job, hãy publish và activate trước khi thử theo cách này. Response từ route local chứa trực tiếp kết quả, không có lớp `body` như khi gọi qua Workspace.
+Route chạy trên máy bạn. Lệnh `jobs.enqueue()` của nó tạo một run thật trên Cogover, nơi code job của version đã publish đang active được thực thi. Khi sửa handler của job, hãy publish và activate trước khi thử theo cách này. Response từ route local có cùng dạng với khi gọi qua Workspace.
 
 Máy chủ local không tự chạy job hay lịch cron. Với logic cần thử trước khi publish, tách thành các hàm thuần để kiểm tra trên máy; kiểm chứng retry, lịch và danh tính truy cập record trên Cogover. Session mở với `--allow-writes=false` sẽ từ chối enqueue.
 

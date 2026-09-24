@@ -113,10 +113,10 @@ Xuất Workspace session và đặt URL, thay `{WORKSPACE_DOMAIN}`:
 cogover-dev auth session --format curl --output .cogover-session.curl
 DEMO_BASE='https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/secrets_demo'
 curl -s --config .cogover-session.curl "$DEMO_BASE/credential-check" \
-  -H 'x-req-type: 6' -H 'x-req-service: 3'
+  -H 'x-req-type: 9' -H 'x-req-service: 3'
 ```
 
-Kết quả mong đợi trong `body` của response:
+Kết quả mong đợi:
 
 ```json
 { "authenticated": true, "upstreamStatus": 200 }
@@ -124,14 +124,14 @@ Kết quả mong đợi trong `body` của response:
 
 ```bash
 curl -s --config .cogover-session.curl "$DEMO_BASE/secret-check" \
-  -H 'x-req-type: 6' -H 'x-req-service: 3'
+  -H 'x-req-type: 9' -H 'x-req-service: 3'
 ```
 
 ```json
 { "configured": true }
 ```
 
-Kết quả nằm trong `body` vì các lệnh gọi dùng Workspace session. Không đưa `.cogover-session.curl` vào Git. `httpbin.org/bearer` kiểm tra có header Bearer; nó không xác thực token với một tài khoản.
+Không đưa `.cogover-session.curl` vào Git. `httpbin.org/bearer` kiểm tra có header Bearer; nó không xác thực token với một tài khoản.
 
 ## 6. Xoay giá trị và thử giới hạn host
 
