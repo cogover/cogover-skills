@@ -12,6 +12,8 @@ Snapshot tài liệu sản phẩm tiếng Việt ngày `2026-09-15`, bổ sung b
 
 Không đặt secret trong Custom Frontend Module vì mã frontend được tải xuống trình duyệt. Logic nhạy cảm, quyền nâng cao và credential tích hợp phải nằm ở backend.
 
+Ghi chú cho agent: dashboard hoặc API có số liệu tổng hợp từ một hoặc nhiều Object (ví dụ dashboard vận hành, API tổng hợp tồn kho) phải kiểm tra saved report của `$report-builder` trước khi thiết kế backend quét record; xem [Tận dụng báo cáo cho số liệu tổng hợp](report-data-reuse.md).
+
 ## Ba dạng Custom Frontend Module
 
 Cả ba dạng đều được tạo, publish và kích hoạt như một Custom Frontend Module trên Workspace: cùng API quản lý, cùng Cogover Dev CLI, cùng `cogover.json` với `projectType: "frontend"` và cùng `slugSlot`. Điểm khác nằm ở việc code có phụ thuộc bộ khung của Cogover hay không và Cogover hiển thị kết quả ở đâu.

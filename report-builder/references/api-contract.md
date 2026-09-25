@@ -3,11 +3,12 @@
 ## Mục lục
 
 1. [Endpoint và xác thực](#endpoint-và-xác-thực)
-2. [Request/response](#requestresponse)
-3. [Service dùng trong report-builder](#service-dùng-trong-report-builder)
-4. [Payload mẫu](#payload-mẫu)
-5. [Validation và semantics đặc biệt](#validation-và-semantics-đặc-biệt)
-6. [Retry và idempotency](#retry-và-idempotency)
+2. [Gọi bằng phiên Web App](#gọi-bằng-phiên-web-app)
+3. [Request/response](#requestresponse)
+4. [Service dùng trong report-builder](#service-dùng-trong-report-builder)
+5. [Payload mẫu](#payload-mẫu)
+6. [Validation và semantics đặc biệt](#validation-và-semantics-đặc-biệt)
+7. [Retry và idempotency](#retry-và-idempotency)
 
 ## Endpoint và xác thực
 
@@ -29,6 +30,24 @@ Public API đặt service trong JSON body:
 ```
 
 Token xác định workspace và user; không gửi `workspace_id` hoặc dữ liệu xác thực trong `payload`. Luôn lấy workspace domain từ người dùng hoặc biến môi trường `COGOVER_WORKSPACE_DOMAIN`; không hard-code hostname của một workspace cụ thể.
+
+## Gọi bằng phiên Web App
+
+Trang hoặc Custom Frontend Module chạy trong Workspace gọi cùng các service bằng phiên của người dùng đang đăng nhập, không dùng API Key:
+
+```text
+POST https://{workspace-domain}/api/v1/report-server
+Content-Type: application/json
+x-req-type: 6
+x-req-service: {service}
+Cookie: HttpSessionId=...; XSRF-TOKEN=...; AuthToken=...
+x-csrf-token: {XSRF-TOKEN}
+x-xsrf-token: {XSRF-TOKEN}
+```
+
+- Body là chính `payload` của service, không bọc `{ "service", "payload" }`. Trình duyệt tự gửi cookie; từ công cụ ngoài trình duyệt, tạo phiên theo `$cogover-api-auth`.
+- Response bọc theo proxy: `{ serviceVersion, service, id, type, body }`, với `body` chứa `r`, `msg`, `data` như Public API. HTTP `200` vẫn có thể mang `body.r != 0`; lỗi phiên hoặc định tuyến do Authorization Server trả có header `x-proxy-error: 1`.
+- Request chạy dưới danh tính và quyền của người sở hữu phiên. Kiểm chứng quyền của một persona bằng phiên của chính persona đó, không bằng phiên Super Admin.
 
 ## Request/response
 
@@ -187,6 +206,7 @@ Không truyền ACL rộng mặc định chỉ để payload giống ví dụ. H
 - Service `231`: `relations` có thể rỗng khi có `src_object_id`.
 - Service `200`: `filter_type` là `1` AND, `2` OR, `3` custom; `logic_sequence` dùng với `3`.
 - Service `200`: `size` mặc định `9999`, tối đa `10000`.
+- Service `200` không có `setting: true` trả `r: 32` (`Wait for response`) kèm `data.id`, kết quả không nằm trong response (HTTP `400` với Public API, `body.r: 32` với phiên Web App). Gửi `setting: true` để chạy đồng bộ và nhận `data` gồm `rows`, `summary`, `total` trong cùng response; đây là cách dùng khi code cần đọc kết quả.
 - `group_rows` và `group_columns` nhận tối đa 2 field ID mỗi mảng.
 - Aggregate hợp lệ: `sum`, `avg`, `count`, `max`, `min`, `median`.
 - `setting` bị overload: service `201/207` dùng object cấu hình saved report; service `200` dùng boolean để yêu cầu tính đồng bộ.

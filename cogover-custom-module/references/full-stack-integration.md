@@ -24,7 +24,7 @@ export default defineConfig({
 
 - Port khớp `COGOVER_LOCAL_PORT` thật. Đây là proxy tới backend **local**, không phải proxy mang API key vào browser để gọi Workspace; chỉ backend local qua CLI mới có Development Session. Frontend không cần Project key.
 - Không dùng biến `VITE_*` chứa Workspace key/Project key/cookie/credential: biến build có thể bị đưa vào bundle.
-- Frontend thuần chưa có browser session trên Workspace: test UI bằng fixture và kiểm thử API trên Workspace ở bước deploy; không lách xác thực bằng cách nhúng key vào source. Báo rõ giới hạn nếu local chưa kiểm thử được dữ liệu thật.
+- Frontend thuần chưa có browser session trên Workspace: test UI bằng fixture và kiểm thử API trên Workspace ở bước deploy; không lách xác thực bằng cách nhúng key vào source hay biến build. Phiên cho trình duyệt test (tài khoản người dùng cung cấp hoặc phiên tạo từ Workspace API key qua `$cogover-api-auth`) chỉ nạp vào browser context của E2E theo [Kiểm thử E2E frontend](frontend-e2e-testing.md#3-xác-thực-trình-duyệt-test). Báo rõ giới hạn nếu local chưa kiểm thử được dữ liệu thật.
 
 ## Production
 
@@ -34,6 +34,8 @@ export default defineConfig({
 4. Local runner không cần các routing/auth header production. Dùng nhánh cấu hình build/dev rõ ràng; logic production không gọi `localhost`.
 5. Response: với `x-req-type: 9`, production trả trực tiếp handler result cùng status và header, giống local, không có transport envelope. Kiểm tra status/error và shape theo mode/contract; không unwrap property `body`, vì output nghiệp vụ cũng có thể có field đó. Lỗi do chính Authorization Server sinh ra có header `x-proxy-error: 1`. Custom response text/binary dùng parser theo content type đã định nghĩa.
 6. Mỗi thao tác ghi có idempotency key riêng; retry thao tác đang pending giữ nguyên key. Vô hiệu hóa nút khi đang gửi chỉ hạn chế thao tác trùng; kiểm soát ghi lặp vẫn ở backend.
+
+Số liệu tổng hợp từ saved report: frontend gọi `/api/v1/report-server` bằng phiên người dùng theo [Gọi báo cáo bằng phiên người dùng cuối](report-data-reuse.md#gọi-báo-cáo-bằng-phiên-người-dùng-cuối), không đi vòng qua backend.
 
 API frontend được gọi bằng quyền người dùng đang đăng nhập; ẩn nút trên UI không thay thế kiểm tra quyền. Render dữ liệu Workspace bằng `textContent` hoặc cơ chế escape của framework.
 
@@ -49,7 +51,7 @@ API frontend được gọi bằng quyền người dùng đang đăng nhập; �
 ## Kiểm thử trên Workspace
 
 - Single page app: mở đúng `https://<WORKSPACE_DOMAIN>/<SLUG_SLOT>/index.html`; không dùng project slug hoặc project ID thay `slugSlot`. Custom component: mở form của Object đã gắn item Federation component `<SLUG_SLOT>/Components/<Tên>`. Federation Page: mở `https://<WORKSPACE_DOMAIN>/<APP_SLUG>/c<N>/<PATH>`.
-- Kiểm tra đăng nhập, tải dữ liệu, thao tác ghi được phép và đọc lại record đã thay đổi; dùng caller có/không có quyền nếu yêu cầu phân quyền.
+- Kiểm tra đăng nhập, tải dữ liệu, thao tác ghi được phép và đọc lại record đã thay đổi; dùng caller có/không có quyền nếu yêu cầu phân quyền. Các ca này thuộc bộ E2E của sub-agent E2E độc lập theo [Kiểm thử E2E frontend](frontend-e2e-testing.md).
 - Refresh/deep-link: static hosting không có SPA fallback; dùng hash routing hoặc URL file tồn tại. Asset có content hash tránh cache version cũ.
 - Xác minh frontend và backend đang chạy đúng version đã kiểm thử; thành công một phía chưa chứng minh toàn luồng.
 

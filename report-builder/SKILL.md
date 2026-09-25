@@ -1,17 +1,17 @@
 ---
 name: report-builder
-description: "Tạo, cấu hình, cập nhật và kiểm chứng Report Type cùng saved report Cogover qua Public Report API `/bapi/v1/report`: báo cáo 1–5 object, chọn relation và kiểu join, report field/section, cột hiển thị, group, aggregate, filter, sort, formula, preview và xác minh dữ liệu; chẩn đoán báo cáo không trả đúng dữ liệu. Phối hợp $object-info."
+description: "Tạo, cấu hình, cập nhật và kiểm chứng Report Type cùng saved report Cogover qua Public Report API `/bapi/v1/report` (hoặc `/api/v1/report-server` bằng phiên Web App): báo cáo 1–5 object, chọn relation và kiểu join, report field/section, cột hiển thị, group, aggregate, filter, sort, formula, preview và xác minh dữ liệu; chẩn đoán báo cáo không trả đúng dữ liệu. Phối hợp $object-info."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.1.0"
 ---
 
 # Report Builder
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-09-25`
 
-Tạo và kiểm chứng báo cáo Cogover qua Public Report API: mọi service gọi `POST https://{WORKSPACE_DOMAIN}/bapi/v1/report` (API Key Bearer) với envelope `{ "service": <number>, "payload": <object> }`. Chuỗi phụ thuộc: phân tích nghiệp vụ → khám phá object → Report Type → relation/section/field → saved report → preview và xác minh. Skill dừng ở saved report đã chạy đúng; dashboard thuộc `$dashboard-builder` và chỉ làm khi người dùng yêu cầu.
+Tạo và kiểm chứng báo cáo Cogover qua Public Report API: mọi service gọi `POST https://{WORKSPACE_DOMAIN}/bapi/v1/report` (API Key Bearer) với envelope `{ "service": <number>, "payload": <object> }`. Trang hoặc Custom Frontend Module chạy trong Workspace gọi cùng service bằng phiên của người dùng đang đăng nhập qua `/api/v1/report-server` theo [Gọi bằng phiên Web App](references/api-contract.md#gọi-bằng-phiên-web-app). Chuỗi phụ thuộc: phân tích nghiệp vụ → khám phá object → Report Type → relation/section/field → saved report → preview và xác minh. Skill dừng ở saved report đã chạy đúng; dashboard thuộc `$dashboard-builder` và chỉ làm khi người dùng yêu cầu.
 
 ## Chuẩn bị
 
@@ -101,4 +101,4 @@ Ngoài quy ước chung của `$cogover-api-auth`:
 - Timeout/network khi đọc: retry tối đa một lần. Timeout khi ghi (`201`, `202`, `207`, `208`, `212`, `227`...): không retry ngay; tìm resource bằng slug/name/ID và kiểm tra relation/field trước khi gọi lại.
 - `r != 0`: đọc `msg`, giữ nguyên resource đã tạo, sửa đúng payload rồi mới tiếp tục.
 - Response shape lạ: lưu output đã redacted; không tự chọn một ID "có vẻ đúng".
-- Service `200` chạy bất đồng bộ: không coi mọi HTTP `400` là lỗi cuối cùng; đọc `r`/`msg` và chỉ theo cơ chế hoàn tất mà response hoặc contract hiện tại chứng minh.
+- Service `200` chạy bất đồng bộ: không có `setting: true` thì trả `r: 32` (`Wait for response`) kèm `data.id` và kết quả không nằm trong response, không phải lỗi cấu hình; gửi `setting: true` khi cần đọc kết quả ngay. Các `r != 0` khác đọc `msg` và chỉ theo cơ chế hoàn tất mà response hoặc contract hiện tại chứng minh.
