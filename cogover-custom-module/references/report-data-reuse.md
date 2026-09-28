@@ -1,18 +1,36 @@
 # Tận dụng báo cáo cho số liệu tổng hợp
 
-Đọc khi yêu cầu có báo cáo, dashboard, KPI, thống kê hoặc bảng tổng hợp (đếm, tổng, trung bình, min/max, trung vị theo nhóm hoặc theo kỳ) lấy từ một hoặc nhiều Object, kể cả khi số liệu hiển thị trong frontend tùy chỉnh. Contract báo cáo: [$report-builder](../../report-builder/SKILL.md), gồm [Public Report API contract](../../report-builder/references/api-contract.md) (có mục gọi bằng phiên Web App) và [Saved report settings](../../report-builder/references/report-settings.md). ID, slug và payload bên dưới chỉ minh họa.
+Đọc khi yêu cầu có báo cáo, dashboard, KPI, thống kê hoặc bảng tổng hợp (đếm, tổng, trung bình, min/max, trung vị theo nhóm hoặc theo kỳ) lấy từ một hoặc nhiều Object, kể cả khi số liệu hiển thị trong frontend tùy chỉnh hoặc backend cần số liệu để quyết định. Hai nguồn số liệu không quét record: `records.aggregate` của `@cogover/sdk` trong backend và saved report của `$report-builder`; chọn theo [`records.aggregate` hay saved report](#recordsaggregate-hay-saved-report). Contract báo cáo: [$report-builder](../../report-builder/SKILL.md), gồm [Public Report API contract](../../report-builder/references/api-contract.md) (có mục gọi bằng phiên Web App) và [Saved report settings](../../report-builder/references/report-settings.md). ID, slug và payload bên dưới chỉ minh họa.
 
 ## 1. Nguyên tắc
 
-- Backend đọc record theo trang (tối đa 200 record mỗi lượt), mỗi lượt tốn thời gian và capability call. Với Object từ vài trăm record trở lên, tổng hợp bằng cách quét record chậm, dễ vượt thời gian chờ và hạn mức. Báo cáo Cogover tính group/aggregate phía nền tảng và trả kết quả đã tổng hợp.
-- Mỗi chỉ số tổng hợp phải được kiểm tra bằng `$report-builder` trước: báo cáo tính được thì agent đọc `$report-builder` để xây (hoặc tái sử dụng) báo cáo và phân quyền hợp lý, rồi module đọc kết quả báo cáo thay vì quét record. Chỉ quét record khi báo cáo không biểu diễn được, kèm lý do cụ thể.
+- Backend đọc record theo trang (tối đa 200 record mỗi lượt), mỗi lượt tốn thời gian và capability call. Với Object từ vài trăm record trở lên, tổng hợp bằng cách quét record chậm, dễ vượt thời gian chờ và hạn mức. `records.aggregate` và báo cáo Cogover đều tính group/aggregate phía nền tảng và trả kết quả đã tổng hợp.
+- Mỗi chỉ số tổng hợp phải được xếp vào một trong hai nguồn trên trước khi code: số liệu đơn giản trên một Object mà backend tính theo điều kiện của lời gọi thì dùng `records.aggregate`; còn lại kiểm tra bằng `$report-builder`, báo cáo tính được thì agent đọc `$report-builder` để xây (hoặc tái sử dụng) báo cáo và phân quyền hợp lý, rồi module đọc kết quả báo cáo thay vì quét record. Chỉ quét record khi cả hai không biểu diễn được, kèm lý do cụ thể.
 - Module đọc báo cáo **bằng phiên của người dùng cuối đang dùng module**: báo cáo chạy dưới danh tính người gọi, không cần API key hay credential riêng.
 - Chỉ cần xem bảng/biểu đồ chuẩn từ saved report: đề xuất dashboard chuẩn qua [$dashboard-builder](../../dashboard-builder/SKILL.md) hoặc mục menu tới `/reports/{reportSlug}` thay vì frontend tùy chỉnh (bước 1 mục 4: chức năng chuẩn đáp ứng trọn vẹn thì không tạo project).
 - Không áp dụng cho: logic cần từng record để ghi hoặc điều chỉnh (trigger, ghi hàng loạt), tra vài record theo ID, quy tắc phải dựa trên dữ liệu mới nhất tại thời điểm ghi.
 
+### `records.aggregate` hay saved report
+
+`@cogover/sdk` từ `0.13.0` có `records.aggregate`: backend (route, trigger, job) đếm, tính tổng, trung bình, min/max các record khớp `where` của một Object trong một capability call, không đọc record. Lời gọi chạy dưới danh tính của client đang dùng (người gọi, `data.asUser()`, `data.asSystem()`): chỉ tính record danh tính đó được thấy, mọi field trong `where`, `groupBy` và metric (trừ `"id"`) phải được identity policy cho đọc. Đủ phép tính và `groupBy` chỉ có với người gọi HTTP route hoặc `data.asSystem()`. `data.asUser()`, và `data.object()` khi lần chạy đọc dưới danh tính người dùng khác người gọi HTTP (record trigger cho thay đổi do người dùng, job có người dùng, Development Session của `cogover-dev run`), không group được và chỉ có `count` trên `"id"`, `count`/`sum`/`avg`/`min`/`max` trên field số; metric khác hoặc `groupBy` ném `ValidationError`. Contract đầy đủ: mục [Aggregate](cogover-sdk-api-reference.md#aggregate) của SDK API reference.
+
+| Tiêu chí | `records.aggregate` | Saved report của `$report-builder` |
+|---|---|---|
+| Object | Một Object | 1–5 Object, relation, join Inner/Left |
+| Điều kiện | `where` như `records.list`, dựng động trong script từ request, người gọi, record đang xử lý | Filter nền cấu hình sẵn, tham số người dùng chọn thêm vào `filters` đã xác nhận |
+| Phép tính | `count` (`"id"` là số record, field khác là số record có giá trị; không nhận `reference`, `file`, `url`), `countDistinct` (cùng loại field, xấp xỉ khi tập lớn), `sum`/`avg` field `numeric`, `decimal`, `currency`, `percent`, `min`/`max` field số hoặc `date`/`date_time`; 1–20 metric mỗi lời gọi; không record khớp thì `count`/`sum` là `0`, `avg`/`min`/`max` là `null`; danh tính người dùng ủy quyền chỉ có `count` trên `"id"` và metric trên field số | Thêm `median`, row formula, summary formula |
+| Nhóm | `groupBy` 1–3 field kiểu choice (`single_choice`, `multi_choices`, `radio_button`, `checkbox`), `boolean`, `lookup_normal`, `date`/`date_time`, số; không nhận text hay `reference`. Key là giá trị thô (lookup → record ID, choice → option slug, ngày → epoch ms; không gom theo tuần/tháng/quý), record không có giá trị ở field nhóm không thuộc nhóm nào, nhóm nhiều record nhất trước; `limit` 1–5.000 nhóm (mặc định 1.000), `truncated: true` khi bị cắt; chỉ với người gọi HTTP route hoặc `data.asSystem()` | Tối đa 2 group hàng và 2 group cột, group thời gian `date`, `week`, `month`, `quarter`, `year`, sort, top-N, tối đa 10.000 dòng |
+| Ai cấu hình, dùng lại | Code module; người dùng không sửa được, không dùng cho dashboard | Người dùng/quản trị viên cấu hình, chia sẻ bằng ACL, dùng lại cho dashboard và báo cáo chuẩn |
+| Nơi gọi | Backend, dưới danh tính của lời gọi, nên dùng được làm căn cứ quyết định cần bảo vệ; trong trigger/job chạy dưới danh tính người dùng, nhóm hoặc metric ngoài giới hạn trên phải qua `data.asSystem()` | Frontend bằng phiên người dùng cuối; backend chưa gọi được bằng phiên đó (mục [Giới hạn](#giới-hạn-khi-backend-cần-số-liệu-báo-cáo)) |
+
+- Dùng `records.aggregate` khi chỉ số nằm trên một Object, là đếm/tổng/trung bình/min/max theo điều kiện động của script, không quá 5.000 nhóm và chấp nhận dữ liệu trễ khoảng 1 giây. Ví dụ: tổng giá trị đơn chưa thanh toán của khách hàng trên đơn đang tạo để kiểm hạn mức, số ticket đang mở của người gọi theo trạng thái, doanh thu theo nhân viên phụ trách trong khoảng ngày của request. Thay cho quét record hoặc gọi saved report từ backend. Ví dụ đầu chạy trong trigger before-change cho thay đổi do người dùng: `sum` trên field tiền tệ, không `groupBy`, nên dùng được với danh tính mặc định; hai ví dụ sau cần `groupBy` nên chạy trong HTTP route bằng người gọi, hoặc qua `data.asSystem()` trong trigger/job.
+- Dùng saved report khi cần nhiều Object hoặc join, nhóm theo kỳ hoặc theo field text/`reference`, `median` hay formula báo cáo, bảng lớn, hoặc số liệu là báo cáo/dashboard người dùng muốn tự cấu hình, chia sẻ, phân quyền và xem lại; chỉ cần bảng/biểu đồ chuẩn thì dùng dashboard.
+- Dữ liệu của `records.aggregate` đọc từ chỉ mục tìm kiếm, trễ khoảng 1 giây sau khi ghi: record vừa ghi có thể chưa được tính, trigger before-change không thấy thay đổi đang ghi, `countDistinct` là xấp xỉ. Không dùng cho quy tắc cần chính xác tuyệt đối tại thời điểm ghi (tồn kho, số thứ tự, chống trùng); chống trùng dùng field unique. Gọi trong before-change được nhưng thao tác ghi của người dùng phải chờ: giữ ít lời gọi.
+- Cần số liệu theo tháng/quý từ `records.aggregate`: mỗi kỳ một lời gọi với `where` theo khoảng ngày (mỗi lời gọi là một capability call, route tối đa 20); nhiều kỳ hoặc hiển thị lâu dài thì dùng saved report.
+
 ## 2. Kiểm tra khả năng bằng `$report-builder`
 
-Sub-agent khảo sát làm ở bước 1, chỉ đọc: liệt kê Report Type (service `215`) và saved report (service `220`, detail `229`) liên quan để tái sử dụng, rồi đối chiếu từng chỉ số với giới hạn của báo cáo:
+Sub-agent khảo sát làm ở bước 1, chỉ đọc. Chỉ số thuộc phạm vi `records.aggregate` theo mục 1 thì ghi kết luận đó (Object, `where`, `groupBy`, metric, danh tính gọi) và không cần báo cáo. Các chỉ số còn lại: liệt kê Report Type (service `215`) và saved report (service `220`, detail `229`) liên quan để tái sử dụng, rồi đối chiếu từng chỉ số với giới hạn của báo cáo:
 
 | Khía cạnh | Báo cáo hỗ trợ | Không hỗ trợ hoặc cần xác minh |
 |---|---|---|
@@ -27,7 +45,7 @@ Kết luận cho từng chỉ số, đưa vào bảng ở bước 1 mục 4:
 1. Saved report có sẵn đáp ứng: ghi ID/slug, Report Type, field dùng và ACL hiện tại.
 2. Tạo được saved report mới (tái sử dụng hoặc tạo Report Type): ghi primary object, relation, group, aggregate, filter nền dự kiến.
 3. Báo cáo đáp ứng một phần: phần báo cáo tính được lấy từ báo cáo, phần còn lại module xử lý nhẹ trên kết quả đã tổng hợp (ghép hai báo cáo, tính tỷ lệ từ tử số/mẫu số đã tổng hợp).
-4. Không làm được bằng báo cáo: lý do cụ thể theo bảng trên, rồi mới thiết kế quét record có background job hoặc Object tổng hợp.
+4. Không làm được bằng báo cáo: phần nằm trên một Object và thuộc phạm vi `records.aggregate` thì backend tính bằng `records.aggregate`; còn lại nêu lý do cụ thể theo bảng trên và mục 1, rồi mới thiết kế quét record có background job hoặc Object tổng hợp.
 
 Nguồn số liệu từng chỉ số, báo cáo sẽ tạo và đối tượng được xem báo cáo nằm trong đề xuất 1A. Tạo báo cáo là thao tác ghi trên Workspace: chỉ làm sau khi người dùng xác nhận.
 
@@ -104,12 +122,12 @@ Tách hàm biến đổi kết quả (`toSalesSummary`) thành hàm thuần, uni
 |---|---|
 | Chỉ frontend | Frontend gọi `/api/v1/report-server` bằng phiên người dùng cuối, tổng hợp nhẹ và hiển thị giao diện mong muốn; không cần backend. |
 | Frontend và backend, số liệu chỉ để hiển thị hoặc để người dùng tự quyết định | Frontend gọi báo cáo trực tiếp như trên; backend chỉ xử lý phần nghiệp vụ khác. |
-| Frontend và backend, backend cần số liệu báo cáo để ra quyết định (duyệt, tính giá, chặn thao tác) | Xem mục dưới: backend chưa gọi được báo cáo bằng phiên người dùng cuối. |
+| Frontend và backend, backend cần số liệu tổng hợp để ra quyết định (duyệt, tính giá, chặn thao tác) | Số liệu thuộc phạm vi `records.aggregate`: backend tự tính bằng `records.aggregate` dưới danh tính người gọi. Cần saved report: xem mục dưới, backend chưa gọi được báo cáo bằng phiên người dùng cuối. |
 
 ### Giới hạn khi backend cần số liệu báo cáo
 
-- Backend không nhận được phiên của người dùng cuối: script không thấy header `authorization`/`cookie` của request, `fetch` của SDK không gửi cookie và từ chối header dành riêng cho Cogover, `@cogover/sdk` (đến `0.12.x`) chưa có API chạy báo cáo dưới danh tính người gọi. Không chuyển `AuthToken`, `HttpSessionId` hay cookie từ frontend sang backend để giả phiên.
-- Số liệu frontend gửi lên là dữ liệu do client cung cấp: backend không dùng làm căn cứ cho quyết định cần bảo vệ. Khi quyết định phụ thuộc số liệu tổng hợp:
+- Backend không nhận được phiên của người dùng cuối: script không thấy header `authorization`/`cookie` của request, `fetch` của SDK không gửi cookie và từ chối header dành riêng cho Cogover, `@cogover/sdk` chưa có API chạy saved report dưới danh tính người gọi. Không chuyển `AuthToken`, `HttpSessionId` hay cookie từ frontend sang backend để giả phiên.
+- Số liệu frontend gửi lên là dữ liệu do client cung cấp: backend không dùng làm căn cứ cho quyết định cần bảo vệ. Khi quyết định phụ thuộc số liệu tổng hợp, trước hết xét `records.aggregate` (SDK từ `0.13.0`, mục 1): số liệu trên một Object thì backend tự tính dưới danh tính người gọi, không cần các phương án dưới. Số liệu cần saved report (nhiều Object, nhóm theo kỳ, formula):
   1. Ưu tiên thu hẹp để backend tự đọc đúng tập record cần thiết bằng quyền của người gọi (lọc chặt, vài trang), khi tập đó nhỏ.
   2. Số liệu cần dùng lặp lại: background job duy trì Object tổng hợp hoặc project state (danh tính system, policy giới hạn), backend đọc lại.
   3. Chỉ khi người dùng chấp nhận số liệu ở danh tính hệ thống thay vì quyền người gọi: backend chạy báo cáo qua `POST https://{WORKSPACE_DOMAIN}/bapi/v1/report` bằng `fetch({ credential })` với credential BEARER (bước 6A) chứa API key của một tài khoản tích hợp quyền tối thiểu; route tự kiểm tra người gọi, cố định Report Type/field/filter, lọc theo phạm vi người gọi lấy từ `invocation`/`org`, gửi `setting: true`, xử lý `r != 0` và `429`. Development Session mặc định chặn credential (`FETCH_BLOCKED`), trigger before-change không `fetch` được, và `fetch` tới chính hostname Workspace phải được chứng minh trên version đã publish trước khi dựa vào.
@@ -117,7 +135,8 @@ Tách hàm biến đổi kết quả (`toSalesSummary`) thành hàm thuần, uni
 
 ## 5. Kiểm thử
 
-- Local: unit test hàm biến đổi và parser bằng fixture; frontend single page app chạy local không có phiên Workspace nên dùng fixture hoặc chặn request.
+- Local: unit test hàm biến đổi và parser bằng fixture; frontend single page app chạy local không có phiên Workspace nên dùng fixture hoặc chặn request. `records.aggregate`: tách hàm dựng `where`/metric và hàm xử lý kết quả thành hàm thuần, unit test cả nhóm rỗng, metric `null` (không record nào có giá trị) và `truncated: true`; chạy thật qua `cogover-dev run` với dữ liệu test. Development Session đọc dưới danh tính người dùng của Project key nên `groupBy` và metric ngoài `count` trên `"id"`/field số bị từ chối trên local: kiểm thử phần đó trên version đã publish.
+- `records.aggregate` trên Workspace: đối chiếu với số đếm/tổng tính tay trên tập record test nhỏ (chờ vài giây sau khi ghi fixture vì dữ liệu trễ khoảng 1 giây), chạy bằng caller có phạm vi record hẹp để xác nhận chỉ record họ thấy được tính.
 - Workspace (bước 9): chạy module bằng phiên của từng persona đã dùng ở bước 2B. Số liệu hiển thị khớp service `200` chạy trực tiếp cùng tham số bằng cùng phiên đó; người ngoài ACL thấy trạng thái không có quyền; người có phạm vi record hẹp chỉ thấy số liệu của phạm vi đó; đo thời gian tải với dữ liệu đại diện. Không kết luận bằng phiên Super Admin.
 - E2E: các ca trên nằm trong bộ E2E của sub-agent E2E theo [Kiểm thử E2E frontend](frontend-e2e-testing.md).
-- Bàn giao: saved report (ID, slug, link), Report Type, ACL đã đặt, payload đang dùng, nơi gọi (frontend hay backend) và lý do, kết quả theo persona, thời gian tải đo được, chỉ số vẫn quét record kèm lý do; nếu dùng credential tài khoản tích hợp thì kèm tên credential, host và tài khoản, không kèm giá trị.
+- Bàn giao: saved report (ID, slug, link), Report Type, ACL đã đặt, payload đang dùng, nơi gọi (frontend hay backend) và lý do, kết quả theo persona, thời gian tải đo được, chỉ số tính bằng `records.aggregate` (route/trigger/job, Object, metric, danh tính gọi), chỉ số vẫn quét record kèm lý do; nếu dùng credential tài khoản tích hợp thì kèm tên credential, host và tài khoản, không kèm giá trị.

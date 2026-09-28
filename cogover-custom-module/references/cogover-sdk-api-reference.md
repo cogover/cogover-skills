@@ -226,7 +226,9 @@ session bắt đầu; hãy khởi động lại `cogover-dev` để nhận thay 
 Tạo router độc lập. `TSchema extends object` mặc định là schema workspace hiệu lực,
 giữ suy luận `WorkspaceObjects` qua module augmentation cho data và schema API.
 Route phân biệt hoa/thường theo method và path tĩnh/động; route tĩnh được ưu tiên
-hơn route động. `/` ứng với URL project canonical
+hơn route động. Khi nhiều route động cùng method khớp một path, ví dụ `/orders/:id` và
+`/:collection/new` với `/orders/new`, route được đăng ký trước sẽ xử lý. `/` ứng với URL
+project canonical
 không có route suffix.
 `/index` là route riêng, phải đăng ký rõ ràng. `defineScript()` vẫn dùng cho `/`;
 gọi đường dẫn con sẽ ném `NotFoundError` trước khi handler của script chạy.
@@ -257,7 +259,8 @@ Trả về handler để default-export, chụp lại danh sách route hiện t�
 Đăng ký thêm sau đó không thay đổi handler đã tạo. Handler parse input, chọn đúng
 một route, chờ kết quả và serialize như `defineScript()`.
 `null` giữ nguyên null; kết quả undefined ném `ValidationError`. Route không tồn tại
-ném `NotFoundError` (HTTP 404). Invocation dùng method chưa hỗ trợ có
+ném `NotFoundError` (HTTP 404), kể cả path chỉ được đăng ký cho method khác: router
+không trả 405 khi sai method. Invocation dùng method chưa hỗ trợ có
 `CogoverApiError` với `code: "METHOD_NOT_ALLOWED"` (HTTP 405).
 Metadata invocation sai ném `ValidationError`.
 Khi gọi trực tiếp mà không có request metadata của Cogover, handler mặc định là POST `/`.
@@ -271,7 +274,9 @@ nghiệp vụ khác nhau.
 
 Trả về giá trị JSON bình thường vẫn giữ hành vi tương thích `200 application/json`.
 Dùng helper `response` trong context khi cần điều khiển status, header, content type
-hoặc dạng body:
+hoặc dạng body. Chỉ response do các helper này tạo mới làm được việc đó: giá trị được
+trả về luôn được gửi như dữ liệu JSON với HTTP 200, kể cả khi có hình dạng giống
+envelope response nội bộ của Cogover, ví dụ request body được route trả lại nguyên vẹn.
 
 ```typescript
 router.post("/orders", ({ response }) => response.json({ id: "ORD-1" }, {
@@ -316,7 +321,8 @@ Cogover bị từ chối. Tên/giá trị header không được chứa newline;
 tối đa 50 header. Tên header dài tối đa 128 ký tự và mỗi giá trị tối đa 8.192 ký tự.
 Content type mặc định lần lượt là
 `application/json; charset=utf-8`, `text/plain; charset=utf-8` và
-`application/octet-stream`. Redirect chỉ nhận 301, 302, 303, 307 hoặc 308. Helper
+`application/octet-stream`. Redirect chỉ nhận 301, 302, 303, 307 hoặc 308; giá trị khác
+ném `ValidationError`. Helper
 trả `ScriptResponse` opaque; code ứng dụng không được tự tạo transport envelope.
 Redirect location phải khác rỗng, dài tối đa 4.096 ký tự và không chứa newline.
 `response.json()` không nhận `undefined`; `response.text()` yêu cầu string và
@@ -367,7 +373,8 @@ sửa thay đổi đó, nhưng được ghi record và gọi `fetch`. Xem
 Cogover đọc cấu hình trigger khi một version của project được publish và áp dụng
 cấu hình đó trong thời gian version ấy đang active. Deactivate project sẽ gỡ các
 trigger của project. Một project khai báo tối đa 50 trigger; một Object có tối đa
-20 trigger before-change đang hoạt động.
+20 trigger before-change đang hoạt động; version khai báo nhiều hơn trên một Object sẽ
+publish thất bại.
 
 ### `defineTrigger(config, handler): TriggerDefinition`
 
@@ -427,7 +434,7 @@ interface TriggerConfig<
 | `changedFields` | Không | 1–200 field slug không trùng; yêu cầu có operation `"update"`. Thao tác cập nhật chỉ chạy trigger khi ít nhất một field trong danh sách thay đổi. Không ảnh hưởng tới tạo và xoá. |
 | `when` | Không | Một `TriggerFilter`. Chỉ record khớp filter mới chạy trigger. |
 | `runWhen` | Không | `"always"` (mặc định) hoặc `"onEnter"`. `"onEnter"` yêu cầu có `when`. |
-| `writableFields` | Không | Tối đa 100 field slug không trùng mà handler được sửa. Chỉ dùng cho `"beforeChange"`; phải rỗng khi `"delete"` là operation duy nhất. Mặc định `[]`. |
+| `writableFields` | Không | Tối đa 100 field slug không trùng mà handler được sửa. Chỉ dùng cho `"beforeChange"`; phải rỗng khi `"delete"` là operation duy nhất. Field formula, auto number, rollup summary hoặc field chỉ đọc khác làm version publish thất bại. Mặc định `[]`. |
 | `order` | Không | Số nguyên từ 1000 đến 8999; mặc định `5000`. Các trigger của một Object chạy theo thứ tự tăng dần. Các giá trị khác dành riêng cho Cogover. Không dựa vào thứ tự tương đối giữa các trigger có cùng giá trị. |
 | `timeoutMs` | Không | Số nguyên từ 100 đến 3000; mặc định `2000`. Thời gian tối đa cho một lần gọi handler. |
 
@@ -596,13 +603,22 @@ Mỗi `TriggerRecord` mô tả một record:
 - `old` chứa giá trị trước thay đổi và đã được deep-freeze. `old` là `null` khi
   record được tạo.
 - `changedFields` là danh sách đã freeze gồm slug các field thay đổi. Với record được
-  tạo, danh sách gồm mọi field có giá trị.
+  tạo, danh sách gồm mọi field có giá trị. Với thao tác cập nhật, danh sách có thể gồm cả
+  field hệ thống mà Cogover đặt ở mọi lần ghi, như `updated`.
 
 `operations` đã khai báo thu hẹp các type này: `new` không bao giờ là `null` trừ khi
 có khai báo `"delete"`, `old` không bao giờ là `null` trừ khi có khai báo `"create"`,
 và trigger chỉ khai báo `"delete"` có `new: null`. `TriggerNewValues` và
 `TriggerOldValues` để mọi field là optional vì field không nằm trong `fields`, hoặc
 không có giá trị, sẽ là `undefined`.
+
+Giá trị lookup và reference trong `new` và `old` có `name` của record liên kết. Điều này
+khác với record đọc qua `data`, có giá trị lookup với `name: ""` trừ khi lệnh đọc dùng
+`expandLookups` (xem [Record liên kết](#record-liên-kết)). Lệnh đọc qua `data`
+trong trigger tuân theo cùng quy tắc như trong script, kể cả `fields` bắt buộc. Với thay
+đổi do người dùng thực hiện, `data.object()` đọc dưới danh tính người đó, nên
+`records.aggregate` của nó có giới hạn của `data.asUser()`: dùng `data.asSystem()` để
+nhóm (xem [Aggregate](#aggregate)).
 
 ### Validate và sửa record
 
@@ -624,6 +640,26 @@ bản tuỳ chọn trong `messages` theo mã lỗi. Thao tác ghi một record b
 ở trigger đầu tiên báo lỗi. Trong batch write, chỉ các dòng bị từ chối thất bại, và
 dòng đã bị từ chối không được chuyển tới các trigger chạy sau.
 
+Khi bên ghi là script của một Custom Backend Module, không có gì được lưu và lời gọi
+`records.create`, `records.update` hoặc thao tác ghi khác của script ném:
+
+- `ValidationError` có `details.reason` là `"TRIGGER_REJECTED"` và `details.r` là `70`
+  khi một trigger từ chối record. `details` còn có `operation`, `objectSlug`, và
+  `triggerKey` khi Cogover biết trigger nào từ chối. Khi Cogover nhận được mã lỗi và đoạn
+  văn bản của trigger, `details.fieldErrors` ánh xạ từng field slug (`$record` với cả
+  record) tới mã lỗi và `details.messages` liệt kê các đoạn văn bản; đừng dựa vào việc
+  chúng luôn có mặt.
+- `RetryableError` có `details.reason` là `"TRIGGER_FAILED"` và `details.r` là `71` khi
+  trigger không đưa ra được quyết định, ví dụ vì ném lỗi hoặc vượt `timeoutMs`. Thao tác
+  ghi có thể thành công khi thực hiện lại sau; trong trigger after-change hoặc job, để
+  lỗi này thoát ra sẽ khiến Cogover chạy lại handler.
+
+Lời từ chối trong `batchInsert` hoặc `batchUpdate` không ném lỗi: chỉ các row bị từ chối
+thất bại, và kết quả của mỗi row đó có `r` là `70` cùng `fieldErrors` và `messages` như
+trên. `deleteMany` xoá các record không bị trigger nào từ chối, liệt kê từng ID bị từ chối
+trong `notDeleted` và `recordErrors`; lời gọi chỉ ném lỗi khi mọi record đều bị từ chối
+(xem [Record API](#record-api)).
+
 Để sửa giá trị sẽ được lưu, hãy gán field của `record.new`:
 
 ```typescript
@@ -638,7 +674,10 @@ record.new.note = null;          // xoá giá trị của field
   `id`, sẽ ném `ValidationError` nêu tên field và thao tác ghi thất bại.
 - Giá trị được gán dùng cùng định dạng với input của `records.update` và phải là dữ
   liệu JSON. `NaN`, function, `Map`, `Set` và class instance bị từ chối; `Date` được
-  lưu thành chuỗi ISO. Gán `null` sẽ xoá giá trị của field; gán `undefined` hoặc xoá
+  gửi dưới dạng chuỗi ISO 8601. Field `date_time` nhận epoch milliseconds và field
+  `date` nhận chuỗi `"yyyy-MM-dd"`; chuỗi ISO, như một `Date`, ghi vào field `date_time`
+  được lưu đúng thời điểm đó, còn ghi vào field `date` được lưu thành ngày theo UTC.
+  Gán `null` sẽ xoá giá trị của field; gán `undefined` hoặc xoá
   field có cùng tác dụng.
 - Thay đổi bên trong giá trị dạng mảng hoặc object được phát hiện và toàn bộ giá trị
   của field sẽ được gửi đi.
@@ -677,6 +716,10 @@ trigger before-change; request chỉ validate input mà không lưu cũng vậy.
   `msg: "BEFORE_CHANGE_TRIGGER_FAILED"`, không kèm chi tiết nội bộ.
 - **Thời gian.** Mỗi lần gọi phải hoàn tất trong `timeoutMs`. Mọi trigger
   before-change của một thao tác ghi dùng chung tổng thời gian 8 giây.
+- **Lệnh đọc làm chậm thao tác ghi.** Thao tác ghi của người dùng phải chờ trong lúc
+  handler đọc. Mỗi lookup được mở rộng đọc thêm một Object, còn `records.aggregate`,
+  được phép dùng, tính từ search index chậm khoảng một giây: nó không tính thay đổi đang
+  được ghi và có thể thiếu các thay đổi vừa lưu ngay trước đó. Hạn chế số lời gọi như vậy.
 
 ### Quy tắc thực thi after-change
 
@@ -866,7 +909,10 @@ Một trường cron là `*`, một số, khoảng `a-b`, danh sách `a,b`, bư�
 khoảng có bước `a-b/n`; các trường nhận phút 0–59, giờ 0–23, ngày 1–31, tháng 1–12
 và thứ 0–7 trong đó cả 0 và 7 đều là Chủ nhật. Tên như `MON`, các ký tự `L`, `W`,
 `#`, `?` và macro như `@daily` không được hỗ trợ. Chu kỳ ngắn nhất là một phút.
-Khoảng trắng giữa các trường được chuẩn hoá thành một dấu cách trong manifest.
+Khoảng trắng giữa các trường được chuẩn hoá thành một dấu cách trong manifest, và biểu
+thức sau khi chuẩn hoá dài tối đa 128 ký tự; biểu thức dài hơn ném `ValidationError`.
+Cogover lưu time zone ở dạng chuẩn hoá, nên offset như `UTC+7` được liệt kê là
+`UTC+07:00` trong danh sách lịch của project.
 
 ### `JobDefinition` và `JobManifest`
 
@@ -970,8 +1016,9 @@ const { runId, duplicate } = await jobs.enqueue("sync_order", { orderId: order.i
 ```
 
 `jobKey` phải là job do version active khai báo; nếu không, Cogover ném
-`ValidationError`. `payload` là giá trị JSON bất kỳ, tối đa 65.536 byte UTF-8 sau
-khi serialize; `undefined` và `null` enqueue lần chạy không có payload. Giá trị mà
+`ValidationError`. `payload` là giá trị JSON bất kỳ, tối đa 65.536 byte UTF-8 của dạng
+`JSON.stringify`, trong đó dấu ngoặc kép, dấu gạch chéo ngược hoặc ký tự điều khiển được
+tính theo chuỗi escape của nó; `undefined` và `null` enqueue lần chạy không có payload. Giá trị mà
 JSON sẽ âm thầm thay đổi, như `NaN` hoặc instance của class, bị từ chối bằng
 `ValidationError`. `delayMs` là số nguyên từ 0 đến 2.592.000.000 (30 ngày) và
 `runAt` là thời điểm Unix millisecond không quá 30 ngày tới; truyền một trong hai
@@ -985,20 +1032,25 @@ inbound webhook. Trigger before-change bị từ chối bằng `PermissionDenied
 (`details.reason === "TRIGGER_READ_ONLY"`), phiên phát triển local không có quyền
 ghi cũng vậy (`"DEVELOPMENT_SESSION_READ_ONLY"`). Một invocation enqueue tối đa
 50 lần chạy, và một project có tối đa 10.000 lần chạy đang chờ hoặc đang chạy; vượt
-quá sẽ ném `RateLimitError`. Khi job chưa được bật cho Workspace, lỗi là
-`CogoverApiError` với `code: "JOBS_DISABLED"`.
+quá sẽ ném `RateLimitError`. HTTP route hoặc trigger sẽ dùng hết ngân sách 20
+capability call trước (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)),
+nên ở đó không chạm tới giới hạn 50 lần enqueue. Khi job chưa được bật cho Workspace,
+lỗi là `CogoverApiError` với `code: "JOBS_DISABLED"`.
 
 ### Quy tắc thực thi job
 
 - **Danh tính.** Lần chạy được enqueue từ script, route hoặc trigger chạy dưới danh
   tính người dùng của invocation đó: `invocation` mô tả người dùng ấy và
-  `data.object()` thực hiện với quyền của người ấy. Lần chạy theo lịch, lần chạy do
-  quản trị viên enqueue và lần chạy được enqueue từ lời gọi inbound webhook không có
-  người dùng: `invocation.identity` là `"system"`, và `data.object()` chỉ hoạt động
+  `data.object()` thực hiện với quyền của người ấy. Lần chạy do Super Admin enqueue
+  qua API quản lý job cũng chạy dưới danh tính Super Admin đó, và lịch sử lần chạy ghi
+  `enqueuedBy: "management"`. Lần chạy theo lịch và lần chạy được enqueue từ lời gọi
+  inbound webhook không có người dùng: `invocation.identity` là `"system"`, và `data.object()` chỉ hoạt động
   nếu identity policy đã duyệt của project đặt `allowInternalSystem: true`; nếu
   không, các lời gọi của nó ném `PermissionDeniedError` có `details.reason` là
   `"IDENTITY_NOT_GRANTED"`. `data.asUser()` và `data.asSystem()` tuân theo identity
-  policy như thông thường.
+  policy như thông thường. Trong lần chạy có người dùng, `records.aggregate` qua
+  `data.object()` có giới hạn của `data.asUser()`; dùng `data.asSystem()` để nhóm (xem
+  [Aggregate](#aggregate)).
 - **Capability.** Job được đọc và ghi record, gọi `fetch`, dùng `state` và `locks`,
   gửi notification và email, enqueue job, đọc secret và dùng `crypto`, trong giới hạn
   runtime của làn job.
@@ -1068,9 +1120,13 @@ Cogover cài đặt global `fetch()` trong hosted runtime. Import `{ fetch }` t�
 `@cogover/sdk` khi muốn khai báo dependency tường minh; cách này cũng ngăn Node.js
 trên máy local âm thầm dùng native `fetch` không bị giới hạn khi chạy test. Hàm
 `fetch` của SDK yêu cầu Cogover runtime và luôn dùng lớp network do Cogover quản
-lý. `input` phải là URL HTTPS public tuyệt đối, port 443 và không chứa userinfo,
-fragment hoặc IP literal. `body` chỉ nhận string; dùng `JSON.stringify()` cho JSON.
+lý. `input` phải là URL HTTPS public tuyệt đối, không chứa userinfo, fragment hoặc
+IP literal, trên port 443 hoặc trên origin đã được duyệt cho project (xem
+[Port khác](#port-khác)). `body` chỉ nhận string; dùng `JSON.stringify()` cho JSON.
 `timeoutMs` phải là số nguyên dương và luôn bị giới hạn bởi hạn mức của platform.
+Giá trị này không kéo dài lần thực thi: HTTP route mặc định có tổng cộng 8 giây, nên ở
+đó server chậm hơn sẽ kết thúc toàn bộ lần thực thi (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
 
 ```typescript
 import { fetch } from "@cogover/sdk";
@@ -1090,16 +1146,47 @@ không phân biệt hoa/thường.
 
 V1 không tự follow redirect, không lưu/gửi cookie, không streaming request/response,
 không WebSocket và không nhận `signal`, `credentials`, `redirect`, proxy, dispatcher,
-agent, DNS resolver hay TLS configuration. Không hỗ trợ URL HTTP, port khác 443,
-userinfo hoặc IP-literal host. Header framing/hop-by-hop/proxy/forwarding và header
+agent, DNS resolver hay TLS configuration. Không hỗ trợ URL HTTP, port khác 443 mà
+project chưa được duyệt, userinfo hoặc IP-literal host. Header framing/hop-by-hop/proxy/forwarding và header
 request dành riêng cho Cogover bị từ chối. Request/response, header, thời gian, số call, destination
 và concurrency đều có quota.
 
+- Request `GET` hoặc `HEAD` có `body` thất bại với `FETCH_BLOCKED`.
+- Response nén, tức có `Content-Encoding` khác `identity`, thất bại với `FETCH_BLOCKED`.
+- Body của response được giải mã theo UTF-8: byte không hợp lệ theo UTF-8 thành U+FFFD,
+  nên không đọc chính xác được nội dung nhị phân.
+- Host name phân giải ra địa chỉ không phải public thất bại với `FETCH_FAILED`.
+- Các lời gọi bắt đầu cùng lúc, ví dụ bằng `Promise.all`, được gửi lần lượt từng lời gọi.
+- Trigger before-change không được gọi `fetch`: lời gọi ném `PermissionDeniedError` có
+  `details.reason` là `"TRIGGER_READ_ONLY"`. Preview version chế độ chỉ đọc chỉ cho phép
+  `GET` và `HEAD` không có `credential`, các lời gọi khác bị từ chối bằng
+  `PermissionDeniedError`.
+
 Lỗi được ném dưới dạng `CogoverApiError` với code `FETCH_DISABLED`, `FETCH_BLOCKED`,
 `FETCH_REQUEST_TOO_LARGE`, `FETCH_RESPONSE_TOO_LARGE`, `FETCH_TIMEOUT` hoặc
-`FETCH_FAILED`; quota dùng `RateLimitError`. Với POST/PUT/PATCH/DELETE bị timeout
+`FETCH_FAILED`; quota dùng `RateLimitError`. Một lần thực thi gọi `fetch` tối đa 20 lần;
+HTTP route hoặc trigger dùng hết ngân sách 20 capability call trước, và điều đó cũng
+được báo bằng `RateLimitError` (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Với POST/PUT/PATCH/DELETE bị timeout
 hoặc mất response, remote server có thể đã xử lý request. Hãy dùng idempotency key
 của API đích và không retry mù.
+
+### Port khác
+
+Hệ thống chỉ công bố trên port khác, ví dụ `https://erp.example.com:9899`, gọi được
+sau khi quản trị viên Workspace duyệt đúng origin đó trong mục `fetch` của identity
+policy của project. Việc duyệt chỉ áp dụng cho các origin `https://host:port` được
+liệt kê; port khác của cùng host vẫn bị chặn. Mọi quy tắc khác trong mục này vẫn áp
+dụng cho origin đã duyệt: HTTPS với chứng chỉ hợp lệ cho host, chỉ địa chỉ public,
+không follow redirect và cùng các giới hạn. URL trên port chưa được duyệt thất bại với
+`FETCH_BLOCKED`. Request rời Cogover từ các địa chỉ outbound dùng chung với Workspace
+khác, nên whitelist các địa chỉ đó trên firewall không xác định được Workspace của bạn:
+hệ thống đích cần xác thực request, ví dụ bằng credential.
+
+```typescript
+// Chỉ gọi được sau khi "https://erp.example.com:9899" được duyệt cho project này.
+const orders = await fetch("https://erp.example.com:9899/api/orders?status=new");
+```
 
 ### Xác thực bằng credential
 
@@ -1119,8 +1206,10 @@ const response = await fetch("https://erp.example.com/v1/orders", {
 Tuỳ cách credential được tạo, Cogover gửi `Authorization: Bearer <value>`,
 `Authorization: Basic <base64 của value>` hoặc một header với tên đã cấu hình. Tên
 phải bắt đầu bằng chữ cái và chứa tối đa 64 chữ cái, chữ số hoặc dấu gạch dưới.
-Credential chỉ được gửi tới các host mà quản trị viên cho phép; request tới host
-khác, request tự đặt cùng header, hoặc tên không phải credential đang active sẽ
+Credential chỉ được gửi tới các host mà quản trị viên cho phép. Host ghi không kèm
+port chỉ cho phép port 443; để dùng credential với origin đã duyệt trên port khác,
+quản trị viên ghi `host:port`, ví dụ `erp.example.com:9899`. Request tới host hoặc
+port khác, request tự đặt cùng header, hoặc tên không phải credential đang active sẽ
 thất bại với `FETCH_BLOCKED`. Redirect không bao giờ được follow, nên credential
 không bao giờ rời khỏi host được phép.
 
@@ -1158,8 +1247,10 @@ Secret không tồn tại hoặc đã bị disable ném `ValidationError` với 
 inbound webhook. Trigger before-change bị từ chối bằng `PermissionDeniedError`
 (`details.reason === "TRIGGER_READ_ONLY"`); phiên phát triển local chỉ đọc được
 secret khi quản trị viên cho phép, nếu không reason là `"SECRETS_NOT_ALLOWED"`.
-Một invocation đọc tối đa 20 secret; đọc lại cùng tên trong cùng invocation trả về
-giá trị đã cache. Khi secret chưa được bật cho Workspace, lỗi là `CogoverApiError`
+Một invocation đọc secret tối đa 20 lần; mọi lần đọc đều được tính, kể cả đọc lại cùng
+tên và thao tác `crypto` dùng key `{ secret: name }`, và lần thứ 21 ném `RateLimitError`.
+Trong HTTP route hoặc trigger, ngân sách 20 capability call sẽ hết trước (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Khi secret chưa được bật cho Workspace, lỗi là `CogoverApiError`
 với `code: "SECRETS_DISABLED"`. Không bao giờ ghi giá trị secret vào log, record,
 state hay response. Để ký, mã hoá hoặc giải mã bằng secret mà không đọc giá trị,
 truyền `{ secret: name }` làm key của một thao tác [`crypto`](#mã-hoá-và-chữ-ký).
@@ -1252,10 +1343,13 @@ const token = await crypto.randomUUID();
 - `randomBytes(length)` trả về `length` byte ngẫu nhiên an toàn cho mật mã;
   `length` là số nguyên từ 1 đến 1024.
 - `randomUUID()` trả về UUID version 4 ngẫu nhiên như
-  `"00000000-0000-4000-8000-000000000000"`.
+  `"00000000-0000-4000-8000-000000000000"`. Byte ngẫu nhiên được lấy mỗi lần
+  1.024 byte, nên một capability call đủ cho 64 UUID.
 - `timingSafeEqual(a, b)` so sánh hai chuỗi hoặc hai mảng byte trong thời gian
   hằng và trả về `false` khi độ dài khác nhau. Chuỗi được so sánh dưới dạng byte
-  UTF-8. Dùng hàm này cho mọi phép so sánh chữ ký, token hoặc key.
+  UTF-8. Mỗi giá trị giới hạn 256 KiB, chuỗi tính theo số byte UTF-8; giá trị lớn
+  hơn ném `ValidationError`. Dùng hàm này cho mọi phép so sánh chữ ký, token hoặc
+  key.
 
 ### Key
 
@@ -1423,8 +1517,9 @@ interface SignatureOptions {
 theo `encoding`. `verify` trả về `true` khi `signature` là chữ ký hợp lệ của `data`
 với public key, và `false` trong mọi trường hợp khác, kể cả khi chữ ký không giải
 mã được hoặc sai độ dài; chữ ký thường đến từ chính bên cần xác minh nên chữ ký sai
-định dạng không phải là lỗi. Key hoặc thuật toán không hợp lệ vẫn ném
-`ValidationError`.
+định dạng không phải là lỗi. Chữ ký dài hơn 2.048 ký tự, hoặc 1.024 byte khi là
+`Uint8Array`, được coi là không hợp lệ mà không được gửi đi. Key hoặc thuật toán không
+hợp lệ vẫn ném `ValidationError`, bất kể chữ ký.
 
 - `RSA-SHA*` là RSASSA-PKCS1-v1_5 và cần RSA key. `RSA-SHA1` chỉ để xác minh chữ ký
   của các hệ thống còn dùng nó; không dùng cho chữ ký mới.
@@ -1456,9 +1551,15 @@ const bankSignature = await crypto.sign("RSA-SHA256", { secret: "bank_signing_ke
 
 `data`, `aad` và HMAC key tường minh giới hạn 256 KiB, ciphertext giới hạn 256 KiB
 cộng tag; giá trị lớn hơn và đối số không hợp lệ ném `ValidationError` trước khi
-gọi. Các lỗi về key, thuật toán và tuỳ chọn do Cogover phát hiện, như key sai kích
+gọi. Toàn bộ lời gọi cũng phải vừa một capability request, mặc định 262.144 byte (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)): mọi đối số
+được gửi trong một request đã mã hoá JSON, và `Uint8Array` được gửi dạng base64, lớn
+hơn một phần ba. Vì vậy dữ liệu nhị phân lớn hơn khoảng 190 KiB, hoặc dữ liệu text gần
+256 KiB cùng các đối số khác, sẽ ném `ValidationError` trước khi gọi dù từng giá trị vẫn
+trong giới hạn riêng của nó. Các lỗi về key, thuật toán và tuỳ chọn do Cogover phát hiện, như key sai kích
 thước hoặc sai loại, cũng ném `ValidationError`. Mọi thao tác trừ `timingSafeEqual`
-là một capability call và được tính vào giới hạn của invocation.
+là một capability call và được tính vào giới hạn của invocation; `randomUUID` gọi một
+lần cho mỗi 64 UUID.
 
 Các thao tác hoạt động trong mọi context, kể cả trigger before-change, khi key được
 truyền trực tiếp trong lời gọi. Key `{ secret }` tuân theo quy tắc của
@@ -1504,10 +1605,12 @@ export default router.toHandler();
 - **Danh tính.** `invocation.identity` là `"inbound"`, `invocation.user` là `null`
   và `invocation.inbound` chứa `id`, `name` và `mode` xác thực của inbound access.
   `data.object()` thực hiện dưới danh tính system và chỉ hoạt động nếu identity
-  policy đã duyệt của project đặt `allowInternalSystem: true`; nếu không, các lời
-  gọi của nó ném `PermissionDeniedError` có `details.reason` là
-  `"IDENTITY_NOT_GRANTED"`. `data.asUser()` và `data.asSystem()` tuân theo identity
-  policy như thông thường.
+  policy đã duyệt của project đặt `allowInternalSystem: true`; khi đó nó có cùng quyền
+  truy cập như trong job chạy theo lịch, không bị thu hẹp bởi các object được cấp cho
+  `data.asSystem()`. Nếu không, các lời gọi của nó ném `PermissionDeniedError` có
+  `details.reason` là `"IDENTITY_NOT_GRANTED"`. `data.asUser()` và `data.asSystem()` chỉ
+  tuân theo quyền được cấp trong identity policy khi `allowInternalSystem` là `true`;
+  nếu không, chúng cũng bị từ chối như vậy, kể cả với object đã được cấp.
 - **Body.** Request body giới hạn 256 KiB. Khi body là JSON object, nó là
   `request.body`; body dạng form, text hoặc dạng khác để `request.body` rỗng (`{}`).
   `request.rawBody` luôn chứa body đúng như đã nhận, dưới dạng chuỗi UTF-8, và
@@ -1520,15 +1623,19 @@ export default router.toHandler();
 - **Retry.** Hệ thống bên ngoài thường gửi lại webhook không nhận được response
   2xx, nên handler có thể thấy cùng một sự kiện nhiều lần. Dùng định danh riêng của
   sự kiện làm `idempotencyKey` cho job được enqueue, hoặc làm key trong state.
-  Header `Idempotency-Key` hoạt động như với mọi route.
+  Header `Idempotency-Key` hoạt động như với mọi route. Khi inbound access kiểm tra chữ
+  ký HMAC có timestamp, mỗi chữ ký chỉ được chấp nhận một lần, trước khi handler chạy:
+  lần retry lặp lại cùng chữ ký bị từ chối với HTTP 401, kể cả khi lần đầu thất bại, nên
+  bên gửi phải ký lại cho mỗi lần retry.
 
 ## Record API
 
 ```typescript
 const orders = data.object("order");
-await orders.records.get(id, { fields });
-await orders.records.getMany(ids, { fields });
-await orders.records.list({ where, orderBy, fields, limit, cursor });
+await orders.records.get(id, { fields, expandLookups });
+await orders.records.getMany(ids, { fields, expandLookups });
+await orders.records.list({ where, orderBy, fields, limit, cursor, expandLookups });
+await orders.records.aggregate({ where, groupBy, metrics, limit });
 await orders.records.create(fields);
 await orders.records.update(id, fields);
 await orders.records.batchInsert(records);
@@ -1536,6 +1643,10 @@ await orders.records.batchUpdate(records);
 await orders.records.upsertByUniqueField(matchBy, fields);
 await orders.records.deleteMany(ids);
 ```
+
+Mọi lệnh đọc phải nêu các field cần trả về: `fields` là bắt buộc với `get`, `getMany` và
+`list` (xem [Chọn field](#chọn-field)). Lookup không được mở rộng trừ khi lệnh đọc yêu
+cầu bằng `expandLookups` (xem [Record liên kết](#record-liên-kết)).
 
 ### Giá trị và kết quả record
 
@@ -1546,8 +1657,13 @@ type CogoverRecordId = string & {
 
 interface RecordReference<ObjectSlug extends string = string> {
   readonly id: CogoverRecordId;
+  // "" trừ khi lệnh đọc mở rộng lookup này; field `reference` giữ tên được lưu sẵn.
   readonly name: string;
   readonly objectSlug?: ObjectSlug;
+  // Chỉ có khi lệnh đọc mở rộng lookup này và đọc được record liên kết.
+  readonly fields?: ObjectSlug extends keyof WorkspaceObjects
+    ? Readonly<Partial<WorkspaceObjects[ObjectSlug]>>
+    : Readonly<Record<string, unknown>>;
 }
 
 interface UrlValue {
@@ -1569,6 +1685,7 @@ interface CogoverRecord<Fields> {
   readonly system: {
     readonly createdAt: number;
     readonly updatedAt: number;
+    // `name` là "" trừ khi lệnh đọc dùng `expandLookups`.
     readonly createdBy?: { readonly id: string; readonly name: string };
   };
 }
@@ -1587,6 +1704,11 @@ interface GetManyResult<Fields> {
 interface DeleteResult {
   readonly deleted: CogoverRecordId[];
   readonly notDeleted: CogoverRecordId[];
+  readonly recordErrors?: Readonly<Record<CogoverRecordId, {
+    readonly reason: "TRIGGER_REJECTED";
+    readonly fieldErrors?: Readonly<Record<string, string>>;
+    readonly messages?: readonly string[];
+  }>>;
 }
 
 interface BatchWriteRowResult {
@@ -1595,6 +1717,8 @@ interface BatchWriteRowResult {
   readonly r: number;
   readonly msg?: string;
   readonly success: boolean;
+  readonly fieldErrors?: Readonly<Record<string, string>>;
+  readonly messages?: readonly string[];
 }
 
 interface BatchWriteResponse {
@@ -1624,20 +1748,116 @@ partial trên các field của workspace. Reference nhận string, `CogoverRecor
 ### Data client và operation
 
 ```typescript
-interface GetRecordOptions<Fields> {
-  readonly fields?: readonly (keyof Fields & string)[];
+type FieldSelection<Fields> = "*" | readonly (keyof Fields & string)[];
+
+type SelectedFields<Fields, Selection extends FieldSelection<Fields>> =
+  Selection extends "*" ? Fields
+  : Selection extends readonly (infer Slug)[] ? Pick<Fields, Slug & keyof Fields>
+  : Fields;
+
+type ExpandLookups<Fields> =
+  | boolean
+  | {
+      // LookupFieldSlug: các field lookup và reference của Fields. LinkedFieldSlug: field slug
+      // của Object liên kết, hoặc string bất kỳ khi Object đó chưa được khai báo.
+      readonly [Slug in LookupFieldSlug<Fields>]?: "*" | readonly LinkedFieldSlug<Fields[Slug]>[];
+    };
+
+interface GetRecordOptions<Fields, Selection extends FieldSelection<Fields> = FieldSelection<Fields>> {
+  readonly fields: Selection;
+  readonly expandLookups?: ExpandLookups<SelectedFields<Fields, Selection>>;
 }
 
-interface GetManyOptions<Fields> {
-  readonly fields: readonly (keyof Fields & string)[];
+interface GetManyOptions<Fields, Selection extends FieldSelection<Fields> = FieldSelection<Fields>> {
+  readonly fields: Selection;
+  readonly expandLookups?: ExpandLookups<SelectedFields<Fields, Selection>>;
 }
 
-interface ListOptions<Fields> {
+interface ListOptions<Fields, Selection extends FieldSelection<Fields> = FieldSelection<Fields>> {
   readonly where?: FilterExpression;
   readonly orderBy?: readonly SortExpression[];
-  readonly fields?: readonly (keyof Fields & string)[];
+  readonly fields: Selection;
   readonly limit?: number;
   readonly cursor?: string;
+  readonly expandLookups?: ExpandLookups<SelectedFields<Fields, Selection>>;
+}
+
+type AggregateMetric<Fields> =
+  | { readonly count: "id" | CountableFieldSlug<Fields> }
+  | { readonly countDistinct: CountableFieldSlug<Fields> }
+  | { readonly sum: NumberFieldSlug<Fields> }
+  | { readonly avg: NumberFieldSlug<Fields> }
+  | { readonly min: NumberOrTextFieldSlug<Fields> }
+  | { readonly max: NumberOrTextFieldSlug<Fields> };
+// CountableFieldSlug: mọi field trừ field file và URL. NumberFieldSlug: các field có kiểu
+// `number`. NumberOrTextFieldSlug: các field có kiểu `number` hoặc `string` (`date` là
+// string). Mỗi loại là string bất kỳ khi Fields chưa được khai báo.
+
+type AsUserAggregateMetric<Fields> =
+  | { readonly count: "id" | NumberFieldSlug<Fields> }
+  | { readonly sum: NumberFieldSlug<Fields> }
+  | { readonly avg: NumberFieldSlug<Fields> }
+  | { readonly min: NumberFieldSlug<Fields> }
+  | { readonly max: NumberFieldSlug<Fields> };
+
+type AggregateMetrics<Fields> = Readonly<Record<string, AggregateMetric<Fields>>>;
+type AsUserAggregateMetrics<Fields> = Readonly<Record<string, AsUserAggregateMetric<Fields>>>;
+
+interface AggregateOptions<
+  Fields,
+  Metrics extends AggregateMetrics<Fields> | AsUserAggregateMetrics<Fields> = AggregateMetrics<Fields>,
+> {
+  readonly where?: FilterExpression;
+  readonly metrics: Metrics;
+  readonly groupBy?: never;
+  readonly limit?: never;
+}
+
+interface GroupedAggregateOptions<
+  Fields,
+  Metrics extends AggregateMetrics<Fields> = AggregateMetrics<Fields>,
+  GroupBy extends readonly (keyof Fields & string)[] = readonly (keyof Fields & string)[],
+> {
+  readonly where?: FilterExpression;
+  readonly groupBy: GroupBy;
+  readonly metrics: Metrics;
+  readonly limit?: number;
+}
+
+type AggregateValues<Metrics> = {
+  readonly [Name in keyof Metrics]:
+    Metrics[Name] extends
+      | { readonly count: string }
+      | { readonly countDistinct: string }
+      | { readonly sum: string }
+      ? number
+      : number | null;
+};
+
+type AggregateGroupKey<Fields, Slug extends keyof Fields & string> = {
+  // CogoverRecordId với lookup, option slug với choice, boolean, number, và epoch
+  // milliseconds (`number`) với field ngày: không nhóm được theo text nên field `string` là ngày.
+  readonly [K in Slug]: GroupKeyValue<Fields[K]>;
+};
+
+interface AggregateResult<Values = Readonly<Record<string, number | null>>> {
+  readonly values: Values;
+}
+
+interface AggregateGroup<
+  Key = Readonly<Record<string, string | number | boolean>>,
+  Values = Readonly<Record<string, number | null>>,
+> {
+  readonly key: Key;
+  readonly values: Values;
+}
+
+interface AggregateGroupResult<
+  Key = Readonly<Record<string, string | number | boolean>>,
+  Values = Readonly<Record<string, number | null>>,
+> {
+  readonly groups: AggregateGroup<Key, Values>[];
+  readonly truncated: boolean;
 }
 
 interface RecordWritesApi<Fields> {
@@ -1652,10 +1872,33 @@ interface RecordWritesApi<Fields> {
   deleteMany(ids: readonly CogoverRecordId[]): Promise<DeleteResult>;
 }
 
-interface RecordsApi<Fields> extends RecordWritesApi<Fields> {
-  get(id: string, options?: GetRecordOptions<Fields>): Promise<CogoverRecord<Fields> | null>;
-  getMany(ids: readonly string[], options: GetManyOptions<Fields>): Promise<GetManyResult<Fields>>;
-  list(options?: ListOptions<Fields>): Promise<RecordPage<Fields>>;
+interface AsUserRecordsApi<Fields> extends RecordWritesApi<Fields> {
+  get<const Selection extends FieldSelection<Fields>>(
+    id: string,
+    options: GetRecordOptions<Fields, Selection>,
+  ): Promise<CogoverRecord<SelectedFields<Fields, Selection>> | null>;
+  getMany<const Selection extends FieldSelection<Fields>>(
+    ids: readonly string[],
+    options: GetManyOptions<Fields, Selection>,
+  ): Promise<GetManyResult<SelectedFields<Fields, Selection>>>;
+  list<const Selection extends FieldSelection<Fields>>(
+    options: ListOptions<Fields, Selection>,
+  ): Promise<RecordPage<SelectedFields<Fields, Selection>>>;
+  aggregate<const Metrics extends AsUserAggregateMetrics<Fields>>(
+    options: AggregateOptions<Fields, Metrics>,
+  ): Promise<AggregateResult<AggregateValues<Metrics>>>;
+}
+
+interface RecordsApi<Fields> extends AsUserRecordsApi<Fields> {
+  aggregate<const Metrics extends AggregateMetrics<Fields>>(
+    options: AggregateOptions<Fields, Metrics>,
+  ): Promise<AggregateResult<AggregateValues<Metrics>>>;
+  aggregate<
+    const Metrics extends AggregateMetrics<Fields>,
+    const GroupBy extends readonly (keyof Fields & string)[],
+  >(
+    options: GroupedAggregateOptions<Fields, Metrics, GroupBy>,
+  ): Promise<AggregateGroupResult<AggregateGroupKey<Fields, GroupBy[number]>, AggregateValues<Metrics>>>;
 }
 
 interface WriteObjectClient<Fields> {
@@ -1668,8 +1911,12 @@ interface ObjectClient<Fields> extends WriteObjectClient<Fields> {
   readonly records: RecordsApi<Fields>;
 }
 
+interface AsUserObjectClient<Fields> extends WriteObjectClient<Fields> {
+  readonly records: AsUserRecordsApi<Fields>;
+}
+
 interface AsUserDataApi<Schema extends object = EffectiveWorkspaceObjects> {
-  object<Slug extends keyof Schema & string>(slug: Slug): ObjectClient<Schema[Slug]>;
+  object<Slug extends keyof Schema & string>(slug: Slug): AsUserObjectClient<Schema[Slug]>;
 }
 
 interface DataApi<Schema extends object = EffectiveWorkspaceObjects> {
@@ -1679,10 +1926,11 @@ interface DataApi<Schema extends object = EffectiveWorkspaceObjects> {
 }
 ```
 
-`get` trả `CogoverRecord<Fields> | null`; `list` trả `RecordPage<Fields>`.
+`get` trả record hoặc `null`; `list` trả `RecordPage`; kiểu field của kết quả được
+thu hẹp theo `fields`.
 
 `getMany(ids, { fields })` đọc tối đa 200 record theo ID bằng một capability call duy
-nhất. `fields` là bắt buộc và phải là danh sách field slug không rỗng. ID được trim
+nhất. `fields` là bắt buộc như mọi lệnh đọc (xem [Chọn field](#chọn-field)). ID được trim
 và loại trùng theo đúng thứ tự ban đầu; nhiều hơn 200 ID duy nhất, ID rỗng hoặc danh
 sách `fields` không hợp lệ sẽ ném `ValidationError` trước khi gửi request. Mảng `ids`
 rỗng trả ngay `{ records: [], missingIds: [] }` mà không gửi request. Kết quả gồm
@@ -1700,18 +1948,58 @@ const accountById = new Map(records.map(record => [record.id, record]));
 Dùng `getMany` thay cho việc gọi `get` trong vòng lặp. Mỗi capability call đều được
 tính vào hạn mức của project, và một record trigger có thể nhận 200 record cùng lúc.
 
-SDK chuẩn hoá boolean `0/1` thành `true/false`. Lookup/reference chỉ public
-`id`, `name`, `objectSlug`, không chuyển tiếp các field lồng từ record được lookup.
-Khi ghi, developer có thể truyền record ID hoặc `RecordReference`; chỉ ID được gửi
-xuống Record API.
+SDK chuẩn hoá boolean `0/1` thành `true/false`. Giá trị lookup hoặc reference là
+`RecordReference` gồm `id`, `name` và `objectSlug`. `name` là `""` trừ khi lệnh đọc mở
+rộng lookup đó, ngoại trừ field `reference` vì tên được lưu kèm record; giá trị được mở
+rộng có thêm `fields` của record liên kết (xem [Record liên kết](#record-liên-kết)). Giá
+trị `new` và `old` của [record trigger](#record-trigger) luôn có tên lookup. Khi
+ghi, developer có thể truyền record ID hoặc `RecordReference`; chỉ ID được gửi xuống
+Record API.
+
+Field `file` được đọc thành object `FileValue`: một `FileValue`, hoặc `null`, với file
+field đơn và một mảng với file field nhiều giá trị. `url` chỉ có khi Cogover có URL tuyệt
+đối đầy đủ cho file.
+
+Lệnh ghi nhận `FileValue` đọc từ một record, nên có thể copy file sang record khác. Mọi
+file được ghi phải là file đã tải lên cho một file field của Workspace này; nếu không, lệnh
+ghi ném `ValidationError` (`details.r` 626) và không lưu gì.
+
+Field `date` được đọc thành chuỗi `"yyyy-MM-dd"`, field `date_time` thành epoch
+milliseconds. Khi ghi, Cogover nhận cùng các dạng đó và cả chuỗi ISO 8601, là dạng mà
+một `Date` được chuyển thành: ghi vào field `date_time` được lưu đúng thời điểm đó, ghi
+vào field `date` được lưu thành ngày theo UTC. Chuỗi khác cho các field này ném
+`ValidationError` có `details.reason` là `"INVALID_FIELD_VALUE"`.
 
 `create` và `update` yêu cầu object field không rỗng. `batchInsert` nhận 1–200
 object field; `batchUpdate` nhận 1–200 phần tử `{ id, fields }`. Batch là
 best-effort theo từng row, không phải `allOrNone`; luôn kiểm tra `success` hoặc
 từng phần tử `results`. `referenceId` là index đầu vào bắt đầu từ 0, dạng chuỗi.
+Xung đột unique key, kể cả hai row trong cùng batch có cùng giá trị unique, làm toàn bộ
+batch bị từ chối thay vì một row: lời gọi ném `ValidationError` có `details.reason` là
+`"UNIQUE_KEY_VIOLATION"` và không trả kết quả theo row. Thao tác ghi bị record trigger
+before-change từ chối ném `ValidationError` có `details.reason` là `"TRIGGER_REJECTED"`,
+còn thao tác ghi mà trigger không kiểm tra được ném `RetryableError` có `details.reason`
+là `"TRIGGER_FAILED"` (xem [Record trigger](#validate-và-sửa-record)).
+Với `batchInsert` và `batchUpdate`, trigger từ chối từng row chứ không từ chối cả lời
+gọi: row bị từ chối có `r` là `70` và `success` là `false`, và khi Cogover nhận được,
+`fieldErrors` ánh xạ từng field slug (`$record` với cả record) tới mã lỗi của trigger,
+còn `messages` liệt kê các đoạn văn bản của trigger.
 
-`deleteMany` yêu cầu ít nhất một record ID không rỗng và trả hai mảng `deleted`,
-`notDeleted`. Record ID, object slug và field slug được validate trước khi gửi.
+`deleteMany` yêu cầu 1–200 record ID không rỗng và trả hai mảng `deleted`,
+`notDeleted`. Khi record trigger before-change từ chối một số record, các record còn
+lại vẫn bị xoá, ID bị từ chối nằm trong `notDeleted`, và `recordErrors` ánh xạ từng ID
+bị từ chối tới `{ reason: "TRIGGER_REJECTED", fieldErrors?, messages? }`. Khi trigger từ
+chối mọi record, không có gì bị xoá và lời gọi ném `ValidationError` có
+`details.reason` là `"TRIGGER_REJECTED"`. Record ID, object slug, option của `get`,
+`getMany`, `list` và `aggregate`, và `matchBy` của `upsertByUniqueField` được validate
+trước khi gửi; Cogover kiểm tra field slug có tồn tại hay không.
+
+Giá trị field bị Cogover từ chối ném `ValidationError` có `details.fieldSlug` là field
+đó: `details.reason` là `"REQUIRED_FIELD_MISSING"` khi field bắt buộc không có giá trị và
+`"INVALID_FIELD_VALUE"` khi giá trị không hợp với kiểu của field. Field formula, auto
+number, rollup summary và field có metadata `readOnly: true` không bao giờ ghi được, với
+mọi danh tính: ghi vào field như vậy ném `ValidationError` có `details.reason` là
+`"FIELD_NOT_WRITABLE"`.
 
 `upsertByUniqueField(matchBy, fields)` yêu cầu `matchBy` là slug của một field đã
 được cấu hình thành single-field unique key và field đó phải có giá trị trong
@@ -1721,6 +2009,195 @@ Cogover yêu cầu đồng thời quyền tạo và cập nhật record cho upse
 Xung đột unique key được trả thành `ValidationError`
 với `details.reason === "UNIQUE_KEY_VIOLATION"`, `objectSlug` và `fieldSlug`.
 Public error không trả lại giá trị business key bị trùng.
+
+### Chọn field
+
+`get`, `getMany` và `list` chỉ trả các field được nêu trong `fields`, nên một lệnh đọc
+không tốn hơn những gì script dùng. `fields` là bắt buộc và là một trong hai dạng:
+
+- danh sách field slug không rỗng, được trim và loại trùng theo đúng thứ tự ban đầu;
+- chuỗi `"*"` đứng riêng: mọi field mà danh tính đang dùng được đọc và identity policy
+  của project cho phép. Khi policy chỉ cho phép một số field, `"*"` là các field đó,
+  không phải mọi field của Object.
+
+Thiếu `fields`, hoặc truyền `null`, danh sách rỗng, `["*"]` hay giá trị không phải field
+slug, sẽ ném `ValidationError` trước khi gửi request, với message:
+
+```text
+fields is required: pass field slugs or "*" (@cogover/sdk 0.13.0+)
+```
+
+Cogover cũng từ chối lệnh đọc như vậy với cùng message, nên một phiên bản project đã
+publish bằng SDK cũ và đọc không có `fields` sẽ lỗi theo cùng cách: thêm `fields` vào các
+lệnh đọc rồi publish lại.
+
+Có thể liệt kê các slug hệ thống `id`, `created`, `updated` và `created_by`; giá trị của
+chúng luôn được trả trong `id` và `system`, không nằm trong `fields`. `where` và `orderBy`
+được dùng field không có trong `fields`. Mọi field trong `fields`, `where` và `orderBy`
+phải được identity policy của project cho phép, nếu không lệnh đọc ném
+`PermissionDeniedError`; slug không có trong Object ném `ValidationError`.
+
+Kiểu kết quả đi theo `fields`. Khi có khai báo workspace, `fields: ["code", "amount"]`
+trả `CogoverRecord<Pick<Fields, "code" | "amount">>`, nên đọc một field không được yêu
+cầu là lỗi compile, còn `"*"` trả mọi field đã khai báo:
+
+```typescript
+const order = await orders.records.get(orderId, { fields: ["code", "amount"] });
+const amount = order?.fields.amount; // number | null | undefined
+// order?.fields.status không compile được: `status` không được yêu cầu.
+const full = await orders.records.get(orderId, { fields: "*" });
+```
+
+Kết quả của một capability call giới hạn 1.048.576 byte (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). `"*"` trên Object có nhiều field
+hoặc field dài có thể vượt giới hạn này, nhất là với `getMany` hoặc một trang `list` 200
+record; khi đó lời gọi ném `ValidationError` có `details.limit`. Hãy nêu đúng các field
+script cần, hoặc đọc ít record hơn mỗi lần.
+
+### Record liên kết
+
+Lệnh đọc không tra cứu record mà field lookup trỏ tới, trừ khi được yêu cầu:
+
+- giá trị `lookup_normal` là `{ id, name: "", objectSlug }`, hoặc mảng các giá trị đó với
+  lookup nhiều giá trị;
+- giá trị `reference` giữ `name` vì record lưu sẵn tên;
+- `system.createdBy` là `{ id, name: "" }`.
+
+Dùng `expandLookups` khi script cần tên hoặc field của record liên kết:
+
+```typescript
+const page = await orders.records.list({
+  fields: ["code", "customer", "owner"],
+  expandLookups: { customer: ["credit_limit", "tier"], owner: "*" },
+  limit: 50,
+});
+const customer = page.items[0]?.fields.customer;
+// { id: "...", name: "ABC Company", objectSlug: "account",
+//   fields: { credit_limit: 5000000, tier: "gold" } }
+```
+
+- `true` mở rộng mọi field lookup và reference trong các field được trả về, mỗi field lấy
+  `"*"` của Object liên kết.
+- Object chỉ mở rộng các field được nêu. Mỗi key phải là field lookup hoặc reference có
+  trong `fields`; giá trị là `"*"` hoặc danh sách field slug không rỗng của Object liên
+  kết.
+- `false`, hoặc không truyền, không mở rộng gì.
+
+Giá trị được mở rộng là `{ id, name, objectSlug, fields }`, trong đó `fields` chứa các
+field đã chọn của record liên kết. Khi có khai báo workspace, `fields` của một
+`RecordReference<"account">` có kiểu partial của các field thuộc `account`. Khi có
+`expandLookups`, `system.createdBy.name` cũng được điền bằng field `name` của record nhân
+sự đã tạo record, có thể là một mã được sinh tự động thay vì họ tên; để lấy tên hiển
+thị, dùng
+[`org.personnel.get`](#orgpersonnelgetid-options-và-orgpersonnelgetmanyids-options)
+với `withDisplay: true`.
+
+Record liên kết được đọc bằng cùng danh tính với lệnh đọc: người gọi, `data.asUser()`
+hoặc `data.asSystem()`. Identity policy của project phải cho phép đọc Object liên kết:
+
+- Với `true` hoặc `"*"`, chỉ các field liên kết được policy cho phép mới được trả. Khi
+  policy không cho đọc Object liên kết, giá trị trỏ tới Object đó không được mở rộng.
+- Với danh sách field, mọi field được liệt kê phải được cho phép, nếu không lệnh đọc ném
+  `PermissionDeniedError` có `details.objectSlug` là Object liên kết và, với field không
+  được cho phép, `details.fieldSlug` là field đó; slug không có trong Object liên kết ném
+  `ValidationError`.
+- Record liên kết không đọc được, vì danh tính không được xem hoặc record đã bị xoá, không
+  được mở rộng và không có `fields`.
+
+Giá trị không được mở rộng là `{ id, name: "", objectSlug }` trong field lookup; trong
+field `reference`, giá trị giữ tên mà record lưu sẵn.
+
+Chỉ mở rộng một cấp: lookup bên trong `fields` của record liên kết là
+`{ id, name: "", objectSlug }`. Mỗi lời gọi mở rộng tối đa 1.000 record liên kết khác
+nhau; vượt quá sẽ ném `ValidationError` (`expandLookups can resolve at most 1000 linked
+records per call`) và không đọc gì. Lệnh đọc vẫn chỉ là một capability call, nhưng
+Cogover phải đọc thêm từng Object liên kết nên tốn thời gian: chỉ mở rộng lookup mà
+script dùng tên hoặc field. Kết quả, kể cả record liên kết, phải nằm trong giới hạn
+1.048.576 byte.
+
+`expandLookups` sai cấu trúc ném `ValidationError` trước khi gửi request: object rỗng,
+key không phải field slug hoặc không có trong `fields`, hay giá trị không phải `"*"` và
+cũng không phải danh sách field slug không rỗng.
+
+### Aggregate
+
+`records.aggregate(options)` đếm, tính tổng, trung bình, giá trị nhỏ nhất và lớn nhất
+trên các record khớp `where`, bằng một capability call và không đọc record:
+
+```typescript
+const totals = await orders.records.aggregate({
+  where: orders.fields.status.eq("paid"),
+  metrics: { orders: { count: "id" }, revenue: { sum: "amount" } },
+});
+// { values: { orders: 120, revenue: 530000000 } }
+
+const byStatus = await orders.records.aggregate({
+  groupBy: ["status"],
+  metrics: { orders: { count: "id" }, revenue: { sum: "amount" } },
+  limit: 100,
+});
+// { groups: [{ key: { status: "paid" }, values: { orders: 120, revenue: 530000000 } }],
+//   truncated: false }
+```
+
+`metrics` đặt tên cho 1 đến 20 metric. Tên metric là một chữ cái, theo sau tối đa 63 chữ
+cái, chữ số hoặc dấu gạch dưới; mỗi metric là đúng một trong các dạng:
+
+| Metric | Field | Giá trị |
+|---|---|---|
+| `{ count: "id" }` | | số record khớp |
+| `{ count: field }` | mọi field trừ `reference`, `file` và `url` | số record khớp có giá trị ở field |
+| `{ countDistinct: field }` | các field mà `count` nhận | số giá trị khác nhau, xấp xỉ với tập lớn |
+| `{ sum: field }` | `numeric`, `decimal`, `currency`, `percent` | tổng |
+| `{ avg: field }` | các kiểu số ở trên | trung bình; `null` khi không record khớp nào có giá trị |
+| `{ min: field }`, `{ max: field }` | các kiểu số ở trên, `date`, `date_time` | giá trị nhỏ nhất hoặc lớn nhất; `null` khi không record khớp nào có giá trị; epoch milliseconds với field ngày |
+
+Số lượng và tổng là `0` khi không có record nào khớp.
+
+`where` hoạt động như trong `list`. Không có `groupBy`, kết quả là `{ values }` với một
+giá trị cho mỗi tên metric. Có `groupBy`, là danh sách 1 đến 3 field slug, kết quả là
+`{ groups, truncated }`: mỗi tổ hợp giá trị là một phần tử `{ key, values }`, nhóm nhiều
+record nhất đứng trước. `groupBy` nhận field có kiểu `single_choice`, `multi_choices`,
+`radio_button`, `checkbox`, `boolean`, `lookup_normal`, `date`, `date_time`, `numeric`,
+`decimal`, `currency` và `percent`; field khác, như field text hoặc `reference`, ném
+`ValidationError`. `key` ánh xạ từng field `groupBy` tới giá trị: record ID với lookup,
+option slug với choice, `true` hoặc `false`, số, hoặc epoch milliseconds với `date` và
+`date_time`. Giá trị của key không bao giờ là `null`: record không có giá trị ở một field
+`groupBy` không thuộc nhóm nào.
+
+`limit`, chỉ dùng cùng `groupBy`, là số nhóm tối đa được trả: 1 đến 5.000, mặc định
+1.000. `truncated` là `true` khi còn nhóm khác và chỉ `limit` nhóm đầu được trả.
+
+Mọi field trong `where`, `groupBy` và `metrics`, trừ `"id"`, phải được identity policy
+của project cho phép, nếu không lời gọi ném `PermissionDeniedError`. Chỉ các record mà
+danh tính đang dùng nhìn thấy mới được tính.
+
+Client của `data.asUser()` có giới hạn hẹp hơn:
+
+- Không nhóm được. Kiểu của nó không nhận `groupBy`, và nếu vẫn truyền thì lời gọi ném
+  `ValidationError` (`aggregate with groupBy is not supported for asUser(); use the
+  caller or asSystem()`).
+- Metric chỉ gồm `count` trên `"id"`, và `count`, `sum`, `avg`, `min`, `max` trên field số
+  (`AsUserAggregateMetric`). Metric khác ném `ValidationError` (`metrics.<name>: asUser()
+  without groupBy supports only count on id and count, sum, avg, min and max on number
+  fields; use the caller or asSystem()`).
+
+Các giới hạn này cũng áp dụng cho `data.object()` khi lần thực thi đọc dưới danh tính một
+người dùng không phải người gọi HTTP: trong record trigger cho thay đổi do người dùng thực
+hiện, hoặc trong lần chạy job có người dùng. Nhóm ở đó ném `ValidationError` (`aggregate with groupBy is not
+supported for the default identity of this invocation, which reads as a delegated user;
+use asSystem()`). Hãy dùng `data.asSystem()` ở đó, hoặc danh tính người gọi trong HTTP
+route, để nhóm và dùng các metric khác.
+
+Option không hợp lệ ném `ValidationError` trước khi gửi request: không có metric hoặc
+nhiều hơn 20, tên metric sai, metric không đúng một trong các dạng trên, `groupBy` rỗng
+hoặc nhiều hơn 3 field, `limit` không có `groupBy`, hoặc `limit` ngoài khoảng 1 đến 5.000.
+
+Aggregate được tính từ search index cập nhật theo các lệnh ghi record sau một khoảng
+trễ ngắn, thường khoảng một giây, nên record vừa ghi có thể chưa được tính. Được dùng
+`aggregate` trong record trigger before-change, nhưng lệnh ghi của người dùng phải chờ
+trong lúc nó chạy: hạn chế số lời gọi, và đừng dựa vào nó để thấy các record đang được
+ghi.
 
 ## Filter và sort
 
@@ -1793,14 +2270,15 @@ quyền người gọi; invocation hệ thống giữ quyền hệ thống.
 
 Trả client immutable mới để đọc và ghi theo ID nhân sự được chỉ định (không phải account ID),
 trong cùng workspace. `personnelId` được trim; giá trị không phải string hoặc rỗng
-gây `ValidationError`. `object(slug)` trả `ObjectClient<TFields>`, có
-`records: RecordsApi<TFields>` gồm toàn bộ API đọc/ghi (kể cả `getMany`), batch và upsert, giữ nguyên
-kiểu tham số và kết quả của Record API mặc định.
+gây `ValidationError`. `object(slug)` trả `AsUserObjectClient<TFields>`, có
+`records: AsUserRecordsApi<TFields>` gồm toàn bộ API đọc/ghi (kể cả `getMany` và
+`aggregate`), batch và upsert, giữ nguyên kiểu tham số và kết quả của Record API mặc
+định, ngoại trừ `aggregate` không nhóm được.
 
-`get(id, options?)` trả `CogoverRecord<TFields> | null`; `list(options?)` trả
-`RecordPage<TFields>`. Chọn field, filter, sort và cursor hoạt động như client
-mặc định. Đọc áp dụng quyền của nhân sự được chọn và giới hạn field của project
-đã duyệt. Truy vấn thành công nhưng không có record trả `null`; lỗi server được
+`get(id, options)` trả record hoặc `null`, `list(options)` trả `RecordPage`, cả hai được
+thu hẹp theo `fields`. Chọn field, `expandLookups`, filter, sort và cursor hoạt động như
+client mặc định. Đọc, kể cả record liên kết, áp dụng quyền của nhân sự được chọn và giới
+hạn field của project đã duyệt. Truy vấn thành công nhưng không có record trả `null`; lỗi server được
 ném ra, không bị coi là record không tồn tại hoặc trang rỗng.
 
 ```typescript
@@ -1816,7 +2294,8 @@ const page = await delegatedOrders.records.list({
 ### `data.asSystem(): DataApi<TSchema>`
 
 Trả client immutable mới để truy cập record bằng hệ thống, kể cả trong invocation
-public đã xác thực. Hỗ trợ toàn bộ Record API, gồm `getMany`, batch và upsert. Quyền hệ
+public đã xác thực. Hỗ trợ toàn bộ Record API, gồm `getMany`, `aggregate` (có nhóm), batch
+và upsert. Quyền hệ
 thống không áp dụng quyền record của người gọi; vẫn áp dụng giới hạn project được
 duyệt, validation field, ranh giới workspace và quota runtime. Không thay đổi người
 khởi tạo invocation hoặc các client đã tạo.
@@ -1831,7 +2310,9 @@ await data.asSystem().object("order").records.update(order.id, { description: "S
 Chọn danh tính cần quản trị viên cấp quyền theo phiên bản project, người gọi, nhân
 sự đích, object, thao tác và field. Việc chọn client không tự cấp quyền. Thao tác
 không được phép ném `PermissionDeniedError`; danh tính sai hoặc không resolve được
-không fallback sang hệ thống hay người gọi. Lỗi server giữ `CogoverApiError.r` gốc.
+không fallback sang hệ thống hay người gọi. Nhân sự không có tài khoản người dùng đang
+hoạt động trong workspace ném `PermissionDeniedError` có `details.reason` là
+`"IDENTITY_NOT_RESOLVED"`. Lỗi server giữ `CogoverApiError.r` gốc.
 Các method không nhận credential hay workspace override. Schema API không thay đổi.
 Mỗi lần ghi độc lập; ba lời gọi minh hoạ trên không phải một transaction.
 
@@ -1895,11 +2376,21 @@ Trả `null` khi không có hoặc đã hết hạn. Entry gồm `value`, `versi
 
 ### `namespace.set<T>(key, value, options?): Promise<StateEntry<T>>`
 
-Ghi một giá trị JSON tối đa 32 KiB (32.768 byte UTF-8 sau serialize). `ttlSeconds`
+Ghi một giá trị JSON tối đa 32 KiB: 32.768 byte UTF-8 của dạng `JSON.stringify`,
+trong đó dấu ngoặc kép, dấu gạch chéo ngược hoặc ký tự điều khiển được tính theo
+chuỗi escape của nó. `ttlSeconds`
 từ 1 giây đến 365 ngày; bỏ qua để state không tự hết hạn. Hai option phải là safe
 integer. `expectedVersion` áp dụng
 compare-and-set: `0` chỉ tạo khi chưa tồn tại, số dương chỉ ghi đúng version, bỏ qua
 để upsert vô điều kiện. Xung đột ném `StateConflictError`; entry trả về chứa version mới.
+Mỗi project giữ tối đa 100.000 entry chưa hết hạn: `set` tạo thêm entry mới khi đã đủ
+sẽ ném `RateLimitError` và không ghi gì, còn cập nhật key đã có vẫn hoạt động bình
+thường. Entry hết hạn được tự động xoá và không tính vào giới hạn.
+
+Version đếm số lần ghi kể từ khi entry được tạo. Sau `delete` hoặc khi hết hạn, lần
+`set` tiếp theo tạo entry mới có version bắt đầu lại từ 1, nên một version đã đọc trước
+khi xoá có thể khớp với một entry mới không liên quan (vấn đề ABA). Khi điều này quan
+trọng, hãy lưu thêm một token duy nhất của bạn trong value và so sánh cả token đó.
 
 ### `namespace.delete(key, options?): Promise<boolean>`
 
@@ -1949,20 +2440,31 @@ await locks.withLock("INV-1", { namespace: "invoice", waitMs: 500 }, async lease
 
 Trả lease hoặc `null` khi không lấy được trong `waitMs`. Namespace mặc định là
 `default`; `waitMs` từ 0 đến 10.000 ms; `leaseMs` từ 5.000 đến 60.000 ms và mặc
-định 30.000 ms. Mỗi invocation giữ tối đa 16 lock. Key dài tối đa 255 ký tự,
-namespace tối đa 128 và dùng cùng quy tắc ký tự như tên state. Numeric option phải
-là safe integer.
+định 30.000 ms. Mỗi invocation giữ tối đa 16 lock; lấy lock thứ 17 ném
+`ValidationError`. Key dài tối đa 255 ký tự, namespace tối đa 128 và dùng cùng quy tắc
+ký tự như tên state. Numeric option phải là safe integer.
+
+Thời gian chờ được tính vào wall-clock của lần thực thi. Trong HTTP route, mặc định
+có tổng cộng 8 giây (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)),
+`waitMs` gần bằng hoặc lớn hơn thời gian còn lại sẽ kết thúc toàn bộ lần thực thi với
+response HTTP 422 chung thay vì trả `null`; hãy giữ `waitMs` nhỏ hơn nhiều so với thời
+gian còn lại.
 
 Lease có `id`, `key`, `namespace`, `fencingToken`, `expiresAt`, cùng
-`renew(leaseMs?)` và `release()`. `renew`/`release` xác minh quyền sở hữu bằng token
-do Cogover quản lý; token đó không lộ cho script. Lease mất hoặc hết hạn ném
-`LockLostError`. `release()` lặp lại trên cùng object lease là no-op sau lần thành công.
+`renew(leaseMs?)` và `release()`. Cogover renew và release lease theo `id` trong phạm vi
+project đã lấy lock: mọi lần thực thi của cùng project biết `id` đều có thể renew hoặc
+release lease đó, còn project khác thì không. Hãy giữ `id` riêng tư và không trả nó cho
+caller. Lease mất hoặc hết hạn ném `LockLostError`. `release()` lặp lại trên cùng object
+lease là no-op sau lần thành công.
 
 ### `locks.withLock(key, callback)` / `locks.withLock(key, options, callback)`
 
-Lấy lock, chạy callback và release trong `finally`. Nếu không lấy được lock, hàm
-ném `LockUnavailableError`. Hàm không tự renew; callback dài phải gọi `lease.renew()`
-trước khi `expiresAt`.
+Lấy lock, chạy callback rồi release lease. Nếu không lấy được lock, hàm ném
+`LockUnavailableError`. Khi callback ném lỗi, lease được release và lỗi của callback
+được ném lại; nếu việc release đó cũng lỗi thì lỗi release bị bỏ qua và lease hết hạn
+sau `leaseMs`. Khi callback thành công nhưng release lỗi, ví dụ `LockLostError` vì lease
+đã hết hạn trong lúc callback chạy, lỗi đó được ném thay cho kết quả của callback. Hàm
+không tự renew; callback dài phải gọi `lease.renew()` trước khi `expiresAt`.
 
 Lock chỉ bảo đảm một lease hợp lệ tại một thời điểm; timeout, pause hoặc lỗi mạng có
 thể làm execution cũ tiếp tục sau khi lease hết hạn. Khi hệ thống đích hỗ trợ,
@@ -2040,8 +2542,10 @@ bao giờ nhận message; giá trị đặc biệt `"actor"` là người dùng 
 execution hiện tại (người gọi HTTP script, người lưu record làm trigger chạy).
 Execution hệ thống không có actor nên `"actor"` không loại ai. Personnel chưa có tài
 khoản người dùng được bỏ qua; personnel ID hoặc object slug không tồn tại ném
-`NotFoundError` trước khi gửi bất kỳ message nào. Mỗi lời gọi nhận tối đa 200 record
-ID và 200 personnel ID; ID trùng được loại bỏ.
+`NotFoundError` trước khi gửi bất kỳ message nào. `recordIds` nhận tối đa 200 record ID
+khác nhau, còn `recipients` và `exclude` mỗi danh sách tối đa 200 phần tử, đếm trước khi
+loại trùng; sau đó ID trùng được loại bỏ. Cogover không kiểm tra record ID có tồn tại hay
+không: message về record không tồn tại sẽ không tới ai đang xem.
 
 ### `push.refreshRecords(object, recordIds, options?): Promise<void>`
 
@@ -2072,7 +2576,7 @@ là `"text"` (mặc định) hoặc `"template"`.
   before-change là chỉ đọc và nhận `PermissionDeniedError` với reason
   `TRIGGER_READ_ONLY`; Development Session chỉ đọc cũng từ chối.
 - Khi deployment tắt push message, mọi lời gọi ném `CogoverApiError` với code
-  `PUSH_DISABLED`.
+  `PUSH_DISABLED`; HTTP route không bắt lỗi này sẽ trả response HTTP 422 chung.
 - Message đã gửi không thể thu hồi, và chạy lại một execution thất bại có thể gửi
   lại message.
 
@@ -2192,7 +2696,8 @@ tiên với `duplicate: true`. Lời gọi thực hiện trong lúc lời gọi 
 giây lát. Lời gọi thất bại không giữ key, nên có thể thử lại. Key thuộc về project và
 tách biệt với key của `email.send`. Trong trigger after-change hoặc job, vốn có thể
 chạy nhiều hơn một lần, hãy tạo key từ `trigger.changeId` và `record.id`, hoặc từ
-`job.id` hay một key nghiệp vụ.
+`job.id` hay một key nghiệp vụ. Cogover không so sánh nội dung: lời gọi dùng lại key với
+người nhận hoặc nội dung khác vẫn trả về kết quả đầu tiên và không gửi gì.
 
 ### Quy tắc
 
@@ -2322,13 +2827,17 @@ hoá, và actor không có hộp thư cá nhân đang hoạt động, ném `NotF
 - `to` phải có ít nhất một người nhận, trừ khi có `recordEmailFields`.
 
 **Nội dung.** `subject` là bắt buộc: một dòng, tối đa 255 ký tự. Cung cấp đúng một
-trong `html` và `text`; nội dung tối đa 192 KB (196.608 byte) theo UTF-8.
+trong `html` và `text`; nội dung tối đa 192 KB (196.608 byte) theo UTF-8, đo trên dạng
+đã mã hoá JSON: mỗi dấu ngoặc kép, dấu gạch chéo ngược hoặc ký tự điều khiển như xuống
+dòng được tính theo chuỗi escape của nó (`\"` là 2 byte, `\n` là 2 byte, `\u0001` là 6
+byte). Nội dung dài hơn ném `ValidationError` trước khi gọi.
 
 **Record.** `record: { object, recordId }` ghi nhận email là một hoạt động email trên
 timeline của record đó: Cogover theo dõi lượt mở và lượt bấm liên kết, gom các thư
 trả lời vào cùng luồng, và `result.delivery` là `"activity"`. Record phải đọc được
-bằng danh tính mặc định của execution, nếu không sẽ ném `NotFoundError` với
-`resource` là `"record"`. Không có `record` thì email chỉ được gửi từ hộp thư và
+bằng danh tính mặc định của execution: record không tồn tại ném `NotFoundError` với
+`resource` là `"record"`, còn record mà danh tính đó không có quyền đọc ném
+`PermissionDeniedError`. Không có `record` thì email chỉ được gửi từ hộp thư và
 `delivery` là `"direct"`. Các tuỳ chọn sau cần `record`; thiếu `record` chúng ném
 `ValidationError`:
 
@@ -2349,7 +2858,8 @@ nên không được đếm. `duplicate` là `true` khi một lời gọi trư�
 [notification](#notification): lời gọi lặp lại cùng key trong 7 ngày trả về kết quả
 đầu tiên với `duplicate: true` thay vì gửi lại, và lời gọi lặp lại trong lúc lời gọi
 đầu tiên vẫn đang gửi ném `CogoverApiError` với `code: "DUPLICATE_IN_PROGRESS"`. Key
-của email tách biệt với key của notification.
+của email tách biệt với key của notification. Giống notification, nội dung không được
+so sánh: dùng lại key cho một email khác vẫn trả về kết quả đầu tiên và không gửi gì.
 
 ### `email.senders(): Promise<readonly EmailSenderInfo[]>`
 
@@ -2660,11 +3170,13 @@ tồn tại.
   tính system đều đọc được. Lần thực thi không có user (background job, inbound
   webhook, hoặc record trigger do một thao tác ghi của hệ thống gây ra) chỉ đọc được
   khi identity policy đã duyệt của project đặt `allowInternalSystem: true`; nếu không,
-  mọi lời gọi ném `PermissionDeniedError` có `details.reason` là
-  `"IDENTITY_NOT_GRANTED"`.
+  mọi lời gọi trừ `org.me()` ném `PermissionDeniedError` có `details.reason` là
+  `"IDENTITY_NOT_GRANTED"`. Khi đó `org.me()` trả `null` mà không thực hiện capability
+  call, vì lần thực thi không có user.
 - Mọi lời gọi trong cùng một lần thực thi đọc cùng một phiên bản cơ cấu tổ chức.
 - ID được SDK kiểm tra và Cogover kiểm tra lại; ID hoặc option không hợp lệ ném
-  `ValidationError`. Các method `get` trả `null` với ID không tồn tại; `members`,
+  `ValidationError`. Mọi method đều trả về promise, và đối số không hợp lệ làm promise đó
+  bị reject thay vì ném lỗi ngay khi gọi method. Các method `get` trả `null` với ID không tồn tại; `members`,
   `managers`, `managerChain`, `ancestors` và `tree({ rootId })` ném `NotFoundError`
   với `resource` là `"department"` hoặc `"position"`.
 - Khi không đọc được cơ cấu tổ chức, lời gọi ném `CogoverApiError` với code
@@ -2690,6 +3202,7 @@ interface ObjectMetadata {
     readonly multiple: boolean;
     readonly readOnly: boolean;
     readonly manualModifyAllow?: boolean;
+    readonly creatable?: boolean;
     readonly metaData?: Readonly<Record<string, unknown>>;
     readonly options?: readonly {
       readonly id: string;
@@ -2704,6 +3217,11 @@ interface SchemaApi<Schema extends object = EffectiveWorkspaceObjects> {
   object<Slug extends keyof Schema & string>(slug: Slug): Promise<ObjectMetadata>;
 }
 ```
+
+`manualModifyAllow` là `false` khi người dùng không được sửa field khi chỉnh sửa record,
+và `creatable` là `false` khi họ không được đặt giá trị field khi tạo record. Thao tác
+ghi đặt giá trị cho field như vậy dưới danh tính người gọi hoặc qua `data.asUser()` ném
+`ValidationError`; `data.asSystem()` được phép đặt giá trị đó.
 
 Schema API chỉ đọc. SDK không public thao tác tạo, sửa hoặc xoá Object/field/option.
 Object slug không hợp lệ ném `ValidationError`.
@@ -2721,8 +3239,16 @@ interface ScriptLogger {
 }
 ```
 
-`details` được ghi tách khỏi message. Không đưa credential, token, dữ liệu cá nhân
-hoặc secret khác vào bất kỳ đối số nào.
+Mỗi lời gọi ghi một dòng vào standard output của lần thực thi, với mọi level:
+`[LEVEL] message`, sau đó là một dấu cách và `details` dạng JSON khi có `details`, ví dụ
+`[WARN] Stock is low {"sku":"A-1","left":2}`. `details` là string được ghi trong dấu
+ngoặc kép. Chuỗi JSON bị cắt ở 8.192 ký tự và khi đó kết thúc bằng `…[truncated]`.
+Giá trị JSON không biểu diễn được sẽ được ghi ở dạng dễ đọc thay vì gây lỗi: tham chiếu
+lặp lại tới một object bao ngoài thành `"[Circular]"`, `bigint` thành chuỗi số thập phân,
+`Error` thành `{"name":…,"message":…}` không kèm stack, `Map` thành object và `Set` thành
+mảng. Khi hoàn toàn không serialize được `details`, ví dụ vì `toJSON()` ném lỗi, dòng
+log kết thúc bằng `[unserializable]`; lời gọi log không bao giờ ném lỗi. Không đưa
+credential, token, dữ liệu cá nhân hoặc secret khác vào bất kỳ đối số nào.
 
 ## Errors
 
@@ -2776,13 +3302,20 @@ Các lỗi dịch vụ được SDK map sang các error trên. Các error giữ:
   từ server (như lỗi validation trong SDK).
 - `error.message`: thông báo gốc; `error.details` giữ chi tiết kèm theo, gồm `r`.
 
-`RetryableError` (`code: "RETRYABLE"`) do code của project ném, SDK không bao giờ tự
-ném. Handler của trigger after-change hoặc job handler ném lỗi này để báo một lỗi
-tạm thời, và Cogover sẽ chạy lại handler sau (xem
+`RetryableError` (`code: "RETRYABLE"`) báo một lỗi tạm thời. SDK ném lỗi này cho thao
+tác ghi record mà trigger before-change không kiểm tra được (`details.reason` là
+`"TRIGGER_FAILED"`, xem [Record trigger](#validate-và-sửa-record)), và
+code của project tự ném lỗi này. Handler của trigger after-change hoặc job handler ném
+lỗi này để báo một lỗi tạm thời, và Cogover sẽ chạy lại handler sau (xem
 [Quy tắc thực thi after-change](#quy-tắc-thực-thi-after-change) và
 [Quy tắc thực thi job](#quy-tắc-thực-thi-job)). Ở những nơi khác lỗi này không có
 ý nghĩa đặc biệt: script để lỗi thoát ra sẽ trả HTTP 422, và trigger before-change
 ném lỗi này sẽ làm thao tác ghi bị từ chối như mọi lỗi khác.
+
+Lệnh đọc record (`get`, `getMany` hoặc `list`) không có option `fields` hợp lệ ném
+`ValidationError` với message `fields is required: pass field slugs or "*"
+(@cogover/sdk 0.13.0+)`. Cogover trả cùng lỗi này cho phiên bản project đã publish bằng
+SDK cũ mà đọc không có `fields` (xem [Chọn field](#chọn-field)).
 
 `jobs.enqueue`, `secrets.get` và `crypto` thất bại với `ValidationError`,
 `PermissionDeniedError` hoặc `RateLimitError` như mô tả trong mục của chúng, và với
@@ -2844,10 +3377,42 @@ status, `code` và `msg` an toàn:
 Thiếu phê duyệt danh tính được chọn trả thêm `reason: "IDENTITY_NOT_GRANTED"`;
 không có nghĩa nhân sự đích đã bị từ chối truy cập một bản ghi cụ thể.
 Không trả thông báo lỗi gốc, stack trace hoặc details tuỳ ý.
-`writesMayHaveCompleted` là true nếu đã gửi ít nhất một thao tác ghi record, kể cả
-khi thao tác sau đó thất bại. Đây là cảnh báo thận trọng, không xác nhận ghi thành công.
+`writesMayHaveCompleted` là true nếu lần thực thi đã gửi ít nhất một lời gọi có thể
+thay đổi dữ liệu bên ngoài, kể cả khi thao tác sau đó thất bại: ghi record,
+`state.set` hoặc `state.delete`, mọi lời gọi `locks` (kể cả `acquire` trả `null`), push
+message, `notifications.send`, `email.send`, hoặc `fetch` có method khác `GET` và `HEAD`.
+Vì vậy `LockUnavailableError` thoát khỏi script luôn báo `true`. Đây là cảnh báo thận
+trọng, không xác nhận ghi thành công.
 Lỗi không xác định và lỗi giới hạn tài nguyên vẫn trả HTTP 422 chung.
 Các phản hồi này không rollback thao tác ghi trước đó; không tự động retry ghi.
+
+## Giới hạn của một lần thực thi
+
+Mỗi lần thực thi chạy trong giới hạn của nền tảng. Các giá trị dưới đây là mặc định;
+chúng do nền tảng thiết lập và có thể khác giữa các môi trường.
+
+- Một HTTP route và một record trigger được gọi tối đa 20 capability call. Mỗi lời gọi
+  `data`, `schema`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`,
+  `secrets`, `crypto`, `org` hoặc `fetch` tính một lần. Một background job được gọi 200.
+  Lời gọi vượt ngân sách và mọi lời gọi sau đó ném `RateLimitError` (`details.limit` là
+  ngân sách) mà không được gửi đi, nên script có thể bắt được.
+- Một HTTP route có 8 giây wall-clock, tính từ lúc handler bắt đầu chạy, kể cả thời gian
+  chờ capability call, chờ lock hoặc chờ server bên ngoài. Record trigger dùng
+  `timeoutMs` của nó, background job dùng `timeoutMs` của job. Vượt thời gian sẽ kết thúc
+  toàn bộ lần thực thi: script không bắt được, và HTTP route trả response HTTP 422 chung.
+- Một capability request, đã mã hoá JSON cùng tham số, không được vượt quá 262.144
+  byte. Request lớn hơn bị từ chối trước khi gửi bằng `ValidationError`, hoặc
+  `CogoverApiError` có `code: "FETCH_REQUEST_TOO_LARGE"` với `fetch`; `details.limit` là
+  giới hạn. Kết quả capability lớn hơn 1.048.576 byte cũng bị giữ lại theo cách đó
+  (`FETCH_RESPONSE_TOO_LARGE` với `fetch`): hãy yêu cầu ít record hơn, hoặc nêu field
+  thay cho `"*"`. Bản thân
+  thao tác vẫn đã chạy, nên thao tác ghi có thể đã hoàn tất.
+- Khi Workspace đã có quá nhiều lần thực thi đang chờ, lời gọi HTTP mới bị từ chối với
+  HTTP 429 và `code: "RATE_LIMITED"` trước khi chạy bất cứ gì; hãy thử lại sau.
+
+Khi một API có quota riêng cho mỗi lần thực thi không nhỏ hơn ngân sách lời gọi, như 20
+lời gọi `fetch` hoặc 20 lần đọc secret, ngân sách lời gọi sẽ hết trước trong route hoặc
+trigger; cả hai đều được báo bằng `RateLimitError`.
 
 ## Khai báo Workspace
 
@@ -2876,8 +3441,17 @@ Generator đọc Object metadata, sắp xếp object/field slug và map type nh�
 | field type chưa biết | `unknown` |
 
 Field không required có thêm `null`; metadata `multiple` trở thành readonly array
-trừ khi base type đã là array. Đưa file được sinh vào TypeScript compilation và
+trừ khi base type đã là array. Khi Object đích của lookup cũng được khai báo, `fields`
+của `RecordReference` có kiểu theo Object đó, và `expandLookups` chỉ nhận field slug của
+Object đó. Đưa file được sinh vào TypeScript compilation và
 không sửa thủ công.
+
+File được sinh import các kiểu SDK mà field của nó dùng (`RecordReference`, `FileValue`,
+`UrlValue`) bằng `import type`. File sinh bởi `@cogover/sdk` trước 0.13.0 không import
+các kiểu này: với `skipLibCheck: false` nó lỗi `Cannot find name 'RecordReference'`, còn
+với `skipLibCheck: true` các field lookup, file và URL âm thầm có kiểu `any`, làm mất cả
+việc kiểm tra `fields`, `expandLookups` và `aggregate` trên các field đó. Hãy sinh lại
+file như vậy.
 
 ## Helper tương thích
 

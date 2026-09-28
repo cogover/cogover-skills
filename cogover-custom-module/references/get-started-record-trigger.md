@@ -301,6 +301,7 @@ Handler làm gì:
 - `record.addError(field, code, message?)` từ chối một bản ghi. Truyền `null` làm field cho lỗi cấp toàn bản ghi. Code là định danh viết hoa; message tuỳ chọn là câu tiếng Anh mà Cogover hiển thị cho end-user khi không có bản dịch cho code. Bản ghi bị từ chối không được lưu; trong thao tác ghi hàng loạt, các dòng còn lại vẫn tiếp tục.
 - Handler nhận toàn bộ bản ghi của một thay đổi, tối đa 200 bản ghi mỗi lần gọi, nên ghi hàng loạt hoặc import gọi handler một lần cho mỗi lô. Xử lý cả danh sách và không bao giờ đọc hay ghi từng bản ghi trong vòng lặp; handler after-change ghi `notes` cho mọi bản ghi bằng một lệnh `batchUpdate`.
 - Handler before-change chỉ đọc: được đọc bản ghi và schema, nhưng mọi lệnh ghi bản ghi, `fetch`, lock và ghi state đều bị từ chối. Handler phải kết thúc trong `timeoutMs` (mặc định 2 giây); khi ném lỗi hoặc hết thời gian, thao tác ghi bị từ chối.
+- Giá trị lookup trong `record.new` và `record.old` có sẵn `name` của record liên kết. Lệnh đọc qua `data` trong handler hoạt động như trong script: phải truyền `fields`, và giá trị lookup có `name: ""` trừ khi lệnh đọc đặt `expandLookups`.
 - Handler after-change chạy sau khi người ghi đã nhận response. Nó được ghi bản ghi và gọi `fetch`, với quyền của người dùng đã thực hiện thay đổi. Việc giao nhận là best-effort: handler đôi khi có thể chạy hơn một lần cho cùng một thay đổi, hoặc không chạy, nên hãy giữ handler idempotent và đặt quy tắc quan trọng trong trigger before-change.
 
 ### 4.4. Export trigger
@@ -484,6 +485,7 @@ Với review có status `new`, `results` là `[]`: handler cho phép xoá. ID kh
 
 - `when`, `changedFields` và `runWhen` không được đánh giá: trigger chạy cho các bản ghi bạn gửi, và `warnings` cho biết khi nào Cogover sẽ bỏ qua nó.
 - Field trong `changes` không có trong `fields` bị bỏ qua và được báo trong `warnings`, vì Cogover sẽ không đưa nó vào `record.new`.
+- Giá trị lookup mà runner đọc từ bản ghi đã lưu có `name: ""`, vì lệnh đọc không tra cứu record liên kết; trên Cogover, lookup trong `record.old` và `record.new` có sẵn tên. Muốn thử code dùng tên này, đưa lookup vào `changes` dưới dạng `{"id": "...", "name": "..."}`; khi đó giá trị tới `record.new` đúng như đã gửi.
 - Thao tác mà trigger không khai báo trả HTTP `400` với code `TRIGGER_OPERATION_NOT_SUPPORTED`; key không tồn tại trả HTTP `404` với `TRIGGER_NOT_FOUND`. Gửi `records: [{"recordId": "...", "changes": {...}}, ...]` thay cho dạng rút gọn một bản ghi để chạy một lần gọi cho tối đa 200 bản ghi.
 - Handler after-change có ghi dữ liệu, như `note_when_completed`, cần Development Session ghi được. Với `--allow-writes=false`, lần chạy thất bại với HTTP `403`, code `PERMISSION_DENIED` và reason `DEVELOPMENT_SESSION_READ_ONLY`. Muốn thử, dừng server bằng `Ctrl+C`, khởi động lại không có `--allow-writes=false` (Project key phải cho phép ghi) và chạy trigger cho một review đã lưu:
 

@@ -177,7 +177,7 @@ router.post("/", getLeadHandler);
 export default router.toHandler();
 ```
 
-`records.get()` chỉ yêu cầu 5 field cần hiển thị và trả `null` nếu Lead không tồn tại. Các message do sample trả về luôn dùng tiếng Anh.
+`records.get()` chỉ yêu cầu 5 field cần hiển thị và trả `null` nếu Lead không tồn tại. Mọi lệnh đọc (`get`, `getMany`, `list`) đều phải truyền `fields`, và kiểu kết quả chỉ chứa các field đó, nên đọc một field không được yêu cầu sẽ lỗi compile. `fields: "*"` đọc mọi field mà caller được đọc; chỉ dùng khi code thực sự cần tất cả. Các message do sample trả về luôn dùng tiếng Anh.
 
 ## 5. Đăng nhập bằng Cogover Dev CLI
 
@@ -228,11 +228,14 @@ API local không cần cookie, CSRF token hoặc `x-req-service`; Cogover Dev CL
     },
     "system": {
       "createdAt": 1788023000000,
-      "updatedAt": 1788023000000
+      "updatedAt": 1788023000000,
+      "createdBy": { "id": "PERXXXXXXXXXXXX", "name": "" }
     }
   }
 }
 ```
+
+`system.createdBy.name` là chuỗi rỗng vì lệnh đọc không tra cứu record liên kết; `name` của field lookup cũng vậy. Khi code cần các tên này, thêm `expandLookups: true` vào options của `records.get()`; việc này tốn thêm lượt đọc. Khi đó `createdBy.name` là field `name` của record nhân sự đã tạo record, có thể là một mã sinh tự động; để lấy tên hiển thị, dùng `org.personnel.get` với `withDisplay: true`.
 
 `403`: kiểm tra Project và caller có quyền `RECORD_READ` trên Object `lead` cùng 5 field đã chọn. `404`: kiểm tra lại `LEAD_ID`.
 
@@ -338,7 +341,8 @@ curl -i --config .cogover-session.curl \
     },
     "system": {
       "createdAt": 1788023000000,
-      "updatedAt": 1788023000000
+      "updatedAt": 1788023000000,
+      "createdBy": { "id": "PERXXXXXXXXXXXX", "name": "" }
     }
   }
 }

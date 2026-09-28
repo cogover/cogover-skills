@@ -12,7 +12,7 @@ Snapshot tài liệu sản phẩm tiếng Việt ngày `2026-09-15`, bổ sung b
 
 Không đặt secret trong Custom Frontend Module vì mã frontend được tải xuống trình duyệt. Logic nhạy cảm, quyền nâng cao và credential tích hợp phải nằm ở backend.
 
-Ghi chú cho agent: dashboard hoặc API có số liệu tổng hợp từ một hoặc nhiều Object (ví dụ dashboard vận hành, API tổng hợp tồn kho) phải kiểm tra saved report của `$report-builder` trước khi thiết kế backend quét record; xem [Tận dụng báo cáo cho số liệu tổng hợp](report-data-reuse.md).
+Ghi chú cho agent: dashboard hoặc API có số liệu tổng hợp từ một hoặc nhiều Object (ví dụ dashboard vận hành, API tổng hợp tồn kho) không thiết kế backend quét record: số liệu đơn giản trên một Object mà backend tính theo điều kiện của lời gọi dùng `records.aggregate` của `@cogover/sdk`, còn lại kiểm tra saved report của `$report-builder`; xem [`records.aggregate` hay saved report](report-data-reuse.md#recordsaggregate-hay-saved-report).
 
 ## Ba dạng Custom Frontend Module
 

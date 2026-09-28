@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.12.0` ngày `2026-09-24`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config, router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.13.0` ngày `2026-09-29`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -33,7 +33,7 @@ npx tsc --noEmit
 ```
 
 Đặt declaration `workspace.d.ts` được sinh từ Object metadata cạnh source của
-script trong project TypeScript.
+script trong project TypeScript. Typecheck cần TypeScript 5.0 trở lên.
 
 ## Bắt đầu nhanh
 
@@ -172,6 +172,23 @@ const approvers = chain?.tiers.flatMap(tier =>
 - Với các field nhân sự khác như custom field, dùng `data.object("personnel")`, nơi
   quyền record được áp dụng.
 
+## Chọn field cần đọc
+
+Mọi lệnh đọc phải nêu field: các slug mà script dùng, hoặc `"*"` cho mọi field mà danh
+tính đang dùng và identity policy của project được đọc. Lệnh đọc không có `fields` ném
+`ValidationError` (`fields is required: pass field slugs or "*" (@cogover/sdk
+0.13.0+)`) trước khi gửi bất cứ gì.
+
+```typescript
+const order = await orders.records.get(orderId, { fields: ["code", "amount"] });
+const amount = order?.fields.amount; // number | null | undefined
+// order?.fields.status không compile được: field này không được yêu cầu.
+const everything = await orders.records.get(orderId, { fields: "*" });
+```
+
+Nên dùng danh sách field thay cho `"*"`: lệnh đọc trả ít dữ liệu hơn, và kết quả `"*"`
+lớn, nhất là từ `getMany` hoặc `list`, có thể vượt giới hạn 1 MiB của một lời gọi.
+
 ## Lọc và sắp xếp record
 
 ```typescript
@@ -180,6 +197,7 @@ import { and, defineScript } from "@cogover/sdk";
 export default defineScript(async ({ data }) => {
   const orders = data.object("order");
   return orders.records.list({
+    fields: ["code", "status", "total"],
     where: and(
       orders.fields.status.in(["new", "nurturing"]),
       orders.fields.is_active.eq(true),
@@ -209,6 +227,50 @@ ID trùng chỉ được gửi một lần. Thứ tự của `records` không b�
 vậy hãy tra cứu record theo `id`. Nên dùng `getMany` thay cho việc gọi `get` trong
 vòng lặp: mỗi capability call đều được tính vào hạn mức của project.
 
+## Đọc record liên kết
+
+Giá trị lookup là `{ id, name: "", objectSlug }` trừ khi lệnh đọc yêu cầu record liên
+kết, và `system.createdBy.name` cũng là `""`. Dùng `expandLookups` khi script cần tên
+hoặc field của record liên kết:
+
+```typescript
+const order = await orders.records.get(orderId, {
+  fields: ["code", "customer"],
+  expandLookups: { customer: ["credit_limit", "tier"] },
+});
+const customer = order?.fields.customer;
+log.info("Customer", { name: customer?.name, creditLimit: customer?.fields?.credit_limit });
+```
+
+`expandLookups: true` mở rộng mọi lookup trong các field được trả về. Record liên kết
+được đọc một cấp, tối đa 1.000 record mỗi lời gọi, bằng cùng danh tính và quyền với
+lệnh đọc; record liên kết không đọc được giữ `name: ""` và không có `fields`. Mở rộng
+phải đọc thêm dữ liệu, nên chỉ mở rộng lookup mà script dùng. Giá trị `new` và `old`
+của record trigger đã có sẵn tên lookup.
+
+## Đếm và tính tổng record
+
+`records.aggregate` trả số lượng, tổng, trung bình, giá trị nhỏ nhất hoặc lớn nhất mà
+không đọc record, có thể nhóm theo tối đa ba field:
+
+```typescript
+const byStatus = await orders.records.aggregate({
+  where: orders.fields.total.gt(0),
+  groupBy: ["status"],
+  metrics: { orders: { count: "id" }, revenue: { sum: "total" } },
+});
+for (const group of byStatus.groups) {
+  log.info("Orders by status", { status: group.key.status, ...group.values });
+}
+```
+
+Không có `groupBy` thì kết quả là `{ values }`. Client của `data.asUser()`, cũng như
+`data.object()` trong trigger hoặc job chạy dưới danh tính một người dùng, không nhóm
+được và chỉ hỗ trợ metric đếm và metric trên field số; ở đó hãy dùng `data.asSystem()`.
+Aggregate cập nhật theo các lệnh ghi record sau khoảng
+một giây, nên record vừa lưu có thể chưa được tính. Xem
+[Aggregate](cogover-sdk-api-reference.md#aggregate) để biết mọi metric và giới hạn.
+
 ## Gọi API ngoài bằng `fetch`
 
 ```typescript
@@ -235,7 +297,8 @@ export default defineScript<Input>(async ({ input }) => {
 ```
 
 API tương thích Fetch này dùng lớp network do Cogover quản lý, không cung cấp quyền
-network Node.js không giới hạn. Chỉ URL HTTPS public port 443 được hỗ trợ. V1 không follow
+network Node.js không giới hạn. Chỉ hỗ trợ URL HTTPS public trên port 443 hoặc trên port
+khác mà quản trị viên Workspace đã duyệt đúng origin cho project. V1 không follow
 redirect, không cookie jar, không streaming/WebSocket, không IP literal/URL userinfo
 và không cho cấu hình proxy, dispatcher, agent, DNS hoặc TLS. Request và response
 đều có giới hạn. Với thao tác ghi ra API ngoài, dùng idempotency key của API đích;
@@ -376,8 +439,8 @@ export default defineScript(async ({ locks }) =>
   }));
 ```
 
-`withLock` luôn thử release trong `finally`; nếu không lấy được sẽ ném
-`LockUnavailableError`. Lease mặc định 30 giây và không tự renew. Với đoạn xử lý
+`withLock` release lease sau khi callback chạy xong; khi cả hai cùng lỗi, lỗi của
+callback được ném ra. Nếu không lấy được lock sẽ ném `LockUnavailableError`. Lease mặc định 30 giây và không tự renew. Với đoạn xử lý
 dài, kiểm tra `expiresAt` và gọi `renew()` trước khi hết hạn. Dùng fencing token ở
 hệ thống đích nếu có thể để chặn writer cũ. Lock không thay thế idempotency hay
 bảo đảm exactly-once.
@@ -847,6 +910,9 @@ quyền của người đó, nên một lời gọi đọc có thể không tr�
 nhìn thấy. `data.asUser()` và `data.asSystem()` cần quản trị viên phê duyệt giống
 như trong script.
 
+**Tên lookup.** Lookup trong `record.new` và `record.old` có tên của record liên kết.
+Record đọc qua `data` có `name: ""` trong lookup trừ khi lệnh đọc dùng `expandLookups`.
+
 **Thời gian và lỗi.** Một lần gọi phải hoàn tất trong `timeoutMs`, và mọi trigger
 before-change của một thao tác ghi dùng chung 8 giây. Trigger before-change hoạt
 động theo nguyên tắc fail closed: khi handler ném lỗi, hết thời gian hoặc không thể
@@ -968,8 +1034,8 @@ Route hỗ trợ GET, POST, PUT, PATCH và DELETE. `request` có `method`, `path
 đã decode, `query` hỗ trợ tên lặp, `headers` an toàn dạng chữ thường và JSON `body`.
 Header xác thực không bao giờ lộ vào script. Giá trị trả trực tiếp là JSON HTTP 200.
 Các helper `response.json`, `text`, `bytes`, `empty`, `redirect` cho phép đặt status,
-response header an toàn và body text/binary. Route thiếu trả 404; method không hỗ trợ
-trả 405. Project `defineScript()` cũ tiếp tục chạy tại `/`. Cần validate mọi input
+response header an toàn và body text/binary. Route thiếu, kể cả path chỉ được đăng ký
+cho method khác, trả 404; method ngoài năm method trên trả 405. Project `defineScript()` cũ tiếp tục chạy tại `/`. Cần validate mọi input
 nghiệp vụ. Xem [router API reference](cogover-sdk-api-reference.md#http-router-và-request-context).
 
 ## Nhận webhook
