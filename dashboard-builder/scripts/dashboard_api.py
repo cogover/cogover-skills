@@ -45,17 +45,18 @@ def get_base_url() -> str:
     return value.rstrip("/")
 
 
-def open_json(request: urllib.request.Request, context: ssl.SSLContext) -> tuple[int, Any]:
+def open_json(request: urllib.request.Request, context: ssl.SSLContext) -> tuple[int, Any, bool]:
+    """Return HTTP status, parsed body and whether the gateway set x-proxy-error."""
     try:
         with urllib.request.urlopen(request, timeout=45, context=context) as response:
-            return response.status, json.load(response)
+            return response.status, json.load(response), response.headers.get("x-proxy-error") == "1"
     except urllib.error.HTTPError as error:
         body = error.read().decode("utf-8", "replace")
         try:
             parsed: Any = json.loads(body)
         except json.JSONDecodeError:
             parsed = {"raw": body[:2000]}
-        return error.code, parsed
+        return error.code, parsed, error.headers.get("x-proxy-error") == "1"
 
 
 def session_headers(root: str, api_key: str, context: ssl.SSLContext) -> dict[str, str]:
@@ -65,7 +66,7 @@ def session_headers(root: str, api_key: str, context: ssl.SSLContext) -> dict[st
         method="POST",
         headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
     )
-    status, response = open_json(request, context)
+    status, response, _ = open_json(request, context)
     if status != 200 or response.get("r") != 0:
         raise RuntimeError(f"auth-token failed: HTTP {status}, r={response.get('r')}, msg={response.get('msg')}")
     data = response.get("data") or {}
@@ -83,12 +84,15 @@ def session_headers(root: str, api_key: str, context: ssl.SSLContext) -> dict[st
 
 
 def business_result(response: Any) -> tuple[Any, Any]:
+    """x-req-type 9 returns r/msg at the root; the body envelope is a legacy fallback."""
     if not isinstance(response, dict):
         return None, None
     if "r" in response:
         return response.get("r"), response.get("msg")
-    body = response.get("body") or {}
-    return body.get("r"), body.get("msg")
+    body = response.get("body")
+    if isinstance(body, dict):
+        return body.get("r"), body.get("msg")
+    return None, None
 
 
 def main() -> int:
@@ -106,7 +110,7 @@ def main() -> int:
             "url": url,
             "headers": {
                 "Content-Type": "application/json",
-                "x-req-type": "6",
+                "x-req-type": "9",
                 "x-req-service": str(args.service),
                 "Cookie": "<session from $cogover-api-auth>",
                 "x-csrf-token": "<XSRF-TOKEN>",
@@ -125,21 +129,22 @@ def main() -> int:
     context = ssl.create_default_context()
     try:
         headers = session_headers(root, api_key, context)
-        headers.update({"x-req-type": "6", "x-req-service": str(args.service)})
+        headers.update({"x-req-type": "9", "x-req-service": str(args.service)})
         request = urllib.request.Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
             method="POST",
             headers=headers,
         )
-        status, response = open_json(request, context)
+        status, response, proxy_error = open_json(request, context)
     except (OSError, ValueError, RuntimeError) as error:
         print(str(error), file=sys.stderr)
         return 1
     print(json.dumps({"httpStatus": status, "response": response}, ensure_ascii=False, indent=2))
     result, message = business_result(response)
     if not 200 <= status < 300 or result != 0:
-        print(f"Request failed: HTTP {status}, r={result}, msg={message}", file=sys.stderr)
+        source = " (x-proxy-error: 1)" if proxy_error else ""
+        print(f"Request failed{source}: HTTP {status}, r={result}, msg={message}", file=sys.stderr)
         return 1
     return 0
 

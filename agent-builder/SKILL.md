@@ -3,13 +3,13 @@ name: agent-builder
 description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool, phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth."
 metadata:
   author: cogover
-  version: "1.1.1"
+  version: "1.2.0"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.1.1`
-- **Ngày phát hành:** `2026-09-13`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-09-29`
 
 ## Phạm vi
 

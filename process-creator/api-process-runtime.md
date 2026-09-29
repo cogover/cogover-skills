@@ -1,15 +1,17 @@
 # Web App API lượt chạy
 
-Tạo lượt chạy, theo dõi lượt chạy đang ở node nào, đọc và submit form User Task, quay lại bước trước, tạm dừng, tiếp tục, huỷ và xoá lượt chạy bằng API, không thao tác trên giao diện. Hành vi dưới đây đã được chạy thử trên Workspace ngày 2026-09-13 với Manual Flow và Normal Flow; mã service có thể thay đổi theo phiên bản nền tảng.
+Tạo lượt chạy, theo dõi lượt chạy đang ở node nào, đọc và submit form User Task, quay lại bước trước, tạm dừng, tiếp tục, huỷ và xoá lượt chạy bằng API, không thao tác trên giao diện. Hành vi dưới đây đã được chạy thử trên Workspace ngày 2026-09-13 với Manual Flow và Normal Flow; dạng response `x-req-type: 9` của cả hai endpoint được đối chiếu lại ngày 2026-09-29. Mã service có thể thay đổi theo phiên bản nền tảng.
 
 ## 1. Endpoint, xác thực và envelope
 
-- Hai endpoint, cùng phiên Web App và cùng envelope như [api-process-lifecycle.md mục 1](api-process-lifecycle.md#1-endpoint-xác-thực-và-envelope):
-  - `POST /api/v1/run-workflow-server` với `x-req-type: 6`: tạo lượt chạy, submit form, rollback, đổi trạng thái, xoá, đọc giá trị resource.
-  - `POST /api/v1/workflow` với `x-req-type: 1`: đọc chi tiết lượt chạy, form User Task, quyền, danh sách lượt chạy và việc cần làm.
-- Thành công khi `body.r = 0`. Với thao tác nhận mảng `instances`, `body.r = 0` chỉ nghĩa là request được xử lý; kết quả từng phần tử nằm trong `body.data[]` với `r` riêng.
-- Thay `{SERVICE}`, `{TYPE}` và `{BODY}` trong mẫu curl ở [api-process-lifecycle.md](api-process-lifecycle.md#1-endpoint-xác-thực-và-envelope), đổi URL theo endpoint tương ứng.
-- ID lượt chạy do server sinh, không có prefix cố định; luôn lấy từ `body.data.instanceId` của lệnh tạo.
+- Hai endpoint, cùng phiên Web App, cùng header `x-req-type: 9` và cùng dạng response như [api-process-lifecycle.md mục 1](api-process-lifecycle.md#1-endpoint-xác-thực-và-envelope):
+  - `POST /api/v1/run-workflow-server`: tạo lượt chạy, submit form, rollback, đổi trạng thái, xoá, đọc giá trị resource.
+  - `POST /api/v1/workflow`: đọc chi tiết lượt chạy, form User Task, quyền, danh sách lượt chạy và việc cần làm.
+- Response là `{"r", "msg", "data", "meta"}` ở cấp cao nhất, không có envelope `body`; thành công khi `r = 0`, đọc kết quả trong `data`.
+- Với thao tác nhận mảng (`instances` của service `5`, `6`; `requestResources` của service `2`), `r = 0` ở cấp cao nhất chỉ nghĩa là request được xử lý; kết quả từng phần tử nằm trong mảng của `data` với `r` riêng. Ví dụ service `2` với lượt chạy không tồn tại vẫn trả `r: 0`, phần tử có `r: 1` "Process/instance not found".
+- Lỗi của run-workflow-server với `x-req-type: 9` cũng nằm ở cấp cao nhất: sai `x-req-service` trả HTTP 400 `{"r": 5001, "msg": "Can not found processor for request: service=..."}` (`/api/v1/workflow` trả cùng body với HTTP 200); body không phải một JSON object trả HTTP 400 `{"r": 400, "msg": "Request body must be one JSON object"}`. Lỗi riêng từng phần tử mảng (ví dụ service `2` ở trên) vẫn trả HTTP 200.
+- Dùng mẫu curl ở [api-process-lifecycle.md mục 1](api-process-lifecycle.md#1-endpoint-xác-thực-và-envelope), thay `{SERVICE}` và `{BODY}`; với run-workflow-server đổi URL thành `/api/v1/run-workflow-server`.
+- ID lượt chạy do server sinh, không có prefix cố định; luôn lấy từ `data.instanceId` của lệnh tạo.
 - Link mở một lượt chạy trên giao diện: `https://{WORKSPACE_DOMAIN}/process/process-instances/{INSTANCE_ID}?processId={PROCESS_ID}&processInfoId={PROCESS_INFO_ID}`. `{PROCESS_ID}` là `id` của version đã tạo lượt chạy (trường `processId` trả về cùng `instanceId`), `{PROCESS_INFO_ID}` là `processInfoId` của process; với lượt chạy không do mình tạo, lấy `instanceId`, `processId`, `processInfoId` từ cùng một phần tử của service `35` (mục 3). Dùng link này khi báo cáo kết quả từng lượt chạy.
 
 ## 2. Tạo lượt chạy theo loại flow
@@ -18,8 +20,8 @@ Tạo lượt chạy, theo dõi lượt chạy đang ở node nào, đọc và s
 
 | Loại | Endpoint, `x-req-service` | Body | Kết quả |
 |---|---|---|---|
-| Normal | run-workflow-server, `10` | `{"processId": "{PROCESS_ID}", "instanceName": "{INSTANCE_NAME}"}` | `body.data`: `{"processId", "instanceId"}`; `instanceName` rỗng thì server tự đặt tên. Yêu cầu version `ACTIVATED` + `isPublished: true` và `START_INSTANCE` |
-| Manual | run-workflow-server, `1` (submit form Root với `instanceId` rỗng) | Xem mục 2.1 | `body.data`: `{"processId", "instanceId"}`. Không kiểm tra trạng thái xuất bản/kích hoạt của version; chỉ kiểm tra quyền thực hiện Root |
+| Normal | run-workflow-server, `10` | `{"processId": "{PROCESS_ID}", "instanceName": "{INSTANCE_NAME}"}` | `data`: `{"processId", "instanceId"}`; `instanceName` rỗng thì server tự đặt tên. Yêu cầu version `ACTIVATED` + `isPublished: true` và `START_INSTANCE` |
+| Manual | run-workflow-server, `1` (submit form Root với `instanceId` rỗng) | Xem mục 2.1 | `data`: `{"processId", "instanceId"}`. Không kiểm tra trạng thái xuất bản/kích hoạt của version; chỉ kiểm tra quyền thực hiện Root |
 | Sequence | run-workflow-server, `7` | `{"list": [{"processId": "{PROCESS_ID}", "flowObjectRecordId": "{RECORD_ID}"}]}` | Một lượt chạy cho mỗi bản ghi được liên kết; cần `CONNECT_SEQUENCE` |
 | Scheduled | Không có API tạo trực tiếp | Kích hoạt theo `scheduleRules`; theo dõi bằng mục 3 | |
 | Triggered record / webhook | Không có API tạo trực tiếp | Tạo/cập nhật bản ghi bằng `$object-record` hoặc gửi HTTP POST tới URL webhook; theo dõi bằng mục 3 | |
@@ -34,7 +36,7 @@ Lỗi tạo lượt chạy Normal: `4` process không tồn tại; `205` không 
    {"processId": "{PROCESS_ID}", "processInfoId": "{PROCESS_INFO_ID}", "instanceId": "", "nodeId": "", "forDebug": false}
    ```
 
-   `body.data` gồm `nodeId` (Root), `nodeScreenId`, `nodeScreenSlug`, `content` (layout `layoutRow → ... → components`; mỗi component có `slug`, `fieldType`, `required` (`0`/`1`), `readOnly`, `defaultValue`, `fieldMetaData`), `buttons` (nhóm nút; có thể rỗng), `variables` (giá trị hiện tại theo `slug`, kèm các key phụ `{slug}.toolTip`, `{slug}.hintText`), `pageSettings`, `title`, `approve`, `permission`, `processVersion`; `instanceId` và `instanceState` là `null` vì chưa có lượt chạy. Version chưa kích hoạt trả `r: 410` (`_httpStatusCode: 403`).
+   `data` gồm `nodeId` (Root), `nodeScreenId`, `nodeScreenSlug`, `content` (layout `layoutRow → ... → components`; mỗi component có `slug`, `fieldType`, `required` (`0`/`1`), `readOnly`, `defaultValue`, `fieldMetaData`), `buttons` (nhóm nút; có thể rỗng), `variables` (giá trị hiện tại theo `slug`, kèm các key phụ `{slug}.toolTip`, `{slug}.hintText`), `pageSettings`, `title`, `approve`, `permission`, `processVersion`; `instanceId` và `instanceState` là `null` vì chưa có lượt chạy. Version chưa kích hoạt trả `r: 410` (HTTP 403).
 2. Dựng `data` từ `content`: key là `slug` của component, giá trị đúng kiểu của `fieldType` ([nodes/user-task-form-fields.md](nodes/user-task-form-fields.md)); field `required` bắt buộc có giá trị; field `readOnly` không gửi trừ khi bật `canSendData`. Field `date` nhận chuỗi `"YYYY-MM-DD"`; epoch millis, ISO 8601 hay `DD/MM/YYYY` bị từ chối. Field không bắt buộc có thể bỏ khỏi `data`.
 3. `submittedButton` là `slug` của nút trong `buttons`/`content`. Server không bắt buộc nút tồn tại: form không có nút thì gửi một chuỗi bất kỳ (ví dụ `"submit"`); form có nút approve/reject hoặc nút gán resource thì phải gửi đúng slug để chạy logic của nút đó.
 4. Submit bằng run-workflow-server, service `1`:
@@ -51,13 +53,13 @@ Lỗi tạo lượt chạy Normal: `4` process không tồn tại; `205` không 
    }
    ```
 
-   `dataForDisplay` là danh sách key trong `variables` cần hiển thị lại ở màn hình đã submit (có thể rỗng). `nodeId` rỗng thì server lấy node ngay sau Start. Thành công: `msg` "Process instance was started successfully", `body.data.instanceId` là lượt chạy mới.
+   `dataForDisplay` là danh sách key trong `variables` cần hiển thị lại ở màn hình đã submit (có thể rỗng). `nodeId` rỗng thì server lấy node ngay sau Start. Thành công: `msg` "Process instance was started successfully", `data.instanceId` là lượt chạy mới.
 
 Lỗi riêng của Manual: `201` không phải `manual_flow`; `202` node submit không phải Root; `204` không có Root; các lỗi validate ở mục 4.
 
 ## 3. Theo dõi lượt chạy
 
-| Mục đích | Endpoint, `x-req-service` | Body | Trường cần đọc trong `body.data` |
+| Mục đích | Endpoint, `x-req-service` | Body | Trường cần đọc trong `data` |
 |---|---|---|---|
 | Chi tiết lượt chạy, node đang chờ, node đã qua | `/api/v1/workflow`, `36` | `{"processId": "{PROCESS_ID}", "instanceId": "{INSTANCE_ID}"}` | `currentState` (`NOT_STARTED`/`RUNNING`/`COMPLETED`/`PAUSED`/`CANCELED`/`DELETED`); `runningUserTasks[]` (`id`, `nodeId`, `name`, `canPerformThisTask`, `performerConfig`, `deadline`); `completedTasks[]` mới nhất trước (`id` = nodeId, `nodeId`, `name`, `formId`, `completedTime`, `buttonName`, `rollback`, `actionType`); `processVersion`; `instanceName`; `starter`; `processInfoId`; `processStatus`; `xmlString`; `permission[]` |
 | Trạng thái process của lượt chạy | `/api/v1/workflow`, `33` | `{"id": "{PROCESS_ID}", "processInfoId": "{PROCESS_INFO_ID}", "instanceId": "{INSTANCE_ID}"}` | `processStatus`, `xmlString`; `submittedNodeIds` không có trong response quan sát được, dùng `completedTasks` của service `36` |
@@ -98,7 +100,7 @@ Lỗi khi submit:
 
 ## 5. Đổi trạng thái và xoá lượt chạy
 
-Endpoint run-workflow-server. Body nhận mảng để xử lý nhiều lượt chạy; đọc `r` từng phần tử trong `body.data[]`.
+Endpoint run-workflow-server (`x-req-type: 9`). Body nhận mảng để xử lý nhiều lượt chạy; đọc `r` từng phần tử trong `data[]`.
 
 | Thao tác | `x-req-service` | Body |
 |---|---|---|
@@ -109,7 +111,7 @@ Endpoint run-workflow-server. Body nhận mảng để xử lý nhiều lượt 
 
 Mã `state`: `1` NOT_STARTED, `2` RUNNING, `3` COMPLETED, `4` PAUSED, `5` CANCELED, `6` DELETED. Chuyển trạng thái hợp lệ: `RUNNING → PAUSED`, `RUNNING → CANCELED`, `PAUSED → RUNNING`, `PAUSED → CANCELED`. Không chuyển được từ `COMPLETED`, `CANCELED`, `DELETED`; không đặt trực tiếp `COMPLETED` hay `DELETED`.
 
-`r` từng phần tử của service `5` (`body.r` luôn `0`, `msg` "Update Process instance state successfully"): `0` thành công (`msg: "OK"`); `1` không tìm thấy lượt chạy; `2` trạng thái không đổi (kể cả huỷ lại lượt đã huỷ); `3` lượt chạy đã `COMPLETED`/`CANCELED`/`DELETED`; `4` chuyển trạng thái không hợp lệ (`error: "Invalid state transition"`); `40` không có quyền; `50` lỗi tra cứu tổ chức. Quyền: người khởi tạo khi `starterPermission` cho phép huỷ, hoặc `CANCEL_INSTANCE` trong `processInstanceAccessControls` (quyền này bao gồm tạm dừng, tiếp tục, huỷ). Xoá cần `DELETE_INSTANCE` hoặc người khởi tạo được phép xoá; dữ liệu form đã submit của lượt chạy bị xoá bất đồng bộ sau khi trả `r: 0`.
+`r` từng phần tử của service `5` (`r` cấp cao nhất luôn `0`, `msg` "Update Process instance state successfully"): `0` thành công (`msg: "OK"`); `1` không tìm thấy lượt chạy; `2` trạng thái không đổi (kể cả huỷ lại lượt đã huỷ); `3` lượt chạy đã `COMPLETED`/`CANCELED`/`DELETED`; `4` chuyển trạng thái không hợp lệ (`error: "Invalid state transition"`); `40` không có quyền; `50` lỗi tra cứu tổ chức. Quyền: người khởi tạo khi `starterPermission` cho phép huỷ, hoặc `CANCEL_INSTANCE` trong `processInstanceAccessControls` (quyền này bao gồm tạm dừng, tiếp tục, huỷ). Xoá cần `DELETE_INSTANCE` hoặc người khởi tạo được phép xoá; dữ liệu form đã submit của lượt chạy bị xoá bất đồng bộ sau khi trả `r: 0`.
 
 Sau tạm dừng, submit trả `10` và `currentState: "PAUSED"`; tiếp tục từ `PAUSED` làm lượt chạy chạy tiếp ngay từ node đang chờ. Huỷ hoặc xoá: liệt kê `instanceId` cụ thể và hỏi xác nhận trước, trừ lượt chạy test do chính phiên này tạo và người dùng đã cho phép dọn dẹp.
 
@@ -131,7 +133,8 @@ Sau tạm dừng, submit trả `10` và `currentState: "PAUSED"`; tiếp tục t
 | `11` | Sequence Flow thiếu ID bản ghi |
 | `12` | `submittedButton` không tồn tại (hiện không được kiểm tra) |
 | `201`–`207` | Sai loại flow hoặc process chưa sẵn sàng (mục 2) |
+| `400` | Body không phải một JSON object (HTTP 400, mục 1) |
 | `30001`–`30005` | Lỗi validate form (mục 4) |
-| `5001` | Sai `x-req-service`/`x-req-type` |
+| `5001` | Sai `x-req-service`/`x-req-type` (sai `x-req-service` trả HTTP 400) |
 
 Mã `x-req-service` là hợp đồng của Web App và có thể thay đổi theo phiên bản nền tảng; gặp `5001` hoặc response khác cấu trúc mong đợi thì dừng và báo, không dò số.

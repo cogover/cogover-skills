@@ -1,12 +1,12 @@
 # Web App API vòng đời Process
 
-Kích hoạt, xuất bản, bỏ xuất bản, vô hiệu hoá và quản lý version của một Process bằng API, không thao tác trên giao diện. Nhóm này dùng phiên Web App; tạo, sửa DRAFT, xoá, list và view vẫn dùng `/bapi/v1/processes` theo [api-process-builder.md](api-process-builder.md). Hành vi dưới đây đã được chạy thử trên Workspace ngày 2026-09-13; mã service có thể thay đổi theo phiên bản nền tảng.
+Kích hoạt, xuất bản, bỏ xuất bản, vô hiệu hoá và quản lý version của một Process bằng API, không thao tác trên giao diện. Nhóm này dùng phiên Web App; tạo, sửa DRAFT, xoá, list và view vẫn dùng `/bapi/v1/processes` theo [api-process-builder.md](api-process-builder.md). Hành vi dưới đây đã được chạy thử trên Workspace ngày 2026-09-13; dạng response `x-req-type: 9` được đối chiếu lại ngày 2026-09-29. Mã service có thể thay đổi theo phiên bản nền tảng.
 
 ## 1. Endpoint, xác thực và envelope
 
-- Endpoint chung: `POST https://{WORKSPACE_DOMAIN}/api/v1/workflow`. Mọi thao tác dùng cùng URL và body JSON; thao tác được chọn bằng hai header `x-req-type: 1` và `x-req-service: {SERVICE}`.
+- Endpoint chung: `POST https://{WORKSPACE_DOMAIN}/api/v1/workflow`. Mọi thao tác dùng cùng URL và body JSON; thao tác được chọn bằng hai header `x-req-type: 9` và `x-req-service: {SERVICE}`.
 - Xác thực: phiên Web App đổi từ API Key qua `POST /bapi/v1/auth-token` theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Gửi đủ ba cookie `HttpSessionId`, `AuthToken`, `XSRF-TOKEN`; hai header `x-csrf-token` và `x-xsrf-token` cùng bằng giá trị cookie `XSRF-TOKEN`. Tạo phiên một lần cho cả vòng kích hoạt, tạo lượt chạy và kiểm thử; không đọc cookie từ trình duyệt; không ghi giá trị phiên ra file, log hay báo cáo.
-- Envelope response: body HTTP là `{"serviceVersion", "service", "id", "type", "body": {"r", "msg", "data", "meta"}}`. Thành công khi `body.r = 0`. Lỗi nghiệp vụ thường vẫn trả HTTP 200 với `body.r != 0`, có thể kèm `body._httpStatusCode` (ví dụ `403`); một số lỗi trả HTTP 400 với cùng envelope. Luôn đọc `body.r`, `body.msg`, `body.meta`, không dựa vào HTTP status. `/bapi/v1/processes/*` trên cùng nền tảng cũng có thể trả envelope này thay vì `{r, msg, data}` phẳng: bóc `body` khi có.
+- Response: body HTTP là `{"r", "msg", "data", "meta"}` ở cấp cao nhất, không bọc envelope `body`. Thành công khi `r = 0`. Lỗi nghiệp vụ trả `r != 0` ở cấp cao nhất, HTTP status có thể vẫn là 200 (ví dụ `r: 5001`) hoặc 4xx (ví dụ `r: 410` "Not accessible" kèm HTTP 403); body không phải một JSON object trả HTTP 400 `{"r": 400, "msg": "Request body must be one JSON object"}`. Luôn đọc `r`, `msg`, `meta`, không dựa vào HTTP status. Không dùng `x-req-type: 1` cũ: kiểu đó bọc kết quả trong envelope `{"serviceVersion", "service", "id", "type", "body"}`. `/bapi/v1/processes/*` trên cùng nền tảng cũng có thể trả envelope này thay vì `{r, msg, data}` phẳng: bóc `body` khi có.
 - `r: 5001` kèm `Can not found processor for request` nghĩa là sai `x-req-service` hoặc `x-req-type` cho endpoint đó. Dừng và đối chiếu lại bảng dưới; không dò số ngẫu nhiên.
 
 Mẫu curl dùng chung, thay `{SERVICE}` và `{BODY}`:
@@ -18,7 +18,7 @@ curl --url 'https://{WORKSPACE_DOMAIN}/api/v1/workflow' \
   -b 'HttpSessionId={HTTP_SESSION_ID}; AuthToken={AUTH_TOKEN}; XSRF-TOKEN={XSRF_TOKEN}' \
   -H 'x-csrf-token: {XSRF_TOKEN}' \
   -H 'x-xsrf-token: {XSRF_TOKEN}' \
-  -H 'x-req-type: 1' \
+  -H 'x-req-type: 9' \
   -H 'x-req-service: {SERVICE}' \
   --data-raw '{BODY}'
 ```
@@ -29,17 +29,17 @@ curl --url 'https://{WORKSPACE_DOMAIN}/api/v1/workflow' \
 
 | Thao tác | `x-req-service` | Body | Kết quả mong đợi |
 |---|---|---|---|
-| Xem chi tiết một version | `4` | `{"id": "{PROCESS_ID}", "processInfoId": "{PROCESS_INFO_ID}"}` | `body.data` cùng cấu trúc với response create của `/bapi/v1/processes`: `progressStatus`, `isPublished`, `isValid`, `version`, `versionNumber`, `currentVersion`, `isNewestVersion`, `xmlString`, `userTasks`, `resources`, ...; `body.meta.errors[]` liệt kê lỗi validation |
+| Xem chi tiết một version | `4` | `{"id": "{PROCESS_ID}", "processInfoId": "{PROCESS_INFO_ID}"}` | `data` cùng cấu trúc với response create của `/bapi/v1/processes`: `progressStatus`, `isPublished`, `isValid`, `version`, `versionNumber`, `currentVersion`, `isNewestVersion`, `xmlString`, `userTasks`, `resources`, ...; `meta.errors[]` liệt kê lỗi validation |
 | Danh sách version | `8` | `{"slug": "{PROCESS_SLUG}", "processInfoId": "{PROCESS_INFO_ID}"}` | Mảng version mới nhất trước: `id`, `version`, `versionNumber`, `versionLabel`, `name`, `progressStatus`, `isPublished`, `status` (`1` active, `2` inactive), `currentVersion`, `created`, `createdBy` |
 | Kích hoạt | `9` | `{"id": "{PROCESS_ID}", "processInfoId": "{PROCESS_INFO_ID}"}` | `progressStatus: "ACTIVATED"`; version đã `ACTIVATED` trả `r: 409` "process is already active" |
 | Kích hoạt và xuất bản | `39` | như trên | `ACTIVATED` và `isPublished: true`; trở thành version hiện hành (`currentVersion: true`); version hiện hành cũ bị bỏ xuất bản nhưng vẫn `ACTIVATED` |
 | Xuất bản | `38` | như trên | `isPublished: true` và trở thành version hiện hành; version hiện hành cũ bị bỏ xuất bản |
 | Bỏ xuất bản | `40` | như trên | `isPublished: false`, vẫn `ACTIVATED` |
 | Vô hiệu hoá | `10` | như trên | `progressStatus: "CANCELED"`, `status: 2`; version đang xuất bản trả `r: 424` "process is published" |
-| Lưu thành version mới | `24` | Toàn bộ process (như body `PUT /bapi/v1/processes/{id}`) kèm `id`, `processInfoId` của version gốc, `version`, `type`, `metadata`, `xmlString`, `resources` | Version mới `DRAFT`, `id` mới, cùng `processInfoId`, `versionNumber` tăng, `isNewestVersion: true`, `currentVersion: false`; `body.meta.errors[]` rỗng khi hợp lệ |
-| Cập nhật version DRAFT | `23` | như `24` với `id` của version DRAFT | Giữ `id`; `body.meta.errors[]` rỗng và `isValid: true` khi hợp lệ |
+| Lưu thành version mới | `24` | Toàn bộ process (như body `PUT /bapi/v1/processes/{id}`) kèm `id`, `processInfoId` của version gốc, `version`, `type`, `metadata`, `xmlString`, `resources` | Version mới `DRAFT`, `id` mới, cùng `processInfoId`, `versionNumber` tăng, `isNewestVersion: true`, `currentVersion: false`; `meta.errors[]` rỗng khi hợp lệ |
+| Cập nhật version DRAFT | `23` | như `24` với `id` của version DRAFT | Giữ `id`; `meta.errors[]` rỗng và `isValid: true` khi hợp lệ |
 
-`body.data` của `9`, `10`, `38`, `39`, `40` là bản ghi rút gọn (có thể thiếu `progressStatus`, `version` không chuẩn); đọc lại bằng `POST /bapi/v1/processes/view` với `{"id": "{PROCESS_ID}"}` hoặc service `4` để xác nhận trạng thái, không suy ra từ `r: 0`.
+`data` của `9`, `10`, `38`, `39`, `40` là bản ghi rút gọn (có thể thiếu `progressStatus`, `version` không chuẩn); đọc lại bằng `POST /bapi/v1/processes/view` với `{"id": "{PROCESS_ID}"}` hoặc service `4` để xác nhận trạng thái, không suy ra từ `r: 0`.
 
 ## 3. Quy trình chuẩn
 
@@ -87,8 +87,8 @@ curl --url 'https://{WORKSPACE_DOMAIN}/api/v1/workflow' \
 |---|---|---|
 | `402` | Kích hoạt version không hợp lệ; `msg` chứa danh sách lỗi validation (`code`, `internalMessage`, `nodeId`) | Sửa version DRAFT bằng service `23` tới khi `meta.errors` rỗng |
 | `409` | Kích hoạt version đã `ACTIVATED` | Dùng `38` để xuất bản/đổi version hiện hành |
-| `410` | Không có quyền đọc form (`_httpStatusCode: 403`), thường vì version chưa kích hoạt hoặc người gọi không phải performer | Kích hoạt trước; kiểm tra `taskPerformer` và `processInstanceAccessControls` |
+| `410` | Không có quyền đọc form hoặc version (HTTP 403), thường vì version chưa kích hoạt hoặc người gọi không phải performer | Kích hoạt trước; kiểm tra `taskPerformer` và `processInstanceAccessControls` |
 | `414` | PUT `/bapi/v1/processes/{id}` trên version đang `ACTIVATED`/xuất bản | Tạo version mới (3.2) |
 | `424` | Vô hiệu hoá version đang xuất bản | Bỏ xuất bản (`40`) trước |
-| `5001` | Không có processor cho `x-req-service` | Đối chiếu bảng mục 2, kiểm tra `x-req-type: 1` |
+| `5001` | Không có processor cho `x-req-service` | Đối chiếu bảng mục 2, kiểm tra `x-req-type: 9` |
 | HTTP 401/403 | Phiên hết hạn hoặc thiếu quyền | Tạo lại phiên theo `$cogover-api-auth`; kiểm tra quyền `EDIT` trong `accessControls` |

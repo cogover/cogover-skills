@@ -13,7 +13,7 @@ x-req-service: 10
 {"agentId":"{agent-id}","message":"Reply exactly AGENT_BUILDER_OK. Do not call tools or change data."}
 ```
 
-API chat trả `r`, `msg`, `data` ở **root**, khác `body` của API cấu hình. Response tạo hội thoại:
+API chat trả `r`, `msg`, `data` ở **root**, như API cấu hình. Response tạo hội thoại:
 
 ```json
 {"r":0,"msg":"OK","data":{"chatSessionId":"{chat-session-id}","chatServerConvId":"{conversation-id}","reasoningSettings":{}}}

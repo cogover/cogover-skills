@@ -2,7 +2,7 @@
 
 ## Danh mục
 
-Dùng [giao thức cấu hình](config-api.md#giao-thức-chung): `POST /api/v1/config-server`, `x-req-type: 6`.
+Dùng [giao thức cấu hình](config-api.md#giao-thức-chung): `POST /api/v1/config-server`, `x-req-type: 9`; `r`, `msg`, `data`, `meta` ở root.
 
 | Thao tác | `x-req-service` | Payload |
 |---|---:|---|
@@ -37,9 +37,9 @@ POST /api/v1/file/upload/v2/client_upload
 Content-Type: multipart/form-data; boundary={boundary-do-http-client-tao}
 ```
 
-Gửi multipart field **`file`** và cookie/CSRF theo skill xác thực; không gửi `x-req-type: 6` của API cấu hình. Để HTTP client tự tạo boundary. Response có `r`, `msg`, `data` ở root; giữ `data.url` và serialize **nguyên object `data`** làm `fileServerInfo`, không chỉ giữ URL hoặc tự tạo `file_id`.
+Gửi multipart field **`file`** và cookie/CSRF theo skill xác thực; không gửi `x-req-type: 9` của API cấu hình. Để HTTP client tự tạo boundary. Response có `r`, `msg`, `data` ở root; giữ `data.url` và serialize **nguyên object `data`** làm `fileServerInfo`, không chỉ giữ URL hoặc tự tạo `file_id`.
 
-3. Tạo tài nguyên file bằng thao tác **70**, type 6 tại `/api/v1/config-server`:
+3. Tạo tài nguyên file bằng thao tác **70**, type 9 tại `/api/v1/config-server`:
 
 ```json
 {
@@ -70,7 +70,7 @@ Form tài liệu nhận MD, TXT, CSV, XLSX, XLSM, DOCX, DOC, PDF, JPG/JPEG, PNG,
 | 2 | `INDEXED` | Có thể test truy xuất; vẫn cần kiểm tra đáp án |
 | 3 | `DELETING_INDEX` | Chờ thao tác đang chạy hoàn tất |
 
-Các thao tác file trên `/api/v1/config-server`, type 6:
+Các thao tác file trên `/api/v1/config-server`, type 9:
 
 - **71** cập nhật: `id` và trường cần sửa; không giả định có thể đổi `dataLibraryId` bằng API cập nhật file.
 - **73** List/chi tiết: `{"ids":["{file-id}"],"page":1,"limit":1}` hoặc lọc `dataLibraryId`.

@@ -10,17 +10,17 @@ Content-Type: application/json
 Cookie: HttpSessionId={HttpSessionId}; XSRF-TOKEN={XSRF-TOKEN}; AuthToken={AuthToken}
 x-csrf-token: {XSRF-TOKEN}
 x-xsrf-token: {XSRF-TOKEN}
-x-req-type: 6
+x-req-type: 9
 x-req-service: {operation-code}
 ```
 
-Gửi **payload trực tiếp**, không tự bọc request vào `body`. Ngoại lệ response so với quy ước `r` ở root: API cấu hình trả kết quả trong `body`, đọc `body.r`, `body.msg`, `body.data`, `body.meta`:
+Gửi **payload trực tiếp**, không tự bọc request vào `body`. Response theo quy ước `r` ở root, không bọc trong `body`: đọc `r`, `msg`, `data`, `meta` ngay ở root:
 
 ```json
-{"body":{"r":0,"msg":"Success","data":[],"meta":{"currentPage":1,"lastPage":1,"perPage":20,"total":0}}}
+{"r":0,"msg":"OK","data":[],"meta":{"currentPage":1,"lastPage":1,"perPage":20,"total":0}}
 ```
 
-Nếu response lỗi ở root, vẫn kiểm tra và báo lỗi đó. HTTP 200 chưa đủ. List phân trang từ `page: 1`; dùng `meta.currentPage/lastPage`, không chỉ đọc trang đầu khi cần tìm theo tên. Chi tiết lấy qua List với `ids: [id]`, `page: 1`, `limit: 1`; không có endpoint `/view` riêng trong contract này.
+Không dùng `x-req-type: 6` cũ; kiểu đó bọc kết quả trong envelope `{serviceVersion, service, id, type, body}`. HTTP 200 chưa đủ, luôn kiểm tra `r: 0`. Lỗi cũng trả `r`, `msg` ở root và có thể kèm HTTP 400, ví dụ `5001` sai `x-req-service`, `5000` payload sai kiểu, `19000` phiên/CSRF không hợp lệ; vẫn đọc body JSON khi HTTP không phải 2xx và báo lỗi đó. List phân trang từ `page: 1`; dùng `meta.currentPage/lastPage`, không chỉ đọc trang đầu khi cần tìm theo tên. Chi tiết lấy qua List với `ids: [id]`, `page: 1`, `limit: 1`; không có endpoint `/view` riêng trong contract này.
 
 ## Mã thao tác
 

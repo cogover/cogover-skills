@@ -3,19 +3,19 @@ name: dashboard-builder
 description: "Quản lý dashboard Cogover qua Web App API `/api/v{N}/dashboard-server` (phiên Web App từ $cogover-api-auth, không nhận API Key trực tiếp): tạo, đọc, cập nhật, nhân bản, xoá; component/biểu đồ từ saved report của $report-builder, layout, dashboard filter; chẩn đoán dashboard không hiển thị đúng. Dùng khi cấu hình dashboard bằng API."
 metadata:
   author: cogover
-  version: "1.0.1"
+  version: "1.1.0"
 ---
 
 # Dashboard Builder
 
-- **Phiên bản:** `1.0.1`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-09-29`
 
 Quản lý dashboard bằng API, không thao tác UI, theo chuỗi: xác nhận workspace → tạo phiên Web App → đọc state → lập payload đầy đủ → mutation → đọc lại và kiểm chứng. Saved report và report field cho chart do `$report-builder` tạo và preview trước; skill này không tạo report.
 
 ## Chuẩn bị
 
-- Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Mọi thao tác gọi `POST /api/v1/dashboard-server` bằng phiên Web App đổi từ API Key; không gửi API Key trực tiếp tới endpoint này. Ngoại lệ riêng: kiểm tra mã nghiệp vụ ở cả `r` top-level và `body.r` ([Response và kiểm chứng](references/api-contract.md#response-và-kiểm-chứng)); lỗi đặc thù ở [Xử lý lỗi](#xử-lý-lỗi).
+- Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Mọi thao tác gọi `POST /api/v1/dashboard-server` bằng phiên Web App đổi từ API Key; không gửi API Key trực tiếp tới endpoint này. Ngoại lệ riêng: gửi `x-req-type: 9`, response là nguyên kết quả service (`r`, `msg`, `data`, `meta`) ở root, không bọc `body`; kiểm tra HTTP status và `r` ở root ([Response và kiểm chứng](references/api-contract.md#response-và-kiểm-chứng)); lỗi đặc thù ở [Xử lý lỗi](#xử-lý-lỗi).
 - Đọc [references/api-contract.md](references/api-contract.md) (service, payload, ràng buộc field) trước khi gọi API; đọc [references/dashboard-model.md](references/dashboard-model.md) trước khi thêm hoặc sửa component, chart, layout, dashboard filter.
 - Contract chỉ lấy từ tài liệu trong skill, tài liệu API chính thức do người dùng cung cấp và response API thực tế; không đọc source code, repository, bundle JavaScript hay source map; không dùng browser/UI để suy ra request (`/settings/dashboards` chỉ là deep-link trả cho người dùng).
 - Sau khi tạo phiên, probe chỉ đọc bằng service `6`; dừng khi `401/403`, `r != 0`, workspace lệch hoặc response khác contract.

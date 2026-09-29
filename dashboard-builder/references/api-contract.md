@@ -16,7 +16,7 @@ Tất cả operation dùng:
 ```http
 POST /api/v1/dashboard-server
 Content-Type: application/json
-x-req-type: 6
+x-req-type: 9
 x-req-service: {service}
 Cookie: HttpSessionId=...; XSRF-TOKEN=...; AuthToken=...
 x-csrf-token: {XSRF-TOKEN}
@@ -121,21 +121,24 @@ Duplicate không phải update; backend sao chép component/filter từ source.
 
 ## Response và kiểm chứng
 
-Service envelope thành công có dạng:
+Với `x-req-type: 9`, response là nguyên kết quả của service ở root, không bọc `{serviceVersion, service, id, type, body}` như `x-req-type: 6` cũ:
 
 ```json
-{
-  "serviceVersion": 1,
-  "service": 6,
-  "type": 1,
-  "body": { "r": 0, "msg": "Success", "data": [], "meta": {} }
-}
+{ "r": 0, "msg": "OK", "data": [], "meta": { "total": 0, "perPage": 20, "currentPage": 1 } }
 ```
 
-Một số gateway trả lỗi ở top-level; số sau `service=` thay đổi theo request:
+Lỗi cũng trả `r`, `msg` ở root kèm HTTP status khác `200`; số sau `service=` thay đổi theo request:
 
 ```json
 { "r": 5001, "msg": "Can not found processor for request: service=<SERVICE_NUMBER>" }
 ```
 
-Luôn kiểm tra cả `response.r` và `response.body.r`. Thành công chỉ khi mã nghiệp vụ là `0`, sau đó phải đọc lại resource để xác minh.
+| Trường hợp | HTTP | Response |
+|---|---:|---|
+| Thành công, kể cả list/detail không có kết quả (`data: []`) | `200` | `r: 0` |
+| Service không tồn tại | `500` | `r: 5001` |
+| Filter theo field không tồn tại | `500` | `r: 5000`, `msg: "Error"` |
+| `AuthToken` không hợp lệ | `401` | Header `x-proxy-error: 1`, `r: 2`, `msg: "TOKEN_NOT_VALID"` |
+| Cookie phiên hoặc CSRF token không hợp lệ | `400` | `r: 19000`, `msg: "CSRF_TOKEN_NOT_VALID"` |
+
+Kiểm tra HTTP status và `r` ở root; không đọc `response.body`. Thành công chỉ khi HTTP `2xx` và `r` là `0`, sau đó phải đọc lại resource để xác minh; đối chiếu component theo `chartId` vì thứ tự `components` có thể khác giữa các lần đọc. Lỗi phiên xử lý theo `$cogover-api-auth`.
