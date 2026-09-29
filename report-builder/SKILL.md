@@ -1,17 +1,17 @@
 ---
 name: report-builder
-description: "Tạo, cấu hình, cập nhật và kiểm chứng Report Type cùng saved report Cogover qua Public Report API `/bapi/v1/report` (hoặc `/api/v1/report-server` bằng phiên Web App): báo cáo 1–5 object, chọn relation và kiểu join, report field/section, cột hiển thị, group, aggregate, filter, sort, formula, preview và xác minh dữ liệu; chẩn đoán báo cáo không trả đúng dữ liệu. Phối hợp $object-info."
+description: "Tạo, cấu hình, cập nhật và kiểm chứng Report Type cùng saved report Cogover qua Public Report API `/bapi/v1/report` (hoặc `/api/v1/report` bằng phiên Web App): báo cáo 1–5 object, chọn relation và kiểu join, report field/section, cột hiển thị, group, aggregate, filter, sort, formula, preview và xác minh dữ liệu; chẩn đoán báo cáo không trả đúng dữ liệu. Phối hợp $object-info."
 metadata:
   author: cogover
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Report Builder
 
-- **Phiên bản:** `1.1.0`
-- **Ngày phát hành:** `2026-09-25`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-09-29`
 
-Tạo và kiểm chứng báo cáo Cogover qua Public Report API: mọi service gọi `POST https://{WORKSPACE_DOMAIN}/bapi/v1/report` (API Key Bearer) với envelope `{ "service": <number>, "payload": <object> }`. Trang hoặc Custom Frontend Module chạy trong Workspace gọi cùng service bằng phiên của người dùng đang đăng nhập qua `/api/v1/report-server` theo [Gọi bằng phiên Web App](references/api-contract.md#gọi-bằng-phiên-web-app). Chuỗi phụ thuộc: phân tích nghiệp vụ → khám phá object → Report Type → relation/section/field → saved report → preview và xác minh. Skill dừng ở saved report đã chạy đúng; dashboard thuộc `$dashboard-builder` và chỉ làm khi người dùng yêu cầu.
+Tạo và kiểm chứng báo cáo Cogover qua Public Report API: mọi service gọi `POST https://{WORKSPACE_DOMAIN}/bapi/v1/report` (API Key Bearer) với envelope `{ "service": <number>, "payload": <object> }`. Trang hoặc Custom Frontend Module chạy trong Workspace gọi cùng service bằng phiên của người dùng đang đăng nhập qua `/api/v1/report` (`x-req-type: 9`) theo [Gọi bằng phiên Web App](references/api-contract.md#gọi-bằng-phiên-web-app). Chuỗi phụ thuộc: phân tích nghiệp vụ → khám phá object → Report Type → relation/section/field → saved report → preview và xác minh. Skill dừng ở saved report đã chạy đúng; dashboard thuộc `$dashboard-builder` và chỉ làm khi người dùng yêu cầu.
 
 ## Chuẩn bị
 
@@ -49,8 +49,8 @@ Theo thứ tự, ghi lại ID sau mỗi bước:
 
 1. `212` tạo Report Type: slug ổn định, `category: "OTHER"`, trạng thái có chủ đích (`0` draft, `1` development, `2` deployed). Public API không nhận `meta_data` ở bước này.
 2. `202` khởi tạo Report Config, gọi đúng một lần kể cả khi không có relation. Một object: `relations: []`, `src_object_id` là primary object, root graph trong `meta_data`. Nhiều object: toàn bộ `relations` cùng graph node/edge đầy đủ; không gửi `src_object_id` chỉ để thay relation. Không dùng `meta_data: "{}"`: root graph tối thiểu có `nodeRoot`, `edges: []` và viewport; graph nhiều object theo [Payload nhiều object](references/report-modeling.md#payload-nhiều-object).
-3. Đọc `211` và `222`. Tái sử dụng default section và field hệ thống backend đã tạo (`workspace_id`, `object_type`): không tự tạo pseudo-field hay gọi `227` tái tạo chúng, mặc định loại chúng khỏi display, group, filter và aggregate. Chỉ gọi `208` khi thật sự cần thêm section, với `section_index: 1000` và để backend quyết định index persisted.
-4. `227` cho từng field nghiệp vụ chưa tồn tại, giữ thứ tự `index_in_section`; chỉ lấy object field active. `field_name` là display `name` mà object API trả về (translation metadata chỉ làm fallback; không tự dịch hoặc đổi nhãn). `field_type: 0` cho field trực tiếp, với `object_type_id` của object sở hữu field và slug trực tiếp; `field_type: 1` chỉ với dotted lookup path được object metadata hoặc Public Report API xác nhận. `field_data_type` trong response không thay thế discriminator `field_type`. Ghi mapping `{object_id, object_field_slug} → report_field_id` từ response `227`/`222`.
+3. Đọc `211` và đủ các trang của `222` (mặc định 50 dòng; gửi `size` hoặc lặp `page` từ `1`). Sau `202`, backend đã tạo một section cho mỗi object trong graph và report field cho mọi field của các object đó, gồm field hệ thống `workspace_id`, `object_type`: tái sử dụng chúng, không gọi `227` tái tạo, mặc định loại field hệ thống khỏi display, group, filter và aggregate. Chỉ gọi `208` khi thật sự cần thêm section, với `section_index: 1000` và để backend quyết định index persisted.
+4. `227` chỉ cho field nghiệp vụ chưa có trong `222` (ví dụ field đã xoá bằng `228`); field đã có trả `r: -1` `already exists`. Giữ thứ tự `index_in_section`; chỉ lấy object field active. `field_name` là display `name` mà object API trả về (translation metadata chỉ làm fallback; không tự dịch hoặc đổi nhãn). `field_type: 0` cho field trực tiếp, với `object_type_id` của object sở hữu field và slug trực tiếp; `field_type: 1` chỉ với dotted lookup path được object metadata hoặc Public Report API xác nhận. `field_data_type` trong response không thay thế discriminator `field_type`. Ghi mapping `{object_id, object_field_slug} → report_field_id` từ response `227`/`222`.
 5. Đọc lại `215`, `221`, `211`, `222`: xác minh root metadata, relation, default section, field hệ thống và mapping field nghiệp vụ. Với mỗi edge kiểm tra `lookup_type`, `source_name`, parent/child object và biểu thức UI tương đương `source.field = destination.id`; không chỉ dựa vào `221`. Chỉ sang saved report khi mọi field nghiệp vụ có ID report field thực (`FRP...` hoặc prefix thực tế của response).
 
 Create response không có ID ở path rõ ràng: không đoán path; resolve bằng slug/name ổn định qua API list/detail.
@@ -61,7 +61,7 @@ Create response không có ID ở path rõ ràng: không đoán path; resolve b�
 
 ### 6. Tạo và hoàn thiện saved report
 
-1. Kiểm tra slug bằng service `239`; đọc response thực tế thay vì giả định tên field boolean.
+1. Kiểm tra slug bằng service `239`: `data.exists: false` là slug còn trống; `msg: "Failed"` đi kèm `r: 0` không phải lỗi.
 2. `201` với `report_type`, `name`, slug/description và base `setting` đầy đủ. Chỉ truyền ACL/folder khi đã xác định chính xác.
 3. Resolve saved report bằng ID trả về hoặc `229` theo slug.
 4. Khi cần cập nhật group/aggregate/filter/view: đọc detail hiện tại, merge cấu hình cuối vào toàn bộ `setting` hiện có (giữ cả key chưa biết, không dựng lại từ base template) rồi gọi `207`. `acl` và `folder_id` có semantics thay thế: gửi lại giá trị hiện tại nếu muốn giữ nguyên, ACL chuyển về write shape tương đương về semantics; không sao chép `created`, `updated`, `created_by`, `updated_by`, ACL ID hay field server-managed từ response/payload mẫu vào update.

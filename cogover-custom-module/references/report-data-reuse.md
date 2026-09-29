@@ -71,48 +71,49 @@ Giao sub-agent Báo cáo đọc bản hiện tại của `$report-builder` và l
 Frontend chạy cùng origin với Workspace nên gọi Report API bằng phiên Web App của người đang đăng nhập:
 
 ```http
-POST /api/v1/report-server
+POST /api/v1/report
 Content-Type: application/json
-x-req-type: 6
+x-req-type: 9
 x-req-service: 200
 x-csrf-token: {XSRF-TOKEN}
 x-xsrf-token: {XSRF-TOKEN}
 ```
 
 - Body là chính `payload` của service `200` (không bọc `{service, payload}` như `/bapi/v1/report`), thêm `"setting": true` để chạy đồng bộ. Thiếu cờ này, service `200` trả `r: 32` (`Wait for response`) kèm `data.id` và kết quả không nằm trong response.
-- Response bọc theo proxy: `{ serviceVersion, service, id, type, body }`; kết quả nằm trong `body` với `r`, `msg`, `data`. HTTP `200` vẫn có thể mang `body.r != 0`: luôn kiểm tra `body.r`. Chạy thành công trả `data` gồm `rows`, `summary` và `total`.
+- Response là `{ r, msg, data }` ở root, không bọc envelope. Lỗi nghiệp vụ vẫn trả HTTP `200` với `r != 0` (ví dụ `r: 404` Report Type không tồn tại): luôn kiểm tra `r`. Chạy thành công trả `data` gồm `rows`, `summary` và `total`. Không dùng `/api/v1/report-server` hoặc `x-req-type: 6`: kết quả bị bọc trong `{ serviceVersion, service, id, type, body }`.
 - Payload: dựng từ saved setting theo [Chuyển setting thành service 200](../../report-builder/references/report-settings.md#chuyển-setting-thành-service-200) một lần ở bước 2B, lưu thành hằng số; `preview: false`, `size` nhỏ nhất đủ dùng (tối đa `10000`). Nhiều chỉ số cùng Report Type thì gom vào một lần chạy (group và nhiều aggregate).
 - Tham số do người dùng chọn (kỳ thời gian, giá trị lọc trong danh sách cho phép) chỉ thêm vào `filters` với operator/`params` đã được `$report-builder` xác nhận ở bước 2B. Dữ liệu người dùng được thấy do quyền của chính họ quyết định; bộ lọc trên giao diện chỉ là tiện ích, không phải ranh giới bảo mật.
 - Để báo cáo group/aggregate phía nền tảng; giao diện chỉ biến đổi nhẹ kết quả đã tổng hợp (đổi nhãn, tính tỷ lệ, sắp xếp, ghép hai báo cáo). Không kéo hàng nghìn dòng chi tiết về trình duyệt để tự cộng.
-- Lỗi: `body.r != 0` hiển thị trạng thái lỗi kèm nút thử lại; phiên hết hạn hoặc lỗi định tuyến có header `x-proxy-error: 1` thì yêu cầu đăng nhập lại; lỗi quyền hiển thị thông báo không có quyền xem báo cáo, không hiển thị số liệu cũ trong cache của người khác.
+- Lỗi: `r != 0` hiển thị trạng thái lỗi kèm nút thử lại; phiên hết hạn hoặc lỗi định tuyến trả HTTP `401` kèm header `x-proxy-error: 1` thì yêu cầu đăng nhập lại; lỗi quyền hiển thị thông báo không có quyền xem báo cáo, không hiển thị số liệu cũ trong cache của người khác.
 - Không đưa API key, cookie hay token vào code; trình duyệt tự gửi cookie phiên.
 
-Frontend theo `custom-frontend-module-template` (custom component, Federation Page) gọi qua HTTP client chung với `REQUEST_TYPE.REVERSE_PROXY`, theo quy ước của `.agents/skills/custom-module-api` trong bản đã clone:
+Frontend theo `custom-frontend-module-template` (custom component, Federation Page) gọi qua HTTP client chung với `x-req-type: 9`, theo quy ước của `.agents/skills/custom-module-api` trong bản đã clone. Template chỉ có hằng số `REQUEST_TYPE.TS_PROJECT` mang giá trị `9`; dùng hằng số này cho Report, không dùng `REQUEST_TYPE.REVERSE_PROXY` (`6`), và khai báo response bằng `SuccessResponse` vì kết quả không bọc `body`:
 
 ```tsx
 // src/apis/report/report.api.ts
-import http, { SuccessServiceResponse } from '../apiBase';
+import http, { SuccessResponse } from '../apiBase';
 import { createServiceHeader, REQUEST_TYPE } from 'src/utils/apiUtils';
 import { ReportRunPayload, ReportRunResult } from './report.type';
 
-const URI = '/api/v1/report-server';
+const URI = '/api/v1/report';
 
 export const reportApi = {
     run(payload: ReportRunPayload) {
-        return http.post<SuccessServiceResponse<ReportRunResult>>(URI, { ...payload, setting: true }, {
-            headers: createServiceHeader({ service: 200, type: REQUEST_TYPE.REVERSE_PROXY }),
+        return http.post<SuccessResponse<ReportRunResult>>(URI, { ...payload, setting: true }, {
+            // x-req-type 9: kết quả { r, msg, data } ở root, không bọc body.
+            headers: createServiceHeader({ service: 200, type: REQUEST_TYPE.TS_PROJECT }),
             // Client chung mặc định chờ 10 giây; tăng theo thời gian đo ở bước 2B khi cần.
         });
     },
 };
 
 // Trong queryFn của TanStack Query:
-// const { body } = (await reportApi.run(MONTHLY_SALES)).data;
-// if (body.r !== 0) throw new Error(body.msg);
-// return toSalesSummary(body.data); // Hàm thuần, viết theo mẫu response đã redact ở bước 2B.
+// const result = (await reportApi.run(MONTHLY_SALES)).data;
+// if (result.r !== 0) throw new Error(result.msg);
+// return toSalesSummary(result.data); // Hàm thuần, viết theo mẫu response đã redact ở bước 2B.
 ```
 
-Single page app tự chọn stack gọi `fetch('/api/v1/report-server', { method: 'POST', credentials: 'same-origin', ... })` với cùng header, lấy giá trị `XSRF-TOKEN` từ cookie đặt vào hai header CSRF theo [Full-stack integration](full-stack-integration.md#production).
+Single page app tự chọn stack gọi `fetch('/api/v1/report', { method: 'POST', credentials: 'same-origin', ... })` với cùng header, lấy giá trị `XSRF-TOKEN` từ cookie đặt vào hai header CSRF theo [Full-stack integration](full-stack-integration.md#production).
 
 Tách hàm biến đổi kết quả (`toSalesSummary`) thành hàm thuần, unit test bằng mẫu response đã redact: có dữ liệu, rỗng, `r != 0`, `r: 32`, thiếu field.
 
@@ -120,7 +121,7 @@ Tách hàm biến đổi kết quả (`toSalesSummary`) thành hàm thuần, uni
 
 | Loại module | Nơi gọi báo cáo |
 |---|---|
-| Chỉ frontend | Frontend gọi `/api/v1/report-server` bằng phiên người dùng cuối, tổng hợp nhẹ và hiển thị giao diện mong muốn; không cần backend. |
+| Chỉ frontend | Frontend gọi `/api/v1/report` bằng phiên người dùng cuối, tổng hợp nhẹ và hiển thị giao diện mong muốn; không cần backend. |
 | Frontend và backend, số liệu chỉ để hiển thị hoặc để người dùng tự quyết định | Frontend gọi báo cáo trực tiếp như trên; backend chỉ xử lý phần nghiệp vụ khác. |
 | Frontend và backend, backend cần số liệu tổng hợp để ra quyết định (duyệt, tính giá, chặn thao tác) | Số liệu thuộc phạm vi `records.aggregate`: backend tự tính bằng `records.aggregate` dưới danh tính người gọi. Cần saved report: xem mục dưới, backend chưa gọi được báo cáo bằng phiên người dùng cuối. |
 

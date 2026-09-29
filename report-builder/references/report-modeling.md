@@ -123,7 +123,7 @@ Primary object Lead; dimension `lead_source`; metric là count một field đị
 
 ```text
 object-info → 215 kiểm tra trùng → 212 (không meta_data) → 202 (relations [], src_object_id, root graph) →
-211/222 lấy default state → 227 (lead_source + field định danh chưa tồn tại) → 222 resolve report field ID →
+211/222 (đủ trang) lấy section và report field backend đã tạo → 227 chỉ cho field còn thiếu → 222 resolve report field ID →
 239 → 201 → 229 → 207 → 200
 ```
 

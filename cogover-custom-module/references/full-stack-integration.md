@@ -35,7 +35,7 @@ export default defineConfig({
 5. Response: với `x-req-type: 9`, production trả trực tiếp handler result cùng status và header, giống local, không có transport envelope. Kiểm tra status/error và shape theo mode/contract; không unwrap property `body`, vì output nghiệp vụ cũng có thể có field đó. Lỗi do chính Authorization Server sinh ra có header `x-proxy-error: 1`. Custom response text/binary dùng parser theo content type đã định nghĩa.
 6. Mỗi thao tác ghi có idempotency key riêng; retry thao tác đang pending giữ nguyên key. Vô hiệu hóa nút khi đang gửi chỉ hạn chế thao tác trùng; kiểm soát ghi lặp vẫn ở backend.
 
-Số liệu tổng hợp từ saved report: frontend gọi `/api/v1/report-server` bằng phiên người dùng theo [Gọi báo cáo bằng phiên người dùng cuối](report-data-reuse.md#gọi-báo-cáo-bằng-phiên-người-dùng-cuối), không đi vòng qua backend.
+Số liệu tổng hợp từ saved report: frontend gọi `/api/v1/report` bằng phiên người dùng theo [Gọi báo cáo bằng phiên người dùng cuối](report-data-reuse.md#gọi-báo-cáo-bằng-phiên-người-dùng-cuối), không đi vòng qua backend.
 
 API frontend được gọi bằng quyền người dùng đang đăng nhập; ẩn nút trên UI không thay thế kiểm tra quyền. Render dữ liệu Workspace bằng `textContent` hoặc cơ chế escape của framework.
 

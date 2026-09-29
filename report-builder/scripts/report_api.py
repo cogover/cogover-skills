@@ -423,12 +423,11 @@ def validate_payload(service: int, payload: dict[str, Any]) -> None:
         require(payload, "object_type_id", "field_id")
     elif service == 231:
         require(payload, "report_id", "relations")
-        has_source = payload.get("src_object_id") not in (None, "")
-        validate_relations(payload["relations"], allow_empty=has_source)
+        # 231 rejects an empty relation list (r: 4 "Relations are required"), even with src_object_id.
+        validate_relations(payload["relations"], allow_empty=False)
         validate_metadata(
             payload,
             require_graph="meta_data" in payload,
-            expected_root=payload.get("src_object_id") if not payload["relations"] else None,
             relations=payload["relations"] if "meta_data" in payload else None,
         )
     elif service == 232:
