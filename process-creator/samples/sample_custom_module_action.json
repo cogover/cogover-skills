@@ -1,0 +1,189 @@
+{
+  "name": "Chấm điểm lead bằng Custom Module Action",
+  "slug": "custom_module_action_example",
+  "description": "Mẫu cấu trúc: thay projectSlug, actionKey, input và hai schema bằng dữ liệu từ danh mục action của Workspace, sinh lại ID trước khi tạo; chưa kiểm thử trên Workspace.",
+  "id": "PECMAEXAMPLE01",
+  "processInfoId": "PICMAEXAMPLE01",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "metadata": {},
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE",
+    "CANCEL_INSTANCE",
+    "DELETE_INSTANCE",
+    "VIEW_INSTANCE_PROGRESS",
+    "VIEW_INSTANCE_FULL"
+  ],
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "DELETE_INSTANCE": false,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": false,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": false,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false
+  },
+  "participantPermission": {
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false
+  },
+  "overviewScreen": {
+    "layout": [],
+    "permissionGeneralInfo": []
+  },
+  "userTasks": [],
+  "gateWays": [],
+  "loops": [],
+  "actions": [
+    {
+      "id": "NOCMAEXAMPLE02",
+      "processId": "PECMAEXAMPLE01",
+      "nodeId": "NOCMAEXAMPLE02",
+      "type": "CUSTOM_MODULE_ACTION",
+      "name": "Chấm điểm lead",
+      "slug": "score_lead",
+      "description": "",
+      "data": "{\"projectSlug\":\"crm_tools\",\"actionKey\":\"score_lead\",\"inputs\":[{\"key\":\"leadId\",\"value\":{\"type\":4,\"value\":\"$flow.lead_id\"}},{\"key\":\"strict\",\"value\":{\"type\":1,\"value\":\"true\"}}],\"runAs\":{\"mode\":\"PROCESS_STARTER\"},\"continueOnFailure\":false,\"inputSchema\":{\"type\":\"object\",\"properties\":{\"leadId\":{\"type\":\"string\",\"x-cogover-object\":\"lead\",\"description\":\"ID of the lead to score\"},\"strict\":{\"type\":\"boolean\"}},\"required\":[\"leadId\"],\"additionalProperties\":false},\"outputSchema\":{\"type\":\"object\",\"properties\":{\"found\":{\"type\":\"boolean\"},\"score\":{\"type\":\"number\"},\"tier\":{\"type\":\"string\",\"enum\":[\"A\",\"B\",\"C\"]}},\"required\":[\"found\",\"score\",\"tier\"],\"additionalProperties\":false}}"
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [
+      {
+        "id": "RSCMAEXAMPLE01",
+        "processId": "PECMAEXAMPLE01",
+        "parentId": "PECMAEXAMPLE01",
+        "parentTable": "process",
+        "name": "Lead ID",
+        "slug": "lead_id",
+        "absoluteSlug": "$flow.lead_id",
+        "absolutePath": "workflow_resource:list.variable / Lead ID",
+        "defaultValue": "",
+        "dataType": "TEXT",
+        "type": 1,
+        "isList": false,
+        "editable": true,
+        "assignable": true,
+        "availableForInput": true,
+        "availableForOutput": false,
+        "isStandard": false,
+        "metaDataType": {
+          "characterLimit": {
+            "min": 0,
+            "max": 131072,
+            "warning": "warning limit note"
+          },
+          "richText": "false"
+        },
+        "resourcesUsedIn": []
+      }
+    ],
+    "userTasks": [],
+    "actions": [
+      {
+        "id": "NOCMAEXAMPLE02",
+        "nodeId": "NOCMAEXAMPLE02",
+        "name": "Chấm điểm lead",
+        "slug": "score_lead",
+        "type": "CUSTOM_MODULE_ACTION",
+        "resources": [
+          {
+            "id": "RSCMAEXAMPLE02",
+            "processId": "PECMAEXAMPLE01",
+            "parentId": "NOCMAEXAMPLE02",
+            "parentTable": "action",
+            "name": "Start At",
+            "slug": "startAt",
+            "absoluteSlug": "$action.score_lead.startAt",
+            "absolutePath": "workflow_custom_module_action:list.customModuleAction / Chấm điểm lead / Start At",
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          },
+          {
+            "id": "RSCMAEXAMPLE03",
+            "processId": "PECMAEXAMPLE01",
+            "parentId": "NOCMAEXAMPLE02",
+            "parentTable": "action",
+            "name": "End At",
+            "slug": "endAt",
+            "absoluteSlug": "$action.score_lead.endAt",
+            "absolutePath": "workflow_custom_module_action:list.customModuleAction / Chấm điểm lead / End At",
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          },
+          {
+            "id": "RSCMAEXAMPLE04",
+            "processId": "PECMAEXAMPLE01",
+            "parentId": "NOCMAEXAMPLE02",
+            "parentTable": "action",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.score_lead.output",
+            "absolutePath": "workflow_custom_module_action:list.customModuleAction / Chấm điểm lead / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": false,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          }
+        ]
+      }
+    ],
+    "loops": []
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PECMAEXAMPLE01\">\n    <bpmn2:startEvent id=\"NOCMAEXAMPLE01\" name=\"Bắt đầu\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:outgoing>FLCMAEXAMPLE01</bpmn2:outgoing>\n    </bpmn2:startEvent>\n    <bpmn2:sendTask id=\"NOCMAEXAMPLE02\" name=\"Chấm điểm lead\">\n      <bpmn2:extensionElements>\n        <elEx:customModuleActionTask />\n        <configEx:elementInfo renderKey=\"CUSTOM_MODULE_ACTION_TASK\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLCMAEXAMPLE01</bpmn2:incoming>\n      <bpmn2:outgoing>FLCMAEXAMPLE02</bpmn2:outgoing>\n    </bpmn2:sendTask>\n    <bpmn2:endEvent id=\"NOCMAEXAMPLE03\" name=\"Kết thúc quy trình\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"END_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLCMAEXAMPLE02</bpmn2:incoming>\n    </bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLCMAEXAMPLE01\" sourceRef=\"NOCMAEXAMPLE01\" targetRef=\"NOCMAEXAMPLE02\" />\n    <bpmn2:sequenceFlow id=\"FLCMAEXAMPLE02\" sourceRef=\"NOCMAEXAMPLE02\" targetRef=\"NOCMAEXAMPLE03\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_CMAEXAMPLE\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_CMAEXAMPLE\" bpmnElement=\"PECMAEXAMPLE01\">\n      <bpmndi:BPMNShape id=\"NOCMAEXAMPLE01_di\" bpmnElement=\"NOCMAEXAMPLE01\">\n        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"49\" y=\"330\" width=\"42\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOCMAEXAMPLE02_di\" bpmnElement=\"NOCMAEXAMPLE02\">\n        <dc:Bounds x=\"200\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"185\" y=\"330\" width=\"90\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOCMAEXAMPLE03_di\" bpmnElement=\"NOCMAEXAMPLE03\">\n        <dc:Bounds x=\"360\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"336\" y=\"330\" width=\"108\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"FLCMAEXAMPLE01_di\" bpmnElement=\"FLCMAEXAMPLE01\">\n        <di:waypoint x=\"100\" y=\"290\" />\n        <di:waypoint x=\"200\" y=\"290\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FLCMAEXAMPLE02_di\" bpmnElement=\"FLCMAEXAMPLE02\">\n        <di:waypoint x=\"260\" y=\"290\" />\n        <di:waypoint x=\"360\" y=\"290\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

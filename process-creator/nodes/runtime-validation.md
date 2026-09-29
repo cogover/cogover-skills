@@ -26,6 +26,7 @@
 | Organization | Gateway downstream kiểm tra `output.total >= 1` và/hoặc lưu field của record thật vào variable; log `preparing` không đủ |
 | Sub Process sync | Child instance/action chạy, output mapping về parent và gateway downstream kiểm tra giá trị; chỉ thấy `SUCCESS` mà output trống là PARTIAL |
 | Export Record | Output chứa FileValue/file tải được, mở được và thuộc đúng record/template |
+| Custom Module Action | GET-back giữ đúng action `CUSTOM_MODULE_ACTION`, `projectSlug`/`actionKey`, `inputs`, `runAs` và `output.result.children` theo `outputSchema`, không có lỗi `70`–`76`; đúng instance có `output.status = COMPLETED`, `output.result.*` đúng giá trị và bước sau dùng được; action ghi dữ liệu thì đọc lại record. Nhánh lỗi, danh tính và `continueOnFailure` theo `custom-module-action-task.md` |
 | AI Agent | GET-back giữ đúng action `AI_AGENT`, cấu hình và output resources; đúng instance có `output.status = COMPLETED`, câu trả lời đáp ứng instruction và bước sau đọc được output. Nếu yêu cầu tool/record change, phải đối chiếu hiệu ứng thực tế; nếu có schema, kiểm tra `output.result` đúng kiểu và dùng được downstream. Đọc `ai-agent-task.md` cho test phiên nối tiếp, lỗi và timeout |
 
 ## Email workspace

@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.14.0` ngày `2026-09-29`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.15.0` ngày `2026-09-30`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -13,7 +13,8 @@ dựng giao diện người dùng.
 Custom Backend Module được viết bằng TypeScript. `@cogover/sdk` cung cấp type và
 API để làm việc với execution hiện tại, dữ liệu Workspace, schema metadata,
 logging, outbound HTTPS request, state, distributed lock, push message tới web
-client, background job, secret, mã hoá và inbound webhook. Cogover thực thi module
+client, background job, secret, mã hoá, inbound webhook, Process và AI Agent, và
+action mà Process và AI Agent gọi. Cogover thực thi module
 theo quyền và giới hạn tài nguyên đã cấu hình cho project.
 
 Quy trình phát triển thông thường:
@@ -550,7 +551,8 @@ router.post("/recalculate", async ({ jobs, response }) => {
 
 - Job handler nhận `job` (run ID, key, lần thử, nguồn), `payload` đã truyền cho
   `enqueue` (hoặc `null`) và cùng các API `data`, `schema`, `log`, `state`,
-  `locks`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org` như script.
+  `locks`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, `processes`,
+  `agents` như script.
   Giá trị trả về bị bỏ qua.
 - Lần chạy được enqueue từ route hoặc trigger thực hiện dưới danh tính người dùng
   của lời gọi đó. Lần chạy theo lịch không có người dùng: `data.object()` chỉ hoạt
@@ -572,6 +574,145 @@ router.post("/recalculate", async ({ jobs, response }) => {
 
 Xem [tài liệu tham chiếu background job](cogover-sdk-api-reference.md#background-job) để biết
 mọi tuỳ chọn và quy tắc.
+
+## Cho Process và AI Agent gọi code của bạn
+
+**Custom Module Action** là một thao tác ngắn của module mà Process hoặc AI Agent gọi:
+một node **Custom Module Action** trong Process Builder, hoặc một tool thuộc nhóm
+**Custom Module** trong AI Agent Builder. Khai báo action bằng `defineAction` và liệt
+kê chúng trong named export `actions`. Mô tả input và output bằng schema builder `s`:
+cùng một khai báo vừa tạo kiểu cho handler, vừa giúp Cogover kiểm tra dữ liệu, vừa cho
+các builder và AI Agent biết action cần gì.
+
+```typescript
+import { defineAction, s } from "@cogover/sdk";
+
+export const actions = [
+  defineAction({
+    key: "check_credit",
+    label: "Check customer credit",
+    description: "Returns whether an account can buy the given amount on credit, and its remaining credit.",
+    exposeTo: ["process", "agent"],
+    effect: "read",
+    input: s.object({
+      accountId: s.recordId("account").describe("ID of the customer account"),
+      amount: s.number({ minimum: 0 }).describe("Order amount in the account currency"),
+    }),
+    output: s.object({
+      allowed: s.boolean(),
+      remaining: s.number(),
+      reason: s.enum(["ok", "limit_exceeded", "account_not_found"]),
+    }),
+    async handler({ data }, input) {
+      const account = await data.object("account").records.get(input.accountId, {
+        fields: ["credit_limit", "credit_used"],
+      });
+      if (!account) return { allowed: false, remaining: 0, reason: "account_not_found" };
+      const remaining = Number(account.fields.credit_limit ?? 0) - Number(account.fields.credit_used ?? 0);
+      const allowed = input.amount <= remaining;
+      return { allowed, remaining, reason: allowed ? "ok" : "limit_exceeded" };
+    },
+  }),
+];
+```
+
+- Publish và activate version: khi đó action xuất hiện trong Process Builder và AI
+  Agent Builder. Hai builder gọi version đang active, nên hãy giữ `key` ổn định.
+- `exposeTo` chọn nơi cung cấp action. Action dành cho AI Agent cần có `description`,
+  và các đoạn `describe` giúp agent điền input đúng.
+- `effect: "read"` chạy action ở chế độ chỉ đọc. Action `"write"` được thay đổi dữ
+  liệu, và tool của AI Agent cho action này mặc định hỏi người phê duyệt.
+- Cogover kiểm tra input trước khi handler chạy và kiểm tra output sau khi handler trả
+  về. Process hoặc agent chỉ nhận mã của lỗi mà handler ném, nên hãy báo các kết quả dự
+  kiến trong output, như `reason` ở trên.
+- Node Process hoặc agent quyết định action chạy dưới danh tính nào: người khởi tạo
+  Process, một nhân sự được chọn, người mà agent đang thay mặt, hoặc không có người
+  dùng. Khi không có người dùng, identity policy đã duyệt phải đặt
+  `allowInternalSystem: true`.
+- Action có ngân sách của một HTTP route và tối đa 8 giây (`timeoutMs`). Chuyển việc
+  dài hơn sang background job bằng `jobs.enqueue`, dùng `action.runId` làm idempotency
+  key: bên gọi thử lại sẽ gửi cùng `runId`.
+
+Xem [tài liệu tham chiếu Custom Module Action](cogover-sdk-api-reference.md#custom-module-action)
+để biết mọi tuỳ chọn, quy tắc của schema và các lỗi bên gọi nhận được.
+
+## Khởi chạy Process và AI Agent từ code
+
+`processes.start` khởi chạy một Process của Cogover và `agents.start` chạy một AI Agent
+từ route, trigger after-change, job hoặc action. Cả hai trả về ngay khi lượt chạy được
+tạo; kết quả được giao cho background job chỉ định trong `onComplete` hoặc `onResult`.
+Identity policy của project phải cho phép các Process và agent đó trong mục
+`processes` và `agents`.
+
+```typescript
+import { createRouter, defineJob, s } from "@cogover/sdk";
+import type { AgentResultJobPayload, CogoverRecordId, ProcessCompletionJobPayload } from "@cogover/sdk";
+
+const router = createRouter();
+
+// Khởi chạy Process phê duyệt báo giá; job bên dưới nhận kết quả.
+router.post("/quotes/:id/submit", async ({ request, processes, response }) => {
+  const quoteId = request.params.id;
+  const { instanceId } = await processes.start("PIXXXXXXXXXXXX", {
+    input: { quote_id: quoteId },
+    idempotencyKey: `quote-approval:${quoteId}`,
+    onComplete: { job: "quote_approved", payload: { quoteId } },
+  });
+  return response.json({ instanceId }, { status: 202 });
+});
+
+// Nhờ AI Agent phân loại ticket hỗ trợ rồi lưu câu trả lời.
+router.post("/tickets/:id/classify", async ({ request, agents, response }) => {
+  const ticketId = request.params.id;
+  const { runId } = await agents.start("AGXXXXXXXXXXXX", {
+    instruction: "Classify this support ticket by product area and urgency.",
+    records: [{ objectSlug: "ticket", recordId: ticketId }],
+    resultSchema: s.object({
+      area: s.enum(["billing", "shipping", "product"]),
+      urgent: s.boolean(),
+    }),
+    idempotencyKey: `classify:${ticketId}`,
+    onResult: { job: "ticket_classified", payload: { ticketId } },
+  });
+  return response.json({ runId }, { status: 202 });
+});
+
+export default router.toHandler();
+
+export const jobs = [
+  defineJob<ProcessCompletionJobPayload<{ quoteId: CogoverRecordId }>>({ key: "quote_approved" }, async ({ payload, data }) => {
+    if (payload?.payload == null || payload.process.state !== "COMPLETED") return;
+    await data.object("quote").records.update(payload.payload.quoteId, { status: "approved" });
+  }),
+  defineJob<AgentResultJobPayload<{ ticketId: CogoverRecordId }, { area: string; urgent: boolean }>>(
+    { key: "ticket_classified" },
+    async ({ payload, data }) => {
+      const result = payload?.agentRun.result;
+      if (payload?.payload == null || result == null) return;
+      await data.object("ticket").records.update(payload.payload.ticketId, {
+        area: result.area,
+        urgent: result.urgent,
+      });
+    },
+  ),
+];
+```
+
+- Process hoặc agent chạy dưới danh tính người dùng của lời gọi và Cogover kiểm tra
+  quyền của chính người dùng đó; lời gọi không có người dùng cần `allowSystem` trong mục
+  policy tương ứng, và khi đó agent dùng `runAs: "agent"`.
+- Hãy truyền `idempotencyKey`: lần start lặp lại trả về lượt chạy đầu tiên với
+  `duplicate: true`, và sau `RetryableError`, lần thử lại với cùng key không thể khởi
+  chạy lượt thứ hai.
+- Một lần thực thi khởi chạy tối đa 20 Process và 5 lượt chạy agent, và mỗi project có
+  giới hạn số lượt chạy agent mỗi ngày (`maxRunsPerDay`, mặc định 200).
+- `processes.get` và `agents.get` đọc trạng thái hiện tại của lượt chạy mà project đã
+  khởi chạy. Đừng chờ kết quả bên trong route: hãy dùng job.
+- Với Cogover Dev CLI, lần start là thật, nhưng `onComplete` và `onResult` bị từ chối
+  với `NOT_SUPPORTED`; hãy thử job sau khi publish.
+
+Xem [tài liệu tham chiếu Process và AI Agent](cogover-sdk-api-reference.md#process-và-ai-agent)
+để biết mọi tuỳ chọn, giới hạn và lỗi.
 
 ## Gửi notification và email
 

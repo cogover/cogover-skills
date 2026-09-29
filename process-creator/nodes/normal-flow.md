@@ -5,8 +5,17 @@
 ## Cách dùng
 
 - Process cha gọi qua node Sub Process: tách các bước xử lý thành quy trình con để process cha gọi và truyền dữ liệu vào; cấu hình quy trình con và mapping input/output theo [sub-process-task.md](sub-process-task.md).
-- Module khác gọi: ví dụ module SLA phát hiện một vi phạm rồi gọi Normal Flow để tạo cảnh báo, gửi email hoặc thông báo cho quản lý (module SLA phát hiện, Normal Flow xử lý khi được gọi).
+- Module khác gọi: ví dụ module SLA phát hiện một vi phạm rồi gọi Normal Flow để tạo cảnh báo, gửi email hoặc thông báo cho quản lý (module SLA phát hiện, Normal Flow xử lý khi được gọi). Custom Backend Module gọi bằng `processes.start`: xem [Được Custom Backend Module khởi chạy](#được-custom-backend-module-khởi-chạy).
 - Chạy độc lập vẫn được hỗ trợ cho người có quyền `START_INSTANCE`, nhưng hiếm dùng. Khi thiết kế, xác định bên gọi dự kiến (process cha, module hay người dùng) và dữ liệu cần nhận/trả; yêu cầu đã nêu process cha hoặc module gọi thì lấy cách gọi đó làm ngữ cảnh chính thay vì mặc định cần người dùng bấm **Tạo lượt chạy**.
+
+## Được Custom Backend Module khởi chạy
+
+Custom Backend Module khởi chạy Normal Flow bằng `processes.start(processInfoId, { input, instanceName, idempotencyKey, onComplete })` của `@cogover/sdk` (từ `0.15.0`, code do [$cogover-custom-module](../../cogover-custom-module/SKILL.md) phụ trách). Thiết kế Process cho bên gọi này:
+
+- Bên gọi dùng **Process ID** (`processInfoId`, prefix `PI`), không dùng ID version (`PE...`). Cogover khởi chạy version đã kích hoạt và đã xuất bản; chỉ Normal Flow được nhận. Giữ Process ID ổn định: sửa bằng version mới (mục 4.4 của `SKILL.md`), không xoá rồi tạo lại.
+- Dữ liệu vào là các Variable có `availableForInput: true`, truyền theo slug biến (ví dụ `{"lead_id": "..."}`); biến không tồn tại hoặc không đánh dấu input bị từ chối. Kết quả trả cho module là các Variable có `availableForOutput: true` (ví dụ gán bằng Assignment trước End Process): module nhận chúng trong job `onComplete` khi lượt chạy kết thúc với trạng thái `COMPLETED`, `CANCELED`, `DELETED` hoặc `FAILED`. Giá trị output được chuyển như khi ghi field (record thành ID, ngày thành `YYYY-MM-DD`, ngày giờ thành Unix ms); tổng output lớn hơn 48 KiB thì module nhận `null`, nên chỉ trả dữ liệu module cần.
+- Lượt chạy mang danh tính người dùng của lần gọi trong module; lời gọi không có người dùng (job theo lịch, webhook) tạo lượt chạy **không có người khởi tạo**: node dùng người khởi tạo (User Task giao cho starter, AI Agent hay Custom Module Action với `PROCESS_STARTER`) phải có phương án khác. Người dùng gọi phải có `START_INSTANCE` trên Process (`processInstanceAccessControls`), identity policy của module phải cho phép Process ID này trong mục `processes`.
+- Module không chờ lượt chạy trong request: kiểm thử bằng cách gọi module rồi theo dõi lượt chạy theo [api-process-runtime.md](../api-process-runtime.md), kiểm tra biến output và job nhận kết quả phía module.
 
 Start dùng `renderKey="START_NORMAL_EVENT"`, `metadata: {}`. Không tạo Root User Task tự động (chỉ `manual_flow` bắt buộc Start → Root); Start có thể nối thẳng tới action, gateway hoặc End Process.
 

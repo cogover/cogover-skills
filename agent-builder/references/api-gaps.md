@@ -4,7 +4,7 @@
 
 | Nhu cầu | Contract cần người dùng cung cấp | Phần vẫn có thể thực hiện |
 |---|---|---|
-| Tạo/sửa HTTP Tool có tham số động | Endpoint hoặc service khai báo/đọc parameter schema; vị trí field trong payload; kiểu, required, default và mapping tham số vào path/query/header/body; ví dụ request/response | List/read Tool, tái sử dụng Tool có schema đã được xác minh; cấu hình Agent/Skill độc lập |
+| Tạo/sửa HTTP Tool có tham số động | Endpoint hoặc service khai báo/đọc parameter schema; vị trí field trong payload; kiểu, required, default và mapping tham số vào path/query/header/body; ví dụ request/response | List/read Tool, tái sử dụng Tool có schema đã được xác minh; cấu hình Agent/Skill độc lập; khi logic thuộc module của Workspace, dùng Tool [CUSTOM_MODULE](tools.md#custom_module) gọi Custom Module Action có schema input |
 | Rà soát nội dung Data sau chuyển đổi trước khi duyệt | Field/endpoint lấy đầy đủ bản chuyển đổi; định dạng, phân trang hoặc tải nội dung và quyền đọc | Upload, tạo file, chuyển đổi và theo dõi trạng thái; dừng bước duyệt phụ thuộc rà soát |
 | Chẩn đoán conversion/index lỗi khi response hiện có không đủ | Field/endpoint chi tiết lỗi/trạng thái tác vụ, mã lỗi và cách liên kết với file ID | Theo dõi trạng thái qua service 73; báo chưa index thành công |
 | Đọc lại kết quả sau mất WebSocket hoặc xem lịch sử test | API lịch sử tin nhắn/trạng thái lượt hoặc replay, tham số session/conversation/turn/cursor, phân trang và thứ tự sự kiện | Test qua socket đang kết nối; giữ ID đã có, không tự gửi lại tin để đoán kết quả |

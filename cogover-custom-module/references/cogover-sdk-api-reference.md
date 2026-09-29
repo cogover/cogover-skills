@@ -43,6 +43,8 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
   readonly crypto: CryptoApi;
   readonly org: OrgApi;
   readonly limits: LimitsApi;
+  readonly processes: ProcessesApi;
+  readonly agents: AgentsApi;
 }
 ```
 
@@ -51,15 +53,16 @@ quả ném lỗi nếu input không phải JSON hợp lệ hoặc output không 
 JSON. Trả `null` tạo kết quả null; trả `undefined` là không hợp lệ.
 
 Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`,
-`push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, `limits`, chờ kết quả async và serialize output thành
-JSON. `limits` đọc ngân sách của lần thực thi (xem
-[Đọc giới hạn trong code](#đọc-giới-hạn-trong-code)).
+`push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, `limits`, `processes`, `agents`, chờ kết quả
+async và serialize output thành JSON. `limits` đọc ngân sách của lần thực thi (xem
+[Đọc giới hạn trong code](#đọc-giới-hạn-trong-code)), còn `processes` và `agents` khởi chạy Process và
+AI Agent (xem [Process và AI Agent](#process-và-ai-agent)).
 
 ## HTTP router và request context
 
 `ScriptContext<TInput, TSchema>` cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`,
-`log`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org` và `limits` cho
-cả script handler lẫn route handler. `input`
+`log`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, `limits`,
+`processes` và `agents` cho cả script handler lẫn route handler. `input`
 giữ input invocation hiện có. Nên dùng `request.body` cho dữ liệu nghiệp vụ: body không chứa invocation
 metadata và các field transport/xác thực đã được Cogover loại bỏ.
 
@@ -554,6 +557,8 @@ interface TriggerContext<
   readonly crypto: CryptoApi;
   readonly org: OrgApi;
   readonly limits: LimitsApi;
+  readonly processes: ProcessesApi;
+  readonly agents: AgentsApi;
 }
 
 interface TriggerInfo<Operation extends TriggerOperation = TriggerOperation> {
@@ -590,10 +595,11 @@ cho từng record. Hãy giữ `fields` ngắn gọn và đọc dữ liệu liên
 bằng một lời gọi `records.getMany` thay vì đọc riêng cho từng record.
 
 `data`, `schema`, `log`, `invocation`, `push`, `notifications`, `email`, `jobs`, `secrets`,
-`crypto`, `org` và `limits` là chính các API mà script nhận được; trigger before-change có ngân
-sách nhỏ hơn (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Trigger context không có `input`,
-`request`, `response`, `state` hay `locks`; `push`, `notifications` và `email` bị từ chối trong
-trigger before-change. `trigger.operation`
+`crypto`, `org`, `limits`, `processes` và `agents` là chính các API mà script nhận được; trigger
+before-change có ngân sách nhỏ hơn (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
+Trigger context không có `input`, `request`, `response`, `state` hay `locks`; `push`, `notifications`,
+`email`, `processes` và `agents` bị từ chối trong trigger before-change (xem
+[Process và AI Agent](#process-và-ai-agent)). `trigger.operation`
 là operation của lần gọi hiện tại, `trigger.id` định danh đăng ký của trigger và
 `trigger.changeId` định danh thay đổi record đã gây ra lần gọi.
 
@@ -701,8 +707,8 @@ trigger before-change; request chỉ validate input mà không lưu cũng vậy.
 
 - **Chỉ đọc.** Trigger before-change được đọc record và schema, nhưng mọi thao tác
   ghi record, `fetch`, lock, ghi state, push message, notification, email (kể cả
-  `email.senders()`), `jobs.enqueue`, `secrets.get` và mọi thao tác `crypto` với key
-  `{ secret }` đều bị từ chối bằng
+  `email.senders()`), `jobs.enqueue`, `secrets.get`, mọi lời gọi `processes` và `agents`, và
+  mọi thao tác `crypto` với key `{ secret }` đều bị từ chối bằng
   `PermissionDeniedError` có `details.reason` là `"TRIGGER_READ_ONLY"`. Quy tắc này
   áp dụng cho mọi danh tính, kể cả `data.asSystem()`. Mọi thao tác `crypto` với key
   truyền trực tiếp trong lời gọi vẫn dùng được, cùng với `crypto.sha256`,
@@ -967,6 +973,8 @@ interface JobContext<Payload = unknown, Schema extends object = EffectiveWorkspa
   readonly crypto: CryptoApi;
   readonly org: OrgApi;
   readonly limits: LimitsApi;
+  readonly processes: ProcessesApi;
+  readonly agents: AgentsApi;
 }
 
 interface JobInfo {
@@ -982,14 +990,15 @@ interface JobInfo {
 
 Handler có thể đồng bộ hoặc bất đồng bộ; giá trị trả về bị bỏ qua. `data`,
 `schema`, `log`, `invocation`, `state`, `locks`, `notifications`, `email`, `jobs`,
-`secrets`, `crypto`, `org` và `limits` là chính các API mà script nhận được; `limits` cho
-biết ngân sách lớn hơn của job (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
+`secrets`, `crypto`, `org`, `limits`, `processes` và `agents` là chính các API mà script nhận
+được; `limits` cho biết ngân sách lớn hơn của job (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
 Job context không có `input`, `request`, `response` hay `push`.
 
 - `job.id` định danh lần chạy và không đổi qua các lần thử; dùng nó làm idempotency
   key cho các lời gọi ra ngoài. `job.attempt` bắt đầu từ 1.
-- `job.source` là `"enqueue"` với lần chạy do `jobs.enqueue` hoặc quản trị viên tạo
-  và `"schedule"` với lần chạy do lịch của job tạo. `job.runAt` là thời điểm lần
+- `job.source` là `"enqueue"` với lần chạy do `jobs.enqueue` hoặc quản trị viên tạo,
+  hoặc để nhận kết quả của Process hay AI Agent, và `"schedule"` với lần chạy do lịch
+  của job tạo. `job.runAt` là thời điểm lần
   chạy đến hạn và `job.enqueuedAt` là thời điểm được enqueue; cả hai là Unix
   millisecond, và `enqueuedAt` vắng mặt với lần chạy theo lịch.
 - `payload` là giá trị JSON đã truyền cho `jobs.enqueue`, hoặc `null` khi không
@@ -1033,8 +1042,9 @@ chữ số, chứa chữ cái, chữ số, `.`, `_`, `:` hoặc `-`, tối đa 1
 thứ hai của cùng job với cùng key khi lần chạy trước còn được lưu sẽ trả về lần
 chạy đó với `duplicate: true` thay vì tạo thêm. Lịch sử lần chạy được giữ 7 ngày.
 
-`enqueue` hoạt động trong script và route, trigger after-change, job và lời gọi
-inbound webhook. Trigger before-change bị từ chối bằng `PermissionDeniedError`
+`enqueue` hoạt động trong script và route, trigger after-change, job, lời gọi
+inbound webhook và Custom Module Action có `effect` là `"write"`. Trigger
+before-change bị từ chối bằng `PermissionDeniedError`
 (`details.reason === "TRIGGER_READ_ONLY"`), phiên phát triển local không có quyền
 ghi cũng vậy (`"DEVELOPMENT_SESSION_READ_ONLY"`). Một invocation enqueue tối đa
 50 lần chạy, và một project có tối đa 10.000 lần chạy đang chờ hoặc đang chạy; vượt
@@ -1057,8 +1067,16 @@ chưa được bật cho Workspace, lỗi là `CogoverApiError` với `code: "JO
   `data.object()` có giới hạn của `data.asUser()`; dùng `data.asSystem()` để nhóm (xem
   [Aggregate](#aggregate)).
 - **Capability.** Job được đọc và ghi record, gọi `fetch`, dùng `state` và `locks`,
-  gửi notification và email, enqueue job, đọc secret và dùng `crypto`, trong giới hạn
-  runtime của làn job.
+  gửi notification và email, enqueue job, đọc secret, dùng `crypto`, và khởi chạy
+  Process và AI Agent, trong giới hạn runtime của làn job.
+- **Kết quả của Process hoặc AI Agent.** Lần chạy do `onComplete` của
+  `processes.start` hoặc `onResult` của `agents.start` tạo nhận
+  `ProcessCompletionJobPayload` hoặc `AgentResultJobPayload` làm `payload`, chạy dưới
+  danh tính người dùng của lần thực thi đã gọi `start`, và được ghi trong lịch sử lần
+  chạy với `enqueuedBy` là `process:<instanceId>` hoặc `agent:<runId>` (xem
+  [Quy tắc của job nhận kết quả](#quy-tắc-của-job-nhận-kết-quả)).
+  Lần chạy được enqueue từ Custom Module Action chạy dưới danh tính của lần gọi action
+  đó.
 - **Thời gian.** Mỗi lần thử phải hoàn tất trong `timeoutMs`. Việc cần lâu hơn phải
   được chia nhỏ: xử lý một trang, lưu cursor và enqueue lại chính job đó với cursor
   trong payload, như ví dụ ở trên.
@@ -3200,6 +3218,758 @@ tồn tại.
   một capability call (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
   Dùng `getMany` hoặc `members` thay vì gọi `get` trong vòng lặp: mỗi lời gọi tính một lần.
 
+## Custom Module Action
+
+Custom Module Action là một thao tác ngắn, chạy đồng bộ của project mà Process hoặc
+AI Agent có thể gọi. Process Builder đưa mỗi action mở cho `"process"` thành một node
+**Custom Module Action**, và AI Agent Builder đưa mỗi action mở cho `"agent"` thành
+một tool. Khai báo từng action bằng `defineAction` và liệt kê kết quả trong named
+export `actions` của project. Default export vẫn là tuỳ chọn với project chỉ khai báo
+action, trigger và job.
+
+Ví dụ này giả định `workspace.d.ts` đã khai báo Object `lead` và các field dùng bên
+dưới.
+
+```typescript
+import { defineAction, s } from "@cogover/sdk";
+
+export const actions = [
+  defineAction({
+    key: "score_lead",
+    label: "Score lead",
+    description: "Scores a lead from its recent activities and returns a tier.",
+    exposeTo: ["process", "agent"],
+    effect: "read",
+    input: s.object({
+      leadId: s.recordId("lead").describe("ID of the lead to score"),
+      strict: s.boolean().optional(),
+    }),
+    output: s.object({
+      found: s.boolean(),
+      score: s.number(),
+      tier: s.enum(["A", "B", "C"]),
+    }),
+    timeoutMs: 5000,
+    async handler({ data, invocation, log }, input) {
+      const lead = await data.object("lead").records.get(input.leadId, { fields: ["rating"] });
+      if (!lead) return { found: false, score: 0, tier: "C" };
+      const score = Number(lead.fields.rating ?? 0) * (input.strict ? 8 : 10);
+      log.info("Lead scored", { leadId: lead.id, source: invocation.source.type });
+      return { found: true, score, tier: score >= 80 ? "A" : score >= 50 ? "B" : "C" };
+    },
+  }),
+];
+```
+
+Cogover đọc khai báo action khi một version của project được publish và cung cấp
+các action của version đang active: node Process và tool của AI Agent tham chiếu
+action bằng slug của project và `key` của action, và luôn chạy version đang active
+tại thời điểm gọi. Version có khai báo không hợp lệ sẽ publish thất bại với
+`ACTION_MANIFEST_INVALID`. Deactivate project sẽ gỡ các action của nó khỏi cả hai
+builder. Một project khai báo tối đa 50 action.
+
+Label, mô tả và schema của action hiển thị với mọi thành viên đang hoạt động của
+Workspace: không đặt secret trong đó.
+
+### `defineAction(config): ActionDefinition`
+
+```typescript
+function defineAction<
+  TInput extends ObjectSchema<ObjectShape, false>,
+  TOutput extends ObjectSchema<ObjectShape, false>,
+  TSchema extends object = EffectiveWorkspaceObjects,
+>(config: ActionConfig<TInput, TOutput, TSchema>): ActionDefinition;
+
+type ActionExposure = "process" | "agent";
+type ActionEffect = "read" | "write";
+
+interface ActionConfig<
+  TInput extends ObjectSchema<ObjectShape, false> = ObjectSchema<ObjectShape, false>,
+  TOutput extends ObjectSchema<ObjectShape, false> = ObjectSchema<ObjectShape, false>,
+  TSchema extends object = EffectiveWorkspaceObjects,
+> {
+  readonly key: string;
+  readonly label: string;
+  readonly description?: string;
+  readonly exposeTo: readonly ActionExposure[];
+  readonly effect: ActionEffect;
+  readonly input: TInput;
+  readonly output: TOutput;
+  readonly timeoutMs?: number;
+  readonly handler: ActionHandler<TInput, TOutput, TSchema>;
+}
+```
+
+`defineAction` kiểm tra cấu hình ngay và ném `ValidationError` khi có vi phạm, khi
+có key cấu hình lạ hoặc khi handler không phải function; khi key đã hợp lệ,
+`details.actionKey` và `details.option` cho biết action và tuỳ chọn bị sai. Hàm trả về một `ActionDefinition`
+đã freeze. Kiểu của tham số `input` và kiểu trả về của handler được suy ra từ schema
+`input` và `output`.
+
+| Tuỳ chọn | Bắt buộc | Quy tắc và ý nghĩa |
+|---|---|---|
+| `key` | Có | Định danh action trong project: một chữ thường, theo sau tối đa 63 chữ thường, chữ số hoặc `_`. Duy nhất trong project. Giữ ổn định giữa các version: node Process và tool của agent dùng key cũ sẽ không tìm thấy action nữa. |
+| `label` | Có | Tên hiển thị trong Process Builder và AI Agent Builder, từ 1 đến 100 ký tự sau khi trim. |
+| `description` | Với agent | Tối đa 1000 ký tự sau khi trim. Bắt buộc khi `exposeTo` có `"agent"`: AI Agent đọc mô tả này để quyết định khi nào gọi tool. |
+| `exposeTo` | Có | Danh sách khác rỗng gồm `"process"` và `"agent"`, không trùng: nơi action được dùng. |
+| `effect` | Có | `"read"`: action chạy chỉ đọc, mọi thao tác ghi đều bị từ chối bằng `PermissionDeniedError`. `"write"`: action được ghi; tool của AI Agent cho action này mặc định cần người phê duyệt. |
+| `input` | Có | Schema của input, tạo bằng `s.object`. |
+| `output` | Có | Schema của output, tạo bằng `s.object`. |
+| `timeoutMs` | Không | Số nguyên từ 1000 đến 8000; mặc định `8000`. Giới hạn thời gian của một lần gọi. |
+| `handler` | Có | `(context, input) => output`, đồng bộ hoặc bất đồng bộ. |
+
+### Schema builder `s`
+
+`s` tạo schema vừa là kiểu TypeScript vừa là JSON Schema. Action dùng nó để khai báo
+`input` và `output`, và `agents.start` dùng nó cho `resultSchema` (xem
+[Process và AI Agent](#process-và-ai-agent)).
+
+```typescript
+const s: {
+  string(options?: { minLength?: number; maxLength?: number }): Schema<string>;
+  enum<const Values extends readonly string[]>(values: Values): Schema<Values[number]>;
+  number(options?: { minimum?: number; maximum?: number }): Schema<number>;
+  integer(options?: { minimum?: number; maximum?: number }): Schema<number>;
+  boolean(): Schema<boolean>;
+  date(): Schema<string>;
+  dateTime(): Schema<number>;
+  recordId(objectSlug: string): Schema<CogoverRecordId>;
+  array<Item extends Schema<unknown, false>>(item: Item, options?: { maxItems?: number }): Schema<InferSchema<Item>[]>;
+  object<Shape extends ObjectShape>(shape: Shape): ObjectSchema<Shape>;
+};
+
+interface Schema<T = unknown, Optional extends boolean = false> {
+  optional(): Schema<T, true>;
+  describe(text: string): Schema<T, Optional>;
+  toJSON(): JsonSchema;
+}
+
+interface ObjectSchema<Shape extends ObjectShape = ObjectShape, Optional extends boolean = false>
+  extends Schema</* kiểu object của Shape */, Optional> {
+  optional(): ObjectSchema<Shape, true>;
+  describe(text: string): ObjectSchema<Shape, Optional>;
+}
+
+type ObjectShape = { readonly [property: string]: Schema<unknown, boolean> };
+type InferSchema<T> = T extends Schema<infer Value, boolean> ? Value : never;
+
+interface JsonSchema {
+  readonly [keyword: string]: null | boolean | number | string | readonly unknown[] | JsonSchema;
+}
+```
+
+| Builder | Giá trị | JSON Schema | Kiểu dữ liệu Process |
+|---|---|---|---|
+| `s.string({ minLength?, maxLength? })` | `string` | `{"type": "string"}` | Text |
+| `s.enum(["A", "B"])` | một trong các chuỗi đã liệt kê | `{"type": "string", "enum": [...]}` | Text |
+| `s.number({ minimum?, maximum? })` | `number` hữu hạn | `{"type": "number"}` | Number |
+| `s.integer({ minimum?, maximum? })` | số nguyên an toàn | `{"type": "integer"}` | Number |
+| `s.boolean()` | `boolean` | `{"type": "boolean"}` | Boolean |
+| `s.date()` | chuỗi `YYYY-MM-DD` | `{"type": "string", "format": "date"}` | Date |
+| `s.dateTime()` | Unix millisecond, như field `date_time` | `{"type": "integer", "format": "x-epoch-ms"}` | Date time |
+| `s.recordId("lead")` | ID của một record thuộc Object, kiểu `CogoverRecordId` | `{"type": "string", "x-cogover-object": "lead"}` | Text |
+| `s.array(item, { maxItems? })` | danh sách giá trị `item` | `{"type": "array", "items": {...}}` | danh sách theo kiểu của item |
+| `s.object({ ... })` | object có đúng các property này | `{"type": "object", "properties": {...}, "required": [...], "additionalProperties": false}` | Record, mỗi property là một field con |
+
+- Mọi node đều bất biến: `.optional()` và `.describe(text)` trả về node mới.
+  `.optional()` cho phép bỏ property khỏi object chứa nó (không có trong `required`);
+  `.describe(text)` thêm `description` từ 1 đến 500 ký tự, lưu sau khi trim, được
+  Process Builder hiển thị và AI Agent đọc.
+- `s.string`: `maxLength` từ 1 đến 100000, mặc định 10000; `minLength` từ 0 đến
+  `maxLength`. Không có option `pattern`: kiểm tra định dạng, ví dụ mã hay địa chỉ email,
+  trong handler và ném `ValidationError` khi không khớp.
+- `s.enum`: từ 1 đến 100 chuỗi khác nhau, mỗi chuỗi từ 1 đến 200 ký tự.
+- `s.number` và `s.integer`: `minimum` và `maximum` là số hữu hạn (số nguyên an toàn
+  với `s.integer`), và `minimum` không lớn hơn `maximum`.
+- `s.recordId`: slug của Object bắt đầu bằng chữ cái hoặc `_` và có tối đa 128 chữ
+  cái, chữ số hoặc `_`. Giá trị có kiểu `CogoverRecordId`, nên handler truyền thẳng vào
+  `records.get` hoặc `records.update` mà không cần ép kiểu, và property output tạo bằng
+  nó nhận `id` của record mà records API trả về. Lúc chạy nó chỉ là chuỗi: Cogover
+  không kiểm tra record có tồn tại.
+- `s.array`: item không được optional; `maxItems` từ 1 đến 10000, mặc định 1000.
+- `s.object`: tối đa 50 property, mỗi tên có dạng như `leadId`: một chữ cái, theo sau
+  tối đa 63 chữ cái, chữ số hoặc `_`. Property giữ thứ tự khai báo.
+- `input` và `output` của action, và `resultSchema` của agent, là một `s.object` không
+  optional, lồng object và array tối đa 3 cấp (object gốc là cấp thứ nhất). JSON Schema
+  của input và output của một action cộng lại, và schema kết quả của agent, tối đa
+  16384 byte UTF-8 khi mã hoá JSON.
+- Chỉ node do `s` tạo mới là schema: object JSON Schema viết tay bị từ chối bằng
+  `ValidationError`. `toJSON()`, và do đó `JSON.stringify(node)`, trả về JSON Schema
+  của node.
+
+`Schema` là node schema mô tả giá trị của một kiểu TypeScript, `ObjectSchema` là node
+tạo bằng `s.object`, và `ObjectShape` là bảng ánh xạ tên property sang node mà
+`s.object` nhận. `InferSchema` cho kiểu TypeScript của một node, và `JsonSchema` là
+JSON Schema dưới dạng dữ liệu JSON thuần:
+
+```typescript
+const leadInput = s.object({ leadId: s.recordId("lead"), note: s.string().optional() });
+type LeadInput = InferSchema<typeof leadInput>; // { leadId: string; note?: string }
+```
+
+### `ActionDefinition` và `ActionManifest`
+
+```typescript
+interface ActionManifest {
+  readonly key: string;
+  readonly label: string;
+  readonly description: string;
+  readonly exposeTo: readonly ActionExposure[];
+  readonly effect: ActionEffect;
+  readonly timeoutMs: number;
+  readonly inputSchema: JsonSchema;
+  readonly outputSchema: JsonSchema;
+}
+
+interface ActionDefinition {
+  readonly key: string;
+  readonly config: ActionManifest;
+  readonly __cogoverActionHandler: (inputJson: string) => Promise<string>;
+}
+```
+
+`config` là cấu hình đã chuẩn hoá dưới dạng JSON thuần đã deep-freeze, đã áp mọi giá
+trị mặc định: `description` là `""` khi không khai báo, `timeoutMs` là `8000` nếu
+không đặt, `label` và `description` đã trim. Đây là nội dung Process Builder và AI
+Agent Builder hiển thị. Nó tách khỏi object đã truyền cho `defineAction`.
+`__cogoverActionHandler` dành riêng cho Cogover; code của project không gọi nó.
+
+### Context của action handler
+
+```typescript
+type ActionHandler<TInput, TOutput, TSchema extends object = EffectiveWorkspaceObjects> = (
+  context: ActionContext<TSchema>,
+  input: InferSchema<TInput>,
+) => InferSchema<TOutput> | Promise<InferSchema<TOutput>>;
+
+interface ActionContext<TSchema extends object = EffectiveWorkspaceObjects> {
+  readonly action: ActionInfo;
+  readonly invocation: ActionInvocationContext;
+  readonly data: DataApi<TSchema>;
+  readonly schema: SchemaApi<TSchema>;
+  readonly log: ScriptLogger;
+  readonly state: ProjectState;
+  readonly locks: DistributedLocks;
+  readonly push: PushApi<TSchema>;
+  readonly notifications: NotificationsApi;
+  readonly email: EmailApi<TSchema>;
+  readonly jobs: JobsApi;
+  readonly secrets: SecretsApi;
+  readonly crypto: CryptoApi;
+  readonly org: OrgApi;
+  readonly limits: LimitsApi;
+  readonly processes: ProcessesApi;
+  readonly agents: AgentsApi;
+}
+
+interface ActionInfo {
+  readonly key: string;
+  readonly runId: string;
+  readonly effect: ActionEffect;
+}
+
+type ActionInvocationContext = (UserInvocationContext | SystemInvocationContext) & {
+  readonly executionIdentity: "user" | "system";
+  readonly source: ActionSource;
+};
+
+type ActionSource = ProcessActionSource | AgentActionSource;
+
+interface ProcessActionSource {
+  readonly type: "process";
+  readonly processId: string;
+  readonly processInfoId: string;
+  readonly instanceId: string;
+  readonly nodeId: string;
+  readonly runAs: ProcessActionRunAs | null;
+}
+
+type ProcessActionRunAs = "PROCESS_STARTER" | "PERSONNEL" | "SYSTEM";
+
+interface AgentActionSource {
+  readonly type: "agent";
+  readonly agentId: string;
+  readonly sessionId: string | null;
+  readonly runId: string | null;
+  readonly interactive: boolean;
+  readonly initiatorPersonnelId: string | null;
+}
+```
+
+`data`, `schema`, `log`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`,
+`secrets`, `crypto`, `org` và `limits` là chính các API mà script nhận được, còn
+`processes` và `agents` được mô tả ở [Process và AI Agent](#process-và-ai-agent).
+Action context không có `input`, `request` hay `response`: input là tham số thứ hai
+của handler.
+
+- `action.key` và `action.effect` lặp lại cấu hình. `action.runId` định danh lần gọi
+  và giữ nguyên khi bên gọi gửi lại chính lần gọi đó (ví dụ node Process thử lại sau
+  lỗi mạng); lần chạy mới của node hoặc lần gọi tool mới của agent có `runId` mới.
+  Dùng nó làm idempotency key cho lời gọi ra ngoài và cho `jobs.enqueue` hoặc
+  `processes.start`.
+- `invocation` là context invocation của người dùng hoặc system (xem
+  [Danh tính invocation và workspace hiện tại](#danh-tính-invocation-và-workspace-hiện-tại))
+  cộng thêm `executionIdentity`, lặp lại `invocation.identity`, và `source`.
+- `invocation.source` cho biết bên gọi. `ProcessActionSource` cho biết Process
+  (`processId`), định nghĩa Process (`processInfoId`), lượt chạy (`instanceId`), node
+  BPMN (`nodeId`) và `runAs`, giá trị `ProcessActionRunAs` mà node dùng để chọn danh tính
+  chạy action: `"PROCESS_STARTER"` (người khởi tạo Process), `"PERSONNEL"` (nhân sự do node
+  chỉ định, có thể lấy từ dữ liệu của Process) hoặc `"SYSTEM"`; là `null` khi bên gọi không
+  cho biết. `AgentActionSource` cho biết agent, phiên chat và lượt chạy của nó (mỗi giá
+  trị là `null` khi agent không được khởi chạy theo cách đó), `interactive`, bằng `true`
+  khi có người đang chat với agent, và `initiatorPersonnelId`, ID nhân sự của người đang
+  chat với agent hoặc người khởi chạy lượt chạy agent (`null` khi không có).
+- Action do AI Agent gọi chạy bằng danh tính của agent, có thể khác người đang chat: mọi
+  người dùng agent đều có quyền truy cập của danh tính đó. Khi action chỉ được làm những
+  gì người đó được phép, hãy kiểm tra `initiatorPersonnelId` trong handler (ví dụ bằng
+  `data.asUser`, identity policy phải cho phép) và từ chối nếu không. Với
+  `runAs: "PERSONNEL"`, Process có thể đã lấy nhân sự từ dữ liệu do người dùng hoặc hệ
+  thống bên ngoài cung cấp: đừng coi đó là bằng chứng ai đã yêu cầu.
+
+### Input và output
+
+- Cogover kiểm tra input theo schema `input` trước khi handler chạy. Input không hợp
+  lệ thì handler không chạy: bên gọi nhận `INPUT_INVALID` kèm đường dẫn JSON Pointer và
+  thông báo cho từng lỗi (tối đa 20). Vì vậy handler luôn nhận đúng các property đã
+  khai báo, với giá trị đúng kiểu.
+- Handler trả về output. Cogover kiểm tra output theo schema `output` sau khi handler
+  trả về: giá trị không phải dữ liệu JSON, hoặc không khớp schema, được báo cho bên gọi
+  là `OUTPUT_INVALID`, và các thao tác ghi handler đã làm không được hoàn tác. Hãy trả
+  về một object; `undefined` không phải output hợp lệ.
+- Node Process hoặc AI Agent chỉ nhận mã lỗi và một thông báo an toàn, cố định của lỗi
+  mà handler ném (xem bên dưới), không bao giờ nhận thông báo riêng của handler. Khi bên
+  gọi cần biết vì sao một trường hợp dự kiến thất bại, hãy mô tả nó trong output, như
+  `found` trong ví dụ trên, thay vì ném lỗi.
+
+### Quy tắc thực thi action
+
+- **Danh tính.** Node Process chạy action dưới danh tính người đã khởi chạy Process,
+  một nhân sự được chọn, hoặc không có người dùng, theo lựa chọn trên node. AI Agent
+  chạy action dưới danh tính người mà agent đang thay mặt. Khi có người dùng,
+  `invocation.user` mô tả người đó, `data.object()` dùng quyền của họ, và Cogover kiểm
+  tra trước rằng người đó vẫn là thành viên đang hoạt động của Workspace. Khi không có
+  người dùng, `invocation.identity` là `"system"`, và lời gọi bị từ chối trước khi chạy
+  trừ khi identity policy đã duyệt của version đang active đặt
+  `allowInternalSystem: true`. `data.asUser()` và `data.asSystem()` tuân theo identity
+  policy như thông thường. Khi version đang active chưa có identity policy được duyệt,
+  action chạy giống route HTTP: lời gọi có người dùng chạy với quyền riêng của người đó
+  và không có quyền nào của policy (`data.asSystem()`, `data.asUser()`, `email.send()`,
+  `fetch()` tới port khác, `processes.start()` và `agents.start()` bị từ chối), còn lời
+  gọi không có người dùng bị từ chối trước khi chạy.
+- **Effect.** Action `"read"` được đọc record, schema và `state`, dùng `org`,
+  `email.senders` và `crypto` trừ khi dùng key `{ secret }`, gửi `fetch` với method `GET`
+  hoặc `HEAD` không kèm credential, và gọi `processes.get` và `agents.get`. Mọi lời gọi khác,
+  như ghi record, `locks`, `push`, `notifications.send`, `email.send`, `jobs.enqueue`,
+  `secrets.get`, `processes.start` hoặc `agents.start`, ném `PermissionDeniedError` với
+  thông báo `This action is declared read-only`.
+- **Giới hạn.** Action có ngân sách của một HTTP route (xem
+  [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)) và giới
+  hạn thời gian riêng là `timeoutMs`, tính từ lúc handler bắt đầu. Vượt thời gian sẽ kết
+  thúc lần gọi với `TIMEOUT`; handler không bắt được lỗi này.
+- **Lời gọi lặp lại.** Node Process và AI Agent gửi lại lời gọi với cùng `runId` khi
+  không nhận được câu trả lời. Khi đó, trong 7 ngày, Cogover trả kết quả đã lưu của lần
+  gọi đã xong mà không chạy lại handler, và từ chối cùng `runId` với input khác. Nếu
+  Cogover bị gián đoạn trong lúc handler chạy, lần thử lại sau có thể chạy lại handler,
+  nên hãy viết action có ghi dữ liệu theo kiểu idempotent, ví dụ dùng `action.runId`.
+- **Vòng lặp luôn kết thúc.** Mỗi lời gọi mang ngân sách tự động hoá của lượt chạy
+  Process hoặc agent đã gọi nó, và thao tác ghi record của action dùng ngân sách này
+  giống thao tác ghi của trigger. Lời gọi đã hết ngân sách bị từ chối với
+  `MAX_HOP_EXCEEDED` trước khi chạy.
+
+### Cách Process và AI Agent dùng action
+
+- **Process.** Node **Custom Module Action** liệt kê các action mở cho `"process"`.
+  Node điền từng property cấp một của input từ dữ liệu của Process; property mà node
+  để trống sẽ không được gửi, nên hãy khai báo nó bằng `.optional()` trừ khi luôn cần.
+  Các node phía sau đọc output của node: `status` (`COMPLETED` hoặc `FAILED`), `result`
+  (output của action, mỗi property của output là một field con), `errorCode`,
+  `errorMessage`, `runId` và `durationMs`. Lời gọi thất bại sẽ dừng lượt chạy Process
+  trừ khi node được đặt tiếp tục khi lỗi.
+- **AI Agent.** Tool thuộc nhóm **Custom Module** gọi một action mở cho `"agent"`.
+  Agent thấy mô tả và schema input của action, kể cả các đoạn `describe`, và tự sinh
+  input; Cogover kiểm tra input đó như mọi input khác. Agent nhận output dưới dạng
+  JSON, hoặc mã lỗi và thông báo. Tool cho action `"write"` mặc định cần người phê
+  duyệt; cấu hình của agent có thể đổi điều này.
+
+### Lỗi bên gọi nhận được
+
+Lời gọi đã chạy báo `COMPLETED` kèm output, hoặc `FAILED` với một trong các mã sau:
+
+| Mã | Ý nghĩa |
+|---|---|
+| `INPUT_INVALID` | Input không khớp schema `input`; handler không chạy. `details.errors` liệt kê `path` và `message` của từng lỗi. |
+| `OUTPUT_INVALID` | Handler trả về giá trị không phải dữ liệu JSON hoặc không khớp schema `output`. |
+| `SCRIPT_ERROR` | Handler ném lỗi SDK. `details.scriptErrorCode` là mã của lỗi đó, như `VALIDATION_ERROR` hoặc `NOT_FOUND`, kèm cùng thông báo an toàn mà HTTP route trả cho mã đó. Mọi lỗi khác được báo với thông báo `The action handler failed`. |
+| `TIMEOUT` | Lời gọi vượt `timeoutMs`; `details.timeoutMs` là giới hạn đã áp dụng. |
+| `RATE_LIMITED` | Lời gọi vượt một ngân sách của lần thực thi; `details.budget` mô tả ngân sách đó. |
+| `SCRIPT_ERROR` với `details.reason` là `"RESOURCE_LIMIT_EXCEEDED"` | Handler dùng hết một giới hạn tài nguyên của sandbox: số câu lệnh, bộ nhớ hoặc stack. |
+| `PERMISSION_DENIED` | Handler để lọt `PermissionDeniedError`, ví dụ khi ghi trong action `"read"`. Trong lúc activate version mới, lời gọi có thể thất bại trong chốc lát với `details.reason` là `"PROJECT_POLICY_NOT_APPROVED"` trước khi chạy; lần gửi lại của bên gọi sẽ chạy. |
+| `INTERNAL_ERROR` | Lỗi khác. |
+
+Lời gọi cũng có thể bị từ chối trước khi action chạy: không tìm thấy action trong
+version đang active hoặc action không mở cho bên gọi đó, người mà action sẽ chạy dưới
+danh tính không còn là thành viên đang hoạt động, lời gọi không có người dùng không
+được identity policy cho phép, ngân sách tự động hoá đã hết, cùng `action.runId` đã được
+dùng với input khác hoặc bởi bên gọi hay danh tính khác, hoặc Cogover tạm thời không
+sẵn sàng (bên gọi sẽ thử lại).
+
+## Process và AI Agent
+
+`processes` khởi chạy Process của Cogover và `agents` khởi chạy lượt chạy AI Agent
+từ code của project. Cả hai là thành phần trong context của script và route, trigger
+after-change, background job và [Custom Module Action](#custom-module-action). Trigger
+before-change bị từ chối bằng `PermissionDeniedError`
+(`details.reason === "TRIGGER_READ_ONLY"`).
+
+Cả hai chạy nền. `start` trả về ngay khi lượt chạy Process hoặc lượt chạy agent được
+tạo, không bao giờ đợi nó kết thúc. Để xử lý kết quả, hãy chỉ định một background job
+của project trong `onComplete` hoặc `onResult`: Cogover enqueue job đó khi lượt chạy
+kết thúc. `get` đọc trạng thái hiện tại của lượt chạy mà project đã khởi chạy.
+
+Ví dụ này giả định `workspace.d.ts` đã khai báo Object `lead` và field dùng bên dưới.
+
+```typescript
+import { defineJob, defineScript } from "@cogover/sdk";
+import type { CogoverRecordId, ProcessCompletionJobPayload } from "@cogover/sdk";
+
+export default defineScript(async ({ input, processes }) => {
+  const { leadId } = input as { leadId: string };
+  const { instanceId, duplicate } = await processes.start("PIXXXXXXXXXXXX", {
+    input: { lead_id: leadId },
+    instanceName: `Approve discount ${leadId}`,
+    idempotencyKey: `discount:${leadId}`,
+    onComplete: { job: "after_approval", payload: { leadId } },
+  });
+  return { instanceId, duplicate };
+});
+
+export const jobs = [
+  // Payload của job là JSON: ID gửi trong onComplete.payload quay về dưới dạng chuỗi.
+  defineJob<ProcessCompletionJobPayload<{ leadId: CogoverRecordId }>>({ key: "after_approval" }, async ({ payload, data }) => {
+    if (payload?.payload == null || payload.process.state !== "COMPLETED") return;
+    const approved = payload.process.output?.approved === true;
+    await data.object("lead").records.update(payload.payload.leadId, { discount_approved: approved });
+  }),
+];
+```
+
+### Quyền
+
+Identity policy của project quyết định project được dùng những Process và AI Agent
+nào; quản trị viên Workspace duyệt các mục này như phần còn lại của policy. Không có
+mục `processes` thì mọi lời gọi `processes` ném `PermissionDeniedError` với
+`details.reason` là `"PROCESSES_NOT_ALLOWED"`; không có mục `agents` thì mọi lời gọi
+`agents` ném lỗi đó với `"AGENTS_NOT_ALLOWED"`.
+
+```json
+{
+  "processes": {
+    "processes": { "mode": "ONLY", "processInfoIds": ["PIXXXXXXXXXXXX"] },
+    "allowSystem": false
+  },
+  "agents": {
+    "agents": { "mode": "ALL", "agentIds": [] },
+    "allowSystem": false,
+    "maxRunsPerDay": 200,
+    "allowAutoApprove": false
+  }
+}
+```
+
+| Field | Ý nghĩa |
+|---|---|
+| `processes.processes` | Những Process mà `processes.start` được khởi chạy: `mode` là `ALL`, `ALL_EXCEPT` hoặc `ONLY`, và ID của Process trong `processInfoIds`. |
+| `processes.allowSystem` | Cho phép lần thực thi không có người dùng khởi chạy các Process đã chọn. Mặc định `false`. |
+| `agents.agents` | Những AI Agent mà `agents.start` được chạy: `mode` và ID của agent trong `agentIds`. |
+| `agents.allowSystem` | Cho phép lần thực thi không có người dùng chạy các agent đã chọn, khi đó agent dùng danh tính riêng của nó. Mặc định `false`. |
+| `agents.maxRunsPerDay` | Số lời gọi `agents.start` tối đa của project trong một ngày UTC, từ 1 đến 10000. Mặc định `200`. |
+| `agents.allowAutoApprove` | Cho phép `agents.start` với `approvalPolicy: "autoApprove"`. Mặc định `false`; lần thực thi không có người dùng không bao giờ dùng được. |
+
+- Lần thực thi có người dùng khởi chạy Process hoặc chạy agent dưới danh tính người
+  dùng đó, và Cogover vẫn kiểm tra người dùng có được khởi chạy Process đó hoặc chạy
+  agent đó không; bị từ chối thì ném `PermissionDeniedError` với `details.reason` là
+  `"PROCESS_START_DENIED"` hoặc `"AGENT_RUN_DENIED"`. Người dùng không có tài khoản
+  Workspace không khởi chạy được Process.
+- Lần thực thi không có người dùng, như job theo lịch hoặc lời gọi inbound webhook,
+  cần `allowSystem: true` trong mục tương ứng. Process khởi chạy theo cách này không có
+  người khởi tạo.
+- `get` cũng cần có mục tương ứng, nhưng không cần được chọn: nó chỉ đọc lượt chạy mà
+  chính project đã khởi chạy.
+
+### `processes.start(processInfoId, options?): Promise<ProcessStartResult>`
+
+```typescript
+interface ProcessesApi {
+  start(processInfoId: string, options?: ProcessStartOptions): Promise<ProcessStartResult>;
+  get(instanceId: string): Promise<ProcessInstanceState>;
+}
+
+interface ProcessStartOptions {
+  readonly input?: Record<string, unknown>;
+  readonly instanceName?: string;
+  readonly idempotencyKey?: string;
+  readonly onComplete?: ProcessCompletion;
+}
+
+interface ProcessCompletion {
+  readonly job: string;
+  readonly payload?: unknown;
+}
+
+interface ProcessStartResult {
+  readonly instanceId: string;
+  readonly duplicate: boolean;
+}
+```
+
+`processInfoId` là ID của một Process, chính là ID mà identity policy liệt kê, không
+phải ID của một version hay lượt chạy của nó: từ 1 đến 64 chữ cái, chữ số, `_` hoặc
+`-`. Cogover khởi chạy version đã kích hoạt và đã xuất bản của Process đó, và Process
+phải là Process Normal flow.
+
+| Tuỳ chọn | Quy tắc và ý nghĩa |
+|---|---|
+| `input` | Object JSON tối đa 65.536 byte UTF-8: giá trị của các biến Process được đánh dấu input, theo tên biến. |
+| `instanceName` | Tên của lượt chạy mới, từ 1 đến 255 ký tự. |
+| `idempotencyKey` | Bắt đầu bằng chữ cái hoặc chữ số và có tối đa 200 chữ cái, chữ số, `.`, `_`, `:` hoặc `-`. Xem [Idempotency và thử lại](#idempotency-và-thử-lại). |
+| `onComplete` | `job` là key của một job mà version đang active khai báo; `payload` là giá trị JSON tuỳ chọn tối đa 8.192 byte UTF-8 được chuyển cho job đó. |
+
+Kết quả là `instanceId` của lượt chạy mới, và `duplicate: true` khi một lần start
+trước với cùng `idempotencyKey` đã trả về lượt chạy đó thay vì tạo mới. Tham số không
+hợp lệ ném `ValidationError` trước khi gửi bất cứ gì.
+
+### `processes.get(instanceId): Promise<ProcessInstanceState>`
+
+```typescript
+interface ProcessInstanceState {
+  readonly instanceId: string;
+  readonly processId: string;
+  readonly processInfoId: string;
+  readonly state: string;
+  readonly startedAt: number | null;
+  readonly finishedAt: number | null;
+}
+```
+
+`state` là `NOT_STARTED`, `RUNNING`, `PAUSED`, `COMPLETED`, `FAILED` (lượt chạy dừng vì
+lỗi), `CANCELED` hoặc `DELETED`. `startedAt` và `finishedAt` là Unix millisecond, hoặc
+`null` trước khi lượt chạy bắt đầu và trong lúc nó đang chạy. Lượt chạy không do
+project này khởi chạy ném `NotFoundError`.
+
+### Job nhận kết quả Process
+
+```typescript
+interface ProcessCompletionJobPayload<TPayload = unknown> {
+  readonly payload: TPayload | null;
+  readonly process: {
+    readonly instanceId: string;
+    readonly processId: string;
+    readonly processInfoId: string;
+    readonly state: "COMPLETED" | "CANCELED" | "DELETED" | "FAILED";
+    readonly output: Record<string, unknown> | null;
+    readonly finishedAt: number | null;
+  };
+}
+```
+
+Khi lượt chạy được khởi chạy với `onComplete` kết thúc, Cogover enqueue một lần chạy
+của job với giá trị này làm `payload`: `payload` là `onComplete.payload` (hoặc
+`null`), còn `process.output` chứa giá trị của các biến Process được đánh dấu output,
+hoặc `null` khi không có hoặc lớn hơn 48 KiB. Xem
+[Quy tắc của job nhận kết quả](#quy-tắc-của-job-nhận-kết-quả) để biết job chạy thế nào.
+
+### `agents.start(agentId, options): Promise<AgentStartResult>`
+
+```typescript
+interface AgentsApi {
+  start(agentId: string, options: AgentStartOptions): Promise<AgentStartResult>;
+  get<TResult = unknown>(runId: string): Promise<AgentRunState<TResult>>;
+}
+
+interface AgentStartOptions {
+  readonly instruction: string;
+  readonly variables?: Readonly<Record<string, string | number | boolean>>;
+  readonly records?: readonly AgentRecordReference[];
+  readonly resultSchema?: ObjectSchema<ObjectShape, false>;
+  readonly runAs?: "caller" | "agent";
+  readonly approvalPolicy?: "deny" | "autoApprove";
+  readonly timeoutSeconds?: number;
+  readonly idempotencyKey?: string;
+  readonly onResult?: AgentResultCompletion;
+}
+
+interface AgentRecordReference {
+  readonly objectSlug: string;
+  readonly recordId: string;
+  readonly withActivities?: boolean;
+}
+
+interface AgentResultCompletion {
+  readonly job: string;
+  readonly payload?: unknown;
+}
+
+interface AgentStartResult {
+  readonly runId: string;
+  readonly duplicate: boolean;
+}
+```
+
+```typescript
+const { runId } = await agents.start("AGXXXXXXXXXXXX", {
+  instruction: "Classify this email as a sales or a support request.",
+  variables: { subject: message.subject, body: message.body },
+  records: [{ objectSlug: "lead", recordId: leadId, withActivities: true }],
+  resultSchema: s.object({ category: s.enum(["sales", "support"]) }),
+  idempotencyKey: `classify:${message.id}`,
+  onResult: { job: "save_classification", payload: { messageId: message.id } },
+});
+```
+
+`agentId` là ID của một AI Agent: từ 1 đến 64 chữ cái, chữ số, `_` hoặc `-`. Mỗi lượt
+chạy mở một cuộc hội thoại mới của agent.
+
+| Tuỳ chọn | Quy tắc và ý nghĩa |
+|---|---|
+| `instruction` | Bắt buộc. Việc agent phải làm, từ 1 đến 20.000 ký tự, không để trống. |
+| `variables` | Tối đa 50 giá trị có tên mà agent dùng được; tên bắt đầu bằng chữ cái và có tối đa 64 chữ cái, chữ số hoặc `_`; giá trị là chuỗi tối đa 4.000 ký tự, số hữu hạn hoặc boolean. |
+| `records` | Tối đa 20 record mà agent đọc làm ngữ cảnh. `objectSlug` là slug của Object, `recordId` có từ 1 đến 128 chữ cái, chữ số, `_` hoặc `-`, và `withActivities: true` cho agent đọc thêm activity của record. |
+| `resultSchema` | Hình dạng của kết quả có cấu trúc, tạo bằng `s.object` (xem [Schema builder](#schema-builder-s)). Agent phải trả kết quả khớp schema; nếu không, lượt chạy thất bại. |
+| `runAs` | `"caller"` (mặc định): agent hành động dưới danh tính người dùng của lần thực thi này. `"agent"`: agent dùng danh tính riêng của nó, và agent phải có danh tính đó. Lần thực thi không có người dùng phải dùng `"agent"`. |
+| `approvalPolicy` | `"deny"` (mặc định): tool cần người phê duyệt sẽ không chạy, và agent được báo điều đó. `"autoApprove"`: các tool đó chạy không cần phê duyệt; cần `allowAutoApprove: true` trong identity policy và lần thực thi có người dùng, nếu không `start` ném `PermissionDeniedError` với `details.reason` là `"AGENT_AUTO_APPROVE_NOT_ALLOWED"`. |
+| `timeoutSeconds` | Số nguyên từ 10 đến 1800; mặc định `300`. Giới hạn thời gian của lượt chạy. |
+| `idempotencyKey` | Cùng quy tắc như với `processes.start`. |
+| `onResult` | `job` là key của một job mà version đang active khai báo; `payload` là giá trị JSON tuỳ chọn tối đa 8.192 byte UTF-8 được chuyển cho job đó. |
+
+Kết quả là `runId` của lượt chạy mới, và `duplicate: true` khi một lần start trước với
+cùng `idempotencyKey` đã trả về lượt chạy đó thay vì tạo mới. Tham số không hợp lệ ném
+`ValidationError` trước khi gửi bất cứ gì.
+
+### `agents.get(runId): Promise<AgentRunState>`
+
+```typescript
+interface AgentRunState<TResult = unknown> {
+  readonly runId: string;
+  readonly status: string;
+  readonly text: string | null;
+  readonly result: TResult | null;
+  readonly error: { readonly code: string; readonly message: string } | null;
+}
+```
+
+`status` là `QUEUED` hoặc `RUNNING` khi lượt chạy đang diễn ra, sau đó là trạng thái
+cuối như `COMPLETED`, `FAILED`, `TIMEOUT` hoặc `CANCELLED`. `text` là câu trả lời của
+agent (tối đa 32 KiB), `result` là kết quả có cấu trúc khớp `resultSchema`, và `error`
+là lý do lượt chạy thất bại; mỗi giá trị là `null` khi không có. `error.code` là một
+trong `RESULT_SCHEMA_MISMATCH`, `TIMEOUT`, `CALLER_TIMEOUT`, `CANCELLED`, `MAX_TURNS`,
+`GUARDRAIL_REJECTED`, `APPROVAL_DENIED`, `SERVER_RESTARTED`, `SESSION_BUSY`,
+`SESSION_EVICTED`, `AGENT_INACTIVE`, `AGENT_ACCESS_DENIED`, `AGENT_CONFIG_INVALID`,
+`CONFIG_LOAD_FAILED`, `LLM_HTTP_ERROR`, `LLM_NETWORK`, `LLM_RESPONSE_FAILED`, `LLM_PARSE`,
+`OUTPUT_TRUNCATED`, `INTERNAL_ERROR`, hoặc `AGENT_ERROR` với mọi lý do khác, và
+`error.message` là mô tả tiếng Anh cố định của mã đó: nội dung từ nhà cung cấp mô hình
+AI không bao giờ được chuyển tiếp. Job `onResult` nhận cùng `error` đó. Lượt chạy không
+do project này khởi chạy ném `NotFoundError`.
+
+### Job nhận kết quả AI Agent
+
+```typescript
+interface AgentResultJobPayload<TPayload = unknown, TResult = unknown> {
+  readonly payload: TPayload | null;
+  readonly agentRun: {
+    readonly runId: string;
+    readonly status: string;
+    readonly text: string | null;
+    readonly result: TResult | null;
+    readonly error: { readonly code: string; readonly message: string } | null;
+    readonly usage: Record<string, unknown> | null;
+  };
+}
+```
+
+Khi lượt chạy được khởi chạy với `onResult` kết thúc, Cogover enqueue một lần chạy của
+job với giá trị này làm `payload`: `payload` là `onResult.payload` (hoặc `null`),
+`agentRun.text` bị cắt còn 32 KiB, `agentRun.result` là `null` khi lớn hơn 16 KiB, và
+`agentRun.usage` cho biết `inputTokens`, `outputTokens`, `iterations` và `durationMs`.
+
+### Quy tắc của job nhận kết quả
+
+- Job được chỉ định trong `onComplete` hoặc `onResult` chạy như mọi job được enqueue
+  (xem [Quy tắc thực thi job](#quy-tắc-thực-thi-job)): `job.source` là
+  `"enqueue"`, job được giao ít nhất một lần và được thử lại khi ném `RetryableError`.
+  Lịch sử lần chạy ghi job với `enqueuedBy` là `process:<instanceId>` hoặc
+  `agent:<runId>`.
+- Job chạy dưới danh tính người dùng của lần thực thi đã gọi `start` (hoặc không có
+  người dùng khi lần thực thi đó không có). Job nhận ít hơn lần thực thi đó hai bước
+  ngân sách tự động hoá (một bước để tới Process hoặc agent, một bước để quay về), và
+  tiếp nối chuỗi job của lần thực thi đó, nên job mà Process hoặc agent của nó kết thúc
+  bằng việc khởi chạy lại chính job đó sẽ dừng như job tự enqueue chính nó. Khi không
+  còn bước nào, hoặc chuỗi quá dài, kết quả sẽ không được giao.
+- Job phải được version đang active khai báo khi gọi `start`; nếu không, `start` ném
+  `ValidationError`. Nếu khi lượt chạy kết thúc mà version đang active không còn khai
+  báo job, hoặc project đã có 10.000 lần chạy job đang chờ, kết quả sẽ không được giao.
+
+### Idempotency và thử lại
+
+- Không có `idempotencyKey` thì mỗi lần `start` tạo một lượt chạy mới.
+- Có key thì lần `start` thứ hai với cùng key trong cùng project trả về lượt chạy đầu
+  tiên với `duplicate: true`. Cogover giữ key trong lúc lượt chạy còn hoạt động và 7
+  ngày sau khi nó kết thúc. Dùng lại key cho một Process hoặc agent khác sẽ ném
+  `ValidationError`. Key thuộc về danh tính đã dùng nó đầu tiên: người dùng khác của
+  project, hoặc lần thực thi không có người dùng, gửi cùng key sẽ nhận
+  `CogoverApiError` với `code: "IDEMPOTENCY_CONFLICT"`, không bao giờ nhận lượt chạy của
+  danh tính kia. Hãy đưa người dùng vào key khi nhiều người có thể dùng chung key.
+- `RetryableError` báo lỗi tạm thời. Khi `details.writesMayHaveCompleted` là `false`,
+  chưa có gì được khởi chạy. Khi giá trị này là `true`, lượt chạy có thể đã được tạo:
+  hãy thử lại sau với cùng `idempotencyKey`, Cogover sẽ hoàn tất lần start đó thay vì
+  tạo lượt chạy thứ hai; lần thử lại quá sớm có thể lại ném `RetryableError`. Sau một
+  lần từ chối dứt khoát, như `ValidationError` hoặc `PermissionDeniedError`, key được
+  dùng lại.
+- Trong job, key suy ra từ `payload` của job hoặc `job.id`, và trong action, key suy ra
+  từ `action.runId`, giúp handler được thử lại không khởi chạy cùng một việc hai lần.
+
+### Giới hạn
+
+- Mỗi lời gọi `processes` và `agents` là một capability call (xem
+  [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
+- Một lần thực thi gọi `processes.start` tối đa 20 lần và `agents.start` tối đa 5 lần.
+  Vượt quá sẽ ném `RateLimitError` không có `details.budget`.
+- `agents.start` còn được tính vào `maxRunsPerDay` của identity policy, và dịch vụ AI
+  Agent có thể áp quota riêng; cả hai đều ném `RateLimitError`. Một project còn được
+  khởi chạy tối đa 1.000 Process trong một ngày UTC. Lần start bị dịch vụ Process hoặc
+  AI Agent từ chối không bị tính.
+- Khởi chạy một Process hoặc một lượt chạy AI Agent dùng một bước của ngân sách tự động
+  hoá, chính ngân sách giới hạn chuỗi record trigger. Khi không còn bước nào, `start`
+  ném `CogoverApiError` với `code: "MAX_HOP_EXCEEDED"`.
+- Các AI Agent khởi chạy lẫn nhau, qua action hoặc qua job nhận kết quả, được lồng tối
+  đa 3 cấp; sâu thêm một cấp thì `agents.start` ném `CogoverApiError` với
+  `code: "AGENT_DEPTH_EXCEEDED"`.
+- Action `"read"` và phiên phát triển local chỉ đọc được gọi `get` nhưng không được
+  gọi `start`: `start` ném `PermissionDeniedError`.
+
+### Lỗi
+
+| Lỗi | `code` | Khi nào |
+|---|---|---|
+| `ValidationError` | `VALIDATION_ERROR` | Tham số không hợp lệ; job `onComplete` hoặc `onResult` không được version đang active khai báo; `idempotencyKey` đã dùng cho Process hoặc agent khác; hoặc dịch vụ Process hay AI Agent từ chối lần start, ví dụ biến input không tồn tại (`details.upstreamCode` cho biết lý do). |
+| `NotFoundError` | `NOT_FOUND` | Process không tồn tại hoặc không active, agent không tồn tại, hoặc `get` chỉ định lượt chạy mà project này không khởi chạy. |
+| `PermissionDeniedError` | `PERMISSION_DENIED` | `details.reason` là `PROCESSES_NOT_ALLOWED`, `AGENTS_NOT_ALLOWED` hoặc `AGENT_AUTO_APPROVE_NOT_ALLOWED` (identity policy), `PROCESS_START_DENIED` hoặc `AGENT_RUN_DENIED` (người dùng không được khởi chạy), hoặc `TRIGGER_READ_ONLY` (trigger before-change); hoặc lần thực thi chỉ đọc. |
+| `RateLimitError` | `RATE_LIMITED` | Giới hạn của một lần thực thi, `maxRunsPerDay`, giới hạn số Process khởi chạy mỗi ngày hoặc quota của dịch vụ AI Agent. |
+| `RetryableError` | `RETRYABLE` | Lỗi tạm thời; xem [Idempotency và thử lại](#idempotency-và-thử-lại). |
+| `CogoverApiError` | `MAX_HOP_EXCEEDED` | Ngân sách tự động hoá đã hết. |
+| `CogoverApiError` | `IDEMPOTENCY_CONFLICT` | Một danh tính khác của project đã dùng `idempotencyKey` này. |
+| `CogoverApiError` | `AGENT_DEPTH_EXCEEDED` | Các AI Agent sẽ gọi lẫn nhau sâu quá 3 cấp. |
+| `CogoverApiError` | `NOT_SUPPORTED` | `onComplete` hoặc `onResult` trong phiên phát triển local. |
+| `CogoverApiError` | `PROCESSES_DISABLED`, `AGENTS_DISABLED` | Tính năng không khả dụng trong môi trường này. |
+
+### Phát triển local
+
+Khi code chạy local bằng Cogover Dev CLI, `start` tạo lượt chạy Process và lượt chạy
+agent thật, dưới danh tính người dùng của Project key, và phiên chỉ đọc sẽ từ chối
+lời gọi này. `onComplete` và `onResult` bị từ chối bằng `CogoverApiError`
+`code: "NOT_SUPPORTED"`, vì job của chúng chỉ chạy trong version đã publish: hãy thử
+lần start mà không có hai tuỳ chọn này và đọc kết quả bằng `get`, rồi publish project
+để thử job.
+
 ## Schema API
 
 `SchemaApi<Schema>.object(slug)` đọc metadata Object và trả:
@@ -3320,8 +4090,10 @@ Các lỗi dịch vụ được SDK map sang các error trên. Các error giữ:
 
 `RetryableError` (`code: "RETRYABLE"`) báo một lỗi tạm thời. SDK ném lỗi này cho thao
 tác ghi record mà trigger before-change không kiểm tra được (`details.reason` là
-`"TRIGGER_FAILED"`, xem [Record trigger](#validate-và-sửa-record)), và
-code của project tự ném lỗi này. Handler của trigger after-change hoặc job handler ném
+`"TRIGGER_FAILED"`, xem [Record trigger](#validate-và-sửa-record)) và
+cho lần khởi chạy Process hoặc AI Agent thất bại tạm thời (xem
+[Process và AI Agent](#idempotency-và-thử-lại)), và code của
+project tự ném lỗi này. Handler của trigger after-change hoặc job handler ném
 lỗi này để báo một lỗi tạm thời, và Cogover sẽ chạy lại handler sau (xem
 [Quy tắc thực thi after-change](#quy-tắc-thực-thi-after-change) và
 [Quy tắc thực thi job](#quy-tắc-thực-thi-job)). Ở những nơi khác lỗi này không có
@@ -3346,6 +4118,20 @@ năng bị tắt, và với `CogoverApiError` có `code` là `DUPLICATE_IN_PROGR
 một lời gọi trước đó cùng `idempotencyKey` vẫn đang gửi. Hộp thư gửi không được
 Project policy cho phép được báo bằng `PermissionDeniedError` có `details.reason` là
 `"EMAIL_SENDER_NOT_GRANTED"`.
+
+`processes` và `agents` thất bại với `ValidationError`, `NotFoundError`,
+`PermissionDeniedError`, `RateLimitError` hoặc `RetryableError` như mô tả ở
+[Process và AI Agent](#lỗi). Process hoặc agent không được
+Project policy cho phép được báo bằng `PermissionDeniedError` có `details.reason` là
+`"PROCESSES_NOT_ALLOWED"` hoặc `"AGENTS_NOT_ALLOWED"`, và `approvalPolicy: "autoApprove"`
+không được cho phép được báo với `"AGENT_AUTO_APPROVE_NOT_ALLOWED"`. Hai API này còn thất
+bại với `CogoverApiError` có `code` là `MAX_HOP_EXCEEDED` khi ngân sách tự động hoá đã
+hết, `IDEMPOTENCY_CONFLICT` khi một danh tính khác của project đã dùng `idempotencyKey`,
+`AGENT_DEPTH_EXCEEDED` khi các AI Agent khởi chạy lẫn nhau quá sâu, `NOT_SUPPORTED` với
+`onComplete` hoặc `onResult` trong phiên phát triển local, và `PROCESSES_DISABLED` hoặc
+`AGENTS_DISABLED` khi tính năng không khả dụng. Node Process hoặc AI Agent gọi một
+Custom Module Action nhận các lỗi mô tả ở
+[Lỗi bên gọi nhận được](#lỗi-bên-gọi-nhận-được).
 
 Script có thể bắt lỗi và tự chọn mã/thông báo trả cho client, không cần forward lỗi gốc.
 Thông báo public trong `msg`, `message` và các field tương tự luôn phải viết bằng
@@ -3396,7 +4182,8 @@ Không trả thông báo lỗi gốc, stack trace hoặc details tuỳ ý.
 `writesMayHaveCompleted` là true nếu lần thực thi đã gửi ít nhất một lời gọi có thể
 thay đổi dữ liệu bên ngoài, kể cả khi thao tác sau đó thất bại: ghi record,
 `state.set` hoặc `state.delete`, mọi lời gọi `locks` (kể cả `acquire` trả `null`), push
-message, `notifications.send`, `email.send`, hoặc `fetch` có method khác `GET` và `HEAD`.
+message, `notifications.send`, `email.send`, `jobs.enqueue`, `processes.start`,
+`agents.start`, hoặc `fetch` có method khác `GET` và `HEAD`.
 Vì vậy `LockUnavailableError` thoát khỏi script luôn báo `true`. Đây là cảnh báo thận
 trọng, không xác nhận ghi thành công.
 Lỗi không xác định và lỗi giới hạn tài nguyên vẫn trả HTTP 422 chung.
@@ -3415,8 +4202,8 @@ chúng do nền tảng thiết lập và có thể khác giữa các môi trư�
 | Record ghi (`recordsWritten`) | 10.000 | — | 10.000 | 50.000 |
 
 - **Capability call.** Mỗi lời gọi `data`, `schema`, `state`, `locks`, `push`,
-  `notifications`, `email`, `jobs`, `secrets` hoặc `fetch`, và mỗi lần đọc `org` có
-  `withDisplay: true`, tính một lần.
+  `notifications`, `email`, `jobs`, `secrets`, `fetch`, `processes` hoặc `agents`, và mỗi
+  lần đọc `org` có `withDisplay: true`, tính một lần.
 - **Lời gọi cục bộ.** Lời gọi `crypto` và lần đọc `org` không có `withDisplay` do chính
   Cogover xử lý, nên tính vào ngân sách riêng. Key `crypto` dạng `{ secret: name }` vẫn là
   một lần đọc secret (xem quota bên dưới).
@@ -3437,7 +4224,8 @@ chúng do nền tảng thiết lập và có thể khác giữa các môi trư�
   lời gọi bị từ chối sẽ bị kết thúc với `code: "RATE_LIMITED"`; script không bắt được lỗi này.
 - Một HTTP route có 8 giây wall-clock, tính từ lúc handler bắt đầu chạy, kể cả thời gian
   chờ capability call, chờ lock hoặc chờ server bên ngoài. Record trigger dùng
-  `timeoutMs` của nó, background job dùng `timeoutMs` của job. Vượt thời gian sẽ kết thúc
+  `timeoutMs` của nó, background job dùng `timeoutMs` của job. Custom Module Action có
+  ngân sách của một HTTP route và `timeoutMs` riêng, tối đa 8 giây. Vượt thời gian sẽ kết thúc
   toàn bộ lần thực thi: script không bắt được, và HTTP route trả response HTTP 422 chung.
   Các capability call của một lần thực thi chạy lần lượt, kể cả khi được bắt đầu cùng lúc
   bằng `Promise.all`.
@@ -3452,8 +4240,9 @@ chúng do nền tảng thiết lập và có thể khác giữa các môi trư�
   HTTP 429 và `code: "RATE_LIMITED"` trước khi chạy bất cứ gì; hãy thử lại sau. Lỗi này
   không có `details.budget`.
 
-Một số API còn có quota riêng cho mỗi lần thực thi, như 20 lời gọi `fetch` hoặc 20 lần
-đọc secret. Vượt các quota này cũng được báo bằng `RateLimitError`.
+Một số API còn có quota riêng cho mỗi lần thực thi, như 20 lời gọi `fetch`, 20 lần đọc
+secret, 20 lời gọi `processes.start` hoặc 5 lời gọi `agents.start`. Vượt các quota này
+cũng được báo bằng `RateLimitError`.
 
 ## Đọc giới hạn trong code
 
@@ -3481,7 +4270,7 @@ interface LimitCounter {
 ```
 
 `limits` được package export và cũng là thành phần `limits` trong context của script,
-route, record trigger và background job. `limits.usage()` trả các ngân sách của lần thực
+route, record trigger, background job và Custom Module Action. `limits.usage()` trả các ngân sách của lần thực
 thi hiện tại tính đến lời gọi Cogover gần nhất: việc đọc không phải capability call.
 `remaining` là `limit - used` và không nhỏ hơn 0. `elapsedMs` là thời gian từ lúc handler
 bắt đầu tính đến lời gọi gần nhất đó, còn `timeLimitMs` là thời gian wall-clock lần thực

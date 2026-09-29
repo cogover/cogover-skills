@@ -15,6 +15,7 @@ Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi 
 | `WEB_SEARCH` | `PERPLEXITY`, `GEMINI` | Tìm thông tin trên web; `systemInstruction` hướng dẫn phạm vi tìm kiếm và cách tổng hợp |
 | `KNOWLEDGE_BASE` | `QDRANT` | Tra cứu tài liệu đã index trong Data của Workspace; cấu hình danh mục và ngưỡng truy xuất |
 | `DEEP_RESEARCH` | `DEEP_RESEARCH` | Nghiên cứu/tổng hợp sâu dựa trên công cụ kiến thức; cần Tool KNOWLEDGE_BASE khả dụng cùng lúc |
+| `CUSTOM_MODULE` | `INVOKE_ACTION` | Gọi một Custom Module Action: logic riêng của Workspace viết trong Custom Backend Module, có schema input/output. Config `{"projectSlug","actionKey"}`; xem [CUSTOM_MODULE](#custom_module) |
 
 `RECORD`, `ACTIVITY`, `PROCESS` nhận `type` là mảng để chọn nhiều thao tác; các category còn lại dùng một chuỗi. Khi tái sử dụng Tool, giữ nguyên định dạng hợp lệ được trả về. Không trộn type của các category trong một Tool.
 
@@ -91,7 +92,7 @@ Form hỗ trợ các cơ chế xác thực:
 
 Điền secret bằng kênh credential được phép; không đưa vào mô tả, Skill, prompt hay file public. Nếu sửa Tool dùng chung, không thay toàn bộ `config` bằng một mẫu làm mất cấu hình/credential hiện hữu. Kiểm tra URL, method và API đích trước khi gọi, không cho phép người chat tự đổi đích gửi credential.
 
-**Giới hạn cần biết:** contract tạo/cập nhật Tool hiện nêu trong tài liệu này không có trường khai báo parameter schema. Chỉ có `description` hoặc nhét `parameters` tùy ý vào payload không bảo đảm Agent có schema đầu vào. Với HTTP cần tham số động, ưu tiên Tool đã có schema đúng; nếu cần tạo schema mới, báo người dùng cung cấp [contract schema HTTP Tool](api-gaps.md). Không chuyển sang trình duyệt hoặc tự thêm trường không được tài liệu hỗ trợ. Không tuyên bố tích hợp có tham số đã hoàn tất khi mới lưu URL/auth. HTTP không tham số vẫn phải test request và phản hồi thực tế.
+**Giới hạn cần biết:** contract tạo/cập nhật Tool HTTP hiện nêu trong tài liệu này không có trường khai báo parameter schema. Chỉ có `description` hoặc nhét `parameters` tùy ý vào payload không bảo đảm Agent có schema đầu vào. Với HTTP cần tham số động, ưu tiên Tool đã có schema đúng; nếu cần tạo schema mới, báo người dùng cung cấp [contract schema HTTP Tool](api-gaps.md). Không chuyển sang trình duyệt hoặc tự thêm trường không được tài liệu hỗ trợ. Không tuyên bố tích hợp có tham số đã hoàn tất khi mới lưu URL/auth. HTTP không tham số vẫn phải test request và phản hồi thực tế. Khi logic cần tham số thuộc về Workspace (tính toán, kiểm tra, đọc/ghi dữ liệu theo quy tắc riêng, gọi hệ thống ngoài bằng secret của Workspace), dùng Tool [CUSTOM_MODULE](#custom_module): action khai báo schema input chặt và Agent nhận schema đó.
 
 ## Web search và kiến thức
 
@@ -120,3 +121,65 @@ KNOWLEDGE_BASE config gợi ý theo form:
 Rerank sắp xếp lại ứng viên; `rerankCandidateTopK` là lượng ứng viên, `rerankFinalTopK` là số kết quả giữ lại. Ngưỡng cao hơn có thể giảm kết quả không liên quan nhưng cũng bỏ sót tài liệu. Test với câu hỏi biết trước đáp án trước khi chỉnh ngưỡng. Các giá trị trên là điểm khởi đầu, không phải bằng chứng truy xuất đạt chất lượng.
 
 DEEP_RESEARCH dùng config cơ bản `{}`. Gắn cùng KNOWLEDGE_BASE vào Skill CORE khi cần sử dụng ổn định ngay từ đầu; kiểm tra Tool khả dụng trước khi test. Chỉ bật khi cần nghiên cứu sâu và chấp nhận thời gian xử lý dài hơn. Nhu cầu tra cứu tài liệu thông thường dùng KNOWLEDGE_BASE. Tránh nhiều Tool KNOWLEDGE_BASE cùng type nhưng phạm vi khác nhau trong cùng Agent; dùng một cấu hình danh mục rõ ràng, kiểm thử lại sau khi thêm Skill.
+
+## CUSTOM_MODULE
+
+Tool gọi một **Custom Module Action**: thao tác ngắn khai báo bằng `defineAction` trong Custom Backend Module của Workspace, có schema input/output. Dùng khi Agent cần logic riêng của Workspace (tính giá, chấm điểm, kiểm tra điều kiện, đọc/ghi dữ liệu theo quy tắc nghiệp vụ, gọi hệ thống ngoài bằng secret của Workspace) mà RECORD/PROCESS/HTTP không đáp ứng. Viết, sửa và publish action thuộc [$cogover-custom-module](../../cogover-custom-module/SKILL.md); mục này chỉ tạo Tool.
+
+### Chọn action
+
+Action phải thuộc version **đang active** của module và có `exposeTo` chứa `"agent"`. Liệt kê bằng cùng phiên Web App (mọi thành viên đang hoạt động đọc được):
+
+```http
+GET https://{workspace-domain}/api/v1/ts-projects/actions?consumer=agent
+x-req-type: 9
+x-req-service: 4
+```
+
+Route chi tiết `GET /api/v1/ts-projects/actions/{projectSlug}/{actionKey}?consumer=agent` trả `data.action` hoặc `404` `ACTION_NOT_FOUND`. Mỗi action có `projectSlug`, `key`, `label`, `description`, `effect` (`read` chỉ đọc, `write` được ghi), `timeoutMs`, `inputSchema`, `outputSchema`; contract đầy đủ ở mục [Custom Module Action](../../cogover-custom-module/references/custom-backend-module-api-reference.md#custom-module-action-1) của Backend API Reference. Không đoán `projectSlug`/`actionKey`; action cần chưa có hoặc thiếu input thì chuyển yêu cầu sang `$cogover-custom-module`.
+
+### Tạo Tool
+
+Thao tác 40, `config` là chuỗi JSON:
+
+```json
+{
+  "name":"Chấm điểm lead",
+  "slug":"score_lead_tool",
+  "description":"",
+  "category":"CUSTOM_MODULE",
+  "type":"INVOKE_ACTION",
+  "config":"{\"projectSlug\":\"{project-slug}\",\"actionKey\":\"{action-key}\"}",
+  "status":true,
+  "accessControls":[{"functions":["VIEW","EXECUTE"],"type":"role","option":2,"items":["{operator-role-id}"]}]
+}
+```
+
+- `projectSlug` khớp `^[A-Za-z_][A-Za-z0-9_]{0,99}$`, `actionKey` khớp `^[a-z][a-z0-9_]{0,63}$`; thiếu key trả `4020`, sai định dạng trả `4021`; key lạ bị bỏ.
+- Server kiểm tra action khi tạo, hoặc khi sửa/nhân bản đổi action hay category, rồi lưu `config` là `{"projectSlug","actionKey","effect"}`: `effect` do server đặt theo action (giá trị client gửi bị bỏ). Đọc lại config bằng thao tác 43.
+- Không dùng `parameters`: agent nhận `inputSchema` của action lúc chạy, gồm cả `description` của từng property. Chất lượng gọi Tool phụ thuộc mô tả action và các đoạn `describe` trong schema; mô tả chưa đủ thì sửa ở module.
+- `description` của Tool không bắt buộc với category này. Để trống thì Agent đọc mô tả của action; chỉ điền khi cần giới hạn thêm cách dùng trong Agent này, không lặp lại hay mâu thuẫn với mô tả action. Tên công cụ Agent thấy lấy từ `slug` của Tool.
+- `requiresApproval` không gửi: `true` nếu action có `effect: "write"`, `false` nếu `"read"`. Gửi giá trị thì dùng giá trị đó; tắt phê duyệt cho action ghi chỉ khi người dùng đã cho phép Agent tự thực hiện thao tác đó. Nếu action đổi từ `read` sang `write` sau khi lưu Tool, Agent vẫn bắt phê duyệt dù `requiresApproval: false` (chậm nhất khoảng một phút).
+
+| Lỗi khi lưu | HTTP | Body | Xử lý |
+|---|---:|---|---|
+| Action không có, module không có version active, hoặc action không mở cho AI Agent | 400 | `{"r":4047,"data":{"errorCode":"CUSTOM_MODULE_ACTION_NOT_FOUND"}}` | Kiểm tra danh mục `consumer=agent`; sửa `exposeTo`/publish/activate ở module |
+| Không kiểm tra được action (dịch vụ module tạm thời không sẵn sàng) | 503 | `{"r":503,"data":{"errorCode":"CUSTOM_MODULE_ACTION_UNAVAILABLE"}}` | Thử lại sau; không đổi cấu hình |
+
+Cả hai trường hợp Tool không được lưu. Sửa tên, mô tả, phê duyệt, trạng thái mà giữ action không kiểm tra lại action: Tool trỏ action đã bị gỡ vẫn lưu được, nên đối chiếu danh mục trước khi bàn giao.
+
+### Khi chạy
+
+- Mỗi lần Agent gọi Tool là một lần chạy action (tối đa `timeoutMs` của action, không quá 8 giây). Input do mô hình sinh luôn được kiểm tra theo `inputSchema` trước khi action chạy.
+- Action chạy dưới danh tính mà Agent đang dùng: nhân sự `runAsPersonnelId` của Agent; Agent nội bộ (`runAsPersonnelId: null`) dùng người đang chat; lượt chạy nền theo danh tính đã chọn cho lượt chạy đó. Agent CSKH chạy bằng một nhân sự cố định cho mọi người chat dùng quyền của nhân sự đó; module nhận thêm ID nhân sự của người đang chat hoặc người khởi chạy lượt chạy (`initiatorPersonnelId`) để tự kiểm tra khi action chỉ được làm điều người đó được phép. Quyết định này thuộc thiết kế module, không thay bằng System Prompt.
+- Kết quả trả Agent: `COMPLETED` là JSON output của action; `FAILED` là lỗi `{"error":{"code","message","details"}}` với `code` như `INPUT_INVALID` (kèm `details.errors[]` theo đường dẫn để Agent sửa input), `OUTPUT_INVALID`, `SCRIPT_ERROR`, `TIMEOUT`, `RATE_LIMITED`, `PERMISSION_DENIED`; bị từ chối trước khi chạy trả mã như `ACTION_NOT_FOUND`, `ACTION_NOT_EXPOSED`, `ACTOR_NOT_ALLOWED`, `MAX_HOP_EXCEEDED`. Message luôn là tiếng Anh cố định theo mã, không chứa message riêng của handler; kết quả dự kiến (không tìm thấy, không đủ điều kiện) nên nằm trong output để Agent trả lời đúng.
+- Không xác định được danh tính chạy thì Tool trả lỗi `ACTOR_NOT_RESOLVED`. Dịch vụ module không trả lời sau khi đã tự gửi lại thì Tool trả `RUNTIME_UNAVAILABLE` hoặc `IN_PROGRESS` (chưa biết kết quả; kiểm tra dữ liệu trước khi cho gọi lại).
+- Action bị gỡ, không còn mở cho AI Agent hoặc module bị deactivate thì Tool không được đưa vào Agent ở hội thoại mới và lời gọi đang dở trả `ACTION_NOT_FOUND`. Đổi schema action làm thay đổi cách Agent điền input: chạy lại kiểm thử sau mỗi version module có thay đổi action.
+
+### Kiểm thử
+
+Gắn Tool vào Skill, cập nhật Agent, tạo hội thoại mới theo [chat và WebSocket](chat-testing.md): câu hỏi cần action phải làm Agent gọi đúng Tool với input hợp lệ và trả lời dựa trên output; câu hỏi thiếu dữ liệu làm Agent hỏi lại thay vì gọi với giá trị bịa. Action `write` cần phê duyệt: nhận `TOOL_APPROVAL_REQUEST`, từ chối không tạo thay đổi, chấp thuận tạo đúng thay đổi (đọc lại bằng [$object-record](../../object-record/SKILL.md)). Module kiểm tra theo người đang chat thì test bằng hai người có quyền khác nhau.
+
+### Agent do Custom Backend Module khởi chạy
+
+Module có thể chạy Agent nền bằng `agents.start` (không phải Tool). Khi thiết kế Agent cho cách gọi này: người dùng mà module chạy thay phải có quyền `EXECUTE` trên Agent; lời gọi không có người dùng hoặc `runAs: "agent"` cần Agent có `runAsPersonnelId`; `approvalPolicy` mặc định từ chối mọi Tool cần phê duyệt, nên Tool ghi mà lượt chạy nền phải dùng cần được thiết kế lại hoặc module phải được phép `autoApprove`. Agent khởi chạy lẫn nhau qua module được lồng tối đa 3 cấp. Code và identity policy của module thuộc `$cogover-custom-module`.

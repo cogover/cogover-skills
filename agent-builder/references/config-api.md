@@ -36,7 +36,7 @@ Model: **53** (List). Prompt template: **83** (List, payload `{}`). Model/provid
 - Cập nhật: `id` bắt buộc; chỉ gửi trường cần sửa. Với `skills`, `tools`, `accessControls`, `agentIds` hoặc `skillIds`, đọc trạng thái hiện tại và xây lại danh sách đầy đủ cần giữ; không giả định đây là thao tác append.
 - Nhân bản: `id`, `name`, `slug`; có thể thêm `description`, `accessControls`. Đọc lại liên kết, danh tính và quyền trước khi dùng bản sao.
 - Xóa: `id` hoặc `ids` cho Agent/Skill/Tool. Chỉ dùng khi người dùng yêu cầu xóa đúng tài nguyên và đã xem các liên kết bị ảnh hưởng; không tự xóa tài nguyên dùng chung sau test.
-- Mã lỗi thường gặp: `4004` không tìm thấy, `4005` trùng slug; `4320`–`4324` liên quan model/reasoning. Báo mã và thông điệp đã lọc bí mật, không dò phiên bản API khác để thử tiếp.
+- Mã lỗi thường gặp: `4004` không tìm thấy, `4005` trùng slug; `4320`–`4324` liên quan model/reasoning; với Tool `CUSTOM_MODULE`: `4020`/`4021` config thiếu hoặc sai định dạng, `4047` (HTTP 400, `data.errorCode` `CUSTOM_MODULE_ACTION_NOT_FOUND`) action không có hoặc không mở cho AI Agent, HTTP 503 với `data.errorCode` `CUSTOM_MODULE_ACTION_UNAVAILABLE` khi chưa kiểm tra được action (thử lại sau), xem [CUSTOM_MODULE](tools.md#custom_module). Báo mã và thông điệp đã lọc bí mật, không dò phiên bản API khác để thử tiếp.
 
 ## Model và reasoning
 

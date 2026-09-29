@@ -1,6 +1,6 @@
 # Custom Backend Module API Reference
 
-Tài liệu này mô tả API HTTP public cho Custom Backend Module của Cogover, bao gồm quản lý Project (module) và version, identity policy, Project key, secret, inbound access, background job, gọi module production, gọi inbound webhook và preview một version cụ thể.
+Tài liệu này mô tả API HTTP public cho Custom Backend Module của Cogover, bao gồm quản lý Project (module) và version, identity policy, Project key, secret, inbound access, background job, danh mục Custom Module Action, gọi module production, gọi inbound webhook và preview một version cụ thể.
 
 Dùng HTTPS origin của Cogover Workspace đích làm base URL:
 
@@ -30,6 +30,7 @@ Gửi thêm hai routing header: `x-req-type: 9` cho mọi nhóm, và `x-req-serv
 | Gọi production | `x-req-service: 3` | Người dùng Workspace đã xác thực; module phải có active version |
 | Quản lý module, version, policy và key | `x-req-service: 4` | TypeScript Project SuperAdmin |
 | Preview chính xác một version | `x-req-service: 6` | TypeScript Project SuperAdmin |
+| Danh mục Custom Module Action | `x-req-service: 4` | Mọi thành viên đang hoạt động của Workspace |
 
 Thiếu `x-req-type: 9` thì request service `4` bị Authorization Server xử lý như lệnh logout, trả `{"data":{"deletedTokens":N}}` và thu hồi phiên; service `3` trả `{"msg":"Error","r":5000}`; service `6` trả `r: 5001` (`Can not found processor for request: service=6`).
 
@@ -42,7 +43,7 @@ Quản lý secret, inbound access và job dùng cùng Workspace session và `x-r
 ## Quy ước chung
 
 - Request và response body dùng JSON, trừ khi module được gọi trả về content type khác được hỗ trợ.
-- Tất cả route quản lý đều dùng `POST`, kể cả thao tác đọc hoặc xóa.
+- Tất cả route quản lý đều dùng `POST`, kể cả thao tác đọc hoặc xóa. Hai route danh mục [Custom Module Action](#custom-module-action-1) dùng `GET` và cũng nhận `POST`.
 - Path resource ID như `projectId`, `versionId` và `keyId` gồm 15 chữ cái in hoa hoặc chữ số.
 - Timestamp là Unix epoch millisecond.
 - API dùng tên field `projectId` cho module trong route quản lý và `projectSlug` cho module đã deploy trong route invocation.
@@ -145,6 +146,15 @@ Tất cả endpoint trong bảng này yêu cầu `x-req-service: 4` và quyền 
 | `POST` | `/api/v1/ts-projects/{projectId}/jobs/runs/{runId}` | `200` |
 | `POST` | `/api/v1/ts-projects/{projectId}/jobs/enqueue` | `201` |
 | `POST` | `/api/v1/ts-projects/{projectId}/jobs/schedules/list` | `200` |
+
+### Custom Module Action
+
+`x-req-service: 4`. Mở cho mọi thành viên đang hoạt động của Workspace. Xem [Custom Module Action](#custom-module-action-1).
+
+| Method | Path | Thành công |
+|---|---|---:|
+| `GET` | `/api/v1/ts-projects/actions?consumer=process\|agent` | `200` |
+| `GET` | `/api/v1/ts-projects/actions/{projectSlug}/{actionKey}?consumer=process\|agent` | `200` |
 
 ### Invocation
 
@@ -333,6 +343,7 @@ Các build state có thể có: `PENDING`, `DOWNLOADING`, `VALIDATING`, `COMPILI
 | `INVALID_COMPILED_BUNDLE` | Không nạp được module đã compile, ví dụ vì khai báo `defineTrigger` hoặc `defineJob` ném lỗi khi module được import. |
 | `TRIGGER_MANIFEST_INVALID` | Khai báo record trigger không hợp lệ (xem [Đọc một version](#đọc-một-version)). |
 | `JOB_MANIFEST_INVALID` | Khai báo background job không hợp lệ, ví dụ job key trùng, biểu thức cron không bao giờ chạy hoặc múi giờ không tồn tại. |
+| `ACTION_MANIFEST_INVALID` | Khai báo Custom Module Action không hợp lệ (xem [Custom Module Action](#custom-module-action-1)). |
 | `BUILD_FAILED` | Lỗi build khác. |
 
 #### Giới hạn kích thước
@@ -452,7 +463,7 @@ Không thể xóa active version. Hãy activate version khác hoặc deactivate 
 
 ## Identity policy
 
-Identity policy kiểm soát caller nào được dùng quyền ủy quyền `data.asSystem()` hoặc `data.asUser()` từ Custom Backend Module, module được gửi email bằng `email.send()` từ những hộp thư nào, và `fetch()` được gọi những origin HTTPS nào trên port khác 443. Policy không chặn việc chạy module thông thường hoặc truy cập dữ liệu theo quyền mặc định của caller. Policy đang chỉnh sửa của module và snapshot bất biến đã duyệt cho version là hai resource riêng. Cập nhật policy đang chỉnh sửa không làm thay đổi snapshot đã duyệt trước đó.
+Identity policy kiểm soát caller nào được dùng quyền ủy quyền `data.asSystem()` hoặc `data.asUser()` từ Custom Backend Module, module được gửi email bằng `email.send()` từ những hộp thư nào, `fetch()` được gọi những origin HTTPS nào trên port khác 443, và module được khởi chạy những Process, AI Agent nào bằng `processes.start()`, `agents.start()`. Policy không chặn việc chạy module thông thường hoặc truy cập dữ liệu theo quyền mặc định của caller. Policy đang chỉnh sửa của module và snapshot bất biến đã duyệt cho version là hai resource riêng. Cập nhật policy đang chỉnh sửa không làm thay đổi snapshot đã duyệt trước đó.
 
 Hỗ trợ policy schema version `2`:
 
@@ -489,7 +500,7 @@ Selector mode gồm `ALL`, `ALL_EXCEPT` và `ONLY`. Operation được hỗ tr�
 
 `callerPersonnelIds` chọn public caller đủ điều kiện dùng delegated grant. `data.asSystem` chọn object và operation được phép. `data.asUser` chọn personnel đích và operation được phép; user đích vẫn phải có quyền thực tế trên dữ liệu được yêu cầu. Bỏ grant nào thì identity mode đó bị cấm.
 
-Policy phải có ít nhất một trong `data.asSystem`, `data.asUser`, `email` và `fetch`.
+Policy phải có ít nhất một trong `data.asSystem`, `data.asUser`, `email`, `fetch`, `processes` và `agents`.
 
 ### Người gửi email
 
@@ -553,6 +564,51 @@ Mặc định `fetch()` chỉ gọi được URL HTTPS công khai trên port 443
 - Khi lưu policy, backend không kiểm tra DNS hay khả năng kết nối; mỗi request được kiểm tra lúc gửi.
 - Credential secret chỉ được gửi tới port khác khi `allowedHosts` của nó ghi port đó (xem [Secret](#secret-1)).
 - Request rời Cogover từ các địa chỉ outbound dùng chung với Workspace khác. Cho phép các địa chỉ đó trên firewall của hệ thống đích không xác định được Workspace của bạn: hãy bảo vệ endpoint bằng cơ chế xác thực riêng và gửi kèm bằng credential secret.
+
+### Process và AI Agent
+
+Mục `processes` (không bắt buộc) cho phép module khởi chạy Process bằng `processes.start()` và đọc các lượt chạy do chính module khởi tạo bằng `processes.get()`. Mục `agents` (không bắt buộc) cho phép module chạy AI Agent bằng `agents.start()` và đọc các lượt chạy do chính module khởi tạo bằng `agents.get()`. Thiếu mục nào thì lời gọi tương ứng lỗi `PermissionDeniedError` với `details.reason` là `"PROCESSES_NOT_ALLOWED"` hoặc `"AGENTS_NOT_ALLOWED"`.
+
+```json
+{
+  "schemaVersion": 2,
+  "callerPersonnelIds": {
+    "mode": "ALL",
+    "personnelIds": []
+  },
+  "allowInternalSystem": false,
+  "processes": {
+    "processes": {
+      "mode": "ONLY",
+      "processInfoIds": ["PIXXXXXXXXXXXX"]
+    },
+    "allowSystem": false
+  },
+  "agents": {
+    "agents": {
+      "mode": "ALL",
+      "agentIds": []
+    },
+    "allowSystem": false,
+    "maxRunsPerDay": 200,
+    "allowAutoApprove": false
+  }
+}
+```
+
+| Field | Kiểu | Ý nghĩa |
+|---|---|---|
+| `processes.processes` | selector | `mode` (`ALL`, `ALL_EXCEPT`, `ONLY`) và `processInfoIds`: ID của Process, không phải ID version hay ID lượt chạy của Process. |
+| `processes.allowSystem` | boolean | Cho phép execution không có người dùng (danh tính system) khởi chạy các Process đã chọn. Mặc định `false`. |
+| `agents.agents` | selector | `mode` và `agentIds`: ID của AI Agent. |
+| `agents.allowSystem` | boolean | Cho phép execution không có người dùng chạy các agent đã chọn; khi đó agent chạy bằng danh tính mặc định của chính agent. Mặc định `false`. |
+| `agents.maxRunsPerDay` | số nguyên | Số lần gọi `agents.start()` tối đa của module trong một ngày UTC, từ 1 đến 10000. Mặc định `200`. |
+| `agents.allowAutoApprove` | boolean | Cho phép `agents.start()` với `approvalPolicy: "autoApprove"`, tức là chạy các tool cần người phê duyệt của agent mà không cần phê duyệt. Mặc định `false`; execution không có người dùng không bao giờ dùng được. Không bật thì lời gọi đó lỗi `PermissionDeniedError` với `details.reason` là `"AGENT_AUTO_APPROVE_NOT_ALLOWED"`. |
+
+- Mỗi selector liệt kê tối đa 200 ID, mỗi ID khớp `[A-Za-z0-9_-]{1,64}`. `ONLY` cần ít nhất một ID, `ALL` không được liệt kê ID nào, ID trùng được bỏ qua. `allowSystem` và `allowAutoApprove` phải là boolean JSON. Giá trị sai bị từ chối với HTTP `400`.
+- Giống `fetch`, hai mục này không phụ thuộc `callerPersonnelIds`: mọi execution của version đã duyệt đều dùng được. Khi execution có người dùng, Process hoặc agent chạy với danh tính người đó và Cogover vẫn kiểm tra người đó có quyền khởi chạy Process hoặc chạy agent đó.
+- Đổi một trong hai mục tạo revision policy mới và phải duyệt lại.
+- Module vượt `maxRunsPerDay` nhận `RateLimitError`.
 
 ### Lưu hoặc đọc policy đang chỉnh sửa
 
@@ -1036,7 +1092,7 @@ Trả về một lần chạy:
 }
 ```
 
-`source` là `ENQUEUE` hoặc `SCHEDULE`. `enqueuedBy` cho biết nguồn tạo lần chạy: `rpc` hoặc `http` với lời gọi module (lời gọi qua domain Workspace được ghi là `rpc`), `trigger:<key>`, `job:<key>`, `inbound:<inboundId>`, `schedule`, `development`, hoặc `management` với endpoint enqueue bên dưới. `actorPersonnelId` là nhân sự mà lần chạy thực thi dưới danh nghĩa, hoặc `null` với lần chạy không có user. Payload của lần chạy không bao giờ được trả về; chỉ có `payloadBytes`. Lần chạy đã kết thúc được giữ 7 ngày.
+`source` là `ENQUEUE` hoặc `SCHEDULE`. `enqueuedBy` cho biết nguồn tạo lần chạy: `rpc` hoặc `http` với lời gọi module (lời gọi qua domain Workspace được ghi là `rpc`), `trigger:<key>`, `job:<key>`, `inbound:<inboundId>`, `action:<key>` với job do một action mà Process hoặc AI Agent gọi enqueue, `process:<instanceId>` với job `onComplete` của `processes.start`, `agent:<runId>` với job `onResult` của `agents.start`, `schedule`, `development`, hoặc `management` với endpoint enqueue bên dưới. `actorPersonnelId` là nhân sự mà lần chạy thực thi dưới danh nghĩa, hoặc `null` với lần chạy không có user. Payload của lần chạy không bao giờ được trả về; chỉ có `payloadBytes`. Lần chạy đã kết thúc được giữ 7 ngày.
 
 `lastErrorCode` và `lastErrorMessage` mô tả lần thử thất bại gần nhất. Message là đoạn text tiếng Anh cố định do Cogover chọn; không bao giờ chứa message lỗi do module ném ra hay dữ liệu payload.
 
@@ -1221,6 +1277,97 @@ theo project.
 Cả bốn API đọc trả `401`/`403` khi thiếu/bị từ chối xác thực hoặc không đủ quyền, `503`
 khi kho dữ liệu theo dõi không khả dụng. Cấu hình trigger đã lưu không hợp lệ trả `500`
 với `msg: "Stored trigger configuration is invalid"`.
+
+## Custom Module Action
+
+Một version của module khai báo Custom Module Action bằng `defineAction` trong package `@cogover/sdk`. Khi version được activate, Process Builder hiển thị mỗi action mở cho `process` thành node **Custom Module Action**, và AI Agent Builder hiển thị mỗi action mở cho `agent` thành một tool. Hai route dưới đây trả về action của các version đang active của mọi module trong Workspace. Route chỉ đọc và mở cho mọi thành viên đang hoạt động của Workspace, vì vậy không đặt thông tin bí mật trong nhãn, mô tả hay schema của action.
+
+```http
+GET /api/v1/ts-projects/actions?consumer=process
+x-req-type: 9
+x-req-service: 4
+```
+
+```http
+GET /api/v1/ts-projects/actions/{projectSlug}/{actionKey}?consumer=agent
+x-req-type: 9
+x-req-service: 4
+```
+
+`consumer` là bắt buộc, giá trị `process` hoặc `agent`. Chỉ action có `exposeTo` chứa giá trị đó được trả về. Hai route cũng nhận `POST` với cùng query string.
+
+```json
+{
+  "r": 0,
+  "msg": "OK",
+  "data": {
+    "actions": [
+      {
+        "projectId": "TSPXXXXXXXXXXXX",
+        "projectSlug": "crm_tools",
+        "projectName": "CRM tools",
+        "versionId": "TSVXXXXXXXXXXXX",
+        "key": "score_lead",
+        "label": "Score lead",
+        "description": "Scores a lead from its recent activities and returns a tier.",
+        "effect": "read",
+        "exposeTo": ["process", "agent"],
+        "timeoutMs": 5000,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "leadId": {"type": "string", "x-cogover-object": "lead", "description": "ID of the lead to score"}
+          },
+          "required": ["leadId"],
+          "additionalProperties": false
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "score": {"type": "number"},
+            "tier": {"type": "string", "enum": ["A", "B", "C"]}
+          },
+          "required": ["score", "tier"],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}
+```
+
+Route chi tiết trả một phần tử trong `data.action`. Action được sắp theo `projectSlug`, rồi theo thứ tự khai báo; property của schema giữ thứ tự khai báo.
+
+| Field | Ý nghĩa |
+|---|---|
+| `key`, `label`, `description` | Key của action (`[a-z][a-z0-9_]{0,63}`, duy nhất trong module), tên hiển thị và mô tả. Action mở cho `agent` luôn có mô tả, AI Agent đọc mô tả này. |
+| `effect` | `read`: action chạy ở chế độ chỉ đọc, thao tác ghi bị từ chối. `write`: action được ghi; tool AI Agent của action này mặc định cần phê duyệt. |
+| `exposeTo` | `process`, `agent` hoặc cả hai. |
+| `timeoutMs` | Giới hạn thời gian của action, từ 1000 đến 8000 ms. |
+| `inputSchema`, `outputSchema` | JSON Schema của input và output. Các keyword được dùng: `type`, `properties`, `required`, `additionalProperties: false`, `items`, `enum`, `minLength`, `maxLength`, `minimum`, `maximum`, `maxItems`, `description`, `format` (`date`, `x-epoch-ms`) và `x-cogover-object` (object slug của một record ID). |
+
+| HTTP | `data.errorCode` | Nguyên nhân |
+|---:|---|---|
+| `400` | `INVALID_REQUEST` | Thiếu `consumer` hoặc giá trị khác `process`, `agent`. |
+| `401` | | Chưa xác thực. |
+| `403` | | Người gọi không phải thành viên đang hoạt động của Workspace. |
+| `404` | `ACTION_NOT_FOUND` | Không có version active nào của module đó khai báo action đó cho consumer đó. |
+
+Version có khai báo action không hợp lệ kết thúc ở `FAILED` với `buildErrorCode: "ACTION_MANIFEST_INVALID"`, ví dụ action key trùng, schema dùng keyword không được hỗ trợ hoặc schema lớn hơn 16 KiB.
+
+Khi Process hoặc AI Agent chạy một action, input được kiểm tra theo `inputSchema` trước khi chạy và output theo `outputSchema` sau khi action trả về. Lượt chạy thất bại báo cho node Process hoặc AI Agent một trong các mã lỗi sau:
+
+| Mã | Ý nghĩa |
+|---|---|
+| `INPUT_INVALID` | Input không khớp `inputSchema`. |
+| `OUTPUT_INVALID` | Action trả về giá trị không phải dữ liệu JSON hoặc không khớp `outputSchema`. |
+| `SCRIPT_ERROR` | Action ném lỗi của SDK; mã lỗi được giữ trong `details.scriptErrorCode` và message là thông báo public cố định của mã đó, giống cách route HTTP trả về (message riêng của handler không được trả về). Lỗi không có mã public được báo bằng một thông báo cố định khác. Handler dùng hết một giới hạn tài nguyên của sandbox (số câu lệnh, bộ nhớ hoặc stack) báo `SCRIPT_ERROR` với `details.reason` là `"RESOURCE_LIMIT_EXCEEDED"`. |
+| `TIMEOUT` | Action chạy quá `timeoutMs`. |
+| `RATE_LIMITED` | Action vượt một giới hạn của lần chạy (`details.budget`). |
+| `PERMISSION_DENIED` | Action bị từ chối một thao tác. Trong lúc activate version mới, lời gọi có thể thất bại trong chốc lát với `details.reason` là `"PROJECT_POLICY_NOT_APPROVED"` trước khi chạy; lần gửi lại của bên gọi sẽ chạy. |
+| `INTERNAL_ERROR` | Lỗi khác. |
+
+Lời gọi cũng có thể bị từ chối trước khi action chạy: `ACTION_NOT_FOUND`, `ACTION_NOT_EXPOSED` (action không mở cho bên gọi đó), `ACTOR_NOT_ALLOWED` (người dùng mà Process hoặc agent chạy thay không còn là thành viên đang hoạt động), `SYSTEM_IDENTITY_NOT_ALLOWED` (lời gọi không có người dùng cần `allowInternalSystem: true` trong identity policy đã duyệt của version active), `MAX_HOP_EXCEEDED` (chuỗi tự động hoá gọi lẫn nhau bị dừng), `IDEMPOTENCY_CONFLICT` (mã lượt chạy của bên gọi đã được dùng với input khác, từ node Process hay phiên agent khác, hoặc cho danh tính khác) và `RUNTIME_UNAVAILABLE` (tạm thời; bên gọi tự gửi lại). Khi action chạy với danh tính người dùng, quyền truy cập record mặc định theo quyền của người đó như khi gọi module production; khi không có người dùng, action chỉ có các quyền mà identity policy đã duyệt cấp. Version active chưa có identity policy được duyệt thì hoạt động như route: lời gọi có người dùng chạy với quyền riêng của người đó và không có quyền nào của policy, lời gọi không có người dùng bị từ chối với `SYSTEM_IDENTITY_NOT_ALLOWED`.
 
 ## Phát triển local
 

@@ -1,15 +1,15 @@
 ---
 name: agent-builder
-description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool, phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth."
+description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.2.0`
-- **Ngày phát hành:** `2026-09-29`
+- **Phiên bản:** `1.3.0`
+- **Ngày phát hành:** `2026-09-30`
 
 ## Phạm vi
 
@@ -63,7 +63,7 @@ Cả hai cơ chế do nền tảng tự vận hành lúc chạy; System Prompt v
 
 Đọc [phân quyền](references/config-api.md#phân-quyền). Cấu hình `accessControls` phù hợp cho Agent, Skill, Tool và danh mục Data nếu dùng: người dùng thường cần `VIEW`/`EXECUTE`; nhóm bảo trì mới cần `EDIT`/`DELETE`. Giữ quyền có sẵn khi bổ sung một nhóm.
 
-Quyền dùng Agent, danh tính thực thi và quyền dữ liệu nghiệp vụ là các phần riêng. Việc gắn Tool không tự cấp quyền Object/record/field hay quyền Process. Khi cần resolve nhân sự/role hoặc thay đổi quyền dữ liệu, dùng [$user-permission](../user-permission/SKILL.md); khi cần metadata Object dùng [$object-info](../object-info/SKILL.md). Kiểm thử bằng đúng nhóm người dùng đích, gồm cả tình huống bị từ chối; không suy ra quyền runtime chỉ từ việc thấy Agent trong danh sách.
+Quyền dùng Agent, danh tính thực thi và quyền dữ liệu nghiệp vụ là các phần riêng. Việc gắn Tool không tự cấp quyền Object/record/field hay quyền Process. Tool `CUSTOM_MODULE` chạy action dưới danh tính thực thi của Agent: Agent CSKH chạy bằng một nhân sự cố định cho mọi người chat dùng quyền của nhân sự đó, nên action chỉ được làm điều người chat được phép phải tự kiểm tra trong module. Khi cần resolve nhân sự/role hoặc thay đổi quyền dữ liệu, dùng [$user-permission](../user-permission/SKILL.md); khi cần metadata Object dùng [$object-info](../object-info/SKILL.md). Kiểm thử bằng đúng nhóm người dùng đích, gồm cả tình huống bị từ chối; không suy ra quyền runtime chỉ từ việc thấy Agent trong danh sách.
 
 ### 4. Tạo hoặc cập nhật Skill
 
@@ -78,6 +78,8 @@ Giới hạn form: tên/slug 250 ký tự, mô tả 500, hướng dẫn Skill 2.
 
 Đọc [danh mục và cấu hình Tool](references/tools.md) trước khi tạo. Chọn đúng cặp `category`/`type`, viết mô tả công cụ theo hành động và kết quả, cấu hình phạm vi Object/App/Data rõ ràng. `config` là **chuỗi JSON**, không phải object JSON lồng trực tiếp.
 
+Logic riêng của Workspace đã viết trong Custom Backend Module (tính toán, kiểm tra điều kiện, đọc/ghi theo quy tắc nghiệp vụ) dùng Tool `CUSTOM_MODULE` gọi Custom Module Action mở cho AI Agent: lấy action từ danh mục `GET /api/v1/ts-projects/actions?consumer=agent`, Agent nhận schema input và mô tả của action, `requiresApproval` mặc định theo `effect` (`write` cần phê duyệt), action chạy dưới danh tính Agent đang dùng; chi tiết tại [CUSTOM_MODULE](references/tools.md#custom_module). Action chưa có hoặc thiếu input/output thì chuyển sang [$cogover-custom-module](../cogover-custom-module/SKILL.md), không thay bằng HTTP Tool gọi module.
+
 Tách công cụ đọc khỏi công cụ ghi khi cần chính sách khác nhau. Đặt `requiresApproval` theo nghiệp vụ và ý định đã được người dùng cho phép; kiểm thử luồng chấp thuận/từ chối bằng sự kiện WebSocket và API chat service 12 theo [hướng dẫn test](references/chat-testing.md). Không mở thêm thao tác ghi chỉ để khắc phục lỗi thiếu công cụ. Đọc lại Tool, gắn vào Skill và kiểm tra Agent gọi đúng công cụ thực tế.
 
 ### 6. Data/RAG khi cần
@@ -90,7 +92,7 @@ Upload thành công chưa có nghĩa Agent tra cứu được. Không xem `agent
 
 1. Đọc lại Agent, Skill, Tool, quyền, model/reasoning và các liên kết; bật tài nguyên cần dùng. Kích hoạt Agent bằng thao tác đổi trạng thái được tài liệu hỗ trợ.
 2. Tạo **hội thoại mới** sau thay đổi cấu hình. Đọc [chat và WebSocket](references/chat-testing.md); kết nối WebSocket trước, tạo chat bằng HTTP, đọc phản hồi/công cụ/yêu cầu duyệt từ sự kiện. Dùng script probe cho kiểm tra kết nối cơ bản; test nghiệp vụ bằng HTTP/WebSocket client theo cùng contract, không chuyển sang trình duyệt khi probe chưa hỗ trợ tình huống.
-3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
+3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data; Tool `CUSTOM_MODULE` theo mục Kiểm thử của [CUSTOM_MODULE](references/tools.md#custom_module) (gọi đúng action với input hợp lệ, phê duyệt action `write`, từ chối không tạo thay đổi). Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
 4. Kết luận dựa trên nội dung trả lời và kết quả nghiệp vụ. HTTP `r: 0` hoặc thông báo “ACCEPTED” chỉ xác nhận nhận yêu cầu. Với WebSocket cần đúng hội thoại/lượt, câu trả lời cuối và sự kiện hoàn tất không lỗi.
 
 ## Bàn giao
