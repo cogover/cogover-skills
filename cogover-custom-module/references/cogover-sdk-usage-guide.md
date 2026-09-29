@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.13.0` ngày `2026-09-29`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.14.0` ngày `2026-09-29`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -226,7 +226,8 @@ if (missingIds.length > 0) log.warn("Accounts could not be read", { missingIds }
 
 ID trùng chỉ được gửi một lần. Thứ tự của `records` không bảo đảm trùng với `ids`, vì
 vậy hãy tra cứu record theo `id`. Nên dùng `getMany` thay cho việc gọi `get` trong
-vòng lặp: mỗi capability call đều được tính vào hạn mức của project.
+vòng lặp: mỗi capability call và mỗi record đọc đều được tính vào ngân sách của lần
+thực thi.
 
 ## Đọc record liên kết
 
@@ -406,7 +407,16 @@ toán JWT tương ứng.
 - Thông tin xác thực của Cogover không được đưa vào code của module; quyền truy cập
   được giới hạn theo Object, operation và field đã cấu hình.
 - TypeScript types không thay thế validation lúc chạy.
-- Cogover giới hạn số lần gọi, kích thước request/response và thời gian thực thi.
+- Với mỗi lần thực thi, Cogover giới hạn số capability call, số lời gọi cục bộ (`crypto`,
+  `org` không có dữ liệu hiển thị), số record đọc và ghi, kích thước request/response
+  và thời gian thực thi. Một HTTP route được gọi 100 capability call và đọc 10.000
+  record; một background job được gọi 1.000 lần và đọc 50.000 record. Lời gọi có thể
+  vượt ngân sách sẽ ném `RateLimitError` có `details.budget`; chờ không giúp được gì.
+- `limits.usage()` (cũng là `context.limits`) cho biết lần thực thi đã dùng bao nhiêu
+  mỗi ngân sách, không tốn capability call. Dùng nó để chuyển phần còn lại của một tác
+  vụ dài sang background job trước khi hết ngân sách.
+- Số tổng và số đếm không cần đọc record: `records.aggregate` chỉ tốn một capability
+  call dù có bao nhiêu record.
 - Request ghi không được tự retry khi timeout vì kết quả commit có thể chưa rõ.
 
 ## Lưu tiến độ nhỏ bằng state

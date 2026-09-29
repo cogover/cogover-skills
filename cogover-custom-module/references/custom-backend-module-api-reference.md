@@ -50,7 +50,7 @@ Quản lý secret, inbound access và job dùng cùng Workspace session và `x-r
 - `Idempotency-Key` phải khớp `[A-Za-z0-9][A-Za-z0-9._:-]{0,127}`.
 - Nội dung thông báo do Cogover trả về luôn bằng tiếng Anh.
 
-Lỗi có JSON shape sau. Một số lỗi có thêm field chẩn đoán an toàn như `code`, `reason`, `operation`, `objectSlug`, `objectServerR` hoặc `writesMayHaveCompleted`.
+Lỗi có JSON shape sau, với `Content-Type: application/json; charset=utf-8`. Một số lỗi có thêm field chẩn đoán an toàn như `code`, `reason`, `operation`, `objectSlug`, `fieldSlug`, `objectServerR` hoặc `writesMayHaveCompleted`.
 
 ```json
 {
@@ -59,7 +59,7 @@ Lỗi có JSON shape sau. Một số lỗi có thêm field chẩn đoán an toà
 }
 ```
 
-Các HTTP status thường gặp: `400` request không hợp lệ, `401` cần xác thực hoặc phiên hết hạn, `403` thiếu quyền, `404` không tìm thấy resource, `409` xung đột lifecycle hoặc idempotency, `413` request quá lớn, `422` script chạy thất bại, `429` vượt quota và `502`/`503`/`504` lỗi dịch vụ tạm thời.
+Các HTTP status thường gặp: `400` request không hợp lệ, `401` cần xác thực hoặc phiên hết hạn, `403` thiếu quyền, `404` không tìm thấy resource, `405` HTTP method không được hỗ trợ, `409` xung đột lifecycle hoặc idempotency, `413` request quá lớn, `422` script chạy thất bại, `429` vượt quota, `500` lỗi server không dự kiến và `502`/`503`/`504` lỗi dịch vụ tạm thời. Lỗi server không dự kiến trả `{ "r": 500, "msg": "Internal server error" }`, không kèm chi tiết. Path quản lý không khớp route nào, ví dụ `/api/v1/ts-projects/{projectId}/secrets/unknown/update`, trả `404` với `msg: "TypeScript project management route not found"`.
 
 ## Tổng hợp endpoint
 
@@ -294,7 +294,7 @@ Content-Type: application/json
 }
 ```
 
-Tên ZIP dài tối đa 255 ký tự. `fileSize` phải dương, `fileExt` phải là `zip`, `acl` phải là `private` và `idempotencyKey` là bắt buộc. Dùng lại key với publish input khác trả về `409`.
+Tên ZIP dài tối đa 255 ký tự. `fileSize` phải dương, `fileExt` phải là `zip`, `acl` phải là `private` và `idempotencyKey` là bắt buộc. Dùng lại key với publish input khác trả về `409`. File phải là ZIP private đã upload vào chính Workspace đó; `file_id` khác trả về `400` và không tạo version.
 
 HTTP `202` trả về version object và quá trình publish tiếp tục bất đồng bộ:
 
@@ -324,6 +324,42 @@ HTTP `202` trả về version object và quá trình publish tiếp tục bất 
 ```
 
 Các build state có thể có: `PENDING`, `DOWNLOADING`, `VALIDATING`, `COMPILING`, `FILE_COMMIT_PENDING`, `READY` và `FAILED`. Poll endpoint chi tiết version cho tới khi nhận `READY` hoặc `FAILED`. Khi thất bại, `buildErrorCode` và `buildErrorMessage` chứa thông tin chẩn đoán public.
+
+| `buildErrorCode` | Ý nghĩa |
+|---|---|
+| `SOURCE_DOWNLOAD_FAILED` | Không tải hoặc xác minh được file ZIP đã upload. |
+| `INVALID_PROJECT_ARCHIVE` | ZIP sai cấu trúc hoặc vượt giới hạn. |
+| `TYPESCRIPT_COMPILE_FAILED` | Source TypeScript compile không thành công. |
+| `INVALID_COMPILED_BUNDLE` | Không nạp được module đã compile, ví dụ vì khai báo `defineTrigger` hoặc `defineJob` ném lỗi khi module được import. |
+| `TRIGGER_MANIFEST_INVALID` | Khai báo record trigger không hợp lệ (xem [Đọc một version](#đọc-một-version)). |
+| `JOB_MANIFEST_INVALID` | Khai báo background job không hợp lệ, ví dụ job key trùng, biểu thức cron không bao giờ chạy hoặc múi giờ không tồn tại. |
+| `BUILD_FAILED` | Lỗi build khác. |
+
+#### Giới hạn kích thước
+
+| Giới hạn | Giá trị | Kiểm tra |
+|---|---|---|
+| File ZIP | 20 MiB | khi publish, rồi kiểm tra lại khi build |
+| Số entry trong ZIP (file và thư mục) | 512 | `INVALID_PROJECT_ARCHIVE` |
+| Tổng dung lượng sau khi giải nén | 20 MiB | `INVALID_PROJECT_ARCHIVE` |
+| Dung lượng một file | 5 MiB | `INVALID_PROJECT_ARCHIVE` |
+| Số source file được `src/main.ts` import tới | 512 | `TYPESCRIPT_COMPILE_FAILED` |
+| Tổng dung lượng các source file đó | 4 MiB | `TYPESCRIPT_COMPILE_FAILED` |
+| Bundle JavaScript sau khi compile | 4 MiB | `TYPESCRIPT_COMPILE_FAILED` |
+
+Request có `fileSize` lớn hơn 20 MiB bị từ chối với `400` trước khi tạo version, ví dụ `ZIP file is 25 MiB, which exceeds the 20 MiB limit`. Các giới hạn còn lại làm version chuyển sang `FAILED`, và `buildErrorMessage` nêu giới hạn bị vượt cùng đường dẫn file liên quan (nếu có):
+
+| Trường hợp | `buildErrorMessage` |
+|---|---|
+| Một file quá lớn | `File "src/data/rates.json" exceeds the 5 MiB per-file limit` |
+| Tổng các file quá lớn | `ZIP content exceeds the 20 MiB total size limit after extraction; the limit was reached at "src/vendor/sdk.ts"` |
+| Quá nhiều entry | `ZIP contains more than 512 entries; files and directories both count` |
+| Một file nén hơn 100:1 | `File "src/data/rates.json" exceeds the 100:1 compression-ratio limit` |
+| Quá nhiều source file | `Project exceeds the limit of 512 source files; the limit was reached at src/lib/helpers.ts` |
+| Source code quá lớn | `Project source exceeds the 4 MiB total size limit; the limit was reached at src/lib/tables.ts` |
+| Bundle quá lớn | `Compiled JavaScript exceeds the 4 MiB limit` |
+
+Chỉ các file được `src/main.ts` import trực tiếp hoặc gián tiếp mới tính vào giới hạn source; `@cogover/sdk` được bundle kèm không tính. Mỗi invocation đều nạp toàn bộ bundle, nên bundle nhỏ hơn cũng khởi động nhanh hơn. 1 MiB bằng 1.048.576 byte. Cogover Dev CLI kiểm tra các giới hạn ZIP trước khi upload ZIP do CLI tạo. Bước upload file của Workspace áp dụng dung lượng tối đa riêng cho file ZIP (field Files của object Contract), có thể thấp hơn giới hạn ZIP ở trên; khi đó upload bị từ chối trước khi tạo version.
 
 ### Liệt kê version
 
@@ -373,7 +409,7 @@ Response là một version object. Response chi tiết có thêm `triggerManifes
 }
 ```
 
-Hãy xem lại `triggerManifest` trước khi activate version: khi version đã active, các trigger của nó chạy cho mọi thao tác tạo, sửa hoặc xoá bản ghi của các object được liệt kê và thoả điều kiện, từ bất kỳ nguồn nào. Trigger có `"timing": "beforeChange"` chạy trước khi thay đổi được lưu và có thể từ chối hoặc điều chỉnh thay đổi. Trigger có `"timing": "afterChange"` chạy bất đồng bộ sau khi thay đổi đã được lưu, theo cơ chế best-effort, và không thể từ chối hay sửa thay đổi đó. Version có khai báo trigger không hợp lệ (ví dụ object hoặc field không tồn tại, field không ghi được, hoặc key trùng nhau) kết thúc ở `FAILED` với `buildErrorCode: "TRIGGER_MANIFEST_INVALID"`.
+Hãy xem lại `triggerManifest` trước khi activate version: khi version đã active, các trigger của nó chạy cho mọi thao tác tạo, sửa hoặc xoá bản ghi của các object được liệt kê và thoả điều kiện, từ bất kỳ nguồn nào. Trigger có `"timing": "beforeChange"` chạy trước khi thay đổi được lưu và có thể từ chối hoặc điều chỉnh thay đổi. Trigger có `"timing": "afterChange"` chạy bất đồng bộ sau khi thay đổi đã được lưu, theo cơ chế best-effort, và không thể từ chối hay sửa thay đổi đó. Version có khai báo trigger không hợp lệ kết thúc ở `FAILED` với `buildErrorCode: "TRIGGER_MANIFEST_INVALID"`: ví dụ object hoặc field không tồn tại, key trùng nhau, `writableFields` có field không ghi được (Formula, đánh số tự động, Rollup Summary, field read-only khác hoặc field hệ thống), hoặc hơn 20 trigger `beforeChange` trên cùng một object.
 
 ### Activate version
 
@@ -399,7 +435,7 @@ Content-Type: application/json
 {}
 ```
 
-Module trả về có `status: "DRAFT"` và `activeVersionId: null`. Các version hiện có vẫn được giữ lại.
+Module trả về có `status: "DRAFT"` và `activeVersionId: null`. Các version hiện có vẫn được giữ lại. Deactivate gỡ các record trigger và lịch job của module; lần chạy job còn đang chờ sẽ thất bại với `lastErrorCode: "JOB_PROJECT_UNAVAILABLE"` khi tới hạn.
 
 ### Xóa version
 
@@ -416,7 +452,7 @@ Không thể xóa active version. Hãy activate version khác hoặc deactivate 
 
 ## Identity policy
 
-Identity policy kiểm soát caller nào được dùng quyền ủy quyền `data.asSystem()` hoặc `data.asUser()` từ Custom Backend Module, và module được gửi email bằng `email.send()` từ những hộp thư nào. Policy không chặn việc chạy module thông thường hoặc truy cập dữ liệu theo quyền mặc định của caller. Policy đang chỉnh sửa của module và snapshot bất biến đã duyệt cho version là hai resource riêng. Cập nhật policy đang chỉnh sửa không làm thay đổi snapshot đã duyệt trước đó.
+Identity policy kiểm soát caller nào được dùng quyền ủy quyền `data.asSystem()` hoặc `data.asUser()` từ Custom Backend Module, module được gửi email bằng `email.send()` từ những hộp thư nào, và `fetch()` được gọi những origin HTTPS nào trên port khác 443. Policy không chặn việc chạy module thông thường hoặc truy cập dữ liệu theo quyền mặc định của caller. Policy đang chỉnh sửa của module và snapshot bất biến đã duyệt cho version là hai resource riêng. Cập nhật policy đang chỉnh sửa không làm thay đổi snapshot đã duyệt trước đó.
 
 Hỗ trợ policy schema version `2`:
 
@@ -453,7 +489,7 @@ Selector mode gồm `ALL`, `ALL_EXCEPT` và `ONLY`. Operation được hỗ tr�
 
 `callerPersonnelIds` chọn public caller đủ điều kiện dùng delegated grant. `data.asSystem` chọn object và operation được phép. `data.asUser` chọn personnel đích và operation được phép; user đích vẫn phải có quyền thực tế trên dữ liệu được yêu cầu. Bỏ grant nào thì identity mode đó bị cấm.
 
-Policy phải có ít nhất một trong `data.asSystem`, `data.asUser` và `email`.
+Policy phải có ít nhất một trong `data.asSystem`, `data.asUser`, `email` và `fetch`.
 
 ### Người gửi email
 
@@ -487,6 +523,37 @@ Policy có thể chỉ gồm mục `email`:
 }
 ```
 
+### Origin fetch trên port khác
+
+Mặc định `fetch()` chỉ gọi được URL HTTPS công khai trên port 443. Mục `fetch` (không bắt buộc) duyệt các origin HTTPS chính xác trên port khác, ví dụ hệ thống on-premise công bố tại `https://erp.example.com:9899`:
+
+```json
+{
+  "schemaVersion": 2,
+  "callerPersonnelIds": {
+    "mode": "ALL",
+    "personnelIds": []
+  },
+  "allowInternalSystem": false,
+  "fetch": {
+    "allowedOrigins": ["https://erp.example.com:9899"]
+  }
+}
+```
+
+| Field | Kiểu | Ý nghĩa |
+|---|---|---|
+| `allowedOrigins` | mảng string | 1 đến 20 origin dạng `https://host:port`. Origin trùng được bỏ qua. `null` và mảng rỗng bị từ chối. |
+
+- Mỗi origin phải dùng `https`, host là tên DNS có ít nhất hai nhãn (tên miền quốc tế ghi ở dạng `xn--`) và port ghi rõ từ 1024 đến 65535. Path khác `/`, query, fragment, thông tin người dùng, wildcard, địa chỉ IP và port 443 (không cần duyệt) bị từ chối với HTTP `400`. Host được lưu ở dạng chữ thường, không kèm `/` ở cuối.
+- Không duyệt được các port: 2375, 2376, 2379, 2380, 2381, 4001, 6443, 6444, 8200, 8201, 8500, 8501, 9345, 10249, 10250, 10255 đến 10260, 16443 và 30000 đến 32767.
+- Việc duyệt chỉ bỏ giới hạn port 443 cho đúng các origin được liệt kê. Mọi quy tắc khác của `fetch()` vẫn áp dụng: HTTPS với chứng chỉ hợp lệ cho host, đích chỉ được phân giải tới địa chỉ công khai không bị nền tảng giữ lại, không theo redirect và các giới hạn request. Đích phân giải tới địa chỉ bị từ chối lỗi `FETCH_FAILED`; URL trên port chưa được duyệt lỗi `FETCH_BLOCKED`.
+- Khác các mục còn lại, `fetch` không phụ thuộc `callerPersonnelIds` hay `allowInternalSystem`: mọi execution của version đã duyệt đều gọi được các origin trong danh sách, kể cả record trigger, job và inbound webhook. Development session dùng policy đang chỉnh sửa của module khi policy ở trạng thái `ACTIVE`.
+- Mục này chỉ có hiệu lực qua version snapshot đã duyệt. Đổi `allowedOrigins` tạo revision policy mới và phải duyệt lại; vô hiệu hoá policy sẽ gỡ việc duyệt.
+- Khi lưu policy, backend không kiểm tra DNS hay khả năng kết nối; mỗi request được kiểm tra lúc gửi.
+- Credential secret chỉ được gửi tới port khác khi `allowedHosts` của nó ghi port đó (xem [Secret](#secret-1)).
+- Request rời Cogover từ các địa chỉ outbound dùng chung với Workspace khác. Cho phép các địa chỉ đó trên firewall của hệ thống đích không xác định được Workspace của bạn: hãy bảo vệ endpoint bằng cơ chế xác thực riêng và gửi kèm bằng credential secret.
+
 ### Lưu hoặc đọc policy đang chỉnh sửa
 
 ```http
@@ -498,7 +565,7 @@ Content-Type: application/json
 <policy-object>
 ```
 
-Mọi lần lưu đều đưa editable policy về `DRAFT`. Revision chỉ tăng khi nội dung policy thay đổi; lưu nội dung giống hệt khi policy đã ở `DRAFT` có tính idempotent.
+Lưu nội dung thay đổi làm tăng revision và đưa editable policy về `DRAFT`. Lưu nội dung giống hệt policy đã lưu không thay đổi gì khi policy ở `DRAFT` hoặc `ACTIVE`: revision và status giữ nguyên. Lưu nội dung giống hệt vào policy `DISABLED` đưa policy về `DRAFT` với cùng revision.
 
 ```http
 POST /api/v1/ts-projects/{projectId}/identity-policy/get
@@ -536,7 +603,7 @@ x-req-service: 4
 Content-Type: application/json
 ```
 
-Response là editable policy object có `status` bằng `ACTIVE` hoặc `DISABLED`. Disable policy cũng khiến các active version snapshot từ chối privileged identity operation.
+Response là editable policy object có `status` bằng `ACTIVE` hoặc `DISABLED`. Cả hai thao tác có tính idempotent: gọi cho policy đã ở đúng status đó trả policy không đổi, và policy đã disable có thể được activate lại với cùng revision. Disable policy cũng disable các version snapshot đã duyệt, khiến chúng từ chối privileged identity operation. Activate lại editable policy không bật lại các snapshot đó; hãy duyệt lại version. Duyệt một version cũng đặt editable policy thành `ACTIVE`.
 
 ### Duyệt và đọc version snapshot
 
@@ -724,10 +791,10 @@ Content-Type: application/json
 | Field | Quy tắc |
 |---|---|
 | `name` | Bắt buộc. Khớp `[A-Za-z][A-Za-z0-9_]{0,63}` và duy nhất trong module. Đây là tên dùng trong `secrets.get`, `fetch({ credential })` và `crypto.hmacSha256({ secret })`. |
-| `kind` | Bắt buộc. `OPAQUE` (code của module đọc được), `BEARER` (`Authorization: Bearer <value>`), `BASIC` (`Authorization: Basic base64(<value>)`, với `value` dạng `user:password`) hoặc `HEADER` (`<headerName>: <value>`). |
-| `value` | Bắt buộc. Giá trị secret; tối đa 8 KiB. |
+| `kind` | Không bắt buộc, mặc định `OPAQUE`. `OPAQUE` (code của module đọc được), `BEARER` (`Authorization: Bearer <value>`), `BASIC` (`Authorization: Basic base64(<value>)`, với `value` dạng `user:password`) hoặc `HEADER` (`<headerName>: <value>`). |
+| `value` | Bắt buộc. Chuỗi không rỗng, tối đa 8.192 ký tự. Giá trị credential không được chứa ký tự điều khiển, và header do nó tạo ra không được vượt 8.192 ký tự: giá trị `BEARER` tối đa 8.185 ký tự, giá trị `BASIC` tối đa 6.138 byte UTF-8, giá trị `HEADER` tối đa 8.192 ký tự. Giá trị dài hơn bị từ chối với `400` khi lưu. |
 | `headerName` | Bắt buộc với `HEADER`, không được gửi với loại khác. Tên header mang giá trị. |
-| `allowedHosts` | Bắt buộc và không rỗng với `BEARER`, `BASIC`, `HEADER`; không được gửi với `OPAQUE`. Mỗi phần tử là một host chính xác hoặc `*.suffix`, khớp mọi host kết thúc bằng `.suffix`. Credential chỉ được gửi tới host khớp. |
+| `allowedHosts` | Bắt buộc và không rỗng với `BEARER`, `BASIC`, `HEADER`; không được gửi với `OPAQUE`. Tối đa 20 phần tử. Mỗi phần tử là một host chính xác hoặc `*.suffix`, khớp mọi host kết thúc bằng `.suffix`, có thể kèm `:port`. Phần tử không có port chỉ khớp port 443; `host:443` được lưu thành `host`. Port khác phải là port mà identity policy duyệt được (xem [Origin fetch trên port khác](#origin-fetch-trên-port-khác)); ghi port ở đây không có nghĩa là origin đã được duyệt. Credential chỉ được gửi tới host và port khớp. |
 | `description` | Không bắt buộc, tối đa 255 ký tự. |
 
 HTTP `201` trả về metadata của secret:
@@ -832,7 +899,7 @@ Content-Type: application/json
 | `authMode` | Bắt buộc. `KEY` hoặc `HMAC`. |
 | `routePrefix` | Không bắt buộc. Route, hoặc tiền tố route, dưới `/hooks` mà inbound access này được gọi, ví dụ `/hooks/payments`. Mặc định `/hooks`, cho phép mọi route hook của module. |
 | `expiresAt` | Không bắt buộc; thời điểm Unix millisecond trong tương lai, sau đó inbound access ngừng hoạt động. |
-| `hmac` | Bắt buộc với `HMAC`, không được gửi với `KEY`. `secret` (bắt buộc, tối đa 8 KiB) là signing secret mà hệ thống ngoài dùng; `header` (bắt buộc) là request header mang chữ ký; `encoding` là `HEX` (mặc định) hoặc `BASE64`; `prefix` (không bắt buộc, tối đa 32 ký tự) là đoạn text hệ thống ngoài đặt trước chữ ký đã mã hóa, ví dụ `sha256=`; `timestampHeader` và `toleranceSeconds` (không bắt buộc, đi cùng nhau) bật chống replay như mô tả bên dưới. |
+| `hmac` | Bắt buộc với `HMAC`, không được gửi với `KEY`. `secret` (bắt buộc, 8 đến 1.024 ký tự in được) là signing secret mà hệ thống ngoài dùng; `header` (bắt buộc) là request header mang chữ ký; `encoding` là `HEX` (mặc định) hoặc `BASE64`; `prefix` (không bắt buộc, tối đa 32 ký tự) là đoạn text hệ thống ngoài đặt trước chữ ký đã mã hóa, ví dụ `sha256=`; `timestampHeader` (không bắt buộc, khác `header`) bật chống replay như mô tả bên dưới, và `toleranceSeconds` (1 đến 86.400, mặc định 300) cần có `timestampHeader`. |
 
 HTTP `201` trả về metadata của inbound access. Với `authMode: "KEY"`, response có thêm `inboundKey`, chỉ được trả về khi create và rotate; hãy đưa cho hệ thống ngoài và lưu vào nơi lưu credential an toàn.
 
@@ -849,12 +916,12 @@ HTTP `201` trả về metadata của inbound access. Với `authMode: "KEY"`, re
   "lastUsedAt": null,
   "created": 1788023000000,
   "updated": 1788023000000,
-  "url": "https://{WORKSPACE_DOMAIN}/api/v1/ts-projects/order_automation/hooks/TSIXXXXXXXXXXXX/payments",
+  "url": "/api/v1/ts-projects/order_automation/hooks/TSIXXXXXXXXXXXX",
   "inboundKey": "cog_ik_TSIXXXXXXXXXXXX_<secret>"
 }
 ```
 
-Với `authMode: "HMAC"`, `secretHint` là `null` và `hmac` trả lại `header`, `encoding`, `prefix`, `timestampHeader`, `toleranceSeconds`; signing secret không bao giờ được trả về. `url` là URL gốc mà hệ thống ngoài gọi, ghép từ slug của module, inbound ID và `routePrefix`.
+Với `authMode: "HMAC"`, `secretHint` là `null` và `hmac` trả lại `header`, `encoding`, `prefix`, `timestampHeader`, `toleranceSeconds`; signing secret không bao giờ được trả về. `url` là path gốc của inbound access, `/api/v1/ts-projects/{projectSlug}/hooks/{inboundId}`, tương đối với origin của Workspace; không chứa origin lẫn `routePrefix`. Hệ thống ngoài gọi `https://{WORKSPACE_DOMAIN}` nối với `url` và phần route sau `/hooks`, ví dụ `.../hooks/TSIXXXXXXXXXXXX/payments` cho route `/hooks/payments`.
 
 ### Liệt kê hoặc đọc inbound access
 
@@ -888,7 +955,7 @@ Content-Type: application/json
 }
 ```
 
-Gửi ít nhất một field. Không thể đổi `authMode`. `hmac` chỉ được chấp nhận với inbound access loại `HMAC` và thay thế toàn bộ cấu hình HMAC, kể cả secret. Trả về metadata đã cập nhật.
+Gửi ít nhất một field. Không thể đổi `authMode`. `hmac` chỉ được chấp nhận với inbound access loại `HMAC` và được gộp vào cấu hình HMAC hiện có: member không gửi giữ giá trị hiện tại, nên ví dụ trên thay secret và header, giữ nguyên encoding, prefix và cấu hình timestamp. Gửi `prefix: null` để bỏ prefix. Để tắt chống replay, gửi cả `timestampHeader: null` và `toleranceSeconds: null`; chỉ gửi `timestampHeader: null` bị từ chối với `400` khi tolerance đang được cấu hình. Trả về metadata đã cập nhật.
 
 ### Rotate hoặc revoke inbound access
 
@@ -926,7 +993,7 @@ Content-Type: application/json
 }
 ```
 
-Mọi field đều không bắt buộc. `status` là `PENDING`, `RUNNING`, `SUCCEEDED` hoặc `FAILED`; `page` bắt đầu từ 1 và `pageSize` tối đa 200. Trả `{ "items": [...], "page": 1, "pageSize": 50, "totalItems": 3 }`, mới nhất trước.
+Mọi field đều không bắt buộc. `status` là `PENDING`, `RUNNING`, `SUCCEEDED` hoặc `FAILED`; `page` bắt đầu từ 1 và `pageSize` (mặc định 20) tối đa 200. Trang có offset lớn hơn 2.147.483.647 bị từ chối với `400`. Trả `{ "items": [...], "page": 1, "pageSize": 50, "totalItems": 3 }`, mới nhất trước.
 
 ```http
 POST /api/v1/ts-projects/{projectId}/jobs/runs/{runId}
@@ -949,19 +1016,42 @@ Trả về một lần chạy:
   "maxAttempts": 3,
   "timeoutMs": 60000,
   "runAt": 1788023000000,
-  "enqueuedBy": "http",
+  "enqueuedBy": "rpc",
+  "actorPersonnelId": "PERXXXXXXXXXXXX",
   "idempotencyKey": "recalc:daily",
   "payloadBytes": 42,
   "lastErrorCode": "RETRYABLE",
-  "lastErrorMessage": "The ERP is temporarily unavailable",
+  "lastErrorMessage": "The job reported a temporary failure",
   "created": 1788022000000,
   "updated": 1788024000000,
   "startedAt": 1788023900000,
-  "finishedAt": 1788024000000
+  "finishedAt": 1788024000000,
+  "durationMs": 1830,
+  "usage": {
+    "capabilityCalls": 212,
+    "localCalls": 0,
+    "recordsRead": 4200,
+    "recordsWritten": 0
+  }
 }
 ```
 
-`source` là `ENQUEUE` hoặc `SCHEDULE`. `enqueuedBy` cho biết nguồn tạo lần chạy: `http` hoặc `rpc` với lời gọi module, `trigger:<key>`, `job:<key>`, `inbound:<inboundId>`, `schedule` hoặc `development`. Payload của lần chạy không bao giờ được trả về; chỉ có `payloadBytes`. `lastErrorMessage` là thông báo tiếng Anh từ module hoặc Cogover, không chứa dữ liệu payload. Lần chạy đã kết thúc được giữ 7 ngày.
+`source` là `ENQUEUE` hoặc `SCHEDULE`. `enqueuedBy` cho biết nguồn tạo lần chạy: `rpc` hoặc `http` với lời gọi module (lời gọi qua domain Workspace được ghi là `rpc`), `trigger:<key>`, `job:<key>`, `inbound:<inboundId>`, `schedule`, `development`, hoặc `management` với endpoint enqueue bên dưới. `actorPersonnelId` là nhân sự mà lần chạy thực thi dưới danh nghĩa, hoặc `null` với lần chạy không có user. Payload của lần chạy không bao giờ được trả về; chỉ có `payloadBytes`. Lần chạy đã kết thúc được giữ 7 ngày.
+
+`lastErrorCode` và `lastErrorMessage` mô tả lần thử thất bại gần nhất. Message là đoạn text tiếng Anh cố định do Cogover chọn; không bao giờ chứa message lỗi do module ném ra hay dữ liệu payload.
+
+`durationMs` và `usage` mô tả lần thử gần nhất: thời gian chạy và phần đã dùng của các ngân sách mỗi lần thực thi của job (capability call, lời gọi cục bộ như `crypto`, record đọc và record ghi; xem "Giới hạn của một lần thực thi" trong SDK API reference). `usage` là `null` với lần thử không chạy tới handler, và cả hai là `null` với lần thử kết thúc trước khi Cogover ghi nhận các giá trị này.
+
+| `lastErrorCode` | Ý nghĩa |
+|---|---|
+| `RETRYABLE` | Handler ném `RetryableError`; lần chạy được thử lại khi còn lượt. |
+| `JOB_TIMEOUT` | Lần thử vượt `timeoutMs` của job; được thử lại khi còn lượt. |
+| `JOB_CAPACITY_EXHAUSTED` | Không còn năng lực runtime; được thử lại khi còn lượt. |
+| `JOB_EXECUTION_FAILED` | Handler ném lỗi khác hoặc vượt giới hạn (không thử lại), hoặc gặp lỗi nền tảng (được thử lại). |
+| `JOB_NOT_DEFINED` | Active version không còn khai báo job này. |
+| `JOB_PROJECT_UNAVAILABLE` | Module hoặc active version của nó không còn khả dụng, ví dụ sau khi deactivate. |
+| `JOB_ACTOR_UNAVAILABLE` | User mà lần chạy thực thi dưới danh nghĩa không còn là thành viên Workspace. |
+| `JOB_ABANDONED` | Lần thử bị gián đoạn và không còn lượt thử. |
 
 ### Enqueue một lần chạy job
 
@@ -981,7 +1071,7 @@ Content-Type: application/json
 }
 ```
 
-`jobKey` phải được active version khai báo. `payload` là JSON không bắt buộc, tối đa 65.536 byte; `delayMs` không bắt buộc, từ 0 đến 2.592.000.000 (30 ngày); `idempotencyKey` không bắt buộc và khớp `[A-Za-z0-9][A-Za-z0-9._:-]{0,127}`. HTTP `201` trả `{ "runId": "TSJXXXXXXXXXXXX", "duplicate": false }`; `duplicate: true` nghĩa là đã tồn tại lần chạy cùng job và cùng idempotency key, và `runId` là lần chạy đó. Lần chạy thực thi với danh tính system, theo identity policy đã duyệt của module. Module phải có active version và tối đa 10.000 lần chạy đang chờ hoặc đang chạy, nếu không trả `409` hoặc `429`.
+`jobKey` phải được active version khai báo. `payload` là JSON không bắt buộc, tối đa 65.536 byte; `delayMs` không bắt buộc, từ 0 đến 2.592.000.000 (30 ngày); `idempotencyKey` không bắt buộc và khớp `[A-Za-z0-9][A-Za-z0-9._:-]{0,127}`. HTTP `201` trả `{ "runId": "TSJXXXXXXXXXXXX", "duplicate": false }`; `duplicate: true` nghĩa là đã tồn tại lần chạy cùng job và cùng idempotency key, và `runId` là lần chạy đó. Lần chạy thực thi dưới danh nghĩa Super Admin đã gọi endpoint này, như một lời gọi module do chính user đó thực hiện: `data.object()` dùng quyền của họ, và lần chạy được liệt kê với `enqueuedBy: "management"` cùng `actorPersonnelId` của họ. Module phải có active version khai báo `jobKey` và tối đa 10.000 lần chạy đang chờ hoặc đang chạy; nếu không trả `409` (kèm `code: "JOB_NOT_DEFINED"` khi job không được khai báo) hoặc `429`.
 
 ### Liệt kê lịch job
 
@@ -994,7 +1084,7 @@ Content-Type: application/json
 {}
 ```
 
-Trả `{ "items": [...] }` với một phần tử cho mỗi job có lịch của active version:
+Trả `{ "items": [...], "total": 1 }` với một phần tử cho mỗi job có lịch của active version, sắp theo `jobKey`:
 
 ```json
 {
@@ -1004,12 +1094,14 @@ Trả `{ "items": [...] }` với một phần tử cho mỗi job có lịch củ
   "status": "ACTIVE",
   "nextRunAt": 1788037200000,
   "lastRunAt": 1787950800000,
+  "timeoutMs": 30000,
+  "maxAttempts": 5,
   "created": 1788023000000,
   "updated": 1788023000000
 }
 ```
 
-Lịch được tạo và gỡ khi activate/deactivate version; không chỉnh sửa được tại đây. Deactivate module sẽ vô hiệu hóa các lịch của module.
+`timezone` là ID múi giờ đã chuẩn hoá, nên offset khai báo là `UTC+7` được liệt kê là `UTC+07:00`; giá trị là `UTC` khi job không khai báo múi giờ. `lastRunAt` là thời điểm theo lịch gần nhất đã tạo lần chạy, hoặc `null`. `timeoutMs` và `maxAttempts` là giá trị mỗi lần chạy theo lịch nhận được. Lịch được tạo, cập nhật và gỡ khi activate version và khi deactivate module; không chỉnh sửa được tại đây. Deactivate module sẽ gỡ các lịch của module. Lịch không còn tính được thời điểm chạy kế tiếp bị chuyển sang `DISABLED` cho tới khi activate version khác.
 
 ## Theo dõi toàn workspace
 
@@ -1156,11 +1248,28 @@ Content-Type: application/json
 
 Hỗ trợ `GET`, `POST`, `PUT`, `PATCH` và `DELETE`. Request body phải là một JSON object; script input hiệu lực giới hạn 256 KiB. Route phân biệt chữ hoa/thường, không được có dấu `/` cuối và không được chứa segment rỗng, `.` hoặc `..`. Root của module là `/api/v1/ts-projects/{projectSlug}` và không có dấu `/` cuối.
 
-Script nhận JSON body cùng request context chỉ đọc, gồm method, route path, query parameter, request header an toàn, Workspace và user đã xác thực. Credential và transport header không bao giờ được truyền cho code của module.
+Script nhận JSON body cùng request context chỉ đọc, gồm method, route path, query parameter, request header an toàn, Workspace và user đã xác thực. Query parameter luôn lấy từ URL của request, không bao giờ lấy từ body. Credential và transport header không bao giờ được truyền cho code của module.
 
-Module chọn HTTP status, content type, header và body qua public SDK response API. Nếu không dùng custom response, JSON result hợp lệ được trả với HTTP `200` và `application/json; charset=utf-8`. Code trong module không thể đặt hop-by-hop header, cookie, server-identifying header hoặc Cogover routing header.
+Project slug không tồn tại trả `404`, module không có active version trả `409`. Method khác năm method trên trả `405`.
 
-`Idempotency-Key` không bắt buộc nhưng nên dùng cho request có thể ghi dữ liệu. Retry đã hoàn tất với cùng caller, version deploy, method, route và key sẽ phát lại kết quả đầu tiên. Request trùng đang chạy trả `409`. Idempotency không biến nhiều thao tác dữ liệu thành một transaction.
+Module chọn HTTP status, content type, header và body qua public SDK response API. Nếu không dùng custom response, JSON result hợp lệ được trả với HTTP `200` và `application/json; charset=utf-8`; kể cả object trả về chỉ trông giống SDK response cũng được gửi như dữ liệu JSON. Code trong module không thể đặt hop-by-hop header, cookie, server-identifying header hoặc Cogover routing header. `response.redirect` chỉ nhận status `301`, `302`, `303`, `307` và `308`.
+
+Khi lỗi SDK thoát khỏi handler, response dùng HTTP status theo nhóm lỗi (ví dụ `400` với `VALIDATION_ERROR`, `403` với `PERMISSION_DENIED`, `404` với `NOT_FOUND`, `429` với `RATE_LIMITED`) và có `r`, `code`, `msg` tiếng Anh, `writesMayHaveCompleted`, cùng các chi tiết an toàn khi liên quan như `reason`, `operation`, `objectSlug`, `fieldSlug` và `objectServerR`. Ví dụ, thao tác ghi record bị record trigger before-change từ chối mà handler không bắt lỗi sẽ trả `400` với `code: "VALIDATION_ERROR"` và `reason: "TRIGGER_REJECTED"`.
+
+Mọi lỗi khác, như exception JavaScript không được bắt hoặc vượt giới hạn thực thi, trả `422` không có `code`:
+
+```json
+{
+  "r": 422,
+  "msg": "Script execution failed or exceeded its limits; writes may already have completed"
+}
+```
+
+Cả `writesMayHaveCompleted: true` lẫn message này đều không có nghĩa là thao tác ghi đã thành công; hãy kiểm tra dữ liệu trước khi retry lời gọi có ghi.
+
+Mỗi lời gọi chạy trong giới hạn của nền tảng về thời gian thực thi và về số lượng, kích thước các SDK call; giá trị do nền tảng đặt và có thể khác nhau giữa các môi trường. Giới hạn thời gian tính từ lúc handler bắt đầu chạy; vượt quá thì lời gọi kết thúc với response `422` ở trên. SDK call vượt ngân sách call, hoặc một call quá lớn, bị từ chối trước khi gửi bằng lỗi mà handler bắt được. Khi Workspace đã có quá nhiều lời gọi đang chờ, lời gọi mới bị từ chối trước khi chạy với `429` và `code: "RATE_LIMITED"`; hãy thử lại sau.
+
+`Idempotency-Key` không bắt buộc nhưng nên dùng cho request có thể ghi dữ liệu. Retry đã hoàn tất với cùng caller, version deploy, method, route và key sẽ phát lại kết quả đầu tiên trong tối đa 6 giờ. Request trùng đang chạy trả `409`. Kết quả đầu tiên lớn hơn 32 KiB, hoặc vượt hạn mức phát lại theo giờ của Workspace, không được lưu: retry cùng key khi đó trả `409` mà không chạy lại handler. Idempotency không biến nhiều thao tác dữ liệu thành một transaction.
 
 Module mà code chỉ khai báo record trigger hoặc background job và không có HTTP handler mặc định thì không có endpoint để gọi: mọi URI gọi module đó trả `404`. Record trigger và job không bao giờ truy cập được qua URI gọi module; trigger chỉ chạy khi bản ghi thay đổi và job chỉ chạy khi được enqueue hoặc theo lịch.
 
@@ -1178,7 +1287,7 @@ Hỗ trợ `GET`, `POST`, `PUT`, `PATCH` và `DELETE`. `inboundId` là ID của 
 Xác thực phụ thuộc vào `authMode` của inbound access:
 
 - `KEY`: gửi inbound key trong `Authorization: Bearer cog_ik_<inboundId>_<secret>` hoặc trong `X-Cogover-Inbound-Key: cog_ik_<inboundId>_<secret>`.
-- `HMAC`: gửi chữ ký trong `header` đã cấu hình. Chữ ký là `<prefix>` nối với HMAC-SHA256 của signed payload, mã hóa theo `encoding`, tính bằng secret dùng chung. Signed payload là raw body của request theo byte; khi có cấu hình `timestampHeader`, signed payload là `<timestamp>.<raw body>`, với `<timestamp>` là giá trị header đó tính bằng giây Unix, và lời gọi bị từ chối khi timestamp lệch quá `toleranceSeconds` so với giờ server.
+- `HMAC`: gửi chữ ký trong `header` đã cấu hình. Chữ ký là `<prefix>` nối với HMAC-SHA256 của signed payload, mã hóa theo `encoding`, tính bằng secret dùng chung. Signed payload là raw body của request theo byte; khi có cấu hình `timestampHeader`, signed payload là `<timestamp>.<raw body>`, với `<timestamp>` là giá trị header đó tính bằng giây Unix (cũng chấp nhận millisecond Unix), và lời gọi bị từ chối khi timestamp lệch quá `toleranceSeconds` so với giờ server.
 
 ```http
 POST /api/v1/ts-projects/order_automation/hooks/TSIXXXXXXXXXXXX/payments
@@ -1191,9 +1300,9 @@ Content-Type: application/json
 
 Mọi lỗi xác thực — inbound access không tồn tại, đã revoke hoặc hết hạn, inbound access của module khác, route ngoài `routePrefix`, key hoặc chữ ký sai, timestamp ngoài tolerance — trả HTTP `401` với `{ "r": 401, "msg": "Inbound authentication failed" }`, không kèm chi tiết. Mỗi inbound access, và mỗi địa chỉ gọi, nhận tối đa 600 request mỗi phút; vượt quá trả `429`. Khi có `timestampHeader`, mỗi chữ ký chỉ được chấp nhận một lần: request thứ hai cùng chữ ký trong cửa sổ tolerance bị từ chối với `401`, nên request bị chặn bắt không thể phát lại.
 
-Request body giới hạn 256 KiB (`413` nếu lớn hơn). Khi body là JSON object, nó trở thành `request.body` của module; body dạng form, text hoặc dạng khác vẫn được chấp nhận và cho module `request.body` rỗng. Trong mọi trường hợp module nhận raw body qua `request.rawBody` và content type của request qua `request.contentType`, nên có thể tự kiểm tra cơ chế chữ ký riêng của hệ thống ngoài. Query parameter và request header an toàn được truyền như mọi lời gọi khác; inbound key và header chữ ký không bao giờ lộ vào code của module.
+Request body giới hạn 256 KiB (`413` nếu lớn hơn). Khi body là JSON object, nó trở thành `request.body` của module; body dạng form, text hoặc dạng khác vẫn được chấp nhận và cho module `request.body` rỗng. Trong mọi trường hợp module nhận raw body qua `request.rawBody` và content type của request qua `request.contentType`, nên có thể tự kiểm tra cơ chế chữ ký riêng của hệ thống ngoài. Raw body chỉ tính vào giới hạn body 256 KiB, nhưng JSON body đã parse, request header và context của lời gọi cộng lại cũng bị giới hạn 256 KiB như mọi lời gọi khác, nên JSON body sát 256 KiB vẫn có thể bị từ chối với `413`. Query parameter và request header an toàn được truyền như mọi lời gọi khác. Header chứa inbound key và `header` chữ ký HMAC đã cấu hình không bao giờ lộ vào code của module; `timestampHeader`, nếu có, vẫn hiện trong `request.headers`.
 
-Module chạy với danh tính `inbound`: `invocation.identity` là `"inbound"`, không có user, và thao tác record dùng danh tính system theo identity policy đã duyệt của module. HTTP status, header và body do module chọn như mọi lời gọi khác, và `Idempotency-Key` hoạt động như bình thường. Module không có active version, hoặc route mà module không định nghĩa, trả `404`.
+Module chạy với danh tính `inbound`: `invocation.identity` là `"inbound"`, không có user, và thao tác record dùng danh tính system theo identity policy đã duyệt của module. HTTP status, header và body do module chọn như mọi lời gọi khác. `Idempotency-Key` hoạt động như bình thường nhưng chỉ dưới dạng request header: request body là dữ liệu của hệ thống ngoài và không bao giờ được dùng làm idempotency key. Module không có active version trả `404` với `msg: "TypeScript project not found"`, và route mà module không định nghĩa trả `404`.
 
 ## Preview chính xác một version
 
@@ -1240,12 +1349,23 @@ Khi `showDebugData` là `false`, response giống contract HTTP trực tiếp c�
   },
   "durationMs": 24,
   "replayed": false,
+  "usage": {
+    "capabilityCalls": {"used": 3, "limit": 100},
+    "localCalls": {"used": 0, "limit": 200},
+    "recordsRead": {"used": 120, "limit": 10000},
+    "recordsWritten": {"used": 0, "limit": 10000},
+    "elapsedMs": 21,
+    "timeLimitMs": 8000
+  },
+  "operations": {"records.list": 2, "state.get": 1},
   "stdout": "",
   "stderr": "",
   "logsTruncated": false
 }
 ```
 
-Debug output bị giới hạn kích thước. Script lỗi trả `success: false` cùng object `error`. Stack trace và thông tin hệ thống nội bộ không được trả về.
+`usage` cho biết preview đã dùng bao nhiêu mỗi ngân sách của lần thực thi, giống `limits.usage()` của SDK, còn `operations` đếm số lời gọi SDK theo operation, kể cả lời gọi bị từ chối vì đã hết ngân sách. Dùng chúng để tìm lời gọi chạm giới hạn.
+
+Debug output bị giới hạn kích thước. Script lỗi trả `success: false` cùng object `error`; response lỗi cũng có `durationMs`, và có `usage`, `operations` khi handler đã bắt đầu chạy. Stack trace và thông tin hệ thống nội bộ không được trả về. Lỗi không thuộc nhóm lỗi SDK nào trả `422`: ở mode `READ_WRITE`, `error` có message giống production `"Script execution failed or exceeded its limits; writes may already have completed"` và `writesMayHaveCompleted: true`; ở mode `READ_ONLY`, message là `"Script execution failed or exceeded its limits"` và `writesMayHaveCompleted: false`.
 
 `READ_ONLY` chỉ cho phép thao tác đọc. `READ_WRITE` không tự cấp thêm quyền; mọi lời gọi vẫn bị giới hạn bởi caller, policy và capability hiện có. Các thao tác ghi là thật và không được rollback theo nhóm.

@@ -10,7 +10,7 @@ cogover-dev --version
 cogover-dev --help
 ```
 
-Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
+Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`, áp ngân sách của lần thực thi khi chạy local và hiện `durationMs`/`usage` trong `jobs runs`/`jobs run` từ `0.19.0`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
 
 ```json
 {
@@ -53,6 +53,8 @@ COGOVER_LOCAL_PORT=<PORT> cogover-dev run --profile <PROFILE> --allow-writes=fal
 ```
 
 `--allow-writes=false` tạo session chỉ đọc, bắt buộc khi Project key chỉ đọc; test ghi được phép dùng `--allow-writes=true`; không viết `--allow-writes false`. Cả hai vẫn dùng dữ liệu Workspace thật. Session ghi được tạo hiệu ứng thật: ngoài ghi record, state và lock, push message, notification (`notifications.send`) và email (`email.send`) tới người thật trong hoặc ngoài Workspace; session chỉ đọc từ chối tất cả, nhưng vẫn đọc được `org` và `email.senders()`. Local HTTP runner chỉ listen loopback và giữ cùng handler với bản publish.
+
+Từ CLI `0.19.0`, với project dùng `@cogover/sdk` từ `0.14.0`, `run` áp cho mỗi lần gọi handler ngân sách của đúng loại lần thực thi (HTTP route, trigger before-change, after-change, job) như trên Cogover: lời gọi có thể vượt không được gửi và ném `RateLimitError` có `details.budget`, `limits.usage()` trả bộ đếm của lần gọi đó. Khác Cogover: record liên kết của `expandLookups` không được tính, giới hạn thời gian chỉ báo trong `usage()`, project SDK cũ hơn hoặc lời gọi SDK ngoài handler không bị áp; Development Session vẫn có quota lời gọi riêng. Thêm `--no-enforce-limits` để chỉ đếm (đo mức dùng) mà không từ chối, ví dụ `cogover-dev run --profile <PROFILE> --no-enforce-limits -- npm run dev`; kết luận PASS bằng lần chạy không có cờ này.
 
 Build và publish tại đúng thư mục project:
 

@@ -371,7 +371,7 @@ Máy chủ local không tự chạy job hay lịch cron. Với logic cần thử
 | `PERMISSION_DENIED` khi truy cập record | Kiểm tra quyền người gọi; với run system, kiểm tra policy và phê duyệt cho version active. |
 | `JOB_ACTOR_UNAVAILABLE` | Người dùng đã enqueue run không còn thuộc Workspace. |
 | `JOB_TIMEOUT` | Giảm công việc mỗi run hoặc tăng `timeoutMs`, tối đa 60.000. |
-| `RateLimitError` | Giảm số enqueue mỗi invocation hoặc chờ hàng đợi xử lý bớt. |
+| `RateLimitError` | Có `details.budget`: lần chạy đã dùng hết một ngân sách của lần thực thi (ví dụ 1.000 capability call hoặc 50.000 record đọc), hãy xử lý ít record hơn mỗi lần chạy và tiếp tục ở lần chạy mới; retry sẽ chạm lại đúng ngân sách đó. Không có `details.budget`: giảm số enqueue mỗi invocation (tối đa 50) hoặc chờ hàng đợi xử lý bớt. |
 | Enqueue trả về run cũ | Đổi idempotency key khi cần bắt đầu công việc mới. |
 | Không thấy run theo lịch | Kiểm tra activation, cron và múi giờ bằng `cogover-dev jobs schedules`; chờ một chút để lịch xuất hiện sau activation. |
 | `Job run not found` | Kiểm tra Project và ID; lịch sử run đã kết thúc hết hạn sau bảy ngày. |

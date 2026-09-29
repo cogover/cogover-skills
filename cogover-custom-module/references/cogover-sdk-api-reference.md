@@ -42,6 +42,7 @@ interface ScriptContext<Input, Schema extends object = EffectiveWorkspaceObjects
   readonly secrets: SecretsApi;
   readonly crypto: CryptoApi;
   readonly org: OrgApi;
+  readonly limits: LimitsApi;
 }
 ```
 
@@ -50,14 +51,15 @@ quả ném lỗi nếu input không phải JSON hợp lệ hoặc output không 
 JSON. Trả `null` tạo kết quả null; trả `undefined` là không hợp lệ.
 
 Hàm wrapper parse input JSON, cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`, `log`, `state`, `locks`,
-`push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, chờ kết quả async và serialize output thành
-JSON.
+`push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org`, `limits`, chờ kết quả async và serialize output thành
+JSON. `limits` đọc ngân sách của lần thực thi (xem
+[Đọc giới hạn trong code](#đọc-giới-hạn-trong-code)).
 
 ## HTTP router và request context
 
 `ScriptContext<TInput, TSchema>` cung cấp `input`, `request`, `invocation`, `response`, `data`, `schema`,
-`log`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`, `secrets`, `crypto` và `org` cho cả script
-handler lẫn route handler. `input`
+`log`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`, `secrets`, `crypto`, `org` và `limits` cho
+cả script handler lẫn route handler. `input`
 giữ input invocation hiện có. Nên dùng `request.body` cho dữ liệu nghiệp vụ: body không chứa invocation
 metadata và các field transport/xác thực đã được Cogover loại bỏ.
 
@@ -551,6 +553,7 @@ interface TriggerContext<
   readonly secrets: SecretsApi;
   readonly crypto: CryptoApi;
   readonly org: OrgApi;
+  readonly limits: LimitsApi;
 }
 
 interface TriggerInfo<Operation extends TriggerOperation = TriggerOperation> {
@@ -587,7 +590,8 @@ cho từng record. Hãy giữ `fields` ngắn gọn và đọc dữ liệu liên
 bằng một lời gọi `records.getMany` thay vì đọc riêng cho từng record.
 
 `data`, `schema`, `log`, `invocation`, `push`, `notifications`, `email`, `jobs`, `secrets`,
-`crypto` và `org` là chính các API mà script nhận được. Trigger context không có `input`,
+`crypto`, `org` và `limits` là chính các API mà script nhận được; trigger before-change có ngân
+sách nhỏ hơn (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Trigger context không có `input`,
 `request`, `response`, `state` hay `locks`; `push`, `notifications` và `email` bị từ chối trong
 trigger before-change. `trigger.operation`
 là operation của lần gọi hiện tại, `trigger.id` định danh đăng ký của trigger và
@@ -962,6 +966,7 @@ interface JobContext<Payload = unknown, Schema extends object = EffectiveWorkspa
   readonly secrets: SecretsApi;
   readonly crypto: CryptoApi;
   readonly org: OrgApi;
+  readonly limits: LimitsApi;
 }
 
 interface JobInfo {
@@ -977,8 +982,9 @@ interface JobInfo {
 
 Handler có thể đồng bộ hoặc bất đồng bộ; giá trị trả về bị bỏ qua. `data`,
 `schema`, `log`, `invocation`, `state`, `locks`, `notifications`, `email`, `jobs`,
-`secrets`, `crypto` và `org` là chính các API mà script nhận được. Job context không có
-`input`, `request`, `response` hay `push`.
+`secrets`, `crypto`, `org` và `limits` là chính các API mà script nhận được; `limits` cho
+biết ngân sách lớn hơn của job (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
+Job context không có `input`, `request`, `response` hay `push`.
 
 - `job.id` định danh lần chạy và không đổi qua các lần thử; dùng nó làm idempotency
   key cho các lời gọi ra ngoài. `job.attempt` bắt đầu từ 1.
@@ -1032,10 +1038,9 @@ inbound webhook. Trigger before-change bị từ chối bằng `PermissionDenied
 (`details.reason === "TRIGGER_READ_ONLY"`), phiên phát triển local không có quyền
 ghi cũng vậy (`"DEVELOPMENT_SESSION_READ_ONLY"`). Một invocation enqueue tối đa
 50 lần chạy, và một project có tối đa 10.000 lần chạy đang chờ hoặc đang chạy; vượt
-quá sẽ ném `RateLimitError`. HTTP route hoặc trigger sẽ dùng hết ngân sách 20
-capability call trước (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)),
-nên ở đó không chạm tới giới hạn 50 lần enqueue. Khi job chưa được bật cho Workspace,
-lỗi là `CogoverApiError` với `code: "JOBS_DISABLED"`.
+quá sẽ ném `RateLimitError`. Mỗi lần `enqueue` cũng tính là một capability call (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Khi job
+chưa được bật cho Workspace, lỗi là `CogoverApiError` với `code: "JOBS_DISABLED"`.
 
 ### Quy tắc thực thi job
 
@@ -1164,10 +1169,10 @@ và concurrency đều có quota.
 
 Lỗi được ném dưới dạng `CogoverApiError` với code `FETCH_DISABLED`, `FETCH_BLOCKED`,
 `FETCH_REQUEST_TOO_LARGE`, `FETCH_RESPONSE_TOO_LARGE`, `FETCH_TIMEOUT` hoặc
-`FETCH_FAILED`; quota dùng `RateLimitError`. Một lần thực thi gọi `fetch` tối đa 20 lần;
-HTTP route hoặc trigger dùng hết ngân sách 20 capability call trước, và điều đó cũng
-được báo bằng `RateLimitError` (xem
-[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Với POST/PUT/PATCH/DELETE bị timeout
+`FETCH_FAILED`; quota dùng `RateLimitError`. Một lần thực thi gọi `fetch` tối đa 20 lần,
+và mỗi lần cũng tính vào ngân sách capability call của lần thực thi (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)); vượt một
+trong hai đều được báo bằng `RateLimitError`. Với POST/PUT/PATCH/DELETE bị timeout
 hoặc mất response, remote server có thể đã xử lý request. Hãy dùng idempotency key
 của API đích và không retry mù.
 
@@ -1249,8 +1254,8 @@ inbound webhook. Trigger before-change bị từ chối bằng `PermissionDenied
 secret khi quản trị viên cho phép, nếu không reason là `"SECRETS_NOT_ALLOWED"`.
 Một invocation đọc secret tối đa 20 lần; mọi lần đọc đều được tính, kể cả đọc lại cùng
 tên và thao tác `crypto` dùng key `{ secret: name }`, và lần thứ 21 ném `RateLimitError`.
-Trong HTTP route hoặc trigger, ngân sách 20 capability call sẽ hết trước (xem
-[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Khi secret chưa được bật cho Workspace, lỗi là `CogoverApiError`
+`secrets.get` cũng tính là một capability call, còn thao tác `crypto` tính là một lời gọi
+cục bộ (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)). Khi secret chưa được bật cho Workspace, lỗi là `CogoverApiError`
 với `code: "SECRETS_DISABLED"`. Không bao giờ ghi giá trị secret vào log, record,
 state hay response. Để ký, mã hoá hoặc giải mã bằng secret mà không đọc giá trị,
 truyền `{ secret: name }` làm key của một thao tác [`crypto`](#mã-hoá-và-chữ-ký).
@@ -1558,8 +1563,9 @@ hơn một phần ba. Vì vậy dữ liệu nhị phân lớn hơn khoảng 190 
 256 KiB cùng các đối số khác, sẽ ném `ValidationError` trước khi gọi dù từng giá trị vẫn
 trong giới hạn riêng của nó. Các lỗi về key, thuật toán và tuỳ chọn do Cogover phát hiện, như key sai kích
 thước hoặc sai loại, cũng ném `ValidationError`. Mọi thao tác trừ `timingSafeEqual`
-là một capability call và được tính vào giới hạn của invocation; `randomUUID` gọi một
-lần cho mỗi 64 UUID.
+là một lời gọi cục bộ và được tính vào ngân sách lời gọi cục bộ của invocation, không
+tính vào capability call (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi));
+`randomUUID` gọi một lần cho mỗi 64 UUID.
 
 Các thao tác hoạt động trong mọi context, kể cả trigger before-change, khi key được
 truyền trực tiếp trong lời gọi. Key `{ secret }` tuân theo quy tắc của
@@ -1945,8 +1951,10 @@ const { records, missingIds } = await accounts.records.getMany(accountIds, { fie
 const accountById = new Map(records.map(record => [record.id, record]));
 ```
 
-Dùng `getMany` thay cho việc gọi `get` trong vòng lặp. Mỗi capability call đều được
-tính vào hạn mức của project, và một record trigger có thể nhận 200 record cùng lúc.
+Dùng `getMany` thay cho việc gọi `get` trong vòng lặp. Mỗi capability call và mỗi record
+đọc đều được tính vào ngân sách của lần thực thi (xem
+[Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)), và một record
+trigger có thể nhận 200 record cùng lúc.
 
 SDK chuẩn hoá boolean `0/1` thành `true/false`. Giá trị lookup hoặc reference là
 `RecordReference` gồm `id`, `name` và `objectSlug`. `name` là `""` trừ khi lệnh đọc mở
@@ -3178,8 +3186,8 @@ tồn tại.
   webhook, hoặc record trigger do một thao tác ghi của hệ thống gây ra) chỉ đọc được
   khi identity policy đã duyệt của project đặt `allowInternalSystem: true`; nếu không,
   mọi lời gọi trừ `org.me()` ném `PermissionDeniedError` có `details.reason` là
-  `"IDENTITY_NOT_GRANTED"`. Khi đó `org.me()` trả `null` mà không thực hiện capability
-  call, vì lần thực thi không có user.
+  `"IDENTITY_NOT_GRANTED"`. Khi đó `org.me()` trả `null` mà không thực hiện lời gọi nào,
+  vì lần thực thi không có user.
 - Mọi lời gọi trong cùng một lần thực thi đọc cùng một phiên bản cơ cấu tổ chức.
 - ID được SDK kiểm tra và Cogover kiểm tra lại; ID hoặc option không hợp lệ ném
   `ValidationError`. Mọi method đều trả về promise, và đối số không hợp lệ làm promise đó
@@ -3188,8 +3196,9 @@ tồn tại.
   với `resource` là `"department"` hoặc `"position"`.
 - Khi không đọc được cơ cấu tổ chức, lời gọi ném `CogoverApiError` với code
   `ORGANIZATION_UNAVAILABLE`.
-- Dùng `getMany` hoặc `members` thay vì gọi `get` trong vòng lặp: mỗi lời gọi là một
-  capability call.
+- Lần đọc không có `withDisplay` là một lời gọi cục bộ; lần đọc có `withDisplay: true` là
+  một capability call (xem [Giới hạn của một lần thực thi](#giới-hạn-của-một-lần-thực-thi)).
+  Dùng `getMany` hoặc `members` thay vì gọi `get` trong vòng lặp: mỗi lời gọi tính một lần.
 
 ## Schema API
 
@@ -3398,15 +3407,40 @@ Các phản hồi này không rollback thao tác ghi trước đó; không tự 
 Mỗi lần thực thi chạy trong giới hạn của nền tảng. Các giá trị dưới đây là mặc định;
 chúng do nền tảng thiết lập và có thể khác giữa các môi trường.
 
-- Một HTTP route và một record trigger được gọi tối đa 20 capability call. Mỗi lời gọi
-  `data`, `schema`, `state`, `locks`, `push`, `notifications`, `email`, `jobs`,
-  `secrets`, `crypto`, `org` hoặc `fetch` tính một lần. Một background job được gọi 200.
-  Lời gọi vượt ngân sách và mọi lời gọi sau đó ném `RateLimitError` (`details.limit` là
-  ngân sách) mà không được gửi đi, nên script có thể bắt được.
+| Ngân sách của một lần thực thi | HTTP route | Trigger before-change | Trigger after-change | Background job |
+|---|---|---|---|---|
+| Capability call (`capabilityCalls`) | 100 | 20 | 100 | 1.000 |
+| Lời gọi cục bộ (`localCalls`) | 200 | 50 | 200 | 1.000 |
+| Record đọc (`recordsRead`) | 10.000 | 4.000 | 10.000 | 50.000 |
+| Record ghi (`recordsWritten`) | 10.000 | — | 10.000 | 50.000 |
+
+- **Capability call.** Mỗi lời gọi `data`, `schema`, `state`, `locks`, `push`,
+  `notifications`, `email`, `jobs`, `secrets` hoặc `fetch`, và mỗi lần đọc `org` có
+  `withDisplay: true`, tính một lần.
+- **Lời gọi cục bộ.** Lời gọi `crypto` và lần đọc `org` không có `withDisplay` do chính
+  Cogover xử lý, nên tính vào ngân sách riêng. Key `crypto` dạng `{ secret: name }` vẫn là
+  một lần đọc secret (xem quota bên dưới).
+- **Record đọc.** Các record mà `records.get`, `records.getMany` và `records.list` trả về,
+  cùng các record liên kết mà `expandLookups` đọc. Một lần đọc bị từ chối trước khi gửi
+  nếu có thể vượt ngân sách: `records.get` tính 1, `records.getMany` tính số ID, còn
+  `records.list` tính `limit` của nó (mặc định 20). `records.aggregate` không trả record
+  nên không tính.
+- **Record ghi.** `create`, `update` và `upsertByUniqueField` tính 1, `batchInsert` và
+  `batchUpdate` tính số record, `deleteMany` tính số ID, được tính khi lời gọi được gửi.
+  Trigger before-change không ghi được record.
+- Lời gọi có thể vượt một ngân sách, và mọi lời gọi sau đó thuộc ngân sách đó, ném
+  `RateLimitError` mà không được gửi đi, nên script có thể bắt được. `details.budget` là
+  tên ngân sách, `details.limit` là kích thước, `details.used` là phần lần thực thi đã
+  dùng, và với record thì `details.requested` là số lời gọi yêu cầu. Chờ không giúp được
+  gì: ngân sách thuộc về lần thực thi. Hãy đọc ít record hơn, dùng `records.aggregate` cho
+  số tổng, hoặc chuyển việc sang background job. Lần thực thi vẫn tiếp tục gọi sau 1.000
+  lời gọi bị từ chối sẽ bị kết thúc với `code: "RATE_LIMITED"`; script không bắt được lỗi này.
 - Một HTTP route có 8 giây wall-clock, tính từ lúc handler bắt đầu chạy, kể cả thời gian
   chờ capability call, chờ lock hoặc chờ server bên ngoài. Record trigger dùng
   `timeoutMs` của nó, background job dùng `timeoutMs` của job. Vượt thời gian sẽ kết thúc
   toàn bộ lần thực thi: script không bắt được, và HTTP route trả response HTTP 422 chung.
+  Các capability call của một lần thực thi chạy lần lượt, kể cả khi được bắt đầu cùng lúc
+  bằng `Promise.all`.
 - Một capability request, đã mã hoá JSON cùng tham số, không được vượt quá 262.144
   byte. Request lớn hơn bị từ chối trước khi gửi bằng `ValidationError`, hoặc
   `CogoverApiError` có `code: "FETCH_REQUEST_TOO_LARGE"` với `fetch`; `details.limit` là
@@ -3415,11 +3449,73 @@ chúng do nền tảng thiết lập và có thể khác giữa các môi trư�
   thay cho `"*"`. Bản thân
   thao tác vẫn đã chạy, nên thao tác ghi có thể đã hoàn tất.
 - Khi Workspace đã có quá nhiều lần thực thi đang chờ, lời gọi HTTP mới bị từ chối với
-  HTTP 429 và `code: "RATE_LIMITED"` trước khi chạy bất cứ gì; hãy thử lại sau.
+  HTTP 429 và `code: "RATE_LIMITED"` trước khi chạy bất cứ gì; hãy thử lại sau. Lỗi này
+  không có `details.budget`.
 
-Khi một API có quota riêng cho mỗi lần thực thi không nhỏ hơn ngân sách lời gọi, như 20
-lời gọi `fetch` hoặc 20 lần đọc secret, ngân sách lời gọi sẽ hết trước trong route hoặc
-trigger; cả hai đều được báo bằng `RateLimitError`.
+Một số API còn có quota riêng cho mỗi lần thực thi, như 20 lời gọi `fetch` hoặc 20 lần
+đọc secret. Vượt các quota này cũng được báo bằng `RateLimitError`.
+
+## Đọc giới hạn trong code
+
+```typescript
+const limits: LimitsApi;
+
+interface LimitsApi {
+  usage(): LimitUsage;
+}
+
+interface LimitUsage {
+  readonly capabilityCalls: LimitCounter;
+  readonly localCalls: LimitCounter;
+  readonly recordsRead: LimitCounter;
+  readonly recordsWritten: LimitCounter;
+  readonly elapsedMs: number;
+  readonly timeLimitMs: number;
+}
+
+interface LimitCounter {
+  readonly used: number;
+  readonly limit: number;
+  readonly remaining: number;
+}
+```
+
+`limits` được package export và cũng là thành phần `limits` trong context của script,
+route, record trigger và background job. `limits.usage()` trả các ngân sách của lần thực
+thi hiện tại tính đến lời gọi Cogover gần nhất: việc đọc không phải capability call.
+`remaining` là `limit - used` và không nhỏ hơn 0. `elapsedMs` là thời gian từ lúc handler
+bắt đầu tính đến lời gọi gần nhất đó, còn `timeLimitMs` là thời gian wall-clock lần thực
+thi được phép chạy. Gọi ngoài handler, ví dụ khi module đang nạp hoặc trong test chạy
+ngoài Cogover, `usage()` ném `CogoverApiError` với `code: "CAPABILITY_UNAVAILABLE"`.
+
+Khi code chạy local bằng Cogover Dev CLI, mỗi handler nhận ngân sách theo loại lần thực
+thi của nó và bị từ chối giống như trên Cogover; record liên kết mà `expandLookups` đọc
+không được tính ở local.
+
+```typescript
+import { defineScript } from "@cogover/sdk";
+
+export default defineScript(async ({ data, jobs, limits }) => {
+  const orders = data.object("order");
+  let cursor: string | undefined;
+  let total = 0;
+  do {
+    const page = await orders.records.list({ fields: ["amount"], limit: 200, cursor });
+    for (const order of page.items) total += Number(order.fields.amount ?? 0);
+    cursor = page.nextCursor;
+    const usage = limits.usage();
+    if (cursor !== undefined && (usage.recordsRead.remaining < 200 || usage.capabilityCalls.remaining < 2)) {
+      // Chuyển phần còn lại sang background job, vốn có ngân sách lớn hơn.
+      await jobs.enqueue("sum_orders", { cursor, total });
+      return { total, complete: false };
+    }
+  } while (cursor !== undefined);
+  return { total, complete: true };
+});
+```
+
+Với một số tổng như ví dụ này, `records.aggregate` chỉ tốn một capability call và không
+đọc record nào; chỉ duyệt từng trang record khi kết quả không biểu diễn được bằng aggregate.
 
 ## Khai báo Workspace
 
