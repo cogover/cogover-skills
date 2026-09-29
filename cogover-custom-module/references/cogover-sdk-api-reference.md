@@ -2016,8 +2016,9 @@ Public error không trả lại giá trị business key bị trùng.
 không tốn hơn những gì script dùng. `fields` là bắt buộc và là một trong hai dạng:
 
 - danh sách field slug không rỗng, được trim và loại trùng theo đúng thứ tự ban đầu;
-- chuỗi `"*"` đứng riêng: mọi field mà danh tính đang dùng được đọc và identity policy
-  của project cho phép. Khi policy chỉ cho phép một số field, `"*"` là các field đó,
+- chuỗi `"*"` đứng riêng: mọi field mà danh tính đang dùng được đọc. Với
+  `data.asUser()` hoặc `data.asSystem()`, `"*"` chỉ gồm các field được identity policy
+  của project cho phép: khi policy chỉ cho phép một số field, `"*"` là các field đó,
   không phải mọi field của Object.
 
 Thiếu `fields`, hoặc truyền `null`, danh sách rỗng, `["*"]` hay giá trị không phải field
@@ -2033,9 +2034,11 @@ lệnh đọc rồi publish lại.
 
 Có thể liệt kê các slug hệ thống `id`, `created`, `updated` và `created_by`; giá trị của
 chúng luôn được trả trong `id` và `system`, không nằm trong `fields`. `where` và `orderBy`
-được dùng field không có trong `fields`. Mọi field trong `fields`, `where` và `orderBy`
-phải được identity policy của project cho phép, nếu không lệnh đọc ném
-`PermissionDeniedError`; slug không có trong Object ném `ValidationError`.
+được dùng field không có trong `fields`. Với `data.asUser()` hoặc `data.asSystem()`, mọi
+field trong `fields`, `where` và `orderBy` phải được identity policy của project cho phép,
+nếu không lệnh đọc ném `PermissionDeniedError`; lệnh đọc qua `data.object()` không cần
+policy và theo quyền của danh tính đang dùng. Slug không có trong Object ném
+`ValidationError`.
 
 Kiểu kết quả đi theo `fields`. Khi có khai báo workspace, `fields: ["code", "amount"]`
 trả `CogoverRecord<Pick<Fields, "code" | "amount">>`, nên đọc một field không được yêu
@@ -2093,7 +2096,9 @@ thị, dùng
 với `withDisplay: true`.
 
 Record liên kết được đọc bằng cùng danh tính với lệnh đọc: người gọi, `data.asUser()`
-hoặc `data.asSystem()`. Identity policy của project phải cho phép đọc Object liên kết:
+hoặc `data.asSystem()`. Với `data.object()`, record liên kết theo quyền của danh tính
+đang dùng. Với `data.asUser()` hoặc `data.asSystem()`, identity policy của project còn
+phải cho phép đọc Object liên kết:
 
 - Với `true` hoặc `"*"`, chỉ các field liên kết được policy cho phép mới được trả. Khi
   policy không cho đọc Object liên kết, giá trị trỏ tới Object đó không được mở rộng.
@@ -2146,7 +2151,7 @@ cái, chữ số hoặc dấu gạch dưới; mỗi metric là đúng một tron
 | Metric | Field | Giá trị |
 |---|---|---|
 | `{ count: "id" }` | | số record khớp |
-| `{ count: field }` | mọi field trừ `reference`, `file` và `url` | số record khớp có giá trị ở field |
+| `{ count: field }` | field số, ngày, lựa chọn, `boolean`, `lookup_normal`, text, `email`, `phone` và `auto_number`; không nhận `reference`, `file`, `url`, `formula` và `rollup_summary` | số record khớp có giá trị ở field |
 | `{ countDistinct: field }` | các field mà `count` nhận | số giá trị khác nhau, xấp xỉ với tập lớn |
 | `{ sum: field }` | `numeric`, `decimal`, `currency`, `percent` | tổng |
 | `{ avg: field }` | các kiểu số ở trên | trung bình; `null` khi không record khớp nào có giá trị |
@@ -2168,9 +2173,10 @@ option slug với choice, `true` hoặc `false`, số, hoặc epoch milliseconds
 `limit`, chỉ dùng cùng `groupBy`, là số nhóm tối đa được trả: 1 đến 5.000, mặc định
 1.000. `truncated` là `true` khi còn nhóm khác và chỉ `limit` nhóm đầu được trả.
 
-Mọi field trong `where`, `groupBy` và `metrics`, trừ `"id"`, phải được identity policy
-của project cho phép, nếu không lời gọi ném `PermissionDeniedError`. Chỉ các record mà
-danh tính đang dùng nhìn thấy mới được tính.
+Với `data.asUser()` hoặc `data.asSystem()`, mọi field trong `where`, `groupBy` và
+`metrics`, trừ `"id"`, phải được identity policy của project cho phép, nếu không lời gọi
+ném `PermissionDeniedError`. Chỉ các record mà danh tính đang dùng nhìn thấy mới được
+tính.
 
 Client của `data.asUser()` có giới hạn hẹp hơn:
 
@@ -2184,7 +2190,8 @@ Client của `data.asUser()` có giới hạn hẹp hơn:
 
 Các giới hạn này cũng áp dụng cho `data.object()` khi lần thực thi đọc dưới danh tính một
 người dùng không phải người gọi HTTP: trong record trigger cho thay đổi do người dùng thực
-hiện, hoặc trong lần chạy job có người dùng. Nhóm ở đó ném `ValidationError` (`aggregate with groupBy is not
+hiện, trong lần chạy job có người dùng, hoặc trong Development Session local do
+`cogover-dev run` khởi động. Nhóm ở đó ném `ValidationError` (`aggregate with groupBy is not
 supported for the default identity of this invocation, which reads as a delegated user;
 use asSystem()`). Hãy dùng `data.asSystem()` ở đó, hoặc danh tính người gọi trong HTTP
 route, để nhóm và dùng các metric khác.

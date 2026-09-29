@@ -175,7 +175,8 @@ const approvers = chain?.tiers.flatMap(tier =>
 ## Chọn field cần đọc
 
 Mọi lệnh đọc phải nêu field: các slug mà script dùng, hoặc `"*"` cho mọi field mà danh
-tính đang dùng và identity policy của project được đọc. Lệnh đọc không có `fields` ném
+tính đang dùng được đọc (với `data.asUser()` hoặc `data.asSystem()`, chỉ các field được
+identity policy của project cho phép). Lệnh đọc không có `fields` ném
 `ValidationError` (`fields is required: pass field slugs or "*" (@cogover/sdk
 0.13.0+)`) trước khi gửi bất cứ gì.
 
@@ -265,8 +266,10 @@ for (const group of byStatus.groups) {
 ```
 
 Không có `groupBy` thì kết quả là `{ values }`. Client của `data.asUser()`, cũng như
-`data.object()` trong trigger hoặc job chạy dưới danh tính một người dùng, không nhóm
-được và chỉ hỗ trợ metric đếm và metric trên field số; ở đó hãy dùng `data.asSystem()`.
+`data.object()` trong trigger hoặc job chạy dưới danh tính một người dùng hoặc trong
+Development Session local do `cogover-dev run` khởi động, không nhóm được và chỉ hỗ trợ
+metric đếm và metric trên field số; ở đó hãy dùng `data.asSystem()`, hoặc thử phần nhóm
+trên version đã publish.
 Aggregate cập nhật theo các lệnh ghi record sau khoảng
 một giây, nên record vừa lưu có thể chưa được tính. Xem
 [Aggregate](cogover-sdk-api-reference.md#aggregate) để biết mọi metric và giới hạn.

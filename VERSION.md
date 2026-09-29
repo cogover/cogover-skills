@@ -1,4 +1,4 @@
 # Skills Release
 
-- Version: `4.14.0`
+- Version: `4.14.1`
 - Release date: `2026-09-29`
