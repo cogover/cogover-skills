@@ -350,6 +350,23 @@ curl -i --config .cogover-session.curl \
 
 `401`: kiểm tra phiên còn hiệu lực và đang gọi đúng Workspace; `403`: kiểm tra quyền thực tế của caller. Đây là request production thật, không phải dry-run: thay sample bằng code ghi dữ liệu thì thao tác ghi sẽ tác động dữ liệu thật.
 
+## 10. Lưu mã nguồn trên Git server của Workspace
+
+Mỗi Project có thể có một repository trên Git server của Workspace, `https://{WORKSPACE_DOMAIN}/git/`. Với Cogover Dev CLI `0.21.0` trở lên và đã cài Git, chạy một lần trong thư mục chứa `cogover.json`:
+
+```bash
+cogover-dev git setup
+```
+
+Lệnh dùng cùng Workspace API key với `publish`, tạo repository của Project và tài khoản Git của bạn nếu chưa có, lưu một access token vào kho credential của hệ điều hành và cấu hình repository này để Git đăng nhập bằng token đó. Lệnh thêm remote `origin`, hoặc `cogover` khi `origin` đã trỏ nơi khác (ví dụ sau khi clone starter từ GitHub), rồi in các lệnh cần chạy tiếp, ví dụ:
+
+```bash
+git add . && git commit -m "Get lead sample"
+git push -u cogover main
+```
+
+Hiện chỉ SuperAdmin quản lý được tài khoản Git, repository và token. `git setup` báo kho credential không dùng được thì cài lại CLI bằng `npm install --global @cogover/dev-cli --allow-scripts=keytar`. Push không publish version: publish bằng `cogover-dev publish` như ở mục 8. Các lệnh `git` khác và quy tắc giữ token: [Lưu source trên Git server của Workspace](cli-session-and-delivery.md#lưu-source-trên-git-server-của-workspace); quản lý repository của Project qua API: [Repository của module](custom-backend-module-api-reference.md#repository-của-module).
+
 ## Sample project hoàn chỉnh
 
 [cogover/get-started-custom-backend-module](https://github.com/cogover/get-started-custom-backend-module) là phiên bản hoàn chỉnh của sample trong bài, gồm source code, local HTTP runner và test; đây là sample đã có sẵn code, khác với starter project ở mục 2. Làm theo README trong repo để cài đặt, cấu hình Project đang dùng, chạy thử và deploy; repo không chứa credential hay dữ liệu Workspace thật.

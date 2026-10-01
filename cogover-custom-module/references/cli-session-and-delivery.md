@@ -5,12 +5,12 @@ Tổng hợp từ tài liệu public Cogover Dev CLI và [Backend quick start](g
 ## Cấu hình và credential
 
 ```bash
-npm install --global @cogover/dev-cli
+npm install --global @cogover/dev-cli --allow-scripts=keytar
 cogover-dev --version
 cogover-dev --help
 ```
 
-Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`, áp ngân sách của lần thực thi khi chạy local và hiện `durationMs`/`usage` trong `jobs runs`/`jobs run` từ `0.19.0`, xếp `processes.start` và `agents.start` là thao tác ghi, áp trần 20 `processes.start` và 5 `agents.start` mỗi lần gọi handler và giải thích `NOT_SUPPORTED` của `onComplete`/`onResult` từ `0.20.0`. Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
+Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`, áp ngân sách của lần thực thi khi chạy local và hiện `durationMs`/`usage` trong `jobs runs`/`jobs run` từ `0.19.0`, xếp `processes.start` và `agents.start` là thao tác ghi, áp trần 20 `processes.start` và 5 `agents.start` mỗi lần gọi handler và giải thích `NOT_SUPPORTED` của `onComplete`/`onResult` từ `0.20.0`, lệnh `git` (`git setup`, `git token create|list|delete`, `git credential`) từ `0.21.0`. `--allow-scripts=keytar` cho npm từ 12 cài phần kết nối credential store của hệ điều hành (npm cũ bỏ qua cờ này). Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
 
 ```json
 {
@@ -29,11 +29,12 @@ Frontend đổi `projectType` thành `frontend` và dùng Project ID frontend. K
 | Backend `login`, `doctor`, `run` | Project key gắn project và caller personnel |
 | Backend/frontend `publish`, `activate`, `auth session` | Workspace API key |
 | Backend `secrets`, `inbound`, `jobs` | Workspace API key của người dùng có quyền Workspace SuperAdmin; Project key không đủ |
+| Backend/frontend `git setup`, `git token` | Workspace API key của người dùng có quyền Workspace SuperAdmin (hiện tại); token Git chỉ lưu trong credential store của hệ điều hành |
 | HTTP `/api/v1/ts-projects/...` | Workspace session, CSRF/XSRF và routing header |
 | HTTP `/api/v1/ts-projects/{slug}/hooks/{inboundId}/...` | Inbound key hoặc chữ ký HMAC của inbound access; không session, không routing header |
 | HTTP `/bapi/v1/...` | Workspace API key Bearer |
 
-- `publish`/`activate`/`auth session`/`secrets`/`inbound`/`jobs` tìm `COGOVER_API_KEY` trong `.env` của project, rồi native credential store (service `cogover.api-key`, account là hostname Workspace), rồi prompt ẩn nếu chưa có; `auth logout` xoá key đã lưu ở cả hai nơi. Biến môi trường do helper bên ngoài cung cấp không mặc nhiên được CLI đọc như `.env`. Có credential store thì dùng key đã lưu; không ghi đè `.env` có sẵn, không in giá trị để kiểm tra. Khi thực sự cần fallback `.env`: giữ file riêng tư, ignored và ngoài artifact.
+- `publish`/`activate`/`auth session`/`secrets`/`inbound`/`jobs`/`git setup`/`git token` tìm `COGOVER_API_KEY` trong `.env` của project, rồi native credential store (service `cogover.api-key`, account là hostname Workspace), rồi prompt ẩn nếu chưa có; `auth logout` xoá key đã lưu ở cả hai nơi. Biến môi trường do helper bên ngoài cung cấp không mặc nhiên được CLI đọc như `.env`. Có credential store thì dùng key đã lưu; không ghi đè `.env` có sẵn, không in giá trị để kiểm tra. Khi thực sự cần fallback `.env`: giữ file riêng tư, ignored và ngoài artifact.
 - `login --profile <PROFILE>` nhận Project key qua prompt ẩn, ưu tiên native store; không có native store thì CLI dùng entry riêng cho profile trong `.env`, đặt quyền hạn chế và thêm `/.env` vào `.gitignore`. Không truyền raw key qua argv. Không có kênh nhập ẩn phù hợp: chuẩn bị xong cấu hình rồi hướng dẫn bước nhập credential cụ thể, không yêu cầu paste secret vào chat.
 
 ## Quản lý Project trước khi có cấu hình local
@@ -64,7 +65,7 @@ cogover-dev publish
 cogover-dev activate <VERSION_ID_FROM_PUBLISH>
 ```
 
-Backend starter `build` chỉ typecheck; publish tự đóng gói `src/`. Frontend `build` phải sinh `dist/index.html`; CLI tự đóng gói `dist/`, không build hộ. CLI giới hạn ZIP upload 10 MiB, archive tự tạo còn giới hạn 10 MiB uncompressed; server có thể có ràng buộc bổ sung. Publish chờ `READY`/`FAILED`, không tự activate. Archive chỉ có source backend cần thiết hoặc static asset frontend, không có key, session, `.env`, `node_modules`, `local/` hay source map.
+Backend starter `build` chỉ typecheck; publish tự đóng gói `src/`. Frontend `build` phải sinh `dist/index.html`; CLI tự đóng gói `dist/`, không build hộ. CLI kiểm tra trước khi upload cùng giới hạn kích thước với server (backend: ZIP 20 MiB, 512 entry, 20 MiB sau giải nén, 5 MiB mỗi file; frontend: 80 MiB, 2.048 entry, 80 MiB, 20 MiB mỗi file) theo mục Giới hạn kích thước của [Backend API Reference](custom-backend-module-api-reference.md#giới-hạn-kích-thước) và [Frontend API Reference](custom-frontend-module-api-reference.md#giới-hạn-kích-thước); bước upload file của Workspace có thể áp dung lượng tối đa thấp hơn (`WORKSPACE_UPLOAD_TOO_LARGE`). Publish chờ `READY`/`FAILED`, không tự activate. Archive chỉ có source backend cần thiết hoặc static asset frontend, không có key, session, `.env`, `node_modules`, `local/` hay source map.
 
 ## Lệnh secrets, inbound và jobs
 
@@ -90,6 +91,23 @@ cogover-dev jobs schedules [--json]
 - Giá trị secret và HMAC secret chỉ đi qua prompt ẩn, stdin hoặc file; không có option truyền giá trị trên dòng lệnh và không in ra. `secrets set` tạo mới hoặc cập nhật giá trị của mục cùng tên (tăng `valueVersion`, giữ thiết lập không truyền); `list` chỉ trả metadata.
 - `inbound create` in URL webhook; ở chế độ `key`, `inboundKey` chỉ hiển thị đúng một lần khi create/rotate (dạng JSON với `--json`). Không thu vào tool log, chat hay báo cáo; chuyển cho bên gửi qua kênh an toàn. `revoke` là vĩnh viễn.
 - `jobs enqueue` tạo run thật trên version active; `jobs runs`/`jobs run` chỉ trả metadata và kích thước payload, không trả nội dung payload. Thêm `--json` khi cần xử lý kết quả bằng chương trình.
+
+## Lưu source trên Git server của Workspace
+
+Mỗi Workspace có Git server tại `https://<WORKSPACE_DOMAIN>/git/`; mỗi Project backend hoặc frontend có tối đa một repository ở đó. Cần CLI từ `0.21.0` và Git (credential helper cần Git từ `2.26`):
+
+```bash
+cogover-dev git setup [--remote <name>] [--no-remote] [--no-create]
+cogover-dev git token create [--name <name>] [--print-token]
+cogover-dev git token list [--account <account-id>]
+cogover-dev git token delete <id> [--account <account-id>] [--yes]
+```
+
+- `git setup` chạy một lần trong thư mục có `cogover.json` của từng Project (backend và frontend chạy riêng), dùng cùng Workspace API key với `publish`: tạo repository của Project nếu chưa có (`--no-create` thì báo `GIT_REPOSITORY_MISSING`; Workspace chưa bật Git báo `GIT_DISABLED`) và tài khoản Git của người chạy nếu chưa có, tạo access token lưu vào credential store của hệ điều hành, `git init` nhánh `main` khi thư mục chưa là Git repository, ghi credential helper vào cấu hình của repository (không phải global), rồi giữ remote đã trỏ đúng repository hoặc thêm `origin`, hay `cogover` khi `origin` đã trỏ nơi khác (ví dụ GitHub); `--remote <name>` chọn tên, `--no-remote` không thêm. Lệnh không commit, push hay sửa lịch sử: chạy tiếp các lệnh `git add`, `git commit`, `git push -u <remote> main` mà lệnh in ra.
+- Hiện chỉ SuperAdmin quản lý được tài khoản Git, repository và token; mọi thành viên đã đăng nhập chỉ xem được tài khoản Git của chính mình. Thiếu quyền thì báo dependency, không tự nới quyền.
+- Token chỉ nằm trong credential store của hệ điều hành, không có fallback `.env`: credential store không dùng được thì `git setup` dừng, cài lại CLI bằng `npm install --global @cogover/dev-cli --allow-scripts=keytar` (npm từ 12) và kiểm tra bằng `cogover-dev doctor`. Git tự gọi `cogover-dev git credential <get|store|erase>`, nên CLI phải có trên `PATH`; token bị Workspace từ chối thì chạy lại `git setup`.
+- Không in, ghi vào file, `.env`, URL remote, commit hay báo cáo giá trị token. Chỉ dùng `git token create --print-token` khi người dùng thực sự cần token cho công cụ khác và không thu output đó vào log hay chat; `git token list` chỉ trả metadata (ID, tên, 8 ký tự cuối), thu hồi token không còn dùng bằng `git token delete`.
+- Push không publish version và không đổi version active: vẫn build (frontend), `cogover-dev publish` rồi `activate`. Không commit `.env`, `.cogover-session.curl` hay file credential; `git setup` cảnh báo khi có `.env` mà Git chưa ignore. Quản lý repository qua API theo mục Repository của module trong [Backend API Reference](custom-backend-module-api-reference.md#repository-của-module) và [Frontend API Reference](custom-frontend-module-api-reference.md#repository-của-module).
 
 ## Tạo session cho cURL
 

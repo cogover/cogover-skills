@@ -109,6 +109,23 @@ CLI kiểm tra version thuộc đúng frontend Project và đang `READY` trướ
 
 Cogover không tự fallback về `index.html` cho SPA: nếu dùng client-side routing, dùng hash routing hoặc bảo đảm thao tác refresh không phụ thuộc vào server fallback. Dùng tên file có content hash để tránh cache asset cũ sau khi activate version mới.
 
+## 6. Lưu mã nguồn trên Git server của Workspace
+
+Mỗi Custom Frontend Module có thể có một repository trên Git server của Workspace, `https://<WORKSPACE_DOMAIN>/git/`. Với Cogover Dev CLI `0.21.0` trở lên, đã cài Git và đã có `cogover.json` ở cách 2 của mục 4, chạy một lần trong thư mục `hello-frontend`:
+
+```bash
+cogover-dev git setup
+```
+
+Lệnh dùng cùng Workspace API key với `publish`, tạo repository và tài khoản Git của người chạy lệnh nếu chưa có, lưu một access token vào kho credential của hệ điều hành, chạy `git init` khi thư mục chưa là Git repository, cấu hình Git đăng nhập bằng token đó, thêm remote `origin` rồi in các lệnh cần chạy tiếp, ví dụ:
+
+```bash
+git add . && git commit -m "Hello frontend"
+git push -u origin main
+```
+
+Hiện chỉ SuperAdmin quản lý được tài khoản Git, repository và token. `git setup` báo kho credential không dùng được thì cài lại CLI bằng `npm install --global @cogover/dev-cli --allow-scripts=keytar`. Push không publish version: build và publish như ở mục 3 và 4. Các lệnh `git` khác và quy tắc giữ token: [Lưu source trên Git server của Workspace](cli-session-and-delivery.md#lưu-source-trên-git-server-của-workspace); quản lý repository của module qua API: [Repository của module](custom-frontend-module-api-reference.md#repository-của-module).
+
 ## Sample project hoàn chỉnh
 
 [cogover/get-started-custom-frontend-module](https://github.com/cogover/get-started-custom-frontend-module) là phiên bản hoàn chỉnh của sample trong bài, gồm source TypeScript, cấu hình Vite và test trên trình duyệt. Làm theo README trong repo để chạy local, build và deploy bằng giao diện hoặc CLI; khi deploy, dùng Workspace, Project ID và `slugSlot` đang triển khai. Repo chỉ chứa cấu hình mẫu, không chứa credential.

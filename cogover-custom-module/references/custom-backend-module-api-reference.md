@@ -1,6 +1,6 @@
 # Custom Backend Module API Reference
 
-Tài liệu này mô tả API HTTP public cho Custom Backend Module của Cogover, bao gồm quản lý Project (module) và version, identity policy, Project key, secret, inbound access, background job, danh mục Custom Module Action, gọi module production, gọi inbound webhook và preview một version cụ thể.
+Tài liệu này mô tả API HTTP public cho Custom Backend Module của Cogover, bao gồm quản lý Project (module) và version, identity policy, Project key, secret, inbound access, background job, Git repository, danh mục Custom Module Action, gọi module production, gọi inbound webhook và preview một version cụ thể.
 
 Dùng HTTPS origin của Cogover Workspace đích làm base URL:
 
@@ -75,6 +75,8 @@ Tất cả endpoint trong bảng này yêu cầu `x-req-service: 4` và quyền 
 | `POST` | `/api/v1/ts-projects/{projectId}` | `200` |
 | `POST` | `/api/v1/ts-projects/{projectId}/update` | `200` |
 | `POST` | `/api/v1/ts-projects/{projectId}/delete` | `200` |
+| `POST` | `/api/v1/ts-projects/{projectId}/git/repository` | `201` / `200` |
+| `POST` | `/api/v1/ts-projects/{projectId}/git/repository/unlink` | `200` |
 | `POST` | `/api/v1/ts-projects/{projectId}/versions` | `202` |
 | `POST` | `/api/v1/ts-projects/{projectId}/versions/list` | `200` |
 | `POST` | `/api/v1/ts-projects/{projectId}/versions/{versionId}` | `200` |
@@ -147,6 +149,35 @@ Tất cả endpoint trong bảng này yêu cầu `x-req-service: 4` và quyền 
 | `POST` | `/api/v1/ts-projects/{projectId}/jobs/enqueue` | `201` |
 | `POST` | `/api/v1/ts-projects/{projectId}/jobs/schedules/list` | `200` |
 
+### Git repository
+
+`x-req-service: 4`. Mọi user đã đăng nhập đều xem được tài khoản Git của chính mình; các endpoint còn lại yêu cầu
+SuperAdmin. Xem [Git repository](#git-repository-1).
+
+| Method | Path | Thành công |
+|---|---|---:|
+| `POST` | `/api/v1/ts-projects/git/overview` | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/get` | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/list` | `200` |
+| `POST` | `/api/v1/ts-projects/git/members/list` | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts` | `201` / `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/lock` | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/unlock` | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/delete` | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/repos/list` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/list` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos` | `201` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/archive` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/unarchive` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/delete` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/collaborators/list` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/collaborators` | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/collaborators/remove` | `200` |
+| `POST` | `/api/v1/ts-projects/git/tokens/list` | `200` |
+| `POST` | `/api/v1/ts-projects/git/tokens` | `201` |
+| `POST` | `/api/v1/ts-projects/git/tokens/{tokenId}/delete` | `200` |
+
 ### Custom Module Action
 
 `x-req-service: 4`. Mở cho mọi thành viên đang hoạt động của Workspace. Xem [Custom Module Action](#custom-module-action-1).
@@ -179,11 +210,12 @@ Content-Type: application/json
 {
   "name": "Order automation",
   "description": "Synchronize order data",
-  "slug": "order_automation"
+  "slug": "order_automation",
+  "createGitRepository": true
 }
 ```
 
-`name` bắt buộc và dài tối đa 250 ký tự. `description` không bắt buộc và dài tối đa 2.000 ký tự. Slug phải duy nhất trong Workspace.
+`name` bắt buộc và dài tối đa 250 ký tự. `description` không bắt buộc và dài tối đa 2.000 ký tự. Slug phải duy nhất trong Workspace. `createGitRepository` (mặc định `true`) tạo [repository của module](#repository-của-module) cùng lúc với module.
 
 HTTP `201` trả về module object:
 
@@ -198,11 +230,21 @@ HTTP `201` trả về module object:
   "activeVersionId": null,
   "lockVersion": 0,
   "created": 1788023000000,
-  "updated": 1788023000000
+  "updated": 1788023000000,
+  "git": {
+    "status": "LINKED",
+    "repository": {
+      "id": 42,
+      "name": "order_automation",
+      "cloneUrl": "https://{WORKSPACE_DOMAIN}/git/example/order_automation.git",
+      "webUrl": "https://{WORKSPACE_DOMAIN}/git/example/order_automation"
+    }
+  }
 }
 ```
 
-`lockVersion` là dấu phiên bản đồng thời dạng opaque; client không được tự thay đổi.
+`lockVersion` là dấu phiên bản đồng thời dạng opaque; client không được tự thay đổi. Mọi module object (tạo, liệt kê,
+đọc, cập nhật và xóa) có `git`, mô tả ở [Repository của module](#repository-của-module).
 
 ### Liệt kê module
 
@@ -276,6 +318,34 @@ Content-Type: application/json
 ```
 
 Thao tác xóa có tính idempotent. Module trả về có `status: "DISABLED"` và không thể được gọi, cập nhật, publish hoặc activate.
+
+### Repository của module
+
+Một module có tối đa một repository trong [organization Git](#git-repository-1) của Workspace, và một repository thuộc
+tối đa một module. Field `git` của module object:
+
+| `status` | Ý nghĩa |
+|---|---|
+| `LINKED` | `repository` có `id`, `name`, `cloneUrl` và `webUrl` của repository |
+| `NONE` | Module chưa có repository; `repository` là `null` |
+| `DISABLED` | Git chưa được bật ở môi trường của Workspace; `repository` là `null` |
+
+Module mới được tạo repository, trừ khi `createGitRepository` là `false`. Repository đặt tên theo slug; nếu tên đã được
+dùng thì thêm `-backend` (`-frontend` với module frontend), rồi hậu tố ngẫu nhiên. Nếu không tạo được repository, ví dụ
+khi đã đủ giới hạn repository, module vẫn được tạo (`201`): khi đó riêng response tạo module có `git.error` gồm `code`
+và `msg` của [lỗi Git](#mã-lỗi-git), `git.status` là `NONE`, và có thể tạo repository sau. SuperAdmin tạo module cũng
+được tạo tài khoản Git nếu chưa có, trừ khi tạo từ phiên SuperAdmin đang thao tác dưới danh nghĩa user khác: khi đó
+repository vẫn được tạo nhưng không tạo tài khoản Git.
+
+`POST /api/v1/ts-projects/{projectId}/git/repository` tạo repository cho module chưa có (`201`), hoặc với
+`{"repository": "<tên>"}` liên kết một repository có sẵn của organization chưa thuộc module nào (`200`). Response là
+object `git`. Lỗi: `409` với `PROJECT_ALREADY_LINKED`, `GIT_REPOSITORY_LINKED`, `GIT_REPOSITORY_LIMIT_REACHED` hoặc
+`PROJECT_DISABLED`; `404` với `GIT_REPOSITORY_NOT_FOUND`.
+
+`POST /api/v1/ts-projects/{projectId}/git/repository/unlink` với `{}` bỏ liên kết repository (repository vẫn được giữ)
+và trả `git` với `status: "NONE"`; module chưa có repository cũng thành công.
+
+Xóa module thì repository được archive: code được giữ ở chế độ chỉ đọc, và sau đó có thể xoá repository.
 
 ## Quản lý version
 
@@ -1277,6 +1347,394 @@ theo project.
 Cả bốn API đọc trả `401`/`403` khi thiếu/bị từ chối xác thực hoặc không đủ quyền, `503`
 khi kho dữ liệu theo dõi không khả dụng. Cấu hình trigger đã lưu không hợp lệ trả `500`
 với `msg: "Stored trigger configuration is invalid"`.
+
+## Git repository
+
+Mỗi Workspace có một Git server tại `https://{WORKSPACE_DOMAIN}/git/`: giao diện web gồm repository, pull request và
+code review, cùng Git over HTTPS. User đã đăng nhập Workspace mở giao diện web bằng chính session Cogover, không có
+bước đăng nhập Git riêng. Chỉ user đã có tài khoản Git mới dùng được, và chỉ SuperAdmin tạo, khoá và xoá tài khoản Git.
+Session mà SuperAdmin đang thao tác dưới danh nghĩa user khác không mở được giao diện web Git (`403`). Đăng nhập, mật
+khẩu, xác thực hai lớp, địa chỉ email và việc là thành viên organization của Workspace đều theo tài khoản Cogover: các
+trang thiết lập Git tương ứng hiện "Managed by Cogover" (`403`). Profile Git chỉ đọc: tên theo tài khoản Cogover sau
+vài phút, và mục **Settings** mở trang access token. Không dùng được SSH key, GPG key, chặn user hay organization khác;
+mỗi Workspace có đúng một organization Git.
+
+Mọi endpoint dưới đây dùng Workspace session, `x-req-type: 9` và `x-req-service: 4`. Mọi user đã đăng nhập đều xem
+được tài khoản Git của chính mình; các endpoint còn lại yêu cầu SuperAdmin.
+
+| Method | Path | Quyền | Thành công |
+|---|---|---|---:|
+| `POST` | `/api/v1/ts-projects/git/overview` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/get` | Tài khoản của mình: mọi user. Của người khác: SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/list` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/members/list` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts` | SuperAdmin | `201` vừa tạo, `200` đã có |
+| `POST` | `/api/v1/ts-projects/git/accounts/lock` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/unlock` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/delete` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/accounts/repos/list` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/list` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos` | SuperAdmin | `201` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/archive` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/unarchive` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/delete` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/collaborators/list` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/collaborators` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/repos/{repository}/collaborators/remove` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/tokens/list` | SuperAdmin | `200` |
+| `POST` | `/api/v1/ts-projects/git/tokens` | SuperAdmin | `201` |
+| `POST` | `/api/v1/ts-projects/git/tokens/{tokenId}/delete` | SuperAdmin | `200` |
+
+Field lạ trong body trả `400`. Lỗi bị từ chối có thêm `code` (bảng ở [Mã lỗi Git](#mã-lỗi-git)) bên cạnh `r` và
+`msg`. Khi Git chưa được bật ở môi trường của Workspace, mọi endpoint trả `404` với `code: "GIT_DISABLED"`, riêng
+endpoint tổng quan trả `{"enabled": false}`.
+
+Phiên SuperAdmin đang thao tác dưới danh nghĩa user khác chỉ đọc được; mọi endpoint ở bảng trên tạo, sửa hoặc xoá tài
+khoản, repository, quyền hay token đều trả `403` với `code: "IMPERSONATION_NOT_ALLOWED"`. Repository của module vẫn
+quản lý được từ phiên này; xem [Repository của module](#repository-của-module).
+
+### Tổng quan Git
+
+`POST /api/v1/ts-projects/git/overview` với `{}`:
+
+```json
+{
+  "enabled": true,
+  "organization": "example",
+  "webUrl": "https://{WORKSPACE_DOMAIN}/git/example",
+  "repositoryCount": 3,
+  "repositoryLimit": 100,
+  "myAccount": {"accountId": "AC00000000101", "exists": false, "organization": "example"}
+}
+```
+
+`organization` và `webUrl` là `null` cho tới khi Workspace có tài khoản Git đầu tiên. `myAccount` là
+[tài khoản Git](#object-tài-khoản-git) của user đang đăng nhập. `repositoryCount` đếm mọi repository của organization,
+kể cả repository đã archive và repository của project.
+
+### Object tài khoản Git
+
+```json
+{
+  "accountId": "AC00000000101",
+  "exists": true,
+  "username": "jane.doe-example",
+  "status": "ACTIVE",
+  "memberActive": true,
+  "superAdmin": false,
+  "organizationOwner": false,
+  "organization": "example",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "personnel": {"id": "PE000000000101", "code": "NV0001", "name": "Jane Doe"},
+  "created": 1790640000000,
+  "createdByAccountId": "AC00000000100"
+}
+```
+
+| Field | Ý nghĩa |
+|---|---|
+| `exists` | `true` với tài khoản đang dùng: `ACTIVE` hoặc `LOCKED` |
+| `status` | `ACTIVE`, `LOCKED` (chặn đăng nhập, giữ quyền và token) hoặc `DELETED`. Không có khi user chưa từng có tài khoản |
+| `memberActive` | `false` khi user đã rời Workspace hoặc không còn hoạt động ở đó; Git khi đó tự chặn đăng nhập |
+| `superAdmin` | User là SuperAdmin của Workspace |
+| `organizationOwner` | Tài khoản đang hoạt động và sở hữu mọi repository của organization (SuperAdmin) |
+| `personnel` | Nhân sự gắn với user, hoặc `null` |
+
+`name`, `email`, `personnel`, `memberActive` và `superAdmin` luôn có. `username`, `status` và `organization` có khi
+user đã có tài khoản; `organizationOwner`, `created` và `createdByAccountId` chỉ có khi tài khoản chưa bị xoá.
+
+### Xem tài khoản Git
+
+`POST /api/v1/ts-projects/git/accounts/get`, `accountId` không bắt buộc. Không truyền thì endpoint trả lời cho user
+đang đăng nhập. User không phải SuperAdmin xem tài khoản của người khác nhận `403`.
+
+```json
+{"accountId": "AC00000000101"}
+```
+
+Response là một [object tài khoản Git](#object-tài-khoản-git).
+
+### Liệt kê tài khoản Git
+
+`POST /api/v1/ts-projects/git/accounts/list`:
+
+```json
+{"page": 1, "pageSize": 20, "keyword": "jane", "status": "LOCKED"}
+```
+
+`page` mặc định 1, `pageSize` mặc định 20 (tối đa 100). `keyword` (không bắt buộc, tối đa 100 ký tự) tìm theo
+username, họ tên hoặc email. `status` lọc một trạng thái (`ACTIVE`, `LOCKED` hoặc `DELETED`); không truyền thì trả tài
+khoản đang hoạt động và đang khoá, mới nhất trước. Response gồm `items` ([object tài khoản Git](#object-tài-khoản-git)),
+`page`, `pageSize`, `totalItems`, `totalPages` và `organization`.
+
+### Liệt kê thành viên Workspace
+
+`POST /api/v1/ts-projects/git/members/list` liệt kê thành viên đang hoạt động của Workspace, để chọn người được cấp tài
+khoản Git:
+
+```json
+{"page": 1, "pageSize": 20, "keyword": "jane", "hasGitAccount": false}
+```
+
+`keyword` tìm theo họ tên hoặc email. `hasGitAccount` lọc thành viên đã có (`true`) hoặc chưa có (`false`) tài khoản
+đang hoạt động hoặc đang khoá; thành viên có tài khoản đã bị xoá được tính là chưa có.
+
+```json
+{
+  "items": [
+    {
+      "accountId": "AC00000000101",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "personnel": {"id": "PE000000000101", "code": "NV0001", "name": "Jane Doe"},
+      "superAdmin": false,
+      "gitAccount": null
+    }
+  ],
+  "page": 1,
+  "pageSize": 20,
+  "totalItems": 1,
+  "totalPages": 1
+}
+```
+
+`gitAccount` là `null` hoặc `{"username": "...", "status": "ACTIVE|LOCKED|DELETED"}`.
+
+### Tạo tài khoản Git
+
+`POST /api/v1/ts-projects/git/accounts` tạo tài khoản Git cho một member đang hoạt động của Workspace, nếu chưa có.
+Mỗi user có tối đa một tài khoản Git trong một Workspace.
+
+```json
+{"accountId": "AC00000000101"}
+```
+
+| Kết quả | Status | Response |
+|---|---:|---|
+| Tạo mới | `201` | [Object tài khoản](#object-tài-khoản-git) và `"created": true` |
+| Đã có, đang hoạt động hoặc đang khoá | `200` | Object tài khoản và `"created": false`; tài khoản đang khoá vẫn khoá |
+| Đã bị xoá trước đó | `200` | Khôi phục với username cũ, không có quyền và token: `"created": false`, `"restored": true` |
+
+Tài khoản đầu tiên của Workspace tạo luôn organization của Workspace. Tài khoản của SuperAdmin được thêm vào nhóm owner
+của organization, và nhóm này tự cập nhật khi quyền SuperAdmin thay đổi. `404` với `MEMBER_NOT_ACTIVE` nghĩa là
+`accountId` không phải member đang hoạt động của Workspace.
+
+### Khoá, mở khoá hoặc xoá tài khoản Git
+
+Mỗi endpoint nhận `{"accountId": "..."}`, trả [object tài khoản](#object-tài-khoản-git), và vẫn thành công khi tài
+khoản đã ở trạng thái được yêu cầu.
+
+- `POST /api/v1/ts-projects/git/accounts/lock` chặn ngay mọi lần đăng nhập của tài khoản, cả web lẫn Git over HTTPS.
+  Quyền trên repository và access token được giữ; SuperAdmin bị khoá mất quyền owner cho tới khi được mở khoá.
+- `POST /api/v1/ts-projects/git/accounts/unlock` cho đăng nhập lại. User không còn là member đang hoạt động của
+  Workspace thì không mở khoá được: `409` với `MEMBER_NOT_ACTIVE`.
+- `POST /api/v1/ts-projects/git/accounts/delete` chặn đăng nhập, gỡ mọi quyền trên repository và mọi team, thu hồi mọi
+  access token. Response có thêm `removedPermissions` và `revokedTokens`. Username vẫn được giữ cho chính user đó:
+  commit giữ tác giả, và tạo lại tài khoản sẽ khôi phục nó.
+
+User chưa có tài khoản (hoặc, với khoá và mở khoá, có tài khoản đã bị xoá) nhận `404` với `GIT_ACCOUNT_NOT_FOUND`.
+
+### Repository của một thành viên
+
+`POST /api/v1/ts-projects/git/accounts/repos/list` với `{"accountId": "..."}`:
+
+```json
+{
+  "accountId": "AC00000000101",
+  "username": "jane.doe-example",
+  "organizationOwner": false,
+  "items": [{"repository": "order_automation", "permission": "write"}]
+}
+```
+
+`items` liệt kê repository được cấp cho user và [mức quyền](#quyền-trên-repository) trên từng repository. Owner của
+organization có mọi repository: khi đó `organizationOwner` là `true` và `items` rỗng.
+
+### Object repository
+
+```json
+{
+  "id": 42,
+  "name": "order_automation",
+  "description": "",
+  "empty": false,
+  "archived": false,
+  "defaultBranch": "main",
+  "updated": 1790640000000,
+  "cloneUrl": "https://{WORKSPACE_DOMAIN}/git/example/order_automation.git",
+  "webUrl": "https://{WORKSPACE_DOMAIN}/git/example/order_automation",
+  "project": {"type": "BACKEND", "id": "TSPXXXXXXXXXXXX", "name": "Order automation", "slug": "order_automation",
+    "status": "ACTIVE"}
+}
+```
+
+`project` là `null` với repository không thuộc project nào; nếu có thì `type` là `BACKEND` hoặc `FRONTEND`, `status` là
+trạng thái của project (`DRAFT`, `ACTIVE` hoặc `DISABLED`). Repository có thể được đổi tên trên giao diện web; nó vẫn là
+repository của project đó.
+
+### Liệt kê repository
+
+`POST /api/v1/ts-projects/git/repos/list`:
+
+```json
+{"page": 1, "pageSize": 20, "keyword": "order", "archived": false}
+```
+
+`page` mặc định 1, `pageSize` mặc định 20 (tối đa 50). `keyword` tìm theo tên; `archived` lọc repository đã archive
+(`true`) hoặc đang hoạt động (`false`). Response gồm `organization`, `items` ([object repository](#object-repository)),
+`page`, `pageSize`, `totalItems`, `repositoryCount` và `repositoryLimit`.
+
+### Tạo, xem, archive hoặc xoá repository
+
+| Endpoint | Body | Thành công | Lỗi riêng |
+|---|---|---|---|
+| `POST /api/v1/ts-projects/git/repos` | `{"name", "description"}` | `201` object repository | `400` tên sai; `409` `GIT_REPOSITORY_EXISTS`, `GIT_REPOSITORY_LIMIT_REACHED` |
+| `POST /api/v1/ts-projects/git/repos/{repository}` | `{}` | `200` object repository | `404` `GIT_REPOSITORY_NOT_FOUND` |
+| `POST /api/v1/ts-projects/git/repos/{repository}/archive` | `{}` | `200` object repository | `404` |
+| `POST /api/v1/ts-projects/git/repos/{repository}/unarchive` | `{}` | `200` object repository | `404` |
+| `POST /api/v1/ts-projects/git/repos/{repository}/delete` | `{"confirm": "<repository>"}` | `200` `{"name", "deleted": true}` | `400` `CONFIRM_MISMATCH`; `409` `GIT_REPOSITORY_LINKED` |
+
+- Tên repository gồm 1 đến 100 chữ cái, chữ số, `.`, `_` hoặc `-`, không bắt đầu bằng `.`, không kết thúc bằng `.git`
+  và không phải `list`. Tên là duy nhất, không phân biệt hoa thường.
+- Repository mới là private và rỗng (không có README, nên lần push đầu từ repository local không bao giờ xung đột);
+  nhánh mặc định là `main`.
+- Repository đã archive chỉ đọc. Xoá repository xoá cả lịch sử và không khôi phục được; repository thuộc project chưa bị
+  xoá thì không xoá được.
+- Một Workspace có tối đa `repositoryLimit` repository (mặc định 100), kể cả repository đã archive. Repository tạo trên
+  giao diện web cũng được tính và bị từ chối khi đã đủ giới hạn.
+
+### Quyền trên repository
+
+SuperAdmin sở hữu mọi repository. Các endpoint dưới đây cấp cho user khác quyền trên một repository của organization
+Workspace, với một trong ba mức:
+
+| `permission` | Được làm |
+|---|---|
+| `read` | Clone, xem code, tạo issue và comment pull request |
+| `write` | Mọi quyền của `read`, thêm push và merge pull request theo branch protection |
+| `admin` | Mọi quyền của `write`, thêm cài đặt repository, collaborator và branch protection |
+
+`POST /api/v1/ts-projects/git/repos/{repository}/collaborators` thêm user hoặc đổi mức quyền của họ:
+
+```json
+{"accountId": "AC00000000101", "permission": "write"}
+```
+
+```json
+{
+  "organization": "example",
+  "repository": "order_automation",
+  "accountId": "AC00000000101",
+  "username": "jane.doe-example",
+  "permission": "write"
+}
+```
+
+`POST /api/v1/ts-projects/git/repos/{repository}/collaborators/remove` với `{"accountId": "..."}` thu hồi quyền và trả
+`"removed": true`. Thu hồi quyền của user vốn không có quyền cũng thành công.
+`POST /api/v1/ts-projects/git/repos/{repository}/collaborators/list` trả:
+
+```json
+{
+  "organization": "example",
+  "repository": "order_automation",
+  "owners": [{"accountId": "AC00000000100", "username": "admin-example", "name": "Admin"}],
+  "items": [{"username": "jane.doe-example", "accountId": "AC00000000101", "name": "Jane Doe",
+    "status": "ACTIVE", "permission": "write"}],
+  "total": 1
+}
+```
+
+`owners` là các SuperAdmin sở hữu repository. Trong `items`, `accountId`, `name` và `status` là `null` với collaborator
+không phải tài khoản Git của Workspace này.
+
+User phải có tài khoản Git đang hoạt động hoặc đang khoá trong cùng Workspace, nếu không trả `404` với
+`GIT_ACCOUNT_NOT_FOUND`. Repository không tồn tại trả `404`; tên repository hoặc `permission` không hợp lệ trả `400`.
+Thay đổi có hiệu lực từ request kế tiếp của user đó.
+
+### Access token
+
+Access token là mật khẩu của Git over HTTPS. Mọi token có đúng hai quyền, đọc và ghi `repository` và đọc `user`;
+client không chọn quyền.
+
+| Endpoint | Body | Thành công |
+|---|---|---|
+| `POST /api/v1/ts-projects/git/tokens/list` | `{"accountId"}`, không bắt buộc | `200` |
+| `POST /api/v1/ts-projects/git/tokens` | `{"name"}` | `201` |
+| `POST /api/v1/ts-projects/git/tokens/{tokenId}/delete` | `{"accountId"}`, không bắt buộc | `200` `{"id", "deleted": true}` |
+
+- Không truyền `accountId` thì việc liệt kê và thu hồi áp dụng cho token của chính user đang đăng nhập; có truyền thì
+  áp dụng cho token của user đó. Token chỉ được tạo cho user đang đăng nhập: không ai tạo token dưới tên người khác.
+- `name` gồm 1 đến 64 chữ cái, chữ số, khoảng trắng hoặc các ký tự `.` `_` `@` `:` `-`, duy nhất trong một tài khoản
+  (`409` với `GIT_TOKEN_NAME_EXISTS`). Một tài khoản có tối đa 20 token (`409` với `GIT_TOKEN_LIMIT_REACHED`). User đang
+  đăng nhập cần có tài khoản Git đang hoạt động (`409` với `GIT_ACCOUNT_NOT_ACTIVE`).
+- Thu hồi token đã không còn cũng thành công. Token tạo trên giao diện web cũng có trong danh sách.
+
+Response tạo token là lần duy nhất có giá trị token:
+
+```json
+{
+  "id": 18,
+  "name": "laptop",
+  "scopes": ["write:repository", "read:user"],
+  "lastEight": "9f8e7d6c",
+  "token": "<giá trị token>",
+  "username": "jane.doe-example"
+}
+```
+
+Danh sách gồm `accountId`, `username`, `total` và `items` có `id`, `name`, `scopes` và `lastEight` (8 ký tự cuối của
+giá trị).
+
+### Repository của các module
+
+Mỗi module backend hoặc frontend có thể có một repository của organization Workspace, và một repository thuộc tối đa
+một module. Module mới được tạo repository, trừ khi tạo với `"createGitRepository": false`; xem
+[Repository của module](#repository-của-module). Xoá module thì repository được archive; code vẫn được giữ.
+
+### Dùng Git over HTTPS
+
+1. Lấy access token: bằng endpoint ở trên, hoặc trên giao diện web `https://{WORKSPACE_DOMAIN}/git/`, mục
+   **Settings → Applications**, với hai quyền: `repository` **Read and write** và `user` **Read**. Quyền `user` cho Git
+   server kiểm tra token đúng là của username bạn gửi; token thiếu quyền này bị từ chối.
+2. Clone bằng `username` Git của bạn, dùng token làm mật khẩu:
+
+   ```bash
+   git clone https://{WORKSPACE_DOMAIN}/git/{organization}/{repository}.git
+   ```
+
+Username phải là chủ của token. Username Git chỉ dùng được trên domain của chính Workspace đó. Username của người
+khác, username không phải tài khoản Git đang hoạt động của Workspace đó, token thiếu quyền đọc `user` và token sai đều
+nhận cùng một `401`, kể cả khi dùng scheme xác thực khác Basic. Quá nhiều request kèm credential từ một địa chỉ nhận
+`429`; thử lại sau vài giây. Chỉ gửi token ở
+vị trí mật khẩu; token đặt trong query string của URL bị từ chối. Vài phút sau khi user rời Workspace, việc đăng nhập
+Git và token của user đó sẽ ngừng hoạt động; tài khoản bị khoá hoặc bị xoá thì ngừng ngay, và token của tài khoản
+vừa mở khoá dùng lại được ngay. Chưa hỗ trợ SSH.
+
+Repository chỉ chia sẻ được cho tài khoản Git trong cùng Workspace: thành viên team và collaborator thuộc Workspace
+khác sẽ tự động bị gỡ, trong vài giây nếu được thêm qua giao diện web.
+
+### Mã lỗi Git
+
+| `code` | Status | Khi nào |
+|---|---:|---|
+| `GIT_DISABLED` | `404` | Git chưa được bật ở môi trường của Workspace |
+| `MEMBER_NOT_ACTIVE` | `404` / `409` | User không phải member đang hoạt động của Workspace |
+| `GIT_ACCOUNT_NOT_FOUND` | `404` | User chưa có tài khoản Git, hoặc tài khoản không ở trạng thái cần thiết |
+| `GIT_ACCOUNT_NOT_ACTIVE` | `409` | Tạo token khi chưa có tài khoản Git đang hoạt động |
+| `GIT_REPOSITORY_NOT_FOUND` | `404` | Không có repository này trong organization |
+| `GIT_REPOSITORY_EXISTS` | `409` | Tên repository đã được dùng |
+| `GIT_REPOSITORY_LIMIT_REACHED` | `409` | Workspace đã đủ giới hạn repository |
+| `GIT_REPOSITORY_LINKED` | `409` | Repository thuộc một project (khi xoá, hoặc khi liên kết vào project khác) |
+| `PROJECT_ALREADY_LINKED` | `409` | Project đã có repository |
+| `PROJECT_DISABLED` | `409` | Project đã bị xoá |
+| `CONFIRM_MISMATCH` | `400` | `confirm` khác tên repository |
+| `GIT_TOKEN_NAME_EXISTS` | `409` | Tên token đã được dùng |
+| `GIT_TOKEN_LIMIT_REACHED` | `409` | Tài khoản đã có 20 token |
+| `IMPERSONATION_NOT_ALLOWED` | `403` | Thao tác thay đổi gửi từ phiên đang thao tác dưới danh nghĩa user khác |
+| `GIT_UNAVAILABLE` | `503` | Git server tạm thời không phản hồi; thử lại sau |
 
 ## Custom Module Action
 

@@ -62,6 +62,8 @@ Các HTTP status thường gặp: `400` request không hợp lệ, `401` cần x
 | `POST` | `/api/v1/ts-projects/frontend/{projectId}` | `200` |
 | `POST` | `/api/v1/ts-projects/frontend/{projectId}/update` | `200` |
 | `POST` | `/api/v1/ts-projects/frontend/{projectId}/delete` | `200` |
+| `POST` | `/api/v1/ts-projects/frontend/{projectId}/git/repository` | `201` / `200` |
+| `POST` | `/api/v1/ts-projects/frontend/{projectId}/git/repository/unlink` | `200` |
 | `POST` | `/api/v1/ts-projects/frontend/{projectId}/versions` | `202` |
 | `POST` | `/api/v1/ts-projects/frontend/{projectId}/versions/list` | `200` |
 | `POST` | `/api/v1/ts-projects/frontend/{projectId}/versions/{versionId}` | `200` |
@@ -86,11 +88,20 @@ Các project endpoint trả shape sau:
   "activeVersionId": null,
   "lockVersion": 0,
   "created": 1788023000000,
-  "updated": 1788023000000
+  "updated": 1788023000000,
+  "git": {
+    "status": "LINKED",
+    "repository": {
+      "id": 43,
+      "name": "sales_dashboard",
+      "cloneUrl": "https://{WORKSPACE_DOMAIN}/git/example/sales_dashboard.git",
+      "webUrl": "https://{WORKSPACE_DOMAIN}/git/example/sales_dashboard"
+    }
+  }
 }
 ```
 
-`slug` là định danh module do client chọn. `slugSlot` là public path segment do Cogover cấp, từ `_cm_1` đến `_cm_100`. Khi tạo link tới asset đã deploy, dùng `slugSlot` thay vì `slug`. `lockVersion` là dấu phiên bản đồng thời dạng opaque.
+`slug` là định danh module do client chọn. `slugSlot` là public path segment do Cogover cấp, từ `_cm_1` đến `_cm_100`. Khi tạo link tới asset đã deploy, dùng `slugSlot` thay vì `slug`. `lockVersion` là dấu phiên bản đồng thời dạng opaque. `git` được mô tả ở [Repository của module](#repository-của-module).
 
 Project status:
 
@@ -113,11 +124,12 @@ Content-Type: application/json
 {
   "name": "Sales dashboard",
   "description": "Workspace sales UI",
-  "slug": "sales_dashboard"
+  "slug": "sales_dashboard",
+  "createGitRepository": true
 }
 ```
 
-`name` bắt buộc và dài tối đa 250 ký tự. `description` không bắt buộc và dài tối đa 2.000 ký tự. Mỗi Workspace có thể có tối đa 100 Custom Frontend Module đang tồn tại.
+`name` bắt buộc và dài tối đa 250 ký tự. `description` không bắt buộc và dài tối đa 2.000 ký tự. Mỗi Workspace có thể có tối đa 100 Custom Frontend Module đang tồn tại. `createGitRepository` (mặc định `true`) tạo [repository của module](#repository-của-module) cùng lúc với module.
 
 HTTP `201` trả project object.
 
@@ -192,7 +204,34 @@ Content-Type: application/json
 {}
 ```
 
-Thao tác xóa có tính idempotent. Project trả về có `status: "DISABLED"` và asset path không còn phục vụ nội dung.
+Thao tác xóa có tính idempotent. Project trả về có `status: "DISABLED"` và asset path không còn phục vụ nội dung. Repository của module được archive: code được giữ ở chế độ chỉ đọc.
+
+## Repository của module
+
+Một module có tối đa một repository trong organization Git của Workspace, và một repository thuộc tối đa một module.
+Tài khoản Git, quyền trên repository và access token được quản lý bằng các endpoint Git của
+[API Reference Custom Backend Module](custom-backend-module-api-reference.md#git-repository-1). Field `git` của
+project object:
+
+| `status` | Ý nghĩa |
+|---|---|
+| `LINKED` | `repository` có `id`, `name`, `cloneUrl` và `webUrl` của repository |
+| `NONE` | Module chưa có repository; `repository` là `null` |
+| `DISABLED` | Git chưa được bật ở môi trường của Workspace; `repository` là `null` |
+
+Module mới được tạo repository, trừ khi `createGitRepository` là `false`. Repository đặt tên theo slug; nếu tên đã được
+dùng thì thêm `-frontend`, rồi hậu tố ngẫu nhiên. Nếu không tạo được repository, ví dụ khi Workspace đã đủ giới hạn
+repository, module vẫn được tạo (`201`): khi đó riêng response tạo module có `git.error` gồm `code` (ví dụ
+`GIT_REPOSITORY_LIMIT_REACHED`) và `msg`, `git.status` là `NONE`, và có thể tạo repository sau.
+
+`POST /api/v1/ts-projects/frontend/{projectId}/git/repository` tạo repository cho module chưa có (`201`), hoặc với
+`{"repository": "<tên>"}` liên kết một repository có sẵn của organization chưa thuộc module nào (`200`). Response là
+object `git`. Lỗi có `code`: `409` với `PROJECT_ALREADY_LINKED`, `GIT_REPOSITORY_LINKED`,
+`GIT_REPOSITORY_LIMIT_REACHED` hoặc `PROJECT_DISABLED`; `404` với `GIT_REPOSITORY_NOT_FOUND`, hoặc `GIT_DISABLED` khi Git
+chưa được bật.
+
+`POST /api/v1/ts-projects/frontend/{projectId}/git/repository/unlink` với `{}` bỏ liên kết repository (repository vẫn
+được giữ) và trả `git` với `status: "NONE"`; module chưa có repository cũng thành công.
 
 ## Version object
 
@@ -254,9 +293,29 @@ Content-Type: application/json
 }
 ```
 
-Tên ZIP dài tối đa 255 ký tự. `fileSize` phải dương, `fileExt` phải là `zip`, `acl` phải là `private` và `idempotencyKey` là bắt buộc.
+Tên ZIP dài tối đa 255 ký tự. `fileSize` phải dương, `fileExt` phải là `zip`, `acl` phải là `private` và `idempotencyKey` là bắt buộc. File phải là ZIP private đã upload vào chính Workspace đó; `file_id` khác trả về `400` và không tạo version.
 
 HTTP `202` trả version object; quá trình publish tiếp tục bất đồng bộ. Poll endpoint chi tiết version cho tới khi version là `READY` hoặc `FAILED`.
+
+### Giới hạn kích thước
+
+| Giới hạn | Giá trị |
+|---|---|
+| File ZIP | 80 MiB |
+| Số entry trong ZIP (file và thư mục) | 2.048 |
+| Tổng dung lượng sau khi giải nén | 80 MiB |
+| Dung lượng một file | 20 MiB |
+
+Request có `fileSize` lớn hơn 80 MiB bị từ chối với `400` trước khi tạo version, ví dụ `ZIP file is 85.3 MiB, which exceeds the 80 MiB limit`. Các giới hạn còn lại được kiểm tra khi validate version: version chuyển sang `FAILED` với `buildErrorCode` là `INVALID_FRONTEND_ARCHIVE`, và `buildErrorMessage` nêu giới hạn bị vượt cùng đường dẫn file liên quan (nếu có):
+
+| Trường hợp | `buildErrorMessage` |
+|---|---|
+| Một file quá lớn | `File "dist/assets/video.mp4" exceeds the 20 MiB per-file limit` |
+| Tổng các file quá lớn | `ZIP content exceeds the 80 MiB total size limit after extraction; the limit was reached at "dist/assets/chunk-42.js"` |
+| Quá nhiều entry | `ZIP contains more than 2048 entries; files and directories both count` |
+| Một file nén hơn 100:1 | `File "dist/data.json" exceeds the 100:1 compression-ratio limit` |
+
+1 MiB bằng 1.048.576 byte. Cogover Dev CLI kiểm tra các giới hạn này trước khi upload ZIP do CLI tạo. Bước upload file của Workspace áp dụng dung lượng tối đa riêng cho file ZIP (field Files của object Contract), có thể thấp hơn giới hạn ZIP ở trên; khi đó upload bị từ chối trước khi tạo version.
 
 ## Liệt kê hoặc đọc version
 
