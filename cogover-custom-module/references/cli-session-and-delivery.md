@@ -94,7 +94,7 @@ cogover-dev jobs schedules [--json]
 
 ## Lưu source trên Git server của Workspace
 
-Mỗi Workspace có Git server tại `https://<WORKSPACE_DOMAIN>/git/`; mỗi Project backend hoặc frontend có tối đa một repository ở đó. Cần CLI từ `0.21.0` và Git (credential helper cần Git từ `2.26`):
+Mỗi Workspace có Git server tại `https://<WORKSPACE_DOMAIN>/git/`; mỗi Project có tối đa một repository. Cần CLI từ `0.21.0` và Git:
 
 ```bash
 cogover-dev git setup [--remote <name>] [--no-remote] [--no-create]
@@ -103,11 +103,13 @@ cogover-dev git token list [--account <account-id>]
 cogover-dev git token delete <id> [--account <account-id>] [--yes]
 ```
 
-- `git setup` chạy một lần trong thư mục có `cogover.json` của từng Project (backend và frontend chạy riêng), dùng cùng Workspace API key với `publish`: tạo repository của Project nếu chưa có (`--no-create` thì báo `GIT_REPOSITORY_MISSING`; Workspace chưa bật Git báo `GIT_DISABLED`) và tài khoản Git của người chạy nếu chưa có, tạo access token lưu vào credential store của hệ điều hành, `git init` nhánh `main` khi thư mục chưa là Git repository, ghi credential helper vào cấu hình của repository (không phải global), rồi giữ remote đã trỏ đúng repository hoặc thêm `origin`, hay `cogover` khi `origin` đã trỏ nơi khác (ví dụ GitHub); `--remote <name>` chọn tên, `--no-remote` không thêm. Lệnh không commit, push hay sửa lịch sử: chạy tiếp các lệnh `git add`, `git commit`, `git push -u <remote> main` mà lệnh in ra.
-- Hiện chỉ SuperAdmin quản lý được tài khoản Git, repository và token; mọi thành viên đã đăng nhập chỉ xem được tài khoản Git của chính mình. Thiếu quyền thì báo dependency, không tự nới quyền.
-- Token chỉ nằm trong credential store của hệ điều hành, không có fallback `.env`: credential store không dùng được thì `git setup` dừng, cài lại CLI bằng `npm install --global @cogover/dev-cli --allow-scripts=keytar` (npm từ 12) và kiểm tra bằng `cogover-dev doctor`. Git tự gọi `cogover-dev git credential <get|store|erase>`, nên CLI phải có trên `PATH`; token bị Workspace từ chối thì chạy lại `git setup`.
-- Không in, ghi vào file, `.env`, URL remote, commit hay báo cáo giá trị token. Chỉ dùng `git token create --print-token` khi người dùng thực sự cần token cho công cụ khác và không thu output đó vào log hay chat; `git token list` chỉ trả metadata (ID, tên, 8 ký tự cuối), thu hồi token không còn dùng bằng `git token delete`.
-- Push không publish version và không đổi version active: vẫn build (frontend), `cogover-dev publish` rồi `activate`. Không commit `.env`, `.cogover-session.curl` hay file credential; `git setup` cảnh báo khi có `.env` mà Git chưa ignore. Quản lý repository qua API theo mục Repository của module trong [Backend API Reference](custom-backend-module-api-reference.md#repository-của-module) và [Frontend API Reference](custom-frontend-module-api-reference.md#repository-của-module).
+- Mặc định lưu source của mọi Project lên repository này, trừ khi người dùng không muốn. Lần đầu báo người dùng repository nào và ai xem được (SuperAdmin, collaborator của repository).
+- `git setup` chạy một lần trong thư mục có `cogover.json` (backend và frontend riêng), dùng cùng Workspace API key với `publish`: tạo repository và tài khoản Git nếu chưa có, lưu access token vào credential store của hệ điều hành, `git init` khi cần, cấu hình credential helper và thêm remote `origin`, hoặc `cogover` khi `origin` trỏ nơi khác. Lệnh không commit hay push.
+- Commit và push: bản khởi tạo, mỗi tính năng hoặc lần sửa lỗi đã qua test local, trước mỗi lần publish. Activate xong thì gắn tag `cogover-<VERSION_ID>` vào commit đã publish và push tag. Push không publish version.
+- Trước commit đầu, `.gitignore` phải loại `.env*`, `.cogover-session.curl`, file phiên/trace/báo cáo E2E (chứa cookie phiên), `node_modules/`, `dist/`, ZIP; mỗi lần commit xem lại file staged.
+- Chỉ push lên remote do `git setup` cấu hình, không force push; push bị từ chối thì `git pull --rebase` rồi push lại, có conflict thì dừng và báo người dùng.
+- Không lưu được (Workspace chưa bật hoặc chưa hỗ trợ Git, chưa cài Git, `CREDENTIAL_STORE_UNAVAILABLE`, không phải SuperAdmin) thì báo một lần rồi làm tiếp, không tự cài phần mềm hay nới quyền. Thiếu credential store: cài lại CLI bằng `npm install --global @cogover/dev-cli --allow-scripts=keytar` (npm từ 12). Git gọi `cogover-dev git credential`, nên CLI phải có trên `PATH`.
+- Token chỉ nằm trong credential store: không in, ghi file, đưa vào URL remote hay commit; `--print-token` chỉ khi người dùng cần token cho công cụ khác. Quản lý repository qua API: mục Repository của module trong [Backend API Reference](custom-backend-module-api-reference.md#repository-của-module) và [Frontend API Reference](custom-frontend-module-api-reference.md#repository-của-module).
 
 ## Tạo session cho cURL
 
