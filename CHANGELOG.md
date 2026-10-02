@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.20.1 - 2026-10-02
+
+- Cập nhật `cogover-api-auth` 1.0.3: quy ước request chung thêm quy tắc body có ký tự ngoài ASCII phải gửi từ file JSON UTF-8 không BOM bằng `--data-binary @file`, không viết inline trong lệnh shell, vì trên Windows tham số dòng lệnh đi qua code page ANSI làm hỏng dấu tiếng Việt trước khi gửi (đã gặp ở mô tả Project và repository Git).
+
 ## 4.20.0 - 2026-10-02
 
 - Cập nhật `cogover-custom-module` 1.18.0: source của mọi Project mặc định được lưu trên Git server của Workspace, trừ khi người dùng không muốn. Bước 4 không gửi `createGitRepository` (server tạo kèm repository); bước 7 chạy `cogover-dev git setup`, commit và push bản đầu, sau đó commit, push mỗi tính năng hoặc lần sửa lỗi đã qua test local và trước mỗi lần publish; bước 9 gắn tag `cogover-<VERSION_ID>` sau khi activate; bước 10 bàn giao link repository và commit/tag cuối. Không lưu được thì báo một lần rồi làm tiếp. `cli-session-and-delivery.md` gom quy tắc: báo người dùng ai xem được repository, `.gitignore` loại `.env*`, session export, file phiên/báo cáo E2E, `node_modules/`, `dist/`, ZIP; chỉ push lên remote do `git setup` cấu hình, không force push, `pull --rebase` khi bị từ chối và dừng khi có conflict.

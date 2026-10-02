@@ -16,6 +16,7 @@ Quy trình chọn credential của một CLI có thể khác thứ tự chung; �
 Áp dụng cho mọi skill trong bộ; từng skill chỉ ghi thêm ngoại lệ riêng.
 
 - Request `/bapi/v{N}` gửi `Authorization: Bearer {API_KEY}` và `Content-Type: application/json`; request `/api/v{N}` gửi cookie phiên và hai header CSRF/XSRF như mục 3.
+- Body có ký tự ngoài ASCII (tiếng Việt, emoji): ghi file JSON UTF-8 không BOM rồi gửi bằng `--data-binary @file`, không viết JSON inline trong lệnh shell. Trên Windows, tham số dòng lệnh đi qua code page ANSI nên dấu bị hỏng trước khi gửi (`à` thành `�`, `ừ` thành `?`).
 - Response có `r` (số, `0` là thành công), `msg` và `data`. Chỉ coi thao tác thành công khi HTTP status phù hợp và `r: 0`.
 - Khi HTTP 4xx/422 hoặc `r` khác `0`: hiển thị `r`, `msg` và chi tiết lỗi đã lọc secret, rồi dừng; không đổi endpoint, phiên bản API hay cơ chế xác thực để thử lại.
 - `401`/`403`: key không hợp lệ, hết hạn hoặc thiếu quyền; yêu cầu người dùng kiểm tra credential/quyền. Riêng `/api/v{N}`: khi `401`/`403` hoặc lỗi CSRF, tạo lại phiên từ API Key theo mục 3 và thử lại đúng một lần trước khi kết luận; không lặp lại mutation có thể đã có side effect. HTTP 5xx: báo lỗi server, thử lại sau.

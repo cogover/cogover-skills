@@ -3,13 +3,13 @@ name: cogover-api-auth
 description: "Chọn và triển khai đúng cơ chế xác thực Cogover API: API Key Bearer cho `/bapi/v{N}`, phiên Web App (cookie kèm CSRF/XSRF) cho `/api/v{N}`, đổi API Key thành phiên qua `/bapi/v1/auth-token`. Nguồn chung cho mọi skill về quản lý credential và quy ước request/response/lỗi. Dùng khi viết request Cogover API hoặc xử lý token/cookie hết hạn."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # Cogover API Auth
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.0.3`
+- **Ngày phát hành:** `2026-10-02`
 
 ## Mục tiêu
 
