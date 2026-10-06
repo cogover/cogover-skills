@@ -3,13 +3,13 @@ name: object-transition-rule
 description: "Quản lý transition rule cho field single-choice của Cogover Object qua `/api/v1/object_security/transition_rule` (phiên Web App): list, tạo, sửa, bật/tắt, xóa; thiết kế flow giữa option (tên hành động tiếng Anh, graph UI-safe), condition/record filter/post-action, verify sau ghi; thiếu cặp chuyển thì tự thiết kế từ ngữ nghĩa Object/field/option."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.1.0"
 ---
 
 # Object Transition Rule
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Quản lý transition rule của field trạng thái (single-choice) qua `/api/v1/object_security/transition_rule` bằng phiên Web App; thao tác hoàn toàn bằng API, không qua giao diện trình duyệt. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Skill dành cho người dùng bên ngoài: chỉ dùng tài liệu đi kèm skill, thông tin người dùng cung cấp và response API; không đọc source code, browser bundle hay source map để suy ra contract; tài liệu và API không đủ thì dừng và báo rõ phần còn thiếu. Gọi `$cogover-api-auth` và `$object-info` qua interface công khai của chúng, không mở file triển khai.
 
@@ -58,6 +58,13 @@ Quản lý transition rule của field trạng thái (single-choice) qua `/api/v
 - Trước mutation, kiểm tra hình học tối thiểu: node-node, edge-label–node và edge-label–edge-label không giao nhau; mọi node nằm trong bounds dự kiến. Sau mutation, đọc lại metadata và kiểm tra lại theo [Layout geometry UI-safe](references/api-contract.md#layout-geometry-ui-safe).
 - Browser (khi người dùng báo lỗi hiển thị hoặc browser sẵn có) chỉ dùng để QA read-only; không tạo/sửa/lưu rule trên UI. Chỉ đo bounding box sau khi UI nạp đủ `optionCount + 1` node và `flowCount` edge label; chỉ báo đã sửa UI khi không còn collision và không node nào nằm ngoài canvas.
 
+## Tác động tới Process, nút và action của App
+
+- Cặp chuyển trạng thái áp dụng cho mọi đường ghi, kể cả bước Update Record của Process: thiếu flow thì node trả `resultCode: 1` và record giữ trạng thái cũ, xem [Ràng buộc khi ghi](../process-creator/nodes/update-record-task.md#ràng-buộc-khi-ghi) của `$process-creator`; ghi qua Records API trả `r: 48`, xem [Xử lý lỗi](../object-record/SKILL.md#xử-lý-lỗi) của `$object-record`.
+- Trước khi thiết kế luồng duyệt trên Object đã có rule (thường là Object chuẩn của App): đọc rule, liệt kê mọi bước tiến, trả về, huỷ mà luồng cần và đối chiếu từng bước với một flow. Trạng thái chuẩn không đủ cho số bước duyệt thì ánh xạ nhiều bước vào một trạng thái chuẩn và lưu bước chi tiết ở field riêng, không thêm option vào field trạng thái chuẩn.
+- Điều kiện nhân sự (block `type: 1`) trên flow chặn người dùng tự chuyển trạng thái qua giao diện, nút chuẩn và action của App (`STATUS_TRANSITION_INVALID`); Process ghi trạng thái bằng Automation không bị chặn (*đã kiểm chứng có đối chứng*). Dùng cách này để ngăn người đề nghị tự duyệt khi Object dùng nút duyệt chuẩn; nút vẫn hiển thị, xem giới hạn ở [$object-button](../object-button/SKILL.md).
+- Duyệt tay bằng nút khi Process còn User Task đang chờ có thể làm task treo rồi ghi đè trạng thái (*quan sát, cần kiểm chứng*): khuyến nghị người dùng duyệt qua task.
+
 ## Verify sau khi ghi
 
 - Sau mọi create/update/status/delete, đọc lại bằng ID rồi so sánh trước/sau; không dựa riêng vào response mutation.
@@ -86,6 +93,8 @@ Quản lý transition rule của field trạng thái (single-choice) qua `/api/v
 2. Không đổi `objectFieldId`; backend giữ field hiện tại khi update. Cần field khác thì tạo rule mới.
 3. Scalar (name, description, status, sort): gửi payload tối thiểu gồm `id` và trường cần đổi. Không hứa slug đã đổi cho tới khi view lại xác nhận, vì một số bản backend validate nhưng không persist slug update.
 4. `flows` là cấu hình thay thế toàn bộ: sửa một flow thì gửi lại **toàn bộ** flows đã merge với thay đổi. Mảng khác rỗng xóa/tạo lại flows phía server; `null`, bỏ trống hoặc `[]` không phải cách xóa tất cả.
+   - Rule (nhất là rule chuẩn của App) có thể chứa flow trỏ option không còn trên field. Gửi lại các flow này làm update bị từ chối (`r: 436` hoặc `437`), nên không thể thêm flow mới mà vẫn giữ chúng (*đã sửa và chạy đúng* sau khi loại các flow này).
+   - Trước update: snapshot rule, đối chiếu từng `originValue`/`targetValue` với option hiện có, liệt kê flow trỏ option không tồn tại (name, slug, cặp trạng thái) và **hỏi người dùng xác nhận** loại chúng khỏi payload. Chưa có xác nhận thì không update; sau update, báo danh sách đã loại và nơi lưu snapshot.
 5. Sửa graph: cập nhật đồng thời `flows`, rule `metaData` và từng flow `metaData`; giữ nguyên condition/personnel/post-action không liên quan và metadata UI hợp lệ ngoài phạm vi thay đổi; bổ sung mọi key baseline còn thiếu; kiểm tra lại theo mục **Ràng buộc graph và bố trí không chồng lấn**.
 6. `cloneTargetValue` chỉ nhận option slug là target trực tiếp của một flow từ `_initial`; không còn hợp lệ thì gửi `null`.
 7. Gọi `POST /api/v1/object_security/transition_rule/update`, rồi view lại và so sánh từng trường/flow mục tiêu.

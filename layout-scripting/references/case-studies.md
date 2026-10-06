@@ -211,3 +211,83 @@ Gotcha:
 - `await rl.rows()` chỉ áp cho dòng có sẵn lúc script chạy; dòng thêm mới sau cần re-trigger (đổi field cha hoặc gõ một ô) mới được áp.
 - Sai slug related list (`cash_transaction_apply` thay vì `cash_transaction_applies`) → `screen.get` vẫn "found" (match qua sourceObjectSlug) nhưng override key sai → không áp. Luôn dùng slug related list trong layout.
 - Cell không có `display` (không ẩn từng ô). Muốn lọc lookup cell → `limitedOptions` nhận mảng record ID.
+
+## Case 7: Form Tạo tự điền người yêu cầu và thông tin liên hệ
+
+- Object `service_request`; field `requester` (lookup → `personnel`), `requester_name` (short_text), `requester_department` (lookup → `department`), `requester_email` (email).
+- Yêu cầu: form Tạo gán `requester` = người đang đăng nhập nếu ô trống; khi `requester` có giá trị trên form Tạo hoặc user đổi `requester`, điền họ tên, phòng ban, email.
+- Answer: DANGER MODE; Q1 = 2 cho phần gán mặc định, Q1 = 3 (`requester`) cho phần điền; Q3 = 1 với `requester` (không ghi đè người đã chọn); ba ô còn lại là thông tin dẫn xuất, luôn theo `requester`.
+- Ghi chú:
+  - Họ tên: không lấy `name` của `personnel` (là mã nhân sự); chọn field họ tên theo [Object đặc biệt của Workspace](../../object-info/SKILL.md#object-đặc-biệt-của-workspace-cần-nắm) của `$object-info`.
+  - Phòng ban: đọc `department_personnel` theo `personnel`, ưu tiên quan hệ `is_primary`, không có thì lấy quan hệ tạo sớm nhất; không giả định `$currentPersonnel` có sẵn phòng ban chính khi user thuộc nhiều phòng ban.
+  - User nghiệp vụ cần quyền xem `personnel` và `department_personnel`: kiểm tra bằng phiên persona theo `$user-permission` trước khi bàn giao.
+  - Record có thể tạo ngoài form (API, import): giữ Process điền dự phòng.
+
+```js
+/**
+ * ⚠️ SCRIPT NÀY THAY ĐỔI DỮ LIỆU FORM TỰ ĐỘNG
+ *
+ * Chạy khi: mở form Tạo (gán người yêu cầu nếu trống); "requester" có giá trị trên form Tạo hoặc user đổi "requester"
+ * KHÔNG chạy khi: mở bản ghi đã lưu mà không đổi "requester"
+ * KHÔNG ghi đè: "requester" đã chọn; họ tên/phòng ban/email luôn theo "requester"
+ *
+ * Nếu sửa script này, GIỮ NGUYÊN các điều kiện `if (...)` bao quanh logic.
+ * KHÔNG thêm `return` — script nằm chung 1 hàm với các script khác.
+ */
+const requesterItem = screen.get("requester", "FORM_ITEM");
+
+// Block 1: form Tạo → gán người đang đăng nhập một lần (user tự xoá ô thì không gán lại)
+if (formType === "create" && requesterItem && !requesterItem.value && $currentPersonnel?.id && !$ref.requesterDefaulted) {
+    $ref.requesterDefaulted = true;
+    requesterItem.value = $currentPersonnel.id;
+}
+
+// Block 2: điền thông tin dẫn xuất khi requester mới
+const requesterId = requesterItem ? requesterItem.value : null;
+if (requesterId && $ref.filledRequesterId !== requesterId && (formType === "create" || changedFields["requester"])) {
+    $ref.filledRequesterId = requesterId;
+    const { records: people } = await filterRecords("personnel", {
+        filterItems: [{ field: "id", op: "=", params: [requesterId] }],
+        limit: 1,
+    });
+    const { records: relations } = await filterRecords("department_personnel", {
+        filterItems: [{ field: "personnel", op: "=", params: [requesterId] }],
+        limit: 50,
+    });
+    let main = relations.find((r) => r.is_primary === true) || null;
+    if (!main) {
+        for (const r of relations) {
+            if (!main || (r.created || 0) < (main.created || 0)) {
+                main = r;
+            }
+        }
+    }
+    const dept = main?.department;
+    const departmentId = typeof dept === "string" ? dept : dept?.id ?? null;
+    const person = people[0];
+
+    // user có thể đã đổi requester trong lúc chờ filterRecords → chỉ điền khi vẫn là người này
+    if (person && screen.get("requester", "FORM_ITEM").value === requesterId) {
+        const fullName = person.first_last_name || ""; // hoặc last_first_name theo cách giao diện hiển thị nhân sự
+        const email = person.account_email || person.work_email || null;
+        const targets = [
+            ["requester_name", fullName],
+            ["requester_department", departmentId],
+            ["requester_email", email],
+        ];
+        for (const [slug, next] of targets) {
+            const item = screen.get(slug, "FORM_ITEM");
+            if (item && item.value !== next) {
+                item.value = next;
+            }
+        }
+    }
+}
+```
+
+Test:
+1. Tạo mới → `requester` = người đăng nhập, ba ô điền đúng.
+2. Đổi `requester` → ba ô đổi theo.
+3. Mở record đã lưu, không đổi gì → không ghi đè.
+4. Xoá tay `requester` trên form Tạo → không bị gán lại.
+5. Persona không phải admin mở form Tạo → vẫn điền được.

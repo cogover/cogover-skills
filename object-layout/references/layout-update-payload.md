@@ -17,7 +17,7 @@ curl --silent --location --request PUT 'https://{WORKSPACE_DOMAIN}/bapi/v1/layou
     "accessControls": [ ... giữ nguyên từ layout hiện tại ... ],
     "hasComponentPath": "<giữ nguyên giá trị hiện tại, kể cả null>",
     "content": [ ... giữ nguyên hoặc chỉ sửa phần được yêu cầu ... ],
-    "title": { ... giữ nguyên ... },
+    "title": { ... giữ nguyên; bỏ key này khi view trả null ... },
     "pageSettings": {
       "...": "... giữ nguyên các key hiện tại ...",
       "script": "SCRIPT_MOI_DA_ESCAPE"
@@ -27,6 +27,8 @@ curl --silent --location --request PUT 'https://{WORKSPACE_DOMAIN}/bapi/v1/layou
     "isMobile": false
   }'
 ```
+
+`title` chỉ gửi khi view trả object; view trả `null` thì bỏ key này (gửi `null` trả `42201`).
 
 ## Cập nhật script bằng jq
 
@@ -56,6 +58,7 @@ curl --silent --location 'https://{WORKSPACE_DOMAIN}/bapi/v1/layouts_v2/view' \
         isWeb: (.isWeb == true or .isWeb == 1),
         isMobile: (.isMobile == true or .isMobile == 1)
       }
+    | if .title == null then del(.title) else . end
   ' \
 > /tmp/layout-update.json
 

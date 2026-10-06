@@ -3,13 +3,13 @@ name: object-button
 description: "Phân tích nghiệp vụ và quản lý Object Button qua Object Buttons API `/bapi/v1/object-buttons`: list, view, tạo, cập nhật, xóa; cấu hình create/update/export, autofill, action chain, group, Call API, Export and Merge PDF, filter, kết quả sau action; đặt button/Button chain lên layout xem/sửa và icon light/dark qua $object-layout, $cogover-icon."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # Object Button
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.0.3`
+- **Ngày phát hành:** `2026-10-06`
 
 Biến ý định nghiệp vụ thành một hành động có ngữ cảnh trên Cogover Object và quản lý cấu hình đó qua `/bapi/v1/object-buttons` (API Key Bearer): list, view, create, update, delete. Một Object Button có thể mở nhanh một thao tác đã điền sẵn dữ liệu, tác động lên bản ghi hiện tại hoặc Object khác, hay điều phối nhiều action theo thứ tự và truyền kết quả giữa các bước. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md).
 
@@ -30,6 +30,11 @@ Chọn cấu trúc nhỏ nhất đáp ứng đúng nghiệp vụ:
 - Action chain `14`: nhiều bước tuần tự, bước sau cần output của bước trước, hoặc một giao dịch nghiệp vụ gồm nhiều bản ghi.
 - Group button `15`: chỉ gom nhiều lệnh độc lập để tổ chức giao diện; không biểu diễn luồng dữ liệu hay thứ tự thực thi.
 - Không dùng button thay cho automation chạy hoàn toàn theo sự kiện, không cần người dùng kích hoạt; button có thể là điểm bắt đầu của luồng đó nếu đúng chủ ý nghiệp vụ.
+
+**Giới hạn hiển thị và quyền:**
+
+- Contract Object Buttons API và entry `pageSettings.buttons.listButton` trong skill không có trường điều kiện hiển thị theo giá trị field (ví dụ chỉ hiện khi `status = draft`) hay ACL theo từng nút; `filterIds` chỉ chọn filter mà list button hiển thị. Không tìm cấu hình không có trong contract.
+- Kiểm soát nghiệp vụ đặt ở server: chuyển trạng thái bằng [$object-transition-rule](../object-transition-rule/SKILL.md) (kể cả điều kiện nhân sự trên flow), quyền sửa bằng security rule theo [Khoá sửa theo trạng thái](../user-permission/SKILL.md#khoá-sửa-theo-trạng-thái). Nút vẫn hiện nhưng thao tác bị từ chối: nêu giới hạn này cho người dùng, kể cả với nút chuẩn của App.
 
 Đọc [references/business-use-cases.md](references/business-use-cases.md) khi cần giải thích ý nghĩa, thiết kế button từ yêu cầu nghiệp vụ, tạo nhanh bản ghi có dữ liệu điền sẵn hoặc xây chuỗi chuyển đổi nhiều Object: hai mẫu thực tế kèm JSON request-oriented [example-create-receipt-voucher.json](references/example-create-receipt-voucher.json) và [example-convert-lead.json](references/example-convert-lead.json).
 
@@ -77,6 +82,7 @@ Chọn cấu trúc nhỏ nhất đáp ứng đúng nghiệp vụ:
    - Button cho màn hình xem một bản ghi: tồn tại trong Object Buttons API chưa đủ để người dùng nhìn thấy. Dùng `$object-layout` đặt button vào một layout có chức năng xem/sửa của cùng `objectTypeSlug` qua `pageSettings.buttons.listButton`; không nhầm với component `fieldType: "button_group"` trong `content` (trường đầu là cụm action ở header màn hình bản ghi, trường sau là component nhúng trong bố cục).
    - Nhiều layout xem/sửa đang hoạt động: không tự thêm vào tất cả; xác định theo ID người dùng cung cấp, access control và kênh web/mobile; còn nhiều ứng viên tương đương thì yêu cầu người dùng chọn.
    - Giữ nguyên toàn bộ button hiện có và thứ tự của chúng; chống trùng theo `buttonId`; entry mới dùng ID và slug thật của button. Với Button chain, entry dùng ID và slug của chính button `actionType: 14`, không dùng ID của từng action con.
+   - Button chỉ coi là xuất hiện khi đã mở màn hình bản ghi/danh sách trên trình duyệt, theo [xác nhận giao diện](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện); chưa mở được thì báo rõ.
 7. Icon cho Button/Button chain trên layout, khi người dùng yêu cầu hoặc thiết kế cần, theo đúng thứ tự:
    1. Dùng file icon người dùng cung cấp; chưa có thì dùng `$cogover-icon` với profile **Button** để tạo cặp light/dark, không tự dựng icon ngoài hợp đồng của skill đó.
    2. Đọc toàn bộ và làm theo [hướng dẫn upload icon/ảnh vào thư viện Workspace](../cogover-icon/references/upload-icon-image-to-workspace-library.md): upload riêng từng file light/dark, thêm vào thư viện và lấy URL do response `add-multiple` trả về. Không gán đường dẫn local, `file_id`, URL ngoài chưa được đưa vào thư viện hoặc URL tự ghép.

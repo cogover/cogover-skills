@@ -384,7 +384,7 @@ Read-back có thể được chuẩn hóa khác payload ghi:
 | `413` | Status không hợp lệ | Dùng `0` hoặc `1` |
 | `434` | Description không hợp lệ | Giới hạn 1000 |
 | `435` | Slug invalid hoặc trùng | Tuân regex/length và unique trên Object |
-| `436` | `originValue` không hợp lệ | Dùng `_initial` hoặc option slug thật |
+| `436` | `originValue` không hợp lệ, gồm flow cũ trỏ option đã bị xoá | Dùng `_initial` hoặc option slug thật; flow trỏ option không còn: snapshot, hỏi người dùng xác nhận rồi mới loại khỏi payload |
 | `437` | `targetValue` không hợp lệ | Dùng option slug thật |
 | `438` | Flows rỗng hoặc thiếu logic | Gửi ít nhất một flow và đủ `logicType`/`logic` |
 | `439` | Post-action không hợp lệ | Kiểm tra type và reference IDs |

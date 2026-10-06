@@ -3,13 +3,13 @@ name: object-filter
 description: "Quản lý saved filter của Cogover Object qua Filters API `/bapi/v1/filters`: list, view, tạo, cập nhật, xóa; thiết kế conditions, logic, sortFields, tableSettings (thứ tự, độ rộng cột) theo nghiệp vụ Object; cấu hình layoutConfig/accessControls; verify bằng view sau khi ghi. Phối hợp $object-info lấy metadata; không dùng chỉ để lọc tạm thời records."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.1.0"
 ---
 
 # Object Filter
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Quản lý bộ lọc đã lưu của Cogover Object qua `/bapi/v1/filters` (API Key Bearer): list, view, create, update, delete. Không dùng skill này chỉ để lọc tạm thời một request lấy records.
 
@@ -17,6 +17,7 @@ Quản lý bộ lọc đã lưu của Cogover Object qua `/bapi/v1/filters` (API
 
 - Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Ngoại lệ riêng: `429` và timeout sau request ghi xử lý theo [Validation và lỗi](references/api-filters.md#validation-và-lỗi); `500` sau request ghi thì không tự lặp request khi chưa xác định trạng thái.
 - Người dùng chỉ đưa tên filter: tra `POST /bapi/v1/filters/list` để lấy ID; nhiều kết quả trùng hoặc gần giống thì đưa danh sách ứng viên thay vì tự chọn.
+- Object vừa tạo: cấu hình filter "Tất cả" theo [Checklist hoàn thiện Object mới](../object-info/SKILL.md#checklist-hoàn-thiện-object-mới) và mục [Filter mặc định của Object mới](#filter-mặc-định-của-object-mới).
 - Dùng `$object-info` lấy `objectTypeId`, `objectTypeSlug`, field slug, `fieldType`, options và metadata field; bắt buộc khi payload có `objectTypeId` hoặc `conditions`.
 - Đọc [references/api-filters.md](references/api-filters.md) (schema, ràng buộc, ví dụ cURL) trước khi dựng payload hoặc gọi endpoint. Nếu mô tả condition ở đó chưa đủ cho `fieldType`/operator đang dùng, đọc [danh mục điều kiện của object-record](../object-record/records_filter_conditions.md): chỉ tái sử dụng quy tắc tương thích `fieldType` + `op` + `params`; vẫn dùng schema saved filter (`conditions`, `logicType`, `logic`) của Filters API, không sao chép schema request của Records API.
 
@@ -29,6 +30,7 @@ Quản lý bộ lọc đã lưu của Cogover Object qua `/bapi/v1/filters` (API
 - Lookup tới người dùng hiện tại: `op: "="`, `params: "$currentUser"`, đúng `fieldType`; không thêm key ngoài schema như `iu` vì UI có thể diễn giải sai condition.
 - `params: null` cho `is null` và `not null`; mảng cho `in`, `not in`, `between` (kiểm tra thứ tự hai đầu khoảng).
 - Kiểm tra `logicType`, `logic`, tối đa ba `sortFields`, `limitRecord >= 1`, độ dài `name`/`description` và kiểu dữ liệu của các cấu hình.
+- Không đưa field `formula` tính khi đọc vào `conditions` hoặc `sortFields`: điều kiện không khớp record nào. Field dùng lọc/sắp xếp phải là field lưu, xem [Formula tính khi đọc và khi lưu](../object-info/references/api-object-fields.md#formula-tính-khi-đọc-và-khi-lưu).
 - Response create/update có thể là resource rút gọn (`conditions`, `accessControls` có thể `null`): không suy luận trường `null` đã bị mất; luôn gọi view để xác minh.
 
 ## Xem danh sách
@@ -54,6 +56,11 @@ Quản lý bộ lọc đã lưu của Cogover Object qua `/bapi/v1/filters` (API
    - `layoutFilterType: 1`, `displayTaskMode: 0`; bỏ qua các cấu hình layout tùy chọn còn lại thay vì tự đoán.
 7. Gọi `POST /bapi/v1/filters`, lấy ID rồi gọi view: kiểm tra conditions, `accessControls`, `layoutConfig.assignment`, thứ tự `showingColumns`, width trong `columns` và `sortFields` theo [Kiểm tra sau khi tạo](references/filter-table-design.md#kiểm-tra-sau-khi-tạo).
 
+## Filter mặc định của Object mới
+
+- Tạo Object với `standard_filter` mặc định sinh filter standard "Tất cả" (`type: 1`) chỉ có cột hệ thống (`id`, `name`, `created`, `created_by`, `updated`, `updated_by`).
+- Filter standard không xoá được nhưng sửa được: khi Object đã có field nghiệp vụ, thiết kế 5–10 cột theo [references/filter-table-design.md](references/filter-table-design.md), rồi cập nhật theo [Cập nhật bộ lọc](#cập-nhật-bộ-lọc), chỉ thay `tableSettings` (*đã sửa và chạy đúng*, kiểm tra cả trên giao diện).
+
 ## Cập nhật bộ lọc
 
 1. Gọi view ngay trước khi sửa để lấy trạng thái mới nhất và kiểm tra quyền `EDIT`.
@@ -75,4 +82,5 @@ Quản lý bộ lọc đã lưu của Cogover Object qua `/bapi/v1/filters` (API
 
 - List: tối thiểu ID, name, slug, objectTypeSlug, logicType, số conditions, type, starred, status và quyền hiện tại; kèm tổng số và phân trang.
 - Create/update: trạng thái đã được view xác minh, không chỉ response rút gọn: ID, name, slug, object, tóm tắt điều kiện, sắp xếp, thứ tự cột và width chính. Với update, nêu rõ phần đã đổi và phần giữ nguyên.
+- Thay đổi cột hoặc sắp xếp: nêu đã hay chưa mở danh sách trên trình duyệt, theo [xác nhận giao diện](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện); view lại không chứng minh danh sách hiển thị đúng.
 - Delete: các ID đã gửi, kết quả xác minh và cảnh báo rõ filter không xóa được.

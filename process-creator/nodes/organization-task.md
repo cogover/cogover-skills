@@ -113,6 +113,8 @@ Chỉ `filterType: "manager"` (cả key `personnel` và `department`) có thêm 
 | `position` | `department` | `1` / `2` / `3` | ALL_DEPARTMENT / INCLUDING_DEPARTMENT / EXCLUDING_DEPARTMENT |
 | `position` | `personnel` | `1` | ONLY_POSITIONS_APPLY_TO_PERSONNEL — chỉ vị trí áp dụng cho nhân sự được chọn |
 
+`filterType: "manager"` dựa vào quan hệ phòng ban–vị trí `level: 1` của nhân sự ([user-permission](../../user-permission/references/api-departments.md#ghi-dữ-liệu)); có thể trả 0 bản ghi khi Workspace chưa khai báo quan hệ này. Luôn kiểm tra `output.total >= 1` bằng gateway, nhánh 0 người dẫn tới người duyệt mặc định. Phương án đã chạy để tìm trưởng bộ phận của người đề nghị: `filterType: "personnel"` với criteria `department` option `3` (`isRawValue: false`, value là lookup người đề nghị) và `position` option `1` (các vị trí trưởng), rồi dùng `output.records` làm performer.
+
 #### `outputSaving`
 
 `"FIELD_OF_FIRST_RECORD"` lưu trường của bản ghi đầu tiên (đơn giá trị); `"FIELD_OF_LIST_RECORDS"` lưu trường của tất cả bản ghi tìm được (danh sách).

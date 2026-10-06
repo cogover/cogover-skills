@@ -47,6 +47,21 @@ Saved report có hai bề mặt URL. Menu Item phải dùng bề mặt runtime `
 
 Trước create/update batch, kiểm tra mọi item có `actionContent` chứa `/reports/`; từ chối item bắt đầu bằng `/settings/reports/`. Sau mutation, list/tree read-back phải trả exact `/reports/{reportSlug}`.
 
+## Route runtime trong App
+
+Link cho người dùng nghiệp vụ (Menu Item, thông báo, email, form User Task, nội dung văn bản) dùng route runtime có `/` đầu, không dùng route quản trị `/settings/...`.
+
+| Đích | Route trong Workspace | Ghi chú |
+|---|---|---|
+| Saved report | `/reports/{reportSlug}` | Xem [Route saved report trong App](#route-saved-report-trong-app) |
+| Dashboard | `/dashboards/{dashboardSlug}` | Menu Item: `actionType: 34`, `actionUrlType: 3`, `actionUrlOption: 2`; không dùng `/settings/dashboards/{dashboardSlug}` |
+| Xem một record | `/{appSlug}/o/{objectSlug}/{recordId}` | Link tuyệt đối `https://{WORKSPACE_DOMAIN}/{appSlug}/o/{objectSlug}/{recordId}`, ghép từ hostname đã chuẩn hoá |
+
+- Ngoại lệ: giá trị `redirectToPage` của node Send Notification dùng cùng route nhưng không có `/` đầu, theo dạng đã chạy trong [Send Notification](../../process-creator/nodes/send-notification-task.md).
+- Route record và dashboard: *đã sửa và chạy đúng* (mở đúng đích trên giao diện). Link record thiếu segment App, ví dụ `/{objectSlug}/{recordId}`, không mở được record.
+- Chọn `appSlug` là App mà người nhận có trong ACL; người ngoài ACL bị từ chối truy cập App. Khuyến nghị chọn App có Menu Item trỏ tới Object đó.
+- Tách App, đổi slug App hoặc chuyển App/Menu Item cũ sang inactive: liệt kê Process có template thông báo, email, form hoặc formula chứa `/{appSlugCũ}/o/` cùng version sẽ thay, hỏi người dùng xác nhận theo Quy tắc an toàn của [$process-creator](../../process-creator/SKILL.md) rồi cập nhật bằng version mới.
+
 ## Cây menu
 
 - `parentId` rỗng hoặc `null` là root; parent phải thuộc cùng `appId`; tối đa 10 level; không đặt parent là chính item hoặc descendant của nó.

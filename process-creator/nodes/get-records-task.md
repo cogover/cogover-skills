@@ -110,6 +110,8 @@ Ví dụ CUSTOM — điều kiện 1 VÀ (2 HOẶC 3), trường formula và l�
 }
 ```
 
+Ví dụ trên chỉ dùng điều kiện tĩnh. Field `formula` chỉ lọc đúng khi là formula tính khi lưu ([object-info](../../object-info/references/api-object-fields.md#formula-tính-khi-đọc-và-khi-lưu)). Logic `CUSTOM`/`OR` có điều kiện biến phải kiểm chứng bằng lượt chạy trước khi dùng ([giới hạn đã quan sát](#giới-hạn-đã-quan-sát-khi-chạy)).
+
 #### 4. `sortFields`
 
 ```json
@@ -129,6 +131,13 @@ Ví dụ CUSTOM — điều kiện 1 VÀ (2 HOẶC 3), trường formula và l�
 #### 6. `outputVariable`
 
 Tên biến đầu ra; `""` dùng mặc định.
+
+### Giới hạn đã quan sát khi chạy
+
+- `sortFields` theo field formula làm node lỗi `NullPointerException`. Sort theo field lưu; cần sort theo giá trị tính toán thì process ghi giá trị đó vào field số/text trước (*đã sửa và chạy đúng*).
+- Formula resource đọc `$action.{slug}.output.records` chỉ thấy `id` của từng bản ghi. Cần field khác: Loop qua `output.records`, đọc `$loop.{loop_slug}.currentItem.<field>` và cộng dồn bằng Assignment, hoặc trong Formula gọi `Workspace.getInstance().getRecord(objectSlug, id)` ([Cogover Scripting API](../../object-info/references/cogover-scripting-api-vi.md#132-getrecordobjectslug-id)) (*đã sửa và chạy đúng*).
+- Điều kiện `isRaw: false` so field lựa chọn với biến lựa chọn (ví dụ `$flow.input.newRecord.<single_choice>`) không khớp vì giá trị runtime của biến là danh sách option ID. Lưu một field text khoá do process ghi (ví dụ `"grade|purpose"`) ở bản ghi cần tìm và so sánh text, hoặc dùng `params` tĩnh (*đã sửa và chạy đúng*).
+- `logicType` `OR`/`CUSTOM` trộn nhiều điều kiện, hoặc hai điều kiện cùng tham chiếu một resource, đã cho kết quả sai trong một lần thử (*quan sát, cần kiểm chứng*): kiểm chứng bằng lượt chạy trước khi dùng; ưu tiên `AND`, tách trường hợp bằng nhiều Get Records và Exclusive Gateway (`output.total == 0` đi nhánh mặc định).
 
 ### Resources của action (`resources.actions[]`)
 
@@ -171,4 +180,4 @@ Tên biến đầu ra; `""` dùng mặc định.
 }
 ```
 
-Output dùng ở các bước sau: `$action.{slug}.output.record` bản ghi đơn (RECORD, liên kết object type đã cấu hình); `$action.{slug}.output.records` danh sách bản ghi (RECORD, `isList: true`); `$action.{slug}.output.total` tổng số bản ghi (NUMBER); `output.result` mã kết quả (NUMBER). `{OBJECT_TYPE_ID}`/`{object_type_slug}` trong `metaDataType` lấy từ `$object-info`.
+Output dùng ở các bước sau: `$action.{slug}.output.record` bản ghi đơn (RECORD, liên kết object type đã cấu hình); `$action.{slug}.output.records` danh sách bản ghi (RECORD, `isList: true`); `$action.{slug}.output.total` tổng số bản ghi (NUMBER); `output.result` mã kết quả (NUMBER). `{OBJECT_TYPE_ID}`/`{object_type_slug}` trong `metaDataType` lấy từ `$object-info`. Mẫu Get Records lấy bản mới nhất của bản ghi trigger: [record-triggered-flow.md](record-triggered-flow.md#dữ-liệu-bản-ghi-trong-lượt-chạy).

@@ -3,13 +3,13 @@ name: object-record
 description: "Quản lý bản ghi Cogover Object qua Records API `/bapi/v1/records` (lấy danh sách có lọc/phân trang, tạo, cập nhật, xoá) và upload/gắn file, chèn ảnh local vào long-text WYSIWYG bằng phiên Web App. Dùng khi cần thao tác record, tạo record kèm file hoặc ảnh trong cùng request, hoặc đính kèm file vào record hiện có; xoá phải xác nhận trước."
 metadata:
   author: cogover
-  version: "1.0.4"
+  version: "1.1.0"
 ---
 
 # Object Record
 
-- **Phiên bản:** `1.0.4`
-- **Ngày phát hành:** `2026-09-16`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác gọi skill này khi cần đọc/ghi record. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Các API record dùng `/bapi/v1` với API Key Bearer; riêng upload file và gắn file vào record đã tồn tại dùng `/api/v1` bằng phiên Web App (đổi từ API Key qua `$cogover-api-auth`; không tạo được phiên thì dừng và báo người dùng, không gọi `/api/v1` bằng API Key).
 
@@ -37,7 +37,7 @@ Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác g
 
 - `type` (số, ở cấp cao nhất, luôn truyền tường minh, không dựa vào mặc định): `1` AND, `2` OR, `3` CUSTOM. Đã kiểm chứng: thiếu `type` trả HTTP 400, `r: 27`, `msg: Invalid filter type`; cùng request thêm `type: 1` thành công. `type` khác `filters[].fieldType`; không sửa `fieldType` để chữa lỗi này.
 - `logic_sequence`: `""` khi `type` là `1`/`2`; khi `3` là biểu thức như `"1 AND (2 OR 3)"` (số là thứ tự phần tử trong `filters`, bắt đầu từ 1).
-- `filters[]`: `{"field": "<slug>", "op": "<toán tử>", "params": <null | string | number | array>, "fieldType": "<fieldType từ $object-info>"}`. Toán tử và kiểu `params` theo từng `fieldType`: [records_filter_conditions.md](records_filter_conditions.md). Lấy tất cả bản ghi: `{"field": "id", "op": "not null", "params": null, "fieldType": "short_text"}`; lọc trạng thái: `{"field": "status", "op": "in", "params": ["new", "nurturing"], "fieldType": "single_choice"}`.
+- `filters[]`: `{"field": "<slug>", "op": "<toán tử>", "params": <null | string | number | array>, "fieldType": "<fieldType từ $object-info>"}`. Toán tử và kiểu `params` theo từng `fieldType`: [records_filter_conditions.md](records_filter_conditions.md); field và đường dẫn không lọc được: [Trường hợp không hỗ trợ](records_filter_conditions.md#trường-hợp-không-hỗ-trợ). Lấy tất cả bản ghi: `{"field": "id", "op": "not null", "params": null, "fieldType": "short_text"}`; lọc trạng thái: `{"field": "status", "op": "in", "params": ["new", "nurturing"], "fieldType": "single_choice"}`.
 - `sorts`: field mặc định `updated`; `order` là `desc` (mới nhất trước) hoặc `asc`.
 - `size`: mặc định `20`, tối đa `200`. Phân trang: lần đầu `"search_after": []`, các lần sau truyền `data.search_after` của response trước.
 
@@ -113,6 +113,8 @@ Hành động không thể hoàn tác. BẮT BUỘC liệt kê ID (và tên nế
 
 `object_type` là ID của Object (ví dụ `OT00000000011`, lấy qua `$object-info`); `ids` nhận nhiều bản ghi cùng lúc. Thành công: `r: 0`, `data.deleted[]` (đã xoá) và `data.not_deleted[]` (không xoá được). `r: 1` với `msg: "Record not existed"`: có ID sai hoặc đã bị xoá trước đó.
 
+Record của Object mà backend App chuẩn duy trì số liệu (ví dụ chứng từ đang giữ chỗ ngân sách): xoá record có thể không hoàn lại số liệu backend đã cập nhật (*quan sát*: số giữ chỗ còn treo sau khi xoá chứng từ đang chờ duyệt). Ưu tiên huỷ, từ chối hoặc đóng bằng trạng thái/action của App; chỉ xoá khi người dùng xác nhận đã biết tác động. Hành vi từng App: `$cogover-overview`.
+
 ## E. Gắn file vào bản ghi hiện có
 
 Thực hiện bằng API, không dùng trình duyệt. Đọc [references/upload-file.md](references/upload-file.md) trước khi gọi.
@@ -123,6 +125,18 @@ Thực hiện bằng API, không dùng trình duyệt. Đọc [references/upload
 4. Upload riêng cho từng field đích bằng `POST /api/v1/file/upload/v2/client_upload`; cùng một file gắn vào nhiều field vẫn cần mỗi field một request với `field_slug` tương ứng và một `FILE_METADATA` riêng. Chỉ tiếp tục khi upload trả HTTP `2xx`, `r: 0` và có object `data`.
 5. Sau khi mọi upload thành công, gắn metadata bằng `POST /api/v1/records`; có thể gắn nhiều field trong cùng request, không tái sử dụng metadata cho field khác. Field đơn (`multiple=false`) gửi object, field đa (`multiple=true`) gửi mảng; nếu người dùng muốn thêm file mà không thay file cũ, đọc giá trị hiện tại và nối metadata mới trước khi gửi.
 6. Hoàn tất chỉ khi request gắn file trả HTTP `2xx` và `r: 0` (kiểm tra cả `body.r`). Báo tên file, Object/field slug, cờ đơn/đa, ID bản ghi và kết quả từng bước.
+
+## Dữ liệu kiểm thử
+
+Nguồn chung cho dữ liệu kiểm thử của bộ skill; skill khác chỉ ghi phần riêng.
+
+- Tạo record test riêng, gắn marker dễ tìm trong field tìm kiếm được (ví dụ tiền tố `[TEST]` trong `name`); không chạy kịch bản thử trên record demo hoặc dữ liệu thật.
+- Luồng làm thay đổi số liệu do backend duy trì (ngân sách, quỹ, công nợ, tồn kho): dùng số nhỏ và tài nguyên riêng cho test, chọn record tổng hợp ít dữ liệu thật, snapshot các record tổng hợp bị ảnh hưởng trước và sau.
+- Trước khi chạy, liệt kê và hỏi người dùng về thao tác không hoàn tác được (chứng từ đã duyệt hoặc kích hoạt không huỷ được, phiếu thu chi đã hoàn thành, số liệu backend đã ghi, email hay thông báo thật, record bị Process khác cập nhật dây chuyền).
+- Kết thúc chứng từ test bằng trạng thái nghiệp vụ (đóng, huỷ, từ chối), không xoá chứng từ đã giữ chỗ hoặc đã phát sinh bút toán (xem [D. Xoá](#d-xoá--post-bapiv1recordsdelete)).
+- Không sửa tay số liệu do backend hoặc module duy trì để "dọn": record tổng sẽ lệch với tổng record chi tiết còn lại (*quan sát*: xoá chứng từ đang chờ duyệt để lại số giữ chỗ; sửa tay làm lệch tổng). Phần dư không hoàn tác được báo người dùng kèm giá trị và record liên quan; chỉ sửa tay khi người dùng duyệt từng giá trị.
+- Thử thao tác trên giao diện: layout Xem có thể tự lưu khi rời ô (inline edit); chỉ thao tác trên record test, lưu nhầm thì khôi phục qua API và báo lại.
+- Persona, API key tạm và dọn dẹp sau kiểm thử quyền: theo [$user-permission](../user-permission/references/permission-testing.md).
 
 ## Trả kết quả
 
@@ -135,6 +149,11 @@ Thực hiện bằng API, không dùng trình duyệt. Đọc [references/upload
 |---|---|
 | `r: 27` — Invalid filter type | Request `/records/list` thiếu hoặc sai `type`: thêm `type` số `1`/`2`/`3` ở cấp cao nhất và đối chiếu `logic_sequence`. Không thay `filters[].fieldType` để chữa. |
 | `r: 1` — Record not existed | RECORD_ID sai hoặc bản ghi đã bị xoá; kiểm tra lại hoặc dùng A để tìm. |
+| `r: 47` — `Field [...] is not editable` | Field không cho sửa qua API: `manualModifyAllow: false`, formula, rollup, field hệ thống hoặc field do backend App quản lý (ví dụ `status` của một số Object App chuẩn). Đọc metadata field qua `$object-info` trước khi `PUT`; đổi trạng thái bằng Object Button, Process hoặc action của App, không thử lại `PUT`. |
+| `r: 37` — `You don't have permission to update this record` | Security rule hoặc khoá sửa theo trạng thái chặn field/record, áp dụng cả Super Admin. Báo đúng field bị chặn; không thử lại bằng key khác, không tự mở rule. Sửa dữ liệu đã khoá: theo [Khoá sửa theo trạng thái](../user-permission/SKILL.md#khoá-sửa-theo-trạng-thái), hỏi người dùng phạm vi trước. |
+| `r: 48` — target value không được phép | Transition rule không có flow từ giá trị hiện tại sang giá trị đích. Đọc rule qua [$object-transition-rule](../object-transition-rule/SKILL.md); không nhảy cóc trạng thái. |
+| `r: 41` khi tạo | *Quan sát, cần kiểm chứng:* đã gặp khi Role của người gọi chưa có quyền `create` trên Object; kiểm tra Role theo [$user-permission](../user-permission/SKILL.md). |
+| `r: 14` — `Fetching data failed`; `r: 25` — `Invalid filter` | Bộ lọc rơi vào [Trường hợp không hỗ trợ](records_filter_conditions.md#trường-hợp-không-hỗ-trợ). |
 | `r: 626` khi gắn file (`not found file id`) | Sai kiểu đơn/đa: không bọc object metadata trong mảng với field đơn. |
 | Timeout hoặc mất kết nối khi upload, gắn file, create | Không tự retry vì thao tác ghi có thể đã xảy ra; báo kết quả chưa xác định, chỉ thử lại khi người dùng yêu cầu rõ. Timeout khi đọc: thử lại khi phù hợp yêu cầu. |
 | Create lỗi sau khi upload | Báo các file ID đã upload có thể bị mồ côi; không tự retry create. |

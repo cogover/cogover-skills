@@ -3,13 +3,13 @@ name: layout-scripting
 description: "Sinh hoặc sửa clientScript cho Layout Rule (`pageSettings.script`) của form builder Cogover từ mô tả nghiệp vụ tiếng Việt; output code paste-ready vào ô \"Cấu hình script\". Sửa script có sẵn: bắt buộc lấy script hiện tại qua $object-layout, giữ logic cũ, hỏi khi ranh giới chưa rõ. Nghiệp vụ có SET giá trị: bắt buộc decision tree 3 câu hỏi."
 metadata:
   author: cogover
-  version: "1.0.3"
+  version: "1.1.0"
 ---
 
 # layout-scripting — sinh code Layout Rule Script
 
-- **Phiên bản:** `1.0.3`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Sinh JavaScript paste-ready cho `pageSettings.script` (ô "Cấu hình script") của layout Cogover từ mô tả nghiệp vụ tiếng Việt. User là non-coder: mọi rủi ro runtime (re-render loop, ghi đè data, idempotency) phải được chặn bằng guard trong code và hỏi bằng ngôn ngữ tự nhiên. Đọc/ghi `pageSettings.script` trên layout qua [$object-layout](../object-layout/SKILL.md).
 
@@ -20,7 +20,7 @@ Tài liệu trong skill, đọc đúng bước:
 | [references/api-cheatsheet.md](references/api-cheatsheet.md) | Luôn, Bước 1: biến global, API screen/field/related list/path component, value shape §7 và §7B, `filterRecords`, `logger` |
 | [references/safety-rules.md](references/safety-rules.md) | DANGER MODE, Bước 4-6: định nghĩa Guard 1-7, combo theo Q1/Q2/Q3, banner overwrite |
 | [references/recipes.md](references/recipes.md) | Bước 5: chọn template |
-| [references/case-studies.md](references/case-studies.md) | Mô tả của user khớp case có sẵn (vd "set order_line từ order", "giới hạn option cột theo loại phiếu"): clone pattern |
+| [references/case-studies.md](references/case-studies.md) | Mô tả của user khớp case có sẵn (vd "set order_line từ order", "giới hạn option cột theo loại phiếu", "tự điền người yêu cầu"): clone pattern |
 | [references/glossary.md](references/glossary.md) | Bước 8: dựng mục "Thuật ngữ trong code" |
 
 ## Quy tắc runtime bắt buộc

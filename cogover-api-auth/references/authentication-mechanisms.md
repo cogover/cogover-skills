@@ -17,16 +17,26 @@ Quy trình chọn credential của một CLI có thể khác thứ tự chung; �
 
 - Request `/bapi/v{N}` gửi `Authorization: Bearer {API_KEY}` và `Content-Type: application/json`; request `/api/v{N}` gửi cookie phiên và hai header CSRF/XSRF như mục 3.
 - Body có ký tự ngoài ASCII (tiếng Việt, emoji): ghi file JSON UTF-8 không BOM rồi gửi bằng `--data-binary @file`, không viết JSON inline trong lệnh shell. Trên Windows, tham số dòng lệnh đi qua code page ANSI nên dấu bị hỏng trước khi gửi (`à` thành `�`, `ừ` thành `?`).
-- Response có `r` (số, `0` là thành công), `msg` và `data`. Chỉ coi thao tác thành công khi HTTP status phù hợp và `r: 0`.
+- Response có `r` (số, `0` là thành công), `msg` và `data`. Chỉ coi thao tác thành công khi HTTP status phù hợp, `r: 0` và có khoá dữ liệu mong đợi theo [shape response](#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện).
 - Khi HTTP 4xx/422 hoặc `r` khác `0`: hiển thị `r`, `msg` và chi tiết lỗi đã lọc secret, rồi dừng; không đổi endpoint, phiên bản API hay cơ chế xác thực để thử lại.
-- `401`/`403`: key không hợp lệ, hết hạn hoặc thiếu quyền; yêu cầu người dùng kiểm tra credential/quyền. Riêng `/api/v{N}`: khi `401`/`403` hoặc lỗi CSRF, tạo lại phiên từ API Key theo mục 3 và thử lại đúng một lần trước khi kết luận; không lặp lại mutation có thể đã có side effect. HTTP 5xx: báo lỗi server, thử lại sau.
+- `401`/`403`: key không hợp lệ, hết hạn hoặc thiếu quyền; yêu cầu người dùng kiểm tra credential/quyền. Riêng `/api/v{N}`: khi `401`/`403` hoặc lỗi CSRF, tạo lại phiên từ API Key theo mục 3 và thử lại đúng một lần trước khi kết luận; không lặp lại mutation có thể đã có side effect. HTTP 5xx, timeout hoặc mất kết nối: xử lý theo [tiểu mục dưới](#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện).
 - HTTP thành công chưa chứng minh thay đổi nghiệp vụ đúng: đọc lại tài nguyên (view/list) sau khi ghi và so với payload; nếu không khớp, báo rõ và dừng.
 - Yêu cầu chỉ xem/phân tích thì không gọi endpoint ghi. Resolve ID/slug thật từ API trước khi ghi; không đoán ID từ tên hiển thị.
 - Không đưa API key, cookie, token hoặc response thô chứa secret vào câu trả lời, log, file bàn giao hay prompt cho sub-agent.
 
+### Response, giới hạn tần suất và xác nhận giao diện
+
+- **Shape response:** vị trí dữ liệu khác nhau theo endpoint (`items` ở gốc, `data.rows`, `data`…); lấy shape từ contract của skill chuyên trách. Chỉ bóc `body` khi contract của skill chuyên trách nói endpoint còn bọc kết quả trong `{serviceVersion, service, id, type, body}`. Endpoint chưa có contract: in danh sách khoá của response (đã lọc secret) trước khi truy cập. HTTP `200` thiếu khoá dữ liệu mong đợi là đọc/ghi thất bại, không phải "không có dữ liệu".
+- **`429`** (đã gặp `r: 42900`, `msg: Rate limit exceeded`): chờ theo `Retry-After` nếu có, nếu không thì chờ tăng dần có trần; giới hạn số lần thử, không gửi song song để bù. Hạn mức tính theo tài khoản sở hữu credential: các tiến trình hoặc agent dùng chung một key chia chung hạn mức, nên giới hạn số luồng ghi đồng thời. Script ghi hàng loạt phải chạy lại được: kiểm tra slug/ID đã tồn tại trước khi tạo.
+- **Ghi không rõ kết quả:** timeout, mất kết nối hoặc HTTP 5xx sau request ghi (tạo, sửa, xoá, chuyển trạng thái) thì không gửi lại ngay; đọc lại theo slug, ID hoặc version để biết thay đổi đã áp dụng chưa rồi mới quyết định. Request chỉ đọc: thử lại có giới hạn số lần.
+- **Truy vấn nặng:** thu hẹp phạm vi (lọc theo slug/ID, chỉ bật phần cần) trước khi tăng timeout của HTTP client.
+- **Phân trang:** theo cursor hoặc trang mà contract nêu, lặp tới khi đủ `total`, trang rỗng hoặc hết cursor; không coi số dòng nhận được nhỏ hơn `size` đã gửi là đã hết dữ liệu.
+- **Xác nhận giao diện:** read-back API chứng minh cấu hình đã lưu, chưa chứng minh hiển thị đúng. Thay đổi phần hiển thị (layout, UI script, list view, nút, menu, dashboard) chỉ báo hoàn tất sau khi xem trên trình duyệt người dùng đã đăng nhập sẵn, hoặc người dùng xác nhận; không nhập mật khẩu thay người dùng. Chưa xem được thì báo "đã lưu, chưa kiểm tra giao diện". Giao diện chỉ dùng để nghiệm thu, không suy ra request API từ giao diện.
+
 ## Mục lục
 
 - [Quy ước request, response và lỗi chung](#quy-ước-request-response-và-lỗi-chung)
+  - [Response, giới hạn tần suất và xác nhận giao diện](#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện)
 - [1. Chọn cơ chế theo URI](#1-chọn-cơ-chế-theo-uri)
 - [2. Cơ chế API Key cho `/bapi/v{N}`](#2-cơ-chế-api-key-cho-bapivn)
 - [3. Cơ chế phiên Web App cho `/api/v{N}`](#3-cơ-chế-phiên-web-app-cho-apivn)

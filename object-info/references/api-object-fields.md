@@ -582,7 +582,7 @@ Nội dung `script` sử dụng ngôn ngữ Cogover Scripting. Trước khi vi�
 ```json
 {
   "return_type": 2,
-  "script": "price * quantity",
+  "script": "return $record.price * $record.quantity;",
   "display_html": false,
   "zero_default_value": true,
   "range_date": false,
@@ -601,7 +601,7 @@ Nội dung `script` sử dụng ngôn ngữ Cogover Scripting. Trước khi vi�
 |---|---|---|
 | `return_type` | Integer | `1` text, `2` number, `4` date-time, `5` date, `6` date-time range, `7` date range, `8` boolean |
 | `script` | String | Biểu thức formula |
-| `calculation_mode` | Integer | Chế độ tính toán: `0` hoặc `1` |
+| `calculation_mode` | Integer | `0` tính khi đọc, `1` tính và lưu khi record được lưu; xem [Formula tính khi đọc và khi lưu](#formula-tính-khi-đọc-và-khi-lưu) |
 | `display_html` | Boolean | Cho phép hiển thị kết quả text như HTML |
 | `zero_default_value` | Boolean | Dùng 0 cho giá trị rỗng trong phép tính |
 | `range_date` | Boolean | Kết quả date/date-time là range |
@@ -612,12 +612,24 @@ Nội dung `script` sử dụng ngôn ngữ Cogover Scripting. Trước khi vi�
 Khi dựng `script`:
 
 - Resolve field của Object trước và dùng đúng slug kỹ thuật trong công thức; không suy đoán slug từ tên hiển thị.
-- Mọi nhánh `return` phải tương thích với `return_type`.
-- Chỉ dùng API được liệt kê trong Cogover Scripting reference và chú ý null, phép chia số nguyên, timezone, giới hạn 10 giây cùng tối đa 10.000 lượt lặp.
+- Mọi nhánh `return` phải tương thích với `return_type`; luôn tham chiếu field bằng `$record.<slug>`. Tránh các [bẫy thường gặp khi viết Formula](formula-validation.md#bẫy-thường-gặp-khi-viết-formula).
+- Chọn `calculation_mode` theo nơi dùng kết quả, xem mục dưới.
+- Chỉ dùng API được liệt kê trong Cogover Scripting reference (ngoại lệ đã chạy thử: `getSelectedOptions()` của field lựa chọn, xem [bẫy Formula](formula-validation.md#bẫy-thường-gặp-khi-viết-formula)) và chú ý null, phép chia số nguyên, timezone, giới hạn 10 giây cùng tối đa 10.000 lượt lặp.
 - Khi đưa cấu hình vào request Object Fields API, serialize toàn bộ object Formula thành JSON string ở `meta_data`; escape đúng dấu nháy, dấu gạch chéo ngược và ký tự xuống dòng trong `script`.
 - Sau create/update, đọc lại field, parse `metaData` và đối chiếu nguyên văn `script`, `return_type` cùng các tuỳ chọn hiển thị.
 
 Public Object Fields API `/bapi/v1/object-fields` không cung cấp endpoint validate/suggest Formula. Dùng hai endpoint Web App `/api/v1` trong [quy trình kiểm tra Formula](formula-validation.md) bằng phiên do `$cogover-api-auth` tạo. Nếu không thể tạo phiên hoặc kiểm tra không thành công, dừng trước thao tác lưu và báo người dùng.
+
+##### Formula tính khi đọc và khi lưu
+
+| `calculation_mode` | Hành vi | Dùng khi |
+|---|---|---|
+| `0` | Tính khi đọc, không lưu giá trị: lọc, tìm kiếm, sắp xếp qua Records API, saved filter hoặc Get Records của Process không khớp (trả rỗng, không báo lỗi) | Chỉ hiển thị; công thức cần luôn mới theo thời gian (`Date.today()`, `Datetime.now()`) |
+| `1` | Tính và lưu khi record được lưu: lọc, sắp xếp được; công thức phụ thuộc thời gian hoặc record khác chỉ cập nhật khi record được lưu lại | Field dùng làm điều kiện lọc, sắp xếp, tìm kiếm |
+
+- Field dùng để lọc, sắp xếp hoặc tìm kiếm phải là field lưu: `calculation_mode: 1` hoặc field thường do Process ghi (*đã kiểm chứng có đối chứng*: cùng điều kiện, mode `0` trả 0 dòng, mode `1` trả đúng). Điều kiện trigger của Process trên formula mode `0` chưa kiểm chứng; tránh dùng.
+- Cần cả "luôn mới theo thời gian" lẫn "lọc được" (SLA, số ngày quá hạn): lọc bằng toán tử ngày tương đối trên field ngày gốc, hoặc dùng report thay cho saved filter.
+- Lọc ngày trên field formula trả ngày: dùng timestamp ms hoặc toán tử tương đối, không dùng chuỗi ngày; xem [Trường hợp không hỗ trợ](../../object-record/records_filter_conditions.md#trường-hợp-không-hỗ-trợ).
 
 #### `rollup_summary`
 
@@ -638,6 +650,11 @@ Public Object Fields API `/bapi/v1/object-fields` không cung cấp endpoint val
 | `field_slug` | String | Slug field nguồn |
 | `summary_type` | String | `SUM`, `COUNT`, `MIN`, `MAX`, `AVERAGE` |
 | `filter_criteria` | Integer | Có/loại áp dụng điều kiện filter |
+
+Điều kiện tiên quyết:
+
+- Object con phải có field `reference` (lookup phụ thuộc) trỏ về Object cha; rollup không chạy qua `lookup_normal`, tạo qua quan hệ không hợp lệ trả `r: 429`, `msg: "Summarized Object is invalid"`. Đọc quan hệ bằng Phần 1 trước khi thiết kế. Object con chỉ có `lookup_normal` thì tạo thêm field `reference` (đánh giá tác động: `reference` là quan hệ phụ thuộc, xoá cha thì xoá con) hoặc thay rollup bằng field số do Process cập nhật.
+- *Quan sát, cần kiểm chứng:* giá trị rollup có thể được tính lại trễ sau khi record con thay đổi, nên Process, Custom Backend Module hoặc formula đọc rollup ngay sau thao tác ghi có thể nhận giá trị cũ; cần chính xác thì tính trực tiếp từ record con. Rollup `MAX` trên field formula đã quan sát không tự cập nhật khi formula đổi; ưu tiên tổng hợp trên field lưu. Trigger và job liên quan rollup: theo [trigger trên Object con của `$cogover-custom-module`](../../cogover-custom-module/SKILL.md#1-khảo-sát-và-chọn-frontendbackend).
 
 Nếu có điều kiện, gửi thêm top-level `rollup_summary_filter` với `logicType`, `logic`, `conditions`, `sortFields`. `SUM` chỉ phù hợp field số; `MIN`, `MAX`, `AVERAGE` hỗ trợ nhóm số và ngày/giờ phù hợp.
 
@@ -1001,7 +1018,7 @@ curl --location 'https://{workspace-domain}/bapi/v1/object-fields/delete' \
 | `419` | `option_sorting_policy` không thuộc `0/1/2` |
 | `424` | Trùng option value |
 | `425` | Trùng option ID |
-| `429` | `meta_data` không hợp lệ |
+| `429` | `meta_data` không hợp lệ; với `rollup_summary` kèm `msg: "Summarized Object is invalid"` là quan hệ không phải `reference` |
 | `432` | Tooltip dài hơn 255 ký tự |
 | `433` | Hint dài hơn 255 ký tự hoặc unique rule không hợp lệ |
 | `434` | Description dài hơn 1.000 ký tự |
@@ -1015,6 +1032,7 @@ curl --location 'https://{workspace-domain}/bapi/v1/object-fields/delete' \
 | `524` | Cảnh báo field đang được sử dụng hoặc không thể xoá |
 | `525` | Slug đã tồn tại |
 | `527` | Tên field đã tồn tại |
+| `528` | Tên field trùng field ẩn hệ thống (ví dụ `Attachments` trùng field `_attachments`); đổi tên |
 | `535` | Vượt giới hạn custom field của gói subscription |
 | `542` | Type không hỗ trợ multiple value |
 | `543` | Record hiện tại không tương thích khi đổi multiple |

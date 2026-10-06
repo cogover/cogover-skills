@@ -57,7 +57,7 @@ curl --url 'https://{WORKSPACE_DOMAIN}/api/v1/workflow' \
 1. Lấy body hiện tại qua `POST /bapi/v1/processes/view`, sửa `xmlString`/`resources`/cấu hình cần đổi, strip các trường server-managed (`created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`, `status`, `isValid`, `validationMessage`, `isPublished`, `progressStatus`, `currentVersion`, `isNewestVersion`, `versionNumber`, `versionLabel`) nhưng giữ `id`, `processInfoId`, `version`, `type`, `slug`, `name`.
 2. Đổi mọi prefix `bpmn:` trong `xmlString` của response về `bpmn2:` trước khi gửi. Gửi nguyên response làm server strip toàn bộ sequence flow: version mới có `isValid: false`, `meta.errors` gồm `START_EVENT_HAS_NO_OUTGOING_FLOW`, `TASK_MUST_HAS_INCOMING_FLOW`, `NODE_HAS_NO_CONNECT_TO_ANYTHING`, và kích hoạt trả `r: 402`. Chạy sanity check XML (SKILL.md mục 4.1).
 3. Gọi service `24`. Response trả version mới `DRAFT` với `id` mới, node ID có thể được server remap; `processInfoId` không đổi nên link, quyền và lịch sử lượt chạy được giữ. Version mới còn lỗi thì sửa bằng service `23` với `id` mới cho tới khi `meta.errors` rỗng.
-4. GET-back verify version mới, rồi gọi `39` trên `id` mới. Đọc lại danh sách version (service `8`): version mới `ACTIVATED`, xuất bản, `currentVersion: true`; version cũ vẫn `ACTIVATED` nhưng `isPublished: false`, `currentVersion: false`.
+4. GET-back verify version mới, rồi gọi `39` trên `id` mới. Đọc lại danh sách version (service `8`): version mới `ACTIVATED`, xuất bản, `currentVersion: true`; version cũ vẫn `ACTIVATED` nhưng `isPublished: false`, `currentVersion: false`. Scheduled/Triggered: vô hiệu hoá version bị thay theo [SKILL.md mục 4.4 bước 3a](SKILL.md#44-sửa-quy-trình-đã-activated) (có bước hỏi xác nhận).
 5. Lượt chạy đã tạo trước đó tiếp tục theo version cũ (`processVersion` giữ nguyên, submit vẫn được); lượt chạy mới dùng version mới. Xoá và tạo lại (mục 4.4 SKILL.md) chỉ là phương án cuối khi không thể tạo version mới, và phải hỏi xác nhận trước khi xoá.
 
 ### 3.3. Đổi version hiện hành, rollback
@@ -90,5 +90,6 @@ curl --url 'https://{WORKSPACE_DOMAIN}/api/v1/workflow' \
 | `410` | Không có quyền đọc form hoặc version (HTTP 403), thường vì version chưa kích hoạt hoặc người gọi không phải performer | Kích hoạt trước; kiểm tra `taskPerformer` và `processInstanceAccessControls` |
 | `414` | PUT `/bapi/v1/processes/{id}` trên version đang `ACTIVATED`/xuất bản | Tạo version mới (3.2) |
 | `424` | Vô hiệu hoá version đang xuất bản | Bỏ xuất bản (`40`) trước |
+| — | `Init schema failed: Object existed with slug ...` khi gọi `9`/`39`: đã gặp khi kích hoạt lần đầu và khi kích hoạt lại version đã khởi tạo schema (*quan sát, nguyên nhân chưa xác định*) | Không lặp `9`/`39` trên cùng version; lưu thành version mới (service `24`) rồi kích hoạt version mới |
 | `5001` | Không có processor cho `x-req-service` | Đối chiếu bảng mục 2, kiểm tra `x-req-type: 9` |
 | HTTP 401/403 | Phiên hết hạn hoặc thiếu quyền | Tạo lại phiên theo `$cogover-api-auth`; kiểm tra quyền `EDIT` trong `accessControls` |
