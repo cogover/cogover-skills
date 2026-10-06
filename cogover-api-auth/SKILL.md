@@ -3,13 +3,13 @@ name: cogover-api-auth
 description: "Chọn và triển khai đúng cơ chế xác thực Cogover API: API Key Bearer cho `/bapi/v{N}`, phiên Web App (cookie kèm CSRF/XSRF) cho `/api/v{N}`, đổi API Key thành phiên qua `/bapi/v1/auth-token`. Nguồn chung cho mọi skill về quản lý credential và quy ước request/response/lỗi. Dùng khi viết request Cogover API hoặc xử lý token/cookie hết hạn."
 metadata:
   author: cogover
-  version: "1.0.3"
+  version: "1.1.0"
 ---
 
 # Cogover API Auth
 
-- **Phiên bản:** `1.0.3`
-- **Ngày phát hành:** `2026-10-02`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 ## Mục tiêu
 
@@ -17,7 +17,7 @@ Chọn cơ chế xác thực theo URI của endpoint và tạo hướng dẫn ho
 
 ## Quy trình
 
-Trước khi gọi API, đọc [Quản lý credential](references/authentication-mechanisms.md#quản-lý-credential) và [Quy ước request, response và lỗi chung](references/authentication-mechanisms.md#quy-ước-request-response-và-lỗi-chung). Hai mục này là nguồn chung cho mọi skill trong bộ; skill khác chỉ ghi ngoại lệ riêng.
+Trước khi gọi API, đọc [Quản lý credential](references/authentication-mechanisms.md#quản-lý-credential) và [Quy ước request, response và lỗi chung](references/authentication-mechanisms.md#quy-ước-request-response-và-lỗi-chung). Hai mục này là nguồn chung cho mọi skill trong bộ (gồm [shape response, `429`, ghi không rõ kết quả, phân trang và xác nhận giao diện](references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện)); skill khác chỉ ghi ngoại lệ riêng.
 
 1. Xác định chính xác URI endpoint và workspace domain.
 2. Chọn cơ chế xác thực theo tiền tố:

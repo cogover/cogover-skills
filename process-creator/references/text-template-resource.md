@@ -141,6 +141,23 @@ Trường con của lookup dùng trong Text Template (ví dụ `$userTask.Root.c
 }
 ```
 
+## Hiển thị giá trị field cho người đọc
+
+Áp dụng cho tiêu đề và nội dung Send Email, Send Notification, Push Message, `display_text` của User Task và Text Template. Quy tắc: chỉ in field có nội dung đã sẵn sàng hiển thị. Simple Renderer (`type: 5`) in nguyên giá trị lưu trữ và không thực thi hàm: `$number.format(...)` trong chuỗi type 5 không có tác dụng.
+
+| Dữ liệu | In trực tiếp sẽ thấy | Cách làm |
+|---|---|---|
+| Lookup nhân sự (`submittedBy`, `owner`, `created_by`, lookup tuỳ chỉnh tới `personnel`) | `.name` là mã tự sinh | Không dùng `.name`; in trường họ tên theo dòng `personnel` ở [object-info](../../object-info/SKILL.md#object-đặc-biệt-của-workspace-cần-nắm), ví dụ `$userTask.Root.submittedBy.first_last_name` |
+| Số, tiền (`decimal`, `currency`, `rollup_summary`, formula số) | `1000000` hoặc `1.0E8` | Field formula text trên Object trả chuỗi đã định dạng kèm đơn vị, template trỏ tới field đó và không in thêm đơn vị (*đã sửa và chạy đúng*). Formula resource `TEXT` hoặc `$number.format` trong Text Template (`type: 2`): *chưa kiểm chứng*; chạy thử và đọc nội dung đã render trước khi dùng |
+| `single_choice`, `multi_choices` | JSON `{"multiChoice":false,"options":[...]}` | Field formula text trả nhãn option đã chọn |
+| Field có thể trống | Chữ `null` | Giá trị mặc định ở field/formula, hoặc `#if` trong Text Template |
+| Ngày có thể trống đi qua formula | `01/01/1970` | Formula kiểm tra trống trước khi định dạng |
+| `name` đã có tiền tố (`REQ-0001`) | `REQ REQ-0001` khi ghép thêm tiền tố | In nguyên `name` |
+
+- Cách viết field formula hiển thị (định dạng tiền, nhãn lựa chọn, ngày trống, đơn vị ở một nơi, chuỗi trông giống số): [bẫy Formula của object-info](../../object-info/references/formula-validation.md#bẫy-thường-gặp-khi-viết-formula).
+- Link tới bản ghi: dùng route runtime trong App theo [app-menu-manager](../../app-menu-manager/references/app-menu-model.md#route-runtime-trong-app). Đổi App chứa Object thì quét link trong mọi process liên quan, liệt kê process và version sẽ thay, hỏi người dùng xác nhận theo Quy tắc an toàn rồi sửa bằng version mới; mở thử một link đã render.
+- Sau khi tạo hoặc sửa process, quét mọi chuỗi nội dung (action `data`, `defaultValue` của `display_text` và Text Template): không còn `.name` của nhân sự, số/tiền thô, field lựa chọn hay field có thể trống in trực tiếp. Khi kiểm thử, đọc nội dung đã render (hộp thư, thông báo hoặc `Process_Debug_data` của node) và đối chiếu từng giá trị.
+
 ## Ví dụ nội dung
 
 ```html

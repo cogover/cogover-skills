@@ -3,13 +3,13 @@ name: object-info
 description: "Xem Object Cogover cùng fields, options, metadata, related lists và nhận diện Object đặc biệt của Workspace; tạo, cập nhật, xoá mềm/khôi phục/xoá thực tế Object và field qua `/bapi/v1`, gồm options và Formula (kiểm tra cú pháp, chạy thử trên record trước khi lưu). Dùng khi cần Object/field ID, slug, schema hoặc metadata cho skill khác."
 metadata:
   author: cogover
-  version: "1.0.4"
+  version: "1.1.0"
 ---
 
 # Object Info
 
-- **Phiên bản:** `1.0.4`
-- **Ngày phát hành:** `2026-09-16`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Xem và quản lý cấu trúc Object Cogover qua `/bapi/v1` (API Key Bearer): xem Object cùng fields, options, metadata, related lists; tạo, sửa, xoá mềm, khôi phục, xoá thực tế Object hoặc field; tạo/cập nhật options của field lựa chọn; viết và kiểm tra Formula. Skill khác gọi `$object-info` để lấy Object ID, field slug, `fieldType`, options, metadata hoặc quan hệ trước khi dựng payload nghiệp vụ. Object phổ biến: Lead, Quote, Order, Product, Personnel, Contact, Account, Opportunity, Task.
 
@@ -21,13 +21,17 @@ Xem và quản lý cấu trúc Object Cogover qua `/bapi/v1` (API Key Bearer): x
 
 ## Phần 1 — Xem Object và fields
 
-`POST /bapi/v1/objects/list`; body lấy đủ cấu trúc:
+`POST /bapi/v1/objects/list`. Đã xác định Object thì lọc chính xác bằng `slugs` hoặc `ids` và chỉ bật `include*` cần dùng:
 
 ```json
-{"pageSize": 2000, "includeFields": true, "includeRelatedLists": true, "includeOptions": true, "includeMetaData": true}
+{"slugs": ["{OBJECT_SLUG}"], "includeFields": true, "includeOptions": true, "includeMetaData": true}
 ```
 
-Chỉ yêu cầu phần cần dùng để giảm response:
+- Không đọc schema toàn Workspace (`pageSize` lớn kèm `includeFields`) trong một lời gọi: response rất nặng, đã gặp timeout phía client, `504` hoặc HTTP `200` thiếu `items`. Cần nhiều Object thì chia lô nhỏ theo `slugs`; chỉ cần ID/slug thì tắt `includeFields`.
+- HTTP `200` không có `items`, hoặc `items` rỗng ngoài dự kiến, là đọc thất bại: chờ vài giây rồi thử lại có giới hạn số lần; không kết luận Object không tồn tại. Quy ước chung: [$cogover-api-auth](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện).
+- Phiên làm việc dài có thể dùng lại snapshot schema đã đọc, nhưng đọc lại ngay trước thao tác ghi.
+
+Tham số:
 
 | Tham số | Mặc định | Cách dùng |
 |---|---:|---|
@@ -68,6 +72,7 @@ Các Object nền tảng hoặc dùng chung sau không phải Object nghiệp v�
 | `notification_channel` | Kênh gửi thông báo | Kiểm tra Object/quan hệ thành viên kênh đang có trước khi tích hợp hoặc tạo dữ liệu |
 | `activity` | Hoạt động trên một bản ghi nghiệp vụ (hợp đồng, lead, cơ hội, công việc): ghi chú, email, cuộc gọi, task, cuộc họp, SMS hoặc chat | Muốn Object có khu vực thảo luận/ghi chú/hoạt động: tạo lookup từ `activity` tới Object đó rồi đưa Related List được sinh ra vào layout Xem/Sửa, theo mục dưới |
 | `activity_comment` | Bình luận gắn với một bản ghi `activity` | Dữ liệu con của Activity; không dùng thay quan hệ trực tiếp giữa `activity` và Object nghiệp vụ |
+| `personnel` | Hồ sơ nhân sự của người dùng Workspace | `name` là mã do hệ thống cấp, không phải họ tên; không in `<lookup nhân sự>.name` trong formula, template hay form. Hiển thị họ tên: chọn `first_last_name` hoặc `last_first_name` theo cách giao diện Workspace đang hiển thị nhân sự, đối chiếu một bản ghi thật. Lookup tới Personnel trên layout dùng `showFieldName` theo [$object-layout](../object-layout/SKILL.md); phòng ban, vị trí, quan hệ quản lý dùng [$user-permission](../user-permission/SKILL.md) |
 
 ### Bổ sung Activity cho một Object nghiệp vụ
 
@@ -76,7 +81,7 @@ Quy trình 5 bước (đọc hai Object thật, tạo `lookup_normal` trên `act
 ## Quy tắc chung cho thao tác ghi (Phần 2 và 3)
 
 - Đọc contract trước khi dựng payload hoặc gọi endpoint: field theo [references/api-object-fields.md](references/api-object-fields.md) (field types, schema, metadata, translations, giới hạn, mã lỗi, ví dụ cURL); Object theo [references/api-objects.md](references/api-objects.md) (schema create/update, `delete_type`, giới hạn standard Object, mã lỗi).
-- Dùng Phần 1 ngay trước thao tác: create kiểm tra trùng (field: tên tiếng Anh, tên được dịch, `slug` dự kiến; Object: `name`, `plural_name`, `slug`); update/delete/restore lấy ID thật cùng type, slug, trạng thái, metadata, standard/custom và quan hệ hiện tại. `object_type_id` là Object ID thật, không dùng tên hoặc slug thay ID.
+- Dùng Phần 1 ngay trước thao tác: create kiểm tra trùng (field: tên tiếng Anh, tên được dịch, `slug` dự kiến, kể cả tên của field ẩn hệ thống như `_attachments`; Object: `name`, `plural_name`, `slug`); update/delete/restore lấy ID thật cùng type, slug, trạng thái, metadata, standard/custom và quan hệ hiện tại. `object_type_id` là Object ID thật, không dùng tên hoặc slug thay ID.
 - Đánh giá tác động trước khi đổi `slug`, `type`, `unique`, `multiple`, trạng thái, quan hệ cha, composite key, xoá field/Object hoặc xoá options đã có dữ liệu/tham chiếu: records, fields, relationships, filters, workflows, formulas, layouts, related lists, Object relations, buttons, Object Picker và skill/cấu hình đang tham chiếu.
 - Kiểu dữ liệu: cờ số `0`/`1` cho `required`, `multiple`, `unique`, `status`, `creatable`, `editable`, `viewable`, `read_only`, `is_standard`, `is_display`, `quickSearch` (field) và `status`, `creatable`, `editable`, `viewable`, `quick_search` (Object); Object `type` nhận `0`, `1` hoặc `2`. Boolean nghiêm ngặt `true`/`false` chỉ với `manual_modify_allow` (field) và `standard_fields`, `standard_layout`, `standard_buttons`, `standard_filter` (Object). Giữ nguyên cách viết `quickSearch`; các key còn lại chủ yếu `snake_case`.
 - `meta_data` (kể cả `name_field.meta_data`) là JSON string, không gửi JSON object. Khi sửa: parse metadata hiện tại, merge đúng key cần đổi, kiểm tra lại theo type rồi serialize toàn bộ; không gửi một phần vì server thay toàn bộ chuỗi đã lưu. Ngoại lệ: standard Object chỉ nhận các metadata key được reference cho phép và API tự merge.
@@ -141,8 +146,8 @@ Options (create và update): chỉ gửi `options` ở top-level cho `single_cho
 1. Chuẩn hoá tên gốc, slug và bản dịch theo mục Ngôn ngữ; chọn `type` được API hỗ trợ và đọc cấu hình riêng của type đó trong reference, không suy metadata của type này từ type khác.
 2. Gửi `type`, `object_type_id`, `name` tiếng Anh và các giá trị ở mục Mặc định. Có thể để server sinh `slug` từ tên tiếng Anh và tự tính `sort`; chỉ gửi slug kỹ thuật hoặc cấu hình tuỳ chọn khi cần, nhưng không dựa vào server cho các mặc định đã quy định.
 3. Field lựa chọn: gửi đủ options ở top-level; mỗi option mới có UUID riêng và `value`; tối đa 200 options, không trùng ID/value, `sort > 0` nếu gửi, cờ số hợp lệ, slug duy nhất; `cascading` flatten cây và `parent_id` trỏ đúng option cha. Không tự bịa options khi người dùng chưa cung cấp.
-4. `lookup_normal`/`reference`: resolve Object đích, gửi `related_list_name`, xác minh metadata quan hệ trước khi tạo.
-5. `formula`: viết `meta_data.script` theo [Cogover Scripting API Reference](references/cogover-scripting-api-vi.md), đọc mục 1–4 (nền tảng cú pháp) và mục 14 (giới hạn, an toàn) rồi đọc đầy đủ các mục hàm/kiểu dữ liệu cùng recipe liên quan tới công thức (định vị qua Mục lục đầu file); tuân thủ các quy tắc dựng `script` ở [api-object-fields.md](references/api-object-fields.md#formula) (slug thật của field tham chiếu, mọi nhánh `return` khớp `return_type`, chỉ dùng API trong reference, kiểm tra tĩnh null, phép chia số nguyên, timezone, giới hạn sandbox, escaping khi serialize `meta_data`). Trước khi lưu, thực hiện đủ [Kiểm tra Formula trước khi lưu](references/formula-validation.md): phiên Web App qua `$cogover-api-auth`, kiểm tra cú pháp rồi chạy thử trên một record thật của Object; chỉ tiếp tục khi cả hai bước thành công và kết quả đúng kỳ vọng, nếu không (kể cả không tạo được phiên hoặc không có record thử) thì dừng, báo người dùng và không gọi API tạo field.
+4. `lookup_normal`/`reference`: resolve Object đích, gửi `related_list_name`, xác minh metadata quan hệ trước khi tạo. `rollup_summary` chỉ chạy qua `reference`, xem [điều kiện tiên quyết](references/api-object-fields.md#rollup_summary).
+5. `formula`: viết `meta_data.script` theo [Cogover Scripting API Reference](references/cogover-scripting-api-vi.md), đọc mục 1–4 (nền tảng cú pháp) và mục 14 (giới hạn, an toàn) rồi đọc đầy đủ các mục hàm/kiểu dữ liệu cùng recipe liên quan tới công thức (định vị qua Mục lục đầu file); tuân thủ các quy tắc dựng `script` ở [api-object-fields.md](references/api-object-fields.md#formula) (slug thật của field tham chiếu, mọi nhánh `return` khớp `return_type`, chỉ dùng API trong reference, kiểm tra tĩnh null, phép chia số nguyên, timezone, giới hạn sandbox, escaping khi serialize `meta_data`). Trước khi lưu, thực hiện đủ [Kiểm tra Formula trước khi lưu](references/formula-validation.md): phiên Web App qua `$cogover-api-auth`, kiểm tra cú pháp rồi chạy thử trên một record thật của Object; chỉ tiếp tục khi cả hai bước thành công và kết quả đúng kỳ vọng, nếu không (kể cả không tạo được phiên hoặc không có record thử) thì dừng, báo người dùng và không gọi API tạo field. Tránh [bẫy thường gặp khi viết Formula](references/formula-validation.md#bẫy-thường-gặp-khi-viết-formula); chọn `calculation_mode` theo [Formula tính khi đọc và khi lưu](references/api-object-fields.md#formula-tính-khi-đọc-và-khi-lưu).
 6. Gọi `POST /bapi/v1/object-fields` (alias `/bapi/v1/object-fields/create` chỉ khi có lý do tương thích cụ thể). Mong đợi `201`, `r: 0`; lấy field ID/slug và option IDs từ `data`, rồi đọc lại đối chiếu tên tiếng Anh, slug, bản dịch có `en-US`, `description`, `manualModifyAllow`, type, cờ và metadata. `formula`: parse metadata đọc lại, đối chiếu nguyên văn `script`, `return_type` và tuỳ chọn liên quan. Options: đối chiếu ID, value, slug, sort, trạng thái, mặc định, màu/icon, quan hệ cha và bản dịch.
 
 ### Cập nhật field
@@ -162,6 +167,7 @@ Options (create và update): chỉ gửi `options` ở top-level cho `single_cho
 3. `name_field.type` chỉ `short_text` hoặc `auto_number`, schema và metadata theo [api-object-fields.md](references/api-object-fields.md). Object con/phụ thuộc, junction, dòng chi tiết, bản ghi kỹ thuật, chứng từ/giao dịch hoặc mã do hệ thống cấp: `auto_number`; Object nhận diện bằng tên/tiêu đề người dùng nhập: `short_text`.
 4. Public API luôn tạo các field chuẩn: giữ `standard_fields` ở mặc định; chỉ đổi `standard_layout`, `standard_buttons`, `standard_filter` khi người dùng yêu cầu rõ. Gửi `parent_field` thì Object thành child Object (`type: 1`); chỉ gửi `composite_keys` sau khi resolve chính xác các field tham gia và kiểm tra ràng buộc unique mong muốn.
 5. Gọi `POST /bapi/v1/objects` (alias `/bapi/v1/objects/create` chỉ khi có lý do tương thích cụ thể). Mong đợi `201`, `r: 0`; lấy Object ID, slug và `standard_fields` từ `data`, rồi đọc lại đúng ID/slug (Phần 1) xác minh tên gốc, bản dịch, trạng thái, fields và thành phần chuẩn. Read-back phải chứng minh có đúng một field active slug `name`, là record-name, đúng nhãn/bản dịch/type/metadata và type thuộc `short_text`/`auto_number`; không khớp thì không tạo custom field thay thế và không tuyên bố hoàn tất.
+6. Trước khi bàn giao Object mới cho người dùng nghiệp vụ, thực hiện [Checklist hoàn thiện Object mới](#checklist-hoàn-thiện-object-mới).
 
 ### Cập nhật Object
 
@@ -171,3 +177,18 @@ Options (create và update): chỉ gửi `options` ở top-level cho `single_cho
 4. `translations[]`: mỗi phần tử chỉ upsert thuộc tính `name` hoặc `plural_name` được gửi; ngôn ngữ và thuộc tính không xuất hiện giữ nguyên; giá trị bản dịch rỗng fallback về giá trị gốc (khác field, xem Phần 2).
 5. Standard Object: chỉ sửa `name`, `plural_name`, `description`, `translations` và các metadata key được hỗ trợ; không gửi thuộc tính khác.
 6. Mong đợi `200`, `r: 0`; đọc lại so sánh trạng thái trước/sau.
+
+## Checklist hoàn thiện Object mới
+
+Object vừa tạo (qua API hoặc import workbook) chưa dùng được cho người dùng nghiệp vụ. Trước khi báo hoàn tất, làm và xác minh từng mục bằng skill chuyên trách:
+
+| # | Hạng mục | Việc cần làm | Skill |
+|---|---|---|---|
+| 1 | Quyền | Thêm Object vào Role của từng nhóm người dùng với đúng action `record` (create/view/edit/delete theo ma trận); rà cả Object chuẩn mà luồng nghiệp vụ đọc/ghi. Permission có `id` bị thay toàn bộ `values`: đọc Role, gộp, ghi, đọc lại. Role mẫu có permission `functionCode: "object"` thì bổ sung tương ứng (tác dụng riêng chưa kiểm chứng) | [$user-permission](../user-permission/SKILL.md#2-phân-quyền-toàn-bộ-records-của-một-object) |
+| 2 | List view mặc định | Filter "Tất cả" tự sinh chỉ có cột hệ thống: cấu hình cột nghiệp vụ | [$object-filter](../object-filter/SKILL.md#filter-mặc-định-của-object-mới) |
+| 3 | Layout | Tạo layout Tạo/Xem/Sửa; không sửa `content` của layout tiêu chuẩn tự sinh | [$object-layout](../object-layout/SKILL.md) |
+| 4 | Bộ lọc theo persona | Việc persona tự làm có saved filter tương ứng, ví dụ "Của tôi" (`created_by` hoặc owner `= $currentUser`), "Chờ tôi xử lý" | [$object-filter](../object-filter/SKILL.md) |
+| 5 | Menu và báo cáo | Menu Item trỏ tới Object/filter trong đúng App; link record theo route runtime; report chia sẻ cho Role người dùng | [$app-menu-manager](../app-menu-manager/references/app-menu-model.md#route-runtime-trong-app), `$report-builder` |
+| 6 | Kiểm chứng | Bằng phiên persona: tạo, xem, sửa record test; xác nhận giao diện theo [quy ước chung](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện) | [$user-permission](../user-permission/references/permission-testing.md), [$object-layout](../object-layout/SKILL.md) |
+
+Hạng mục người dùng chủ động loại khỏi phạm vi thì ghi rõ trong kết quả bàn giao, không bỏ qua im lặng.

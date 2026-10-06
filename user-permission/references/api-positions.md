@@ -38,7 +38,7 @@ Trước khi gán cho Personnel, xác minh Position active. Nếu `is_department
 
 ## Ghi dữ liệu
 
-Payload tạo Position có tên đa ngôn ngữ, các cờ trạng thái/phạm vi và `department_ids` khi Position chỉ dùng cho một số phòng ban. Update là partial update theo ID trên URL.
+Payload tạo Position có tên đa ngôn ngữ, các cờ trạng thái/phạm vi và `department_ids` khi Position chỉ dùng cho một số phòng ban. Update theo ID trên URL nhưng không phải partial update hoàn toàn: đã quan sát `PUT` bắt buộc có `is_department_only` và `name` dù chỉ đổi thuộc tính khác. Đọc `positions/view` rồi gửi lại các khoá này cùng trường cần đổi.
 
 Không tạo Position mới chỉ để dựng persona test khi có thể dùng Position hiện hữu. Xoá Position đang được sử dụng có thể cần mapping thay thế và ảnh hưởng nhiều Personnel; không dùng endpoint delete để cleanup quan hệ test. Dùng Personnels API `departmentPosition` để gỡ hoặc phục hồi quan hệ.
 

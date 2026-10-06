@@ -34,6 +34,7 @@
 - Nếu personnel sender lỗi `USER_DONT_HAVE_EMAIL`, không suy ra rằng địa chỉ trong hồ sơ personnel đủ để gửi. Runtime `PERSONNEL_EMAIL` cần email channel/account tương ứng.
 - Khi workspace đã cấu hình sender, dùng `fromType: "WORKSPACE_EMAIL"` và `emailId` thật của sender. Không dùng tên hiển thị hoặc địa chỉ email thay cho ID.
 - Dùng một subject duy nhất có timestamp/test token, gửi tới địa chỉ người dùng đã cho phép, rồi kiểm tra hộp thư đích (bằng chứng này không có API trong skill; dùng mail client hoặc trình duyệt). Xác nhận From, To, Subject, body và thời điểm nhận.
+- Chưa đọc được hộp thư đích: bằng chứng trung gian là bản ghi `Process_Debug_data` của node Send Email ghi sender, người nhận, `sendEmail: true` và không có lỗi. Đánh `PARTIAL` cho tới khi người dùng xác nhận hộp thư nhận đúng From/To/Subject/body.
 - Với Wait EMAIL_OPEN/REPLY/LINK_WAS_CLICKED, tạo mỗi event một lượt chạy rõ ràng. Bắt buộc gateway EVENT_PASS/TIMEOUT dựa trên `isEventTriggered`; dùng token/subject khác nhau cho hai nhánh. Link click nên trỏ tới URL kiểm thử an toàn do người dùng cho phép.
 
 ## Backend limitations hiện tại
@@ -68,6 +69,34 @@ Mỗi kịch bản là một lượt chạy riêng với `instanceName` có mark
 | Scheduled, Triggered, Webhook | Kích hoạt theo lịch/bản ghi/HTTP POST, tìm lượt chạy bằng service `35` (`process_info_id`, thời điểm) hoặc `Process_Debug_data` | Lượt chạy xuất hiện đúng thời điểm/sự kiện với input (`$flow.input.*`) đúng; cleanup lịch/bản ghi đã khôi phục |
 
 Cleanup: huỷ lượt chạy test còn `RUNNING`/`PAUSED` (service `5`), xoá lượt chạy (service `6`) chỉ khi người dùng đã xác nhận danh sách ID; khôi phục lịch, quyền và fixture theo SKILL.md mục 4.6.
+
+## Đọc lỗi trong Process_Debug_data
+
+- Sau mỗi lượt chạy kiểm thử, kể cả lượt `COMPLETED`, đọc mọi bản ghi `Process_Debug_data` của lượt đó bằng `$object-record`, sắp theo thời điểm tạo tăng dần. Field quan sát được trên Workspace kiểm thử: `process_id`, `instance_id`, `node_id`, `node_name`, `data` (chuỗi JSON chi tiết node); xác nhận slug bằng `$object-info` trước khi lọc.
+- Lượt chạy chưa đạt khi có `RUNTIME_ERROR`, exception hoặc `resultCode` khác `0` ở node nghiệp vụ, kể cả khi `currentState` là `COMPLETED`.
+- Lọc theo `process_id` của version đang xuất bản: lượt tạo trước khi xuất bản chạy theo version cũ, lỗi của nó không phản ánh bản sửa.
+- Service `35` không thấy lượt cần tìm: kiểm tra đã đọc đủ trang bằng `search_after` ([api-process-runtime.md mục 3](../api-process-runtime.md#3-theo-dõi-lượt-chạy)) trước khi kết luận thiếu lượt; vẫn thiếu thì tìm `instance_id` trong `Process_Debug_data` theo `process_id` và thời điểm.
+
+## Lỗi thường gặp khi lưu và khi chạy
+
+Mã và thông điệp ghi theo response quan sát được, mỗi lỗi đã được sửa theo cột Xử lý; mã có thể thay đổi theo phiên bản nền tảng.
+
+| Lúc | Lỗi | Nguyên nhân thường gặp | Xử lý |
+|---|---|---|---|
+| Lưu | XML không parse (`not well-formed`) | Tên node chứa `&`, `<`, `"` chưa escape | Escape thuộc tính `name` trong `xmlString` |
+| Lưu | `meta.errors` code `11` `mergeGatewayMustHaveForkGateway` | Gateway đóng thiếu gateway mở tương ứng | Ghép cặp fork/merge ([gateway.md](gateway.md)) |
+| Lưu | code `23` `TASK_HAS_NO_OUTGOING_FLOW` | Node thiếu cạnh ra | Nối cạnh; sanity check SKILL.md mục 4.1 |
+| Lưu | code `15` | Hai vế điều kiện khác kiểu | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy) |
+| Lưu | code `34` `expectedDataType ["NUMBER"]` | Gán Formula `TEXT` vào field số trong Create/Update Record | Đổi kiểu trả về của Formula |
+| Lưu | `TaskPerformerConfig: Resource not found: $flow.input.newRecord.<field>` | Performer hoặc nội dung trỏ field không có trên Object | Dùng field lấy từ `$object-info` |
+| Kích hoạt | `Init schema failed: Object existed with slug ...` | Chưa xác định | [api-process-lifecycle.md mục 5](../api-process-lifecycle.md#5-lỗi-thường-gặp) |
+| Chạy | `CAN_NOT_COMPARE_BECAUSE_RESOURCE_VALUE_IS_NULL` | Gateway so sánh resource null | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy) |
+| Chạy | `Boolean cannot be cast to Number` | Kiểu điều kiện không khớp kiểu field | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy) |
+| Chạy | `ArrayList cannot be cast to String` ở Send Email | Lookup nhiều giá trị trong `to` | Loop từng người ([send-email-task.md](send-email-task.md#4-to-cc-bcc-replyto)) |
+| Chạy | `NullPointerException` ở Get Records | Sort theo field formula | [get-records-task.md](get-records-task.md#giới-hạn-đã-quan-sát-khi-chạy) |
+| Chạy | `resultCode: 1`, "target value ... is not allowed" | Transition rule chặn Update Record | [update-record-task.md](update-record-task.md#ràng-buộc-khi-ghi) |
+| Chạy | code `262` `DATE_NULL`, `UPDATE_RECORD_FAILED_RECORD_FOR_UPDATE_NULL` | Ghi ngày/lookup null; không có bản ghi cần cập nhật | Gateway `IS_NOT_NULL` trước node |
+| Chạy | `USER_DONT_HAVE_EMAIL` (code `269`) | `PERSONNEL_EMAIL` chưa có account email | [send-email-task.md](send-email-task.md#3-from) |
 
 ## Phân loại báo cáo
 

@@ -70,7 +70,7 @@ Thêm vào mảng `actions` ở root level:
 | `duplicateOneRecordStrategy` | Chiến lược khi tìm thấy 1 bản ghi trùng: `UPDATE`, `SKIP`, ... |
 | `duplicateManyRecordStrategyFe` | `"UPDATE"` |
 | `duplicateManyRecordStrategy` | Chiến lược khi tìm thấy nhiều bản ghi trùng: `UPDATE_LATEST`, ... |
-| `onErrorStrategy` | `"SKIP_ERROR"`: bỏ qua lỗi và tiếp tục |
+| `onErrorStrategy` | `"SKIP_ERROR"`: bỏ qua lỗi và tiếp tục. Lỗi bị bỏ qua không làm lượt chạy thất bại: xác minh bằng đọc lại bản ghi và `resultCode` trong `Process_Debug_data` ([ràng buộc khi ghi](update-record-task.md#ràng-buộc-khi-ghi)) |
 | `actionType` | `"CREATE_RECORD"` |
 
 ### Giá trị từng trường trong `recordData`

@@ -3,13 +3,13 @@ name: build-cogover-app
 description: "Điều phối dự án Cogover end-to-end: xác thực API key đúng Workspace, khảo sát App/Object, làm rõ và fit-gap yêu cầu BRD/SRS, thiết kế Object/state machine, kế hoạch có dependency, triển khai qua các cổng duyệt. Chỉ dùng khi người dùng gọi $build-cogover-app hoặc đã đồng ý rõ; thay đổi đơn lẻ dùng skill chuyên trách hoặc $cogover-overview."
 metadata:
   author: cogover
-  version: "3.0.1"
+  version: "3.1.0"
 ---
 
 # Build Cogover App
 
-- **Phiên bản:** `3.0.1`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `3.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Đóng vai solution architect, database architect và chuyên gia phần mềm quản trị doanh nghiệp: thiết kế cấu hình khả thi trên Cogover, không xử lý như một dự án phần mềm độc lập và không bắt đầu từ API payload.
 
@@ -235,6 +235,8 @@ Mỗi `W-ID` có `REQ-ID`, current→target delta, skill, dependency `W-ID`, par
 - Phạm vi Mobile: work item layout ghi rõ Web/Mobile/dùng chung; work item Send Notification resolve bản ghi `notification_channel` và các trường kênh trước khi cấu hình node. Bổ sung test theo persona trên Android/iOS trong phạm vi, gồm nhận thông báo trong ứng dụng và nhận thêm push khi không mở ứng dụng nếu có yêu cầu mobile push.
 - `NEW_APP`: thêm chuỗi `KPI/report source → preview/reconciliation PASS → Overview Dashboard → Home/Overview menu wiring`; `Home` là menu cấp 1 dạng nhóm, `Overview` là menu cấp 2 và default target. Dashboard `NOT_SUPPORTED`: thay đúng target Overview bằng report/page fallback đã chứng minh, giữ traceability và limitation. Không áp chuỗi này cho `CUSTOMIZE_EXISTING_APP` nếu người dùng không yêu cầu.
 - App có Menu Item cấp 1: thêm work item icon riêng trước work item tạo/cập nhật menu: `library discovery → reuse exact asset hoặc generate SVG App Menu → technical validation → upload library → resolve returned library URL/ID → set menu icon → read-back`. Root menu parent/icon hoàn tất trước các menu con phụ thuộc khi API/menu builder yêu cầu.
+- Menu theo persona: với mỗi persona, liệt kê việc persona tự làm và mục menu tương ứng; danh sách "của tôi" dùng saved filter người tạo là người dùng hiện tại (`$object-filter`); report và dashboard trong menu có ACL cho role của persona.
+- Process có link tới record phụ thuộc slug App đã chốt ([Route runtime trong App](../app-menu-manager/references/app-menu-model.md#route-runtime-trong-app)); App tạo hoặc tách sau Process thì thêm work item cập nhật link.
 - Chỉ đánh dấu song song khi dependency đã hoàn tất và lock không trùng/bao nhau; cấu hình replacement/full-state luôn single-writer (xem [Dependency và resource lock](references/orchestration-and-gates.md#dependency-và-resource-lock)).
 
 Kế hoạch bắt buộc có requirement traceability, execution waves, dependency DAG, lock register, snapshot strategy, test/UAT cases, unsupported/external items, rollout và containment; diễn giải bằng tiếng Việt dễ hiểu như phần yêu cầu/giải pháp. Chạy validator và coordinator preflight; không mở gate khi còn requirement không map, dependency cycle, lock conflict, `READY` item chứa `TBD/UNKNOWN` hoặc test không quan sát được. Sau khi Markdown đã kiểm tra, giao `plan_reader` tạo `implementation-plan-vN.html` (danh sách việc, `W-ID`, trạng thái, dấu hoàn thành); Markdown vẫn là nguồn chuẩn cho thực thi.
@@ -254,11 +256,14 @@ Chỉ chạy `APPLY_APPROVED_PLAN` sau khi Gate Data Model đã qua trước, r�
    - Tách lock `workspace/icon-library/<asset-name>` khỏi lock `workspace/app/<app-id>/menu-tree`; không cho hai agent cùng upload/cài một asset hoặc cùng sửa menu. Chuẩn bị xong toàn bộ icon cấp 1 trước batch menu mutation để tránh cây menu dở dang.
 4. Sau mỗi mutation, đọc lại resource và so postcondition trước khi mở dependency downstream; timeout thì read-back trước retry.
    - Hoàn tất từng `W-ID` với đủ read-back/test đã duyệt: cập nhật ngay `DONE` và `[x]` trong Markdown rồi giao `plan_reader` đồng bộ HTML theo [quy trình checkpoint](references/human-readable-deliverables.md#html-kế-hoạch-checkpoint-và-bàn-giao-agent); chưa đủ bằng chứng thì không tick trước. Lỗi tạo HTML không làm chạy lại việc đã hoàn tất.
+   - `W-ID` thay đổi phần hiển thị (layout, UI script, list view, button, dashboard, menu, icon): `DONE` cần thêm bằng chứng giao diện theo [quy tắc xác nhận giao diện](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện), bằng trình duyệt người dùng đã đăng nhập sẵn hoặc người dùng xác nhận; không nhập mật khẩu thay người dùng. Chưa có thì giữ `IN_PROGRESS`, ghi "chờ kiểm tra giao diện" ở cột Remaining/next step. Thao tác thử trên layout Xem có thể tự lưu khi rời ô: chỉ thao tác trên record test.
+   - `W-ID` tạo Object mới: `DONE` sau khi đạt [Checklist hoàn thiện Object mới](../object-info/SKILL.md#checklist-hoàn-thiện-object-mới).
    - `NEW_APP`: read-back phải chứng minh `Home` là root group, `Overview` là child/default target, action trỏ đúng Dashboard đã reconciled hoặc fallback đã ghi trong plan; ACL Dashboard/report/menu nhất quán theo persona. `CUSTOMIZE_EXISTING_APP`: regression check chứng minh cây menu cũ không bị tái cấu trúc ngoài change set.
    - Icon menu: read-back chứng minh từng Menu Item cấp 1 có đúng icon URL/ID từ thư viện; không dùng `file_id`, URL upload tạm hoặc asset không resolve được. Regression check giữ nguyên action, parent, order, default, ACL, platform và status ngoài field `icon`.
 5. Không auto-delete để rollback. Partial failure: giữ ID/state, chặn downstream, containment và xin approval nếu recovery có tính destructive ([partial failure](references/orchestration-and-gates.md#partial-failure)).
 6. Chạy test theo persona và acceptance, regression các cấu hình bị ảnh hưởng, cleanup đúng fixture do lần chạy tạo và giữ evidence đã redacted.
+   - Dữ liệu test, bước không hoàn tác được và phần dư: theo [Dữ liệu kiểm thử](../object-record/SKILL.md#dữ-liệu-kiểm-thử); liệt kê trước khi chạy, ghi phần dư vào bảng Cleanup and restoration của `test-handover-vN.md`.
    - Phạm vi Mobile: ghi riêng kết quả thao tác và bố cục trên Android/iOS được yêu cầu. Send Notification: đối chiếu bản ghi kênh và các trường được tick, kiểm tra nhận trong ứng dụng và mobile push khi không mở ứng dụng; node chạy thành công không phải bằng chứng đã nhận push. Chưa có thiết bị hoặc evidence thì ghi rõ chưa kiểm thử phần đó.
 7. Tạo `test-handover-vN.md` map `REQ → W → T`, ghi actual resource IDs, PASS/FAIL, deviation, limitation, residual risk và UAT/handoff.
 
-Không tuyên bố hoàn tất nếu chưa có read-back và test evidence tương ứng.
+Không tuyên bố hoàn tất nếu chưa có read-back và test evidence tương ứng; cấu hình hiển thị cần thêm bằng chứng giao diện.

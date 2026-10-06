@@ -26,7 +26,7 @@ Envelope của mỗi phần tử `components`:
 ## Layout
 
 - `i` bằng `chartId`; `x`, `y` nguyên không âm; `w`, `h` nguyên dương; `x + w` không vượt `layoutSize`.
-- Kích thước tối thiểu: text/image khoảng `2x2`; metric width `2`, height phụ thuộc title/footer/comparison; gauge width `3`, height phụ thuộc title/footer; chart report-backed khác `4x8`.
+- Kích thước tối thiểu: text/image khoảng `2x2`; metric width `2`, height phụ thuộc title/footer/comparison (xem [Lỗi hiển thị đã gặp](#lỗi-hiển-thị-đã-gặp)); gauge width `3`, height phụ thuộc title/footer; chart report-backed khác `4x8`.
 - Khi update, giữ layout key chưa biết như `static`, `moved`, `minW`, `minH`.
 
 ## Report-backed charts
@@ -59,6 +59,16 @@ Key đặc thù theo type:
 - Metric: `metricIndicator`, `maxValueRange`, `defineColorValueRanges`; gauge: `metricIndicator`, `typeScale`, target config.
 - Table: `groupByRows`, `groupByColumns`, `groupTypeMap`, `displayFieldIds`, `aggregates`, `viewConfig`, formulas và sorts.
 - Formula metric: `sources`, `metaData`, `script`, `return_type`, `allow_zero_if_null`.
+
+## Lỗi hiển thị đã gặp
+
+API không báo lỗi với các trường hợp sau: service đọc lại khớp payload, saved report vẫn chạy đúng. Rà trước khi tạo hoặc sửa component.
+
+| Triệu chứng trên giao diện | Nguyên nhân | Cách làm | Mức chắc chắn |
+|---|---|---|---|
+| Chart cột hoặc đường có trục 0–1, không có cột | Saved report nguồn có 2 cấp group theo hàng, dữ liệu trả dạng cây | Chart dùng saved report có tối đa 1 group hàng. Cần giữ bản 2 cấp để xem dạng bảng thì tạo thêm saved report tóm tắt 1 cấp trên cùng Report Type cho chart | *đã sửa và chạy đúng* |
+| Metric hiện `- - -` dù report có số | Ô quá thấp, chữ số bị cắt | Metric có tiêu đề và footer: `h` từ `5`, `minH` từ `4` (`h: 3` đã bị cắt) | *đã sửa và chạy đúng* |
+| Một series luôn bằng 0 hoặc hiện số của series khác | Nhiều aggregate trong cùng chart có field slug là hậu tố của nhau, ví dụ `amount` và `committed_amount` | Tách chart hoặc chọn field có slug không là hậu tố của nhau | *quan sát, cần kiểm chứng* |
 
 ## Text và image
 

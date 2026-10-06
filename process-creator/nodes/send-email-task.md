@@ -12,7 +12,7 @@ Task hệ thống tự động gửi email khi luồng chạy đến, không c�
 | `4` | Giá trị từ biến hoặc resource (variable, text template, trường con lookup...) | to, cc, bcc, replyTo, content |
 | `5` | Nhập trực tiếp có chứa biến bên trong (Simple Renderer) | subject, content, `name` trong to/cc/bcc/replyTo |
 
-Type `5` (Simple Renderer) chỉ render biến, KHÔNG hỗ trợ if/else, for như Text Template; cú pháp biến `$userTask.Root.submittedBy.first_last_name`, KHÔNG bọc `{{}}` hay `{}`.
+Type `5` (Simple Renderer) chỉ render biến, KHÔNG hỗ trợ if/else, for như Text Template; cú pháp biến `$userTask.Root.submittedBy.first_last_name`, KHÔNG bọc `{{}}` hay `{}`. Type `5` in nguyên giá trị lưu trữ (mã nhân sự, số dạng `1.0E8`, JSON của field lựa chọn, chữ `null`): chọn field theo [text-template-resource.md mục Hiển thị giá trị field cho người đọc](../references/text-template-resource.md#hiển-thị-giá-trị-field-cho-người-đọc).
 
 ### BPMN XML
 
@@ -98,6 +98,7 @@ Phân biệt `/process/account` và Workspace Email:
 - Địa chỉ email trong hồ sơ personnel chưa đủ để `PERSONNEL_EMAIL` chạy; personnel phải có email account/channel đã kết nối, nếu thiếu runtime báo `USER_DONT_HAVE_EMAIL`.
 - Không có endpoint list sender: (1) tạo một process DRAFT probe, mở editor trên Chrome và chọn đúng sender theo tên/email người dùng chỉ định; (2) Save nhưng chưa Kích hoạt/Tạo lượt chạy; (3) GET-back và copy nguyên object `data.from` sang process mới, không đoán `fromType`, personnel ID hay `emailId`; (4) xoá probe chỉ khi người dùng xác nhận, nếu không để nguyên DRAFT và báo link.
 - Retest sender vừa cấu hình: đặt `continueIfFromEmailNotExist: false` để lỗi channel không bị che. Chỉ đánh PASS sau khi mailbox đích nhận đúng From/To/Subject/body.
+- `emailId` của Workspace Email do người dùng đưa: payload `WORKSPACE_EMAIL` ở trên được chấp nhận khi tạo qua API, không bắt buộc qua editor. Vẫn chạy một process probe (Normal Flow → Send Email → End Process, `continueIfFromEmailNotExist: false`) trước khi nhân rộng; chỉ áp cho nhiều process khi lượt probe không lỗi và hộp thư đích nhận đúng.
 
 #### 4. `to`, `cc`, `bcc`, `replyTo`
 
@@ -120,6 +121,9 @@ Bốn mảng cùng cấu trúc; mỗi phần tử có `email` và tuỳ chọn `
 
 Nguồn type 4 khác chỉ đổi `value`/`dataPathName`: Text Template `$flow.text_template` với `workflow_resource:list.textTemplate / Text template`; trường con của lookup `$userTask.Root.chon_lead.emails` với `workflow_resource:list.userTask / Root / Chọn Lead / Emails`. Một mảng có thể trộn nhiều kiểu phần tử.
 
+- Không truyền lookup nhiều giá trị (danh sách nhân sự) vào một phần tử `email` type 4: runtime lỗi `ArrayList cannot be cast to String`, node không gửi. Duyệt bằng [Loop](loop-task.md) và gửi trong nhánh `for_each_item` với `$loop.{loop_slug}.currentItem.account_email`, hoặc mỗi người một phần tử khi số người cố định (*đã sửa và chạy đúng*).
+- `type: 1` là địa chỉ thô: không viết chuỗi tham chiếu (ví dụ `{PERSONNEL_ID}.account_email`) vào `type: 1`; dùng địa chỉ thật hoặc resource `type: 4`.
+
 #### 5. `attachments`
 
 `[]` hoặc file từ biến/trường: `[{"type": 2, "value": "$userTask.Root.file_field", "pathName": "workflow_resource:list.userTask / Root / File Field", "dataType": "FILE"}]`.
@@ -129,7 +133,7 @@ Nguồn type 4 khác chỉ đổi `value`/`dataPathName`: Text Template `$flow.t
 - `sequenceFlowType`: `"AUTOMATIC"` (mặc định) tự chuyển bước sau khi gửi; `"MANUAL"` gửi thủ công (tạo todo task).
 - `maximumWaitTimeUnit`, `maximumWaitTimeValue`: `null`.
 - `emailAppendSignature`: thêm chữ ký, mặc định `false`. `emailLayout`: mặc định `""`.
-- `continueIfFromEmailNotExist`: mặc định `false`; `true` thì personnel không có email → action bỏ qua thay vì báo lỗi (dùng với `PERSONNEL_EMAIL` khi personnel có thể chưa cấu hình email).
+- `continueIfFromEmailNotExist`: mặc định `false`; `true` thì lỗi sender (personnel không có email, mất kết nối mailbox) không dừng lượt chạy: lượt vẫn `COMPLETED` dù email không gửi. Chỉ bật khi luồng phải chạy tiếp lúc mailbox gặp sự cố, kèm Send Notification song song và quét lỗi email trong `Process_Debug_data`.
 
 #### 7. Quy trình Sequence (gửi email đến bản ghi)
 

@@ -3,21 +3,21 @@ name: dashboard-builder
 description: "Quản lý dashboard Cogover qua Web App API `/api/v{N}/dashboard-server` (phiên Web App từ $cogover-api-auth, không nhận API Key trực tiếp): tạo, đọc, cập nhật, nhân bản, xoá; component/biểu đồ từ saved report của $report-builder, layout, dashboard filter; chẩn đoán dashboard không hiển thị đúng. Dùng khi cấu hình dashboard bằng API."
 metadata:
   author: cogover
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Dashboard Builder
 
-- **Phiên bản:** `1.1.0`
-- **Ngày phát hành:** `2026-09-29`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-10-06`
 
-Quản lý dashboard bằng API, không thao tác UI, theo chuỗi: xác nhận workspace → tạo phiên Web App → đọc state → lập payload đầy đủ → mutation → đọc lại và kiểm chứng. Saved report và report field cho chart do `$report-builder` tạo và preview trước; skill này không tạo report.
+Cấu hình dashboard bằng API, không cấu hình qua UI, theo chuỗi: xác nhận workspace → tạo phiên Web App → đọc state → lập payload đầy đủ → mutation → đọc lại và kiểm chứng. Saved report và report field cho chart do `$report-builder` tạo và preview trước; skill này không tạo report.
 
 ## Chuẩn bị
 
 - Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Mọi thao tác gọi `POST /api/v1/dashboard-server` bằng phiên Web App đổi từ API Key; không gửi API Key trực tiếp tới endpoint này. Ngoại lệ riêng: gửi `x-req-type: 9`, response là nguyên kết quả service (`r`, `msg`, `data`, `meta`) ở root, không bọc `body`; kiểm tra HTTP status và `r` ở root ([Response và kiểm chứng](references/api-contract.md#response-và-kiểm-chứng)); lỗi đặc thù ở [Xử lý lỗi](#xử-lý-lỗi).
 - Đọc [references/api-contract.md](references/api-contract.md) (service, payload, ràng buộc field) trước khi gọi API; đọc [references/dashboard-model.md](references/dashboard-model.md) trước khi thêm hoặc sửa component, chart, layout, dashboard filter.
-- Contract chỉ lấy từ tài liệu trong skill, tài liệu API chính thức do người dùng cung cấp và response API thực tế; không đọc source code, repository, bundle JavaScript hay source map; không dùng browser/UI để suy ra request (`/settings/dashboards` chỉ là deep-link trả cho người dùng).
+- Contract chỉ lấy từ tài liệu trong skill, tài liệu API chính thức do người dùng cung cấp và response API thực tế; không đọc source code, repository, bundle JavaScript hay source map; không dùng browser/UI để suy ra request. Giao diện chỉ dùng để nghiệm thu hiển thị theo [Trả kết quả](#9-trả-kết-quả); `/settings/dashboards/...` là deep-link quản trị trả cho người dùng.
 - Sau khi tạo phiên, probe chỉ đọc bằng service `6`; dừng khi `401/403`, `r != 0`, workspace lệch hoặc response khác contract.
 - Helper script [scripts/dashboard_api.py](scripts/dashboard_api.py): base URL và API Key qua biến môi trường hoặc secret manager; mặc định dry-run, thêm `--execute` để gửi, mutation (service `3`, `4`, `5`, `20`) thêm `--apply`.
 
@@ -42,6 +42,7 @@ Với chart dựa trên báo cáo:
 1. Dùng `$report-builder` tìm hoặc tạo saved report và preview đúng trước khi tạo chart; đọc saved report detail lấy ID/slug và report field ID thật. Không gán object field ID vào nơi yêu cầu report field ID.
 2. Chọn `type` và lập `config` theo [references/dashboard-model.md](references/dashboard-model.md). Không tự dựng config phức tạp từ phỏng đoán: deep-copy một component cùng `type` đang chạy đúng từ API response làm base, chỉ thay `reportId`, field ID, tiêu đề, filter, palette; giữ key chưa biết.
 3. Tạo UUID mới cho `chartId`; `location.i` và `config.chartId` bằng đúng `chartId`.
+4. Rà [Lỗi hiển thị đã gặp](references/dashboard-model.md#lỗi-hiển-thị-đã-gặp) với từng chart: số cấp group hàng của saved report nguồn, kích thước metric, slug của các aggregate trong cùng chart.
 
 ### 4. Tạo dashboard
 
@@ -72,12 +73,14 @@ Service `20` với `id` nguồn cùng `name`/`slug` mới đã kiểm tra trùng
 
 ### 8. Chẩn đoán dashboard không hiển thị đúng
 
-Đọc detail và đối chiếu từng component với [references/dashboard-model.md](references/dashboard-model.md) (định danh `chartId`/`location.i`/`config.chartId`; layout trong grid và kích thước tối thiểu; `reportId` và report field ID thật; filter `isDynamic`, `params`, `fieldId`/`filtersReplace`), preview lại saved report nguồn bằng `$report-builder`, rồi sửa theo bước 5.
+Đọc detail và đối chiếu từng component với [references/dashboard-model.md](references/dashboard-model.md) (định danh `chartId`/`location.i`/`config.chartId`; layout trong grid và kích thước tối thiểu; `reportId` và report field ID thật; filter `isDynamic`, `params`, `fieldId`/`filtersReplace`), preview lại saved report nguồn bằng `$report-builder`, đối chiếu triệu chứng với [Lỗi hiển thị đã gặp](references/dashboard-model.md#lỗi-hiển-thị-đã-gặp), rồi sửa theo bước 5.
 
 ### 9. Trả kết quả
 
 - Workspace domain; operation; dashboard ID, name, slug; layout, palette, số component và mapping chart → saved report; filter/config chính đã thay đổi; kết quả postcondition và warning còn lại.
-- Deep-link `https://{WORKSPACE_DOMAIN}/settings/dashboards/{DASHBOARD_SLUG}`; chỉ mở deep-link để kiểm chứng UI khi người dùng yêu cầu.
+- Deep-link quản trị `https://{WORKSPACE_DOMAIN}/settings/dashboards/{DASHBOARD_SLUG}`; route chạy `https://{WORKSPACE_DOMAIN}/dashboards/{DASHBOARD_SLUG}` theo [Route runtime trong App](../app-menu-manager/references/app-menu-model.md#route-runtime-trong-app).
+- Read-back chỉ chứng minh cấu hình, không chứng minh hiển thị. Dashboard mới hoặc đã sửa: xem route chạy trong trình duyệt người dùng đã đăng nhập sẵn, hoặc nhờ người dùng tự mở và xác nhận; không nhập mật khẩu thay người dùng ([quy tắc xác nhận giao diện](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện)). Chưa xem thì báo "đã lưu, chưa kiểm tra giao diện". Việc xem chỉ để nghiệm thu, không dùng để suy ra request.
+- Payload dashboard không có ACL; quyền xem của persona chưa được contract mô tả: kiểm chứng bằng tài khoản persona. Chart trống với persona nhưng có dữ liệu với quản trị thì kiểm tra ACL người xem của saved report nguồn theo [$report-builder](../report-builder/SKILL.md#6-tạo-và-hoàn-thiện-saved-report).
 
 ## Xử lý lỗi
 

@@ -107,13 +107,15 @@ Toán tử theo `leftValueDataType` và `leftValueIsList` (`rightValue` ghi đú
 | `BOOLEAN` | `false` | `==`, `!=`, `IS_NULL`, `IS_NOT_NULL` | `true` hoặc `false` |
 | `TEXT` | `false` | `==`, `!=`, `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`, `STARTS_WITH`, `ENDS_WITH`, `IS_NULL`, `IS_NOT_NULL` | chuỗi, ví dụ `"abc"` |
 | `TEXT` | `true` | `LIST_CONTAINS`, `LIST_NOT_CONTAINS` | chuỗi, ví dụ `"1"` |
-| `SELECT_LIST` | `false` | `==`, `!=` | một giá trị lựa chọn: chuỗi `"Lựa chọn 1"` hoặc số `1` |
-| `SELECT_LIST` | `false` | `IS_ONE_OF`, `IS_NOT_ONE_OF` | mảng, ví dụ `["Lựa chọn 1", "Lựa chọn 2"]` hoặc `[1, 2]` |
+| `SELECT_LIST` | `false` | `==`, `!=` | `value` của một option: chuỗi `"approve"` hoặc số `1` |
+| `SELECT_LIST` | `false` | `IS_ONE_OF`, `IS_NOT_ONE_OF` | mảng `value`, ví dụ `["approve", "return"]` hoặc `[1, 2]` |
 | `SELECT_LIST` | `false` | `LIST_IS_EMPTY` (chưa chọn) | không có |
-| `SELECT_LIST` | `true` | `SELECT_LIST_CONTAINS`, `SELECT_LIST_NOT_CONTAINS` (không dùng `LIST_CONTAINS`/`LIST_NOT_CONTAINS`) | luôn là mảng, ví dụ `["Lựa chọn 1"]` hoặc `[1]` |
+| `SELECT_LIST` | `true` | `SELECT_LIST_CONTAINS`, `SELECT_LIST_NOT_CONTAINS` (không dùng `LIST_CONTAINS`/`LIST_NOT_CONTAINS`) | luôn là mảng `value`, ví dụ `["approve"]` hoặc `[1]` |
 | `SELECT_LIST` | `true` | `LIST_IS_EMPTY`, `LIST_IS_NOT_EMPTY` | không có |
 | `RECORD` | `false` | `==`, `IS_NULL`, `IS_NOT_NULL` | ID bản ghi, ví dụ `"LE000000000001"` |
 | `RECORD` | `true` | `LIST_CONTAINS`, `LIST_NOT_CONTAINS` | ID bản ghi |
+
+`rightValue` của `SELECT_LIST` là `value` của option, không phải `label`. Option dùng để rẽ nhánh đặt `value` là mã ổn định không dấu ([user-task-form-fields.md](user-task-form-fields.md#select_list-danh-sách-lựa-chọn)); `samples/sample_process_gw_conditions.json` có `value` trùng nhãn (`"Lựa chọn 1"`) nên đổi nhãn ở đó sẽ phải sửa cả điều kiện.
 
 Ví dụ điều kiện RECORD (các kiểu khác chỉ khác `leftValueDataType`, `operator`, `rightValue` và không có `leftObjectTypeId`):
 
@@ -129,6 +131,13 @@ Ví dụ điều kiện RECORD (các kiểu khác chỉ khác `leftValueDataType
   "operator": "=="
 }
 ```
+
+### Điều kiện an toàn khi chạy
+
+- So sánh (`==`, `>=`, ...) khi resource vế trái null làm lượt chạy dừng với `CAN_NOT_COMPARE_BECAUSE_RESOURCE_VALUE_IS_NULL`. Field của User Task thuộc nhánh chưa chạy, field không bắt buộc, field do backend tính chậm đều có thể null: đặt outcome `IS_NULL` lên trước, hoặc so sánh Formula resource null-safe trả `NUMBER` 0/1 với `== 1` (*đã sửa và chạy đúng*).
+- `leftValueDataType` phải đúng kiểu thật của resource: khai báo `NUMBER` cho field formula trả boolean (hoặc ngược lại) gây lỗi lúc chạy `Boolean cannot be cast to Number`; lưu process có thể báo `meta.errors` code `15` khi hai vế khác kiểu. Chưa chắc kiểu trả về thì dùng formula 0/1 và `NUMBER ==` (*đã sửa và chạy đúng*).
+- `SELECT_LIST` so sánh theo `value` của option (xem ghi chú dưới bảng toán tử).
+- Field `rollup_summary` trong điều kiện gateway hoặc `recordData` của Create Record đã gây lỗi một lần, chưa rõ lúc lưu hay lúc chạy (*quan sát, cần kiểm chứng*): chép sang field formula số rồi dùng field đó. Điều kiện tạo và độ trễ tính lại của rollup: [object-info `rollup_summary`](../../object-info/references/api-object-fields.md#rollup_summary).
 
 ### `resourcesUsedIn` của trường dùng trong điều kiện
 
@@ -242,6 +251,8 @@ Mỗi Inclusive mở nhánh (`openedGateway="true"`) **bắt buộc** có một 
 ```
 
 Gateway đóng: cùng element và `renderKey`, `openedGateway="false"`, nhiều incoming, 1 outgoing. Không có thuộc tính `default`. `sequenceFlow` đi ra từ gateway mở có `name` nhánh nhưng không có điều kiện.
+
+Hai User Task song song cùng ghi một field của bản ghi và được submit gần như cùng lúc đã làm mất một giá trị một lần (field lựa chọn; *quan sát, cần kiểm chứng*). Mỗi nhánh ghi field riêng; sau gateway đóng, đọc lại bản ghi bằng Get Records rồi mới đánh giá kết quả.
 
 `gateWays` có **2 phần tử** (mở `isOpen: true`, đóng `isOpen: false`), **cả hai** `decisionOutcomes: []`:
 

@@ -64,7 +64,7 @@ Field vừa `required: 1` (hoặc `true`) vừa `readOnly: true` (hoặc `1`) **
 | 15 | `lookup_normal` (tra cứu) | `{"multiple_limit": {"min": 0, "max": 30}, "link_field": "id", "object": "{OBJECT_TYPE_ID}", "object_slug": "{object_slug}"}` | `"defaultValue": null`, `"defaultValueRecord"`, `"minLength": 0`, `"maxLength": 30`; xem ghi chú dưới |
 | 16 | `select_list` | xem mục riêng | |
 | 17 | `regex` (văn bản theo biểu thức) | `{"character_limit": {"min": 0, "max": 255}, "multiple_limit": {"min": 0, "max": 30}, "regex": "^[A-Z]{3}-[0-9]{4}$"}` | field nhập TEXT có validation regex; resource tương ứng `dataType: "TEXT"`. `multiple: 1`: giữ `multiple_limit` hợp lệ và serialize `defaultValue` dạng danh sách như field text nhiều giá trị |
-| 18 | `display_text` (văn bản hiển thị) | `{"rich_text": true}` | chỉ hiển thị nội dung, không phải field nhập, không tạo variable/resource User Task; `"displayTextType"`: `"text"`, `"html"` hoặc `"markdown"`; `"defaultValue"` là nội dung (ví dụ `"<p>Vui lòng kiểm tra thông tin trước khi gửi.</p>"`), `"defaultTextValueType": 1`; nội dung tham chiếu resource thì thêm `defaultValueDataType`/`defaultValuePathName` và `defaultTextValueType` phù hợp resource |
+| 18 | `display_text` (văn bản hiển thị) | `{"rich_text": true}` | chỉ hiển thị nội dung, không phải field nhập, không tạo variable/resource User Task; `"displayTextType"`: `"text"`, `"html"` hoặc `"markdown"`; `"defaultValue"` là nội dung (ví dụ `"<p>Vui lòng kiểm tra thông tin trước khi gửi.</p>"`), `"defaultTextValueType": 1`; nội dung tham chiếu resource thì thêm `defaultValueDataType`/`defaultValuePathName` và `defaultTextValueType` phù hợp resource; field của bản ghi in theo [quy tắc hiển thị](../references/text-template-resource.md#hiển-thị-giá-trị-field-cho-người-đọc) |
 | 19 | `select_record_table` (bảng chọn bản ghi) | không dùng | xem mục riêng |
 
 Ghi chú `lookup_normal`:
@@ -226,6 +226,8 @@ Option trong component và trong resource: chung `sourceType: "RAW"`, `label`, `
   ]
 }
 ```
+
+Trường quyết định (Duyệt/Từ chối/Trả về): `value` và `slug` là mã ổn định không dấu (`approve`, `reject`, `return`), `label` theo ngôn ngữ người dùng; không đặt `value` bằng câu hiển thị. Gateway so sánh theo `value` ([gateway.md](gateway.md#điều-kiện-conditions)) nên đổi `label` về sau không đổi nhánh (*đã sửa và chạy đúng*). Submit form gửi `value`: [api-process-runtime.md mục 2.1](../api-process-runtime.md#21-manual-flow-đọc-form-root-rồi-submit).
 
 ### `select_record_table` (bảng chọn bản ghi)
 

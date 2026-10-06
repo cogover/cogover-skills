@@ -134,3 +134,12 @@ Giống Create Record: resource của userTask dùng trong `recordData` (`type: 
   ]
 }
 ```
+
+### Ràng buộc khi ghi
+
+- Đổi `status` (hoặc field có transition rule) chỉ thành công khi cặp trạng thái hiện tại → đích được transition rule của Object cho phép. Cặp không được phép: node trả `resultCode: 1` kèm "Your target value [X] is not allowed, current value [Y], available values [...]"; với `onErrorStrategy: "SKIP_ERROR"` lượt chạy vẫn đi tiếp tới `COMPLETED` nhưng bản ghi giữ trạng thái cũ (*đã sửa và chạy đúng* sau khi bổ sung cặp trạng thái).
+  - Trước khi dựng: đọc rule bằng `$object-transition-rule`, lập bảng mọi chuyển trạng thái luồng dùng (kể cả nhánh trả về, huỷ). Thiếu cặp: đề xuất người dùng bổ sung rule, hoặc giữ trạng thái chuẩn và ghi bước chi tiết vào field riêng (ví dụ `example_approval_step`).
+  - Sau khi chạy: đọc lại bản ghi và `resultCode` của node trong `Process_Debug_data` ([runtime-validation.md](runtime-validation.md#đọc-lỗi-trong-process_debug_data)).
+- Ghi `null` để xoá giá trị không có tác dụng trong các ca đã gặp (*quan sát, cần kiểm chứng*). Không thiết kế bộ lọc hay hiển thị dựa vào việc xoá giá trị; kết hợp điều kiện trạng thái.
+- `outputVariable` null (không tìm thấy bản ghi cần cập nhật) hoặc gán ngày/lookup null làm node lỗi (`UPDATE_RECORD_FAILED_RECORD_FOR_UPDATE_NULL`, code `262` `DATE_NULL`): kiểm tra `IS_NOT_NULL` hoặc `output.total >= 1` bằng gateway trước node.
+- Field khoá theo trạng thái với người dùng (security rule, khoá của App chuẩn) vẫn ghi được bằng process trong các ca đã gặp (*quan sát*): dữ liệu cần bổ sung sau duyệt nên đi qua process, không PUT bằng API key người dùng.

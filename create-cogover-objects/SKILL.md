@@ -3,13 +3,13 @@ name: create-cogover-objects
 description: "Tạo workbook Excel (.xlsx) định nghĩa Cogover Object: mỗi sheet một Object với trường, bản dịch Anh/Việt, selective option, quan hệ lookup và record-name slug `name`; có Log mode cho bảng log phẳng. Dùng khi cần thiết kế schema Object cho CRM/ứng dụng doanh nghiệp hoặc tạo file import Object; chạy validator kèm theo trước khi bàn giao."
 metadata:
   author: cogover
-  version: "1.0.2"
+  version: "1.1.0"
 ---
 
 # Tạo Cogover Object
 
-- **Phiên bản:** `1.0.2`
-- **Ngày phát hành:** `2026-09-11`
+- **Phiên bản:** `1.1.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Tạo workbook Excel định nghĩa Cogover Object: mỗi sheet một Object, mỗi cột một trường. Đặc tả cấu trúc sheet và loại trường: [references/OBJECT_SPEC.md](references/OBJECT_SPEC.md); mẫu đầy đủ 29 Object: `assets/Objects_for_CRM.xlsx` (chỉ là schema minh họa, không dùng ID hoặc credential từ mẫu để ghi vào Workspace). Đường dẫn tài nguyên resolve từ thư mục chứa `SKILL.md`.
 
@@ -28,6 +28,8 @@ Công cụ: dùng skill spreadsheet của môi trường nếu có; nếu không
 - **Record-name**: mỗi sheet đúng một field có `Slug` là `name`, type `Short text` hoặc `Auto number`; dòng `"Record name" field` ghi tên hiển thị của chính field này (bỏ `*` khi đối chiếu). Tên hiển thị theo nghiệp vụ (`Name`, `Title`, `Subject`, `Membership code`, `Order number`...) nhưng slug luôn là `name`; không dùng slug riêng như `membership_code`, `title`, `order_number` cho record-name. Chọn type: Object con/phụ thuộc, junction, dòng chi tiết, bản ghi kỹ thuật → `Auto number`; tên/tiêu đề do người dùng nhập → `Short text`; số chứng từ/mã giao dịch do hệ thống cấp → `Auto number`. Chưa có field phù hợp thì thêm field hiển thị (mặc định `Name`) với `Slug: name`; không tạo thêm field record-name có slug khác. Chi tiết và ví dụ: [Bất biến field record-name](references/OBJECT_SPEC.md#bất-biến-field-record-name).
 - **Trường số dạng tiền** (giá, thành tiền, tổng tiền, số dư, đã thanh toán, còn phải thu/phải trả, số tiền cấn trừ): `Data type` là `Decimal`, dòng `Currency` để trống (định dạng tiền tệ cấu hình riêng khi import hoặc trên Workspace). Không dùng `Number (min, max)` hay `Currency` chỉ vì field hiển thị như tiền tệ. `Currency` chỉ khi người dùng yêu cầu rõ type này, và khi đó bắt buộc ghi `VND` hoặc `USD` ở dòng 13.
 - **Trường hệ thống**, KHÔNG tạo: `created`/`created_date`, `updated`/`updated_date`, `created_by`, `updated_by`.
+- **Quan hệ cần tổng hợp**: Object cha cần trường tổng hợp từ Object con (tổng tiền, số dòng, ngày lớn nhất) thì field ở Object con trỏ về cha phải là `Dependency lookup`; rollup không chạy qua `Normal lookup` (điều kiện phía Workspace: [`rollup_summary`](../object-info/references/api-object-fields.md#rollup_summary)). Dependency lookup xoá dây chuyền (xoá cha thì xoá con): chỉ dùng khi đúng quan hệ phụ thuộc; nếu không, dùng `Normal lookup` và field số do Process cập nhật. Ánh xạ `Dependency lookup` sang `reference` khi import *cần kiểm chứng*: sau khi import, đọc `fieldType` qua `$object-info`.
+- **Mã định danh dạng số** (mã số thuế, số tài khoản, số giấy tờ, mã có số 0 đầu): `Short text` (hoặc `Regex` khi cần kiểm tra mẫu), không dùng `Number` hay `Formula` vì giá trị bị đọc thành số và mất số 0 đầu.
 - Không đặt tên trường `Attachments`; dùng `Files`.
 - `Default`: `$currentUser` = người dùng hiện tại (trường Owner); các mặc định khác dùng giá trị thực.
 
@@ -87,3 +89,4 @@ Selective field option | Closed      | Đã đóng    | end_state
 - Mọi lookup target tồn tại (Normal mode); mọi trường Single choice/Multi choices có bảng option; bản dịch đầy đủ cho mọi trường; trường bắt buộc có `*`; Bảng 2 đủ tên, số nhiều, record name; giá trị mặc định và cấu hình nhiều giá trị đúng; trường tiền dùng `Decimal` với dòng Currency trống (`Currency` chỉ khi được yêu cầu rõ, kèm VND/USD); không có trường hệ thống, không có `Attachments`.
 - Record-name: mỗi sheet đúng một dòng `"Record name" field`, cột B khớp đúng một field ở dòng `Field name` (bỏ `*`); field đó có đúng một `Slug: name` trong sheet và type Short text/Auto number.
 - Chạy `python3 scripts/validate_record_name.py <đường-dẫn-xlsx>`; sửa mọi lỗi trước khi bàn giao.
+- Sau khi Object được tạo trên Workspace, thực hiện [Checklist hoàn thiện Object mới](../object-info/SKILL.md#checklist-hoàn-thiện-object-mới).

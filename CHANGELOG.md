@@ -1,5 +1,70 @@
 # Changelog
 
+## 4.21.0 - 2026-10-06
+
+Bài học từ một dự án triển khai nhiều phân hệ (Process, Object, layout, quyền, App, báo cáo, Custom Backend Module) trên một Workspace thử nghiệm. Mỗi đề xuất đã qua review độc lập. Nội dung ghi rõ mức chắc chắn: *đã kiểm chứng có đối chứng*, *đã sửa và chạy đúng*, hoặc *quan sát, cần kiểm chứng*. Không sửa reference là snapshot tài liệu sản phẩm. Ba điểm còn chờ kiểm chứng trên Workspace sạch để lại changeset sau: giới hạn số dòng mỗi trang của `records/list`, hành vi giữ chỗ ngân sách của App Finance, export document template.
+
+- `cogover-api-auth` 1.1.0: thêm tiểu mục Response, giới hạn tần suất và xác nhận giao diện vào quy ước chung.
+  - Đọc đúng shape response theo contract của skill chuyên trách; chỉ bóc `body` khi contract nêu endpoint còn bọc.
+  - `429`/`r: 42900` retry có giới hạn; các agent dùng chung một key thì chia chung hạn mức.
+  - Lệnh ghi bị timeout hoặc `5xx` thì đọc lại trước khi gửi lại.
+  - Truy vấn nặng thì thu hẹp phạm vi trước khi tăng timeout; phân trang đọc tới đủ `total`.
+  - Read-back qua API không chứng minh giao diện hiển thị đúng. Chỉ xác nhận bằng trình duyệt người dùng đã đăng nhập sẵn, không nhập mật khẩu thay. Chưa xem thì báo "đã lưu, chưa kiểm tra giao diện".
+- `object-info` 1.1.0:
+  - Đọc schema theo `slugs`, chia lô nhỏ; response `200` thiếu `items` coi là đọc thất bại.
+  - Tiểu mục Formula tính khi đọc và khi lưu (`calculation_mode`): field dùng để lọc hoặc sắp xếp phải là formula tính khi lưu.
+  - `formula-validation.md` thêm mục Bẫy thường gặp khi viết Formula:
+    - khoảng trắng trước `$`, tiền tố `$record.`, null từng cấp lookup;
+    - ngày trống thành 1970; chuỗi trông giống số bị ép kiểu nên gắn đơn vị;
+    - nhãn lựa chọn đọc bằng `getSelectedOptions()`;
+    - sửa ví dụ `price * quantity`.
+  - Điều kiện quan hệ `reference` của `rollup_summary`, các mã lỗi tương ứng.
+  - Dòng `personnel` trong bảng Object đặc biệt: `name` là mã, họ tên dùng field họ tên.
+  - Mục Checklist hoàn thiện Object mới: quyền, list view, layout, filter, menu/report, kiểm tra giao diện.
+- `object-record` 1.1.0:
+  - Cách xử lý mã lỗi ghi `r: 37/47/48/14/25` (riêng `r: 41` ở mức quan sát).
+  - Mục Trường hợp không hỗ trợ của bộ lọc, kèm cách thay thế.
+  - Mục Dữ liệu kiểm thử: marker, số nhỏ, snapshot, phần dư không hoàn tác, không xoá chứng từ App chuẩn đang giữ số liệu, hỏi người dùng trước thao tác không hoàn tác.
+- `create-cogover-objects` 1.1.0: chọn kiểu quan hệ cho phép rollup; mã có số 0 đầu dùng Short text; link checklist Object mới.
+- `object-filter` 1.1.0: filter "Tất cả" tự sinh của Object mới chỉ có cột hệ thống, cần cấu hình cột nghiệp vụ; formula tính khi đọc không dùng để lọc.
+- `object-layout` 1.2.0: layout tiêu chuẩn tự sinh không nhận `content`; `title: null` gây `42201`, mẫu jq không gửi `title` khi rỗng. Tiểu mục Kiểm tra trên giao diện cho form Tạo/Xem và inline edit.
+- `object-button` 1.0.3: giới hạn điều kiện hiển thị theo contract của skill; kiểm tra giao diện trước khi báo hoàn tất.
+- `layout-scripting` 1.1.0: R4 chỉ là lớp giao diện, khoá dữ liệu dùng security rule. Case 7: tự điền người yêu cầu và thông tin liên quan khi tạo record.
+- `object-transition-rule` 1.1.0: mục Tác động tới Process, nút và action của App.
+  - Thiếu cặp chuyển thì bước cập nhật của Process lỗi `resultCode: 1`; Records API trả `r: 48`.
+  - Flow trỏ option đã xoá làm update bị từ chối (`r: 436`). Snapshot, liệt kê rồi hỏi xác nhận trước khi loại khỏi rule.
+- `user-permission` 1.2.0:
+  - Mục Khoá sửa theo trạng thái: security rule loại 2 kèm script layout; sửa dữ liệu đã khoá đi qua Process, hỏi xác nhận phạm vi trước khi backfill.
+  - `name` phòng ban dạng mảng bản dịch; manager là `level: 1`.
+  - Sửa câu "partial update" trong `api-positions.md`.
+- `app-menu-manager` 1.1.0:
+  - Mục Route runtime trong App: `/reports/{slug}`, `/dashboards/{slug}`, `/{appSlug}/o/{objectSlug}/{recordId}`. `redirectToPage` của Send Notification không có `/` đầu.
+  - Quét link trong Process khi tách hoặc đổi App.
+  - Kiểm chứng cây menu theo mọi target. ACL Menu Item chỉ xác nhận trên giao diện của persona, vì cây menu qua API vẫn có thể trả item (quan sát).
+- `dashboard-builder` 1.2.0: mục Lỗi hiển thị đã gặp: report nguồn có hai cấp group làm chart trống, ô KPI thấp bị cắt số, aggregate trùng hậu tố slug (quan sát). Nghiệm thu bằng route `/dashboards/{slug}` trên trình duyệt người dùng đã đăng nhập sẵn; sửa câu hạn chế mở giao diện cho thống nhất.
+- `report-builder` 1.2.1: report nguồn cho chart dùng một group hàng; ACL người xem đưa vào report contract.
+- `build-cogover-app` 3.1.0: cổng `DONE` cần bằng chứng giao diện; dữ liệu test và phần dư theo mục Dữ liệu kiểm thử; menu "của tôi" theo persona; link record theo App; mỗi agent song song dùng thư mục tạm riêng.
+- `process-creator` 1.6.0:
+  - Nội dung người đọc (email, thông báo, form) in field đã sẵn sàng hiển thị: họ tên thay mã nhân sự, số tiền đã định dạng, nhãn lựa chọn, giá trị trống. `$number.format` trong Text Template ghi mức cần kiểm chứng.
+  - Ngôn ngữ người dùng ngay từ đầu; quyết định so sánh theo `value` ổn định của option.
+  - Send Email: chốt sender ở Bước 1, người nhận lookup nhiều giá trị thì Loop, bản ghi debug chỉ là bằng chứng `PARTIAL`.
+  - Scheduled/Triggered: sau khi publish version thay thế, vô hiệu hoá version bị thay (căn cứ tài liệu lifecycle, chưa quan sát version cũ chạy trùng); hỏi xác nhận khi process đang được dùng.
+  - Luồng duyệt: đọc lại bản ghi trước gateway, nhánh chặn khi bản ghi bị huỷ lúc đang chờ.
+  - Điều kiện gateway an toàn với null, kiểu dữ liệu và rollup.
+  - Chiến lược kích hoạt lại của trigger; cấu trúc `taskPerformer` (performer biến và cố định ở group riêng).
+  - Giới hạn Get Records; Update Record bị transition rule chặn nhưng `SKIP_ERROR` che lỗi.
+  - Quét `Process_Debug_data` sau mỗi lượt chạy, đọc đủ trang trước khi kết luận thiếu lượt.
+  - `Math.round(n, places)`; submit `select_list` theo `value`.
+  - Ví dụ `SELECT_LIST` trong `gateway.md` và ghi chú điều kiện trên field formula trong `record-triggered-flow.md`, `get-records-task.md`.
+- `cogover-custom-module` 1.19.0:
+  - Reference mới `backend-review-and-testing.md`: backend có ghi dữ liệu cần review code và E2E bằng sub-agent khác sub-agent viết code; kiểm thử trên dữ liệu test, không sửa tay số liệu đang kiểm thử.
+  - Bước 1 thêm khảo sát và spike khi module ghi số liệu do backend khác duy trì. Liệt kê mọi đường làm đổi giá trị; quy tắc dựa trên rollup/formula của record cha cần trigger trên Object con.
+  - `batch-writes-and-checkpoints.md` thêm mục Ghi số liệu do backend khác duy trì: ghi delta, khoá → đọc lại → tính → ghi, nhật ký nhiều bước, đối soát. Ví dụ đã typecheck với SDK `0.15.0`, chưa chạy trên Workspace.
+  - Cách tạo `objects.json` cho generator.
+  - Xin xác nhận publish và activate theo từng version, mỗi thao tác một lệnh; hoãn activate khi đang có kiểm thử thủ công trên cùng record.
+  - `npm test` chạy cả test nghiệp vụ trong `test/`.
+- `cogover-overview` 1.2.1: nguyên tắc đo hành vi backend của App chuẩn bằng dữ liệu test trước khi thiết kế logic bổ sung.
+
 ## 4.20.1 - 2026-10-02
 
 - Cập nhật `cogover-api-auth` 1.0.3: quy ước request chung thêm quy tắc body có ký tự ngoài ASCII phải gửi từ file JSON UTF-8 không BOM bằng `--data-binary @file`, không viết inline trong lệnh shell, vì trên Windows tham số dòng lệnh đi qua code page ANSI làm hỏng dấu tiếng Việt trước khi gửi (đã gặp ở mô tả Project và repository Git).

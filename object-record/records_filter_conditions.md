@@ -51,6 +51,18 @@ Node và trigger của Process dùng cùng phần tử điều kiện nhưng b�
 
 Cách đánh số trong `logic` giống `logic_sequence`. Quy tắc riêng của từng node (giá trị `logicType` khi không có điều kiện, điều kiện tham chiếu biến workflow) theo tài liệu node trong `$process-creator`.
 
+## Trường hợp không hỗ trợ
+
+Áp dụng cho Records API, saved filter ([$object-filter](../object-filter/SKILL.md)) và Get Records của Process; điều kiện trigger trên field formula chưa kiểm chứng.
+
+| Trường hợp | Hành vi đã gặp | Thay thế |
+|---|---|---|
+| Field `formula` tính khi đọc (`calculation_mode: 0`) | `r: 0` với 0 dòng, không báo lỗi | Dùng field lưu, xem [Formula tính khi đọc và khi lưu](../object-info/references/api-object-fields.md#formula-tính-khi-đọc-và-khi-lưu) |
+| `params` dạng chuỗi ngày cho field formula trả ngày | `400`, `r: 14`, `Fetching data failed` | Timestamp ms hoặc toán tử ngày tương đối (ví dụ `Next n days`); hoặc lọc trên field ngày gốc |
+| Đường dẫn qua lookup (`lookup_a.lookup_b.field`) trong `field` | `400`, `r: 14` | Lọc theo ID record lookup cấp 1, lưu khoá text trên chính Object, hoặc lọc phía client |
+| `filters: []` | `400`, `r: 25`, `Invalid filter` (đã gặp trên Object lịch sử) | Lấy tất cả bằng `{"field": "id", "op": "not null", "params": null, "fieldType": "short_text"}` |
+| `op` ngoài bảng (ví dụ `equals`) | `r: 25` | Chỉ dùng `op` trong bảng dưới theo đúng `fieldType` |
+
 ## Các điều kiện
 
 Ví dụ ba điều kiện: boolean bằng `0`, số điện thoại không trống, email không trống:

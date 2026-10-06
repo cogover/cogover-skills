@@ -173,6 +173,8 @@ Không chạy song song nếu:
 
 Mọi full-state/replacement resource dùng single-writer, đọc state mới nhất, merge ngoài scope và read-back sau một mutation có chủ đích.
 
+Sub-agent song song dùng thư mục tạm riêng, không ghi chung file trung gian. Các agent dùng chung một API key chia chung giới hạn tần suất ([$cogover-api-auth](../../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện)): giới hạn số writer đồng thời trên Workspace, chia việc kiểm chứng dài thành bước nhỏ có kết quả lưu file.
+
 ## Snapshot và mutation safety
 
 ### Snapshot contract
@@ -198,4 +200,5 @@ Lưu response/config đủ để diff và phục hồi thủ công, không lưu 
 - ID/slug resource thực tế.
 - Read-back postcondition.
 - Test result/observable side effect.
+- Cấu hình hiển thị: bằng chứng xem trên giao diện hoặc xác nhận của người dùng; chưa có thì ghi rõ trong Deviation.
 - Deviation, containment và fixture/tài nguyên tạm còn lại.

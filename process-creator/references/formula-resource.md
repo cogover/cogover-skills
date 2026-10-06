@@ -21,7 +21,7 @@ return Json.stringify(data);
 
 // Hàm hỗ trợ (ví dụ)
 Text.concat("Hello", " ", "World"); Text.upper($userTask.Root.text_1)
-Math.round(3.7); Math.max(10, 20)
+Math.round(3.7, 0); Math.max(10, 20)   // Math.round bắt buộc tham số thứ hai (số chữ số thập phân)
 Date.now(); Date.format($userTask.Root.ngay, "dd/MM/yyyy")
 Json.stringify(data); Json.parse(jsonString)
 if ($userTask.Root.number_1 > 10) { return "Lớn"; } else { return "Nhỏ"; }

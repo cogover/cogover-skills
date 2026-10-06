@@ -66,7 +66,7 @@ Element `elEx:sendNotificationTask` (không phải `bpmn2:userTask`/`bpmn2:sendT
 | `4` | Giá trị từ biến hoặc resource | title, subTitle, content, to |
 | `5` | Nhập trực tiếp có chứa biến bên trong (Simple Renderer) | title, subTitle, content |
 
-Type `5` (Simple Renderer) chỉ render biến, KHÔNG hỗ trợ if/else, for như Text Template; cú pháp `$userTask.Root.submittedBy.id`, KHÔNG bọc `{{}}` hay `{}`.
+Type `5` (Simple Renderer) chỉ render biến, KHÔNG hỗ trợ if/else, for như Text Template; cú pháp `$userTask.Root.submittedBy.id`, KHÔNG bọc `{{}}` hay `{}`. Type `5` in nguyên giá trị lưu trữ (mã nhân sự, số dạng `1.0E8`, JSON của field lựa chọn, chữ `null`): chọn field theo [text-template-resource.md mục Hiển thị giá trị field cho người đọc](../references/text-template-resource.md#hiển-thị-giá-trị-field-cho-người-đọc).
 
 ### Chi tiết các trường trong `data`
 
@@ -77,7 +77,7 @@ Type `5` (Simple Renderer) chỉ render biến, KHÔNG hỗ trợ if/else, for n
 - `from`: từ hệ thống workspace `{"isRaw": true, "fromType": "WORKSPACE_NOTIFICATION", "personnel": null}`; từ personnel nhập ID `{"isRaw": true, "fromType": "PERSONNEL_NOTIFICATION", "personnel": "PER_SAMPLE_USER"}`; từ personnel lấy từ biến/resource `{"isRaw": false, "fromType": "PERSONNEL_NOTIFICATION", "personnel": "$userTask.Root.submittedBy"}`.
 - `to`: mảng người nhận; khác Send Email, dùng Personnel ID trực tiếp. Type 1 `{"type": 1, "value": "PER_SAMPLE_USER"}` (nhiều người: nhiều phần tử); type 4 `{"type": 4, "value": "$userTask.Root.submittedBy", "valuePathName": "workflow_resource:list.userTask / Root / Submitted By", "valueDataType": "RECORD"}`.
 - `exclude`: danh sách người bị loại trừ; phần tử cấu trúc giống `to`.
-- `redirectType`: `"ROUTING"` (điều hướng trong app theo routing mặc định) hoặc `"NEW_TAB"` (mở tab mới); `redirectToPage`: `{"type": 1, "value": "https://example.com/detail"}` là URL mở khi click thông báo (`""` nếu không có).
+- `redirectType`: `"ROUTING"` (điều hướng trong app theo routing mặc định) hoặc `"NEW_TAB"` (mở tab mới); `redirectToPage`: đường dẫn mở khi click thông báo (`{"type": 1, "value": ""}` nếu không có). Mở bản ghi: route runtime trong App mà người nhận mở được ([app-menu-manager](../../app-menu-manager/references/app-menu-model.md#route-runtime-trong-app)), `RECORD_ID` lấy từ resource; dạng đã chạy: `{"type": 5, "value": "{APP_SLUG}/o/{OBJECT_SLUG}/$flow.input.newRecord.id"}` (không có `/` đầu). Không dựng đường dẫn thiếu App slug.
 - `notificationChannel`: ID kênh thông báo đã cấu hình trong workspace. Cách lấy: dùng `$object-record` lấy danh sách bản ghi của đối tượng `object_slug=notification_channel`; thường có 2 bản ghi: `name="All"` (email, web push, in-app) và `name="In App"` (chỉ in-app). Dùng `id` của bản ghi phù hợp lựa chọn người dùng; không chỉ định thì mặc định chọn `name="All"`.
 
 ### Resources của action (`resources.actions[]`)

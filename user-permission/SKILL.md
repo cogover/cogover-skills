@@ -3,13 +3,13 @@ name: user-permission
 description: "Quản lý user, Personnel/Department/Position, Role và quyền dữ liệu Cogover Workspace qua `/bapi/v1` (Users, Roles, Personnels, Departments, Positions, Object Security Rules, API Keys): mời/xoá user, gán/gỡ Role, cấp quyền tính năng và quyền record/field, rule giữ chỗ cho Object do backend quản lý, kiểm thử quyền runtime bằng persona test."
 metadata:
   author: cogover
-  version: "1.1.4"
+  version: "1.2.0"
 ---
 
 # User Permission
 
-- **Phiên bản:** `1.1.4`
-- **Ngày phát hành:** `2026-09-16`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Quản lý người dùng, Role, cơ cấu nhân sự (Personnel, Department, Position, quan hệ phòng ban–vị trí) và quyền dữ liệu trong một Cogover Workspace. Phân loại yêu cầu trước để chọn đúng API cơ cấu hoặc lớp phân quyền. Role ở mức Object chỉ đủ khi cổng tương ứng chưa có security rule active: rule `type: 1` giữ cổng tạo record, rule `type: 2` giữ cổng xem/sửa/xoá; cổng đã có rule active thì quyền của mọi user ở cổng đó, kể cả Super Admin, còn phải được rule phù hợp cấp.
 
@@ -106,6 +106,8 @@ Dùng Role khi user cần tạo, xem, sửa hoặc xoá toàn bộ records của
 2. Liệt kê toàn bộ security rules của Object không lọc trạng thái. Không có rule active → dừng ở Role; `roleActions` áp dụng cho mọi record.
 3. Có rule active → Role một mình chưa đủ; tạo hoặc cập nhật active rule phạm vi rộng cho user/Role đích: rule `type: 1` scope `create` toàn bộ field với `filter.conditions: []` khi cần tạo với mọi dữ liệu; các rule `type: 2` riêng cho View, Edit, Delete với `filter.conditions: []` khi cần quyền trên mọi record hiện có, scope không phải mục đích của rule đặt `none`/`no`. Chỉ cấp action đã có trong `roleActions`.
 
+Object vừa tạo: cấp quyền theo [Checklist hoàn thiện Object mới](../object-info/SKILL.md#checklist-hoàn-thiện-object-mới), gồm cả Object chuẩn mà luồng nghiệp vụ đọc/ghi.
+
 Mẫu Role Ticket ([sample-customer-service-role.json](references/sample-customer-service-role.json)) mô tả "Xem/sửa/xoá…" nhưng `permissions[0].actions` chỉ là `["view"]`: `actions` là nguồn sự thật, không suy ra quyền từ tên hoặc mô tả; muốn cấp xem/sửa/xoá phải gửi đủ `["view", "edit", "delete"]`.
 
 ### 3. Phân quyền chi tiết theo record hoặc field
@@ -150,6 +152,24 @@ Viết `name` và `description` gốc bằng tiếng Anh cho mọi rule mới ho
 - Ví dụ tên/description theo từng action, payload View rule mẫu và ghi chú về mẫu `cash_transaction`: [references/security-rule-examples.md](references/security-rule-examples.md).
 
 Không mặc định workspace user ID và `personnelId` là cùng một ID: kiểm tra chi tiết user để tìm quan hệ Personnel; nếu response không có quan hệ rõ, tra Object Personnel theo email/tài khoản và xác minh khớp chính xác trước khi dùng record ID. Không sao chép `personnelId` top-level từ snapshot Role mẫu vì đó là người gọi request, không phải user đích.
+
+## Khoá sửa theo trạng thái
+
+Mẫu cho yêu cầu "chỉ sửa/xoá được khi Nháp hoặc Từ chối" trên Object chưa có rule `type: 2` active (*đã sửa và chạy đúng*: persona bị từ chối `r: 37` khi sửa bản đã duyệt, sửa được bản nháp):
+
+| Rule | `type` | Audience | `filter` | Scope |
+|---|---|---|---|---|
+| View all | `2` | Người dùng nghiệp vụ | rỗng | `read`: all; `edit: none`; `delete: no` |
+| Edit khi còn sửa được | `2` | Người dùng nghiệp vụ | `status in [draft, rejected]` | `edit`: field nghiệp vụ |
+| Edit field ngoại lệ (nếu có) | `2` | Audience cần | `status in [pending_approval, approved]` | `edit`: chỉ field được phép (ví dụ cờ yêu cầu huỷ, lý do) |
+| Delete khi còn sửa được | `2` | Người dùng nghiệp vụ | `status in [draft, rejected]` | `delete: yes` |
+
+- Rule đầu tiên đưa cổng xem/sửa/xoá về mặc định từ chối, kể cả Super Admin (xem [Hai cổng bảo mật độc lập theo loại rule](#3-hai-cổng-bảo-mật-độc-lập-theo-loại-rule)): tạo View all cùng đợt, cảnh báo theo [An toàn khi ghi và xoá](#an-toàn-khi-ghi-và-xoá) mục 5, rồi kiểm thử bằng persona và admin.
+- Process ghi record bằng Automation không bị các rule này chặn trong các ca đã gặp (*quan sát*): luồng duyệt vẫn đổi trạng thái và ghi field.
+- Backfill dữ liệu đã bị khoá: liệt kê phạm vi record/field sẽ sửa và **hỏi người dùng xác nhận** trước khi chạy, kể cả khi đi qua Process. Chỉ tạm mở rule cho admin khi người dùng đồng ý riêng, có snapshot rule và khôi phục ngay sau đó.
+- Kèm script đặt chỉ đọc theo trạng thái cho trải nghiệm trên form ([R4 của `$layout-scripting`](../layout-scripting/references/recipes.md#r4-readonly-theo-điều-kiện)); script không thay security rule.
+- Object chuẩn của App đã có rule khoá chứng từ sau duyệt: không sửa rule chuẩn; cần mở thêm field sau duyệt thì tạo rule mới cùng họ với audience/field hẹp.
+- Ghi trong `description` của rule và trong bàn giao danh sách field cố ý cho sửa sau khi khoá.
 
 ## Quản lý người dùng
 

@@ -170,3 +170,18 @@ Mỗi userTask có các nút tiêu chuẩn với nhãn tiếng Việt, đặt tr
 - Nhóm nút phải: "Hủy" (cancel) + "Thực hiện" (accept).
 
 Cấu trúc component nhóm nút (`fieldType: "button_group"`, `buttonPosition` `left`/`right`, `listButton[]` với `buttonCategory` `rollback`/`cancel`/`accept`): lấy nguyên mẫu từ `samples/sample_process_1.json`.
+
+## Người thực hiện (`taskPerformer`)
+
+`taskPerformer[group_index][performer_index]`; mỗi phần tử có `field`, `isRawValue`, `value`, `option`.
+
+| Mục đích | Phần tử |
+|---|---|
+| Nhân sự cố định | `{"field": "account", "isRawValue": true, "value": ["{PERSONNEL_ID}"], "option": 2}` |
+| Nhân sự từ resource (lookup nhân sự của bản ghi trigger) | `{"field": "account", "isRawValue": false, "value": [{"value": "$flow.input.newRecord.{lookup_slug}", "valueDataType": "RECORD", "valuePathName": "workflow_resource:list.resource / Input / New Record / {Field Name}"}], "option": 2}` |
+| Output của Organization | Như dòng trên với `value` `$action.{org_slug}.output.records`, `valuePathName` `workflow_resource:list.organization / {Org Name} / Output / Records` |
+
+- `option` (*quan sát, cần kiểm chứng*): `2` chỉ định nhân sự trong `value`, `1` tất cả. Có thể tương ứng bảng `criteria` của [Organization](../nodes/organization-task.md#criteria--điều-kiện-lọc) (`1` ALL, `2` INCLUDING, `3` EXCLUDING): mẫu `option: 3` với `value: []` khi đó là mọi người, không dùng thay cho chỉ định người duyệt.
+- Không trộn performer từ resource và performer ID cố định trong cùng group: người được chỉ định bị từ chối khi submit (`r: 8`). Tách mỗi loại một group: `[[{performer từ resource}], [{performer cố định}]]` (*đã sửa và chạy đúng*).
+- Performer dự phòng (ví dụ admin để hoàn thành kiểm thử khi persona chưa kích hoạt) đặt ở group riêng, ghi vào báo cáo là cấu hình tạm và bỏ bằng version mới trước khi bàn giao. Người không phải performer, kể cả admin, không đọc được form task của Triggered Flow trong lần thử (*quan sát*).
+- Xác minh đúng người: service `36` (`runningUserTasks[].canPerformThisTask`) và submit bằng phiên của chính người thực hiện; persona chưa chấp nhận lời mời chưa đăng nhập được (xem `$user-permission`).

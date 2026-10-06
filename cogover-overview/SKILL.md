@@ -3,13 +3,13 @@ name: cogover-overview
 description: "Tổng quan Cogover Platform: kiến trúc 3 tầng, tính năng chuẩn của Sales, Finance, Inventory, Manufacture, Omni Channel, Custom Frontend/Backend Module và bản đồ skill chuyên trách. Dùng khi hỏi Cogover/App chuẩn làm được gì hoặc cần chọn skill. Tạo/sửa Custom Module: $cogover-custom-module; dự án App end-to-end từ BRD/SRS: $build-cogover-app."
 metadata:
   author: cogover
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Tổng quan Cogover Platform
 
-- **Phiên bản:** `1.2.0`
-- **Ngày phát hành:** `2026-09-24`
+- **Phiên bản:** `1.2.1`
+- **Ngày phát hành:** `2026-10-06`
 
 Điểm vào và bản đồ điều phối cho mọi bài toán Cogover: xác định yêu cầu thuộc tầng nào, đọc reference tương ứng, rồi gọi skill chuyên trách để đọc state thật, thực hiện thay đổi và xác minh.
 
@@ -17,6 +17,7 @@ metadata:
 
 - Không sao chép contract API hoặc hướng dẫn thao tác chi tiết từ overview; skill chuyên trách là nguồn chuẩn.
 - Ứng dụng hiện có: khảo sát state thật trước; giữ cấu hình ngoài phạm vi (ưu tiên merge có chủ đích thay vì thay toàn bộ); sau thay đổi đọc lại state và chạy một kịch bản nghiệp vụ tiêu biểu.
+- Logic bổ sung đọc hoặc ghi số liệu do backend App chuẩn duy trì: đo hành vi backend trên Workspace đích bằng dữ liệu kiểm thử trước khi thiết kế (cập nhật theo chênh lệch hay tính lại, thời điểm ghi, field khoá theo trạng thái). Tách hành vi chuẩn khỏi Process/rule tuỳ biến trên cùng Object; không kết luận từ một lần thử, ghi điều kiện và bằng chứng; gắn kiểm soát tuỳ biến vào field backend thật sự đọc. Custom Module ghi số liệu loại này: khảo sát và spike theo [$cogover-custom-module bước 1](../cogover-custom-module/SKILL.md#1-khảo-sát-và-chọn-frontendbackend).
 - Ứng dụng mới: thiết kế nghiệp vụ và mô hình dữ liệu trước khi tạo cấu hình trên workspace. Mức độ có sẵn và khả năng tùy chỉnh phải được xác minh trên workspace đích trước khi triển khai.
 - Tạo hoặc sửa Custom Frontend Module, Custom Backend Module hay cả hai: chuyển thẳng sang [$cogover-custom-module](../cogover-custom-module/SKILL.md) (điều phối khảo sát, thiết kế, lập trình, kiểm thử và publish). Khi được gọi để cung cấp kiến thức nền cho Custom Module, không chuyển vòng sang `$build-cogover-app`.
 - Dự án end-to-end từ BRD/SRS (fit-gap, tư vấn App, thiết kế dữ liệu, lập plan, triển khai nhiều loại cấu hình): giao orchestration cho [$build-cogover-app](../build-cogover-app/SKILL.md); overview chỉ cung cấp kiến thức nền và bản đồ skill.

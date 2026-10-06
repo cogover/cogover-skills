@@ -3,13 +3,13 @@ name: report-builder
 description: "Tạo, cấu hình, cập nhật và kiểm chứng Report Type cùng saved report Cogover qua Public Report API `/bapi/v1/report` (hoặc `/api/v1/report` bằng phiên Web App): báo cáo 1–5 object, chọn relation và kiểu join, report field/section, cột hiển thị, group, aggregate, filter, sort, formula, preview và xác minh dữ liệu; chẩn đoán báo cáo không trả đúng dữ liệu. Phối hợp $object-info."
 metadata:
   author: cogover
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Report Builder
 
-- **Phiên bản:** `1.2.0`
-- **Ngày phát hành:** `2026-09-29`
+- **Phiên bản:** `1.2.1`
+- **Ngày phát hành:** `2026-10-06`
 
 Tạo và kiểm chứng báo cáo Cogover qua Public Report API: mọi service gọi `POST https://{WORKSPACE_DOMAIN}/bapi/v1/report` (API Key Bearer) với envelope `{ "service": <number>, "payload": <object> }`. Trang hoặc Custom Frontend Module chạy trong Workspace gọi cùng service bằng phiên của người dùng đang đăng nhập qua `/api/v1/report` (`x-req-type: 9`) theo [Gọi bằng phiên Web App](references/api-contract.md#gọi-bằng-phiên-web-app). Chuỗi phụ thuộc: phân tích nghiệp vụ → khám phá object → Report Type → relation/section/field → saved report → preview và xác minh. Skill dừng ở saved report đã chạy đúng; dashboard thuộc `$dashboard-builder` và chỉ làm khi người dùng yêu cầu.
 
@@ -26,6 +26,9 @@ Tạo và kiểm chứng báo cáo Cogover qua Public Report API: mọi service 
 ### 1. Chuẩn hóa yêu cầu
 
 Chuyển yêu cầu thành report contract ngắn: câu hỏi nghiệp vụ và đơn vị đo; population/mẫu số và event/tử số nếu là tỷ lệ; grain (một row đại diện record nào); dimension group theo hàng, theo cột và kỳ thời gian; metric cùng phép aggregate; cột chi tiết, filter, sort, top-N và detail row; dạng output (detail list, summary, pivot hay tỷ lệ); quyền xem/sửa và thư mục đích nếu người dùng nêu; tiêu chí nghiệm thu bằng một hoặc hai kết quả mong đợi.
+
+- Saved report làm nguồn cho chart cột, đường hoặc tròn của dashboard: tối đa 1 group hàng theo [Lỗi hiển thị đã gặp](../dashboard-builder/references/dashboard-model.md#lỗi-hiển-thị-đã-gặp); cần bản 2 cấp để xem dạng bảng thì tạo saved report riêng trên cùng Report Type.
+- Report đặt vào App menu hoặc dashboard cho người dùng nghiệp vụ: ghi role, phòng ban hoặc nhân sự được xem vào report contract.
 
 Nêu giả định có thể đảo ngược. Hỏi lại trước mutation khi join, population, công thức tỷ lệ hoặc quyền chia sẻ còn mơ hồ và có thể làm sai kết quả.
 
@@ -64,7 +67,7 @@ Create response không có ID ở path rõ ràng: không đoán path; resolve b�
 1. Kiểm tra slug bằng service `239`: `data.exists: false` là slug còn trống; `msg: "Failed"` đi kèm `r: 0` không phải lỗi.
 2. `201` với `report_type`, `name`, slug/description và base `setting` đầy đủ. Chỉ truyền ACL/folder khi đã xác định chính xác.
 3. Resolve saved report bằng ID trả về hoặc `229` theo slug.
-4. Khi cần cập nhật group/aggregate/filter/view: đọc detail hiện tại, merge cấu hình cuối vào toàn bộ `setting` hiện có (giữ cả key chưa biết, không dựng lại từ base template) rồi gọi `207`. `acl` và `folder_id` có semantics thay thế: gửi lại giá trị hiện tại nếu muốn giữ nguyên, ACL chuyển về write shape tương đương về semantics; không sao chép `created`, `updated`, `created_by`, `updated_by`, ACL ID hay field server-managed từ response/payload mẫu vào update.
+4. Khi cần cập nhật group/aggregate/filter/view: đọc detail hiện tại, merge cấu hình cuối vào toàn bộ `setting` hiện có (giữ cả key chưa biết, không dựng lại từ base template) rồi gọi `207`. `acl` và `folder_id` có semantics thay thế: gửi lại giá trị hiện tại nếu muốn giữ nguyên, ACL chuyển về write shape tương đương về semantics; không sao chép `created`, `updated`, `created_by`, `updated_by`, ACL ID hay field server-managed từ response/payload mẫu vào update. Chia sẻ cho người xem theo report contract cũng theo quy trình này: thêm phần tử `acl` (ví dụ `type: "role"`, `option: 2`, `functions: ["VIEW"]`) vào ACL hiện có rồi gửi lại đủ `setting`, `folder_id`, `acl`.
 5. Gọi lại `229` và đối chiếu từng phần của `setting` với report contract.
 
 ### 7. Chạy và xác minh dữ liệu
@@ -77,6 +80,8 @@ Ngắn gọn nhưng đủ audit: workspace domain (không kèm token); Report Ty
 
 - Report Type: `https://{WORKSPACE_DOMAIN}/settings/report-types/{REPORT_TYPE_ID}`
 - Saved report: `https://{WORKSPACE_DOMAIN}/settings/reports/{REPORT_SLUG}`
+
+Báo ACL người xem của saved report. Quyền xem của persona chỉ xác nhận bằng phiên của chính persona theo [Gọi bằng phiên Web App](references/api-contract.md#gọi-bằng-phiên-web-app); chưa chạy thì ghi "chưa kiểm chứng quyền xem persona".
 
 ## Dùng công cụ API đi kèm
 

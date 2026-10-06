@@ -79,6 +79,8 @@ if (item.readOnly !== shouldLock) {
 }
 ```
 
+`readOnly` chỉ khoá ô trên form đang mở, không chặn ghi qua API, import hay giao diện khác. Yêu cầu "khoá sửa khi trạng thái là X" cần thêm security rule phía server (*đã sửa và chạy đúng* với hai lớp này) theo [Khoá sửa theo trạng thái](../../user-permission/SKILL.md#khoá-sửa-theo-trạng-thái); khi sinh script loại này, nêu rõ trong mục "Script này làm gì" rằng script không thay security rule.
+
 ## R5: required theo điều kiện (validate chéo field, chặn lưu bằng required)
 
 ```js

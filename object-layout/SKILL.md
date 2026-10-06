@@ -3,13 +3,13 @@ name: object-layout
 description: "Quản lý layout Cogover Object qua Layouts V2 API `/bapi/v1/layouts_v2`: tạo, xem, cập nhật, xoá layout; tạo layout `isForm: 1` khi $object-form gọi; thiết kế row/column/section/tab/group/component; lấy/cập nhật `pageSettings.script`; đặt Object Button vào `pageSettings.buttons.listButton`, Path Component và Federation component (custom component) vào layout xem/sửa."
 metadata:
   author: cogover
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Object Layout
 
-- **Phiên bản:** `1.1.0`
-- **Ngày phát hành:** `2026-09-15`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-10-06`
 
 Skill này được `$object-form` gọi như sub-skill khi Object chưa có layout `isForm` hợp lệ, được `$layout-scripting` dùng để lấy/ghi `pageSettings.script`, và phối hợp với `$object-button`, `$document-template`, `$object-path-component` khi cần đặt Object Button hoặc Path Component lên layout xem/sửa. `$cogover-custom-module` gọi skill này để nhúng custom component của Custom Frontend Module (item Federation component) vào layout.
 
@@ -53,6 +53,9 @@ Quy tắc cho mọi `PUT`:
 - View lại layout ngay trước khi sửa và dựng payload từ `data` mới nhất để không ghi đè thay đổi của người khác.
 - Payload chỉ gồm allowlist: `name`, `objectTypeSlug`, `status`, `type`, `updateRecordMode`, `accessControls`, `hasComponentPath`, `content`, `title`, `pageSettings`, `functionLayout`, `isWeb`, `isMobile`. Không gửi raw `data` của response view (chứa trường server-managed `id`, `slug`, `created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`, `objectTypeId`, `contentCompiled` mà API update không nhận). Không gửi payload rút gọn chỉ có `pageSettings.script` hoặc chỉ `name`, `content`, `pageSettings`.
 - Giữ nguyên mọi giá trị không được yêu cầu thay đổi, kể cả `hasComponentPath` (có thể là `null`); không tự dựng lại `content` khi chỉ sửa script, button hoặc thêm một component.
+- `title` phải là object hợp lệ: view trả `title: null` thì bỏ key `title` khỏi payload hoặc dựng object theo [layout-json-structure.md](references/layout-json-structure.md). Gửi `title: null` hoặc thiếu `pageSettings` trả `42201` với `meta` như `{"title": "array"}`; đọc `meta` để biết khoá sai.
+- Layout tiêu chuẩn sinh khi tạo Object (thường tên "Giao diện tiêu chuẩn") có thể có `content` rỗng và `title: null`; đã quan sát `PUT` `content` vào layout này trả `r: 0` nhưng view lại vẫn rỗng. Không dùng nó làm đích: tạo layout custom theo [Tạo layout](#tạo-layout).
+- Layout custom tồn tại song song với layout tiêu chuẩn: xác định layout giao diện thực sự dùng cho màn Tạo và Xem/Sửa bằng cách mở form, theo [Kiểm tra trên giao diện](#kiểm-tra-trên-giao-diện).
 - Sau `PUT`, view lại và so với payload. So `accessControls` theo `functions`, `option`, `items`, `type`: server cấp lại `id`, `created`, `updated` của từng entry ở mỗi lần `PUT` dù quyền không đổi (đã quan sát). Không khớp: báo dữ liệu chưa được lưu đúng và dừng.
 
 ## Phân loại layout
@@ -68,6 +71,8 @@ Quy tắc cho mọi `PUT`:
 - Layout cho Object Form: Web active với `functionLayout: 1`, quyền `ADD`, `isForm: 1`, `status: 1`, `isWeb: true` và `content` hợp lệ; không dùng `functionLayout: 3` cho fallback này. Sau create, view/list lại và chỉ trả ID cho `$object-form` khi `objectTypeSlug` cùng các giá trị trên khớp chính xác.
 
 ## Tạo layout
+
+Object vừa tạo: xem [Checklist hoàn thiện Object mới](../object-info/SKILL.md#checklist-hoàn-thiện-object-mới).
 
 ### Bước 1: Thu thập yêu cầu
 
@@ -132,7 +137,7 @@ Quy tắc bắt buộc; sai sẽ gây lỗi UI "Cannot read properties of undefi
 
 Object Field component bắt buộc có `id` thật và `fieldMetaData` (chuỗi JSON stringify từ `metaData` của field). Thiếu thì layout vẫn tạo được nhưng không sửa/di chuyển/xoá được field trong layout editor, chỉ thêm mới từ palette.
 
-`showFieldName` của lookup mặc định `"$record.name"`; lookup tới Personnel (`personnel`) dùng `"{$record.first_name} {$record.last_name}"`; Object có cách hiển thị tên riêng thì chỉnh tương ứng.
+`showFieldName` của lookup mặc định `"$record.name"`; lookup tới Personnel (`personnel`) dùng `"{$record.first_name} {$record.last_name}"`, thứ tự họ tên đối chiếu dòng `personnel` của [$object-info](../object-info/SKILL.md) và cách giao diện Workspace đang hiển thị; Object có cách hiển thị tên riêng thì chỉnh tương ứng.
 
 Tên và slug:
 
@@ -180,7 +185,15 @@ curl --silent --location 'https://{WORKSPACE_DOMAIN}/bapi/v1/layouts_v2' \
   }'
 ```
 
-Hiển thị ID, tên, slug và link layout. Khi tạo cho `$object-form`: `functionLayout: 1`, `isForm: 1`, quyền `ADD`, `status: 1`, `isWeb: true`; view/list lại và chỉ trả ID khi khớp.
+Hiển thị ID, tên, slug và link layout. Khi tạo cho `$object-form`: `functionLayout: 1`, `isForm: 1`, quyền `ADD`, `status: 1`, `isWeb: true`; view/list lại và chỉ trả ID khi khớp. Sau đó kiểm tra theo [Kiểm tra trên giao diện](#kiểm-tra-trên-giao-diện).
+
+### Kiểm tra trên giao diện
+
+Quy tắc chung: [xác nhận giao diện](../cogover-api-auth/references/authentication-mechanisms.md#response-giới-hạn-tần-suất-và-xác-nhận-giao-diện) của `$cogover-api-auth`. Riêng layout, script và vị trí nút:
+
+- View lại chỉ xác nhận cấu hình đã lưu, không xác nhận layout nào đang được dùng, field có hiện, script có chạy hay nút có xuất hiện.
+- Trước khi báo hoàn tất: mở form Tạo và màn Xem của một record test trong trình duyệt người dùng đã đăng nhập sẵn. Chưa mở được thì báo "đã lưu, chưa kiểm tra giao diện" và liệt kê màn hình người dùng cần mở.
+- Layout xem có thể tự lưu khi rời ô (inline edit): chỉ thao tác thử trên record test.
 
 ## Xem danh sách và chi tiết layout
 
@@ -199,13 +212,13 @@ Chỉ thay đổi `pageSettings.script`; giữ `content`, `title`, quyền truy 
 
 1. View layout, dựng payload theo allowlist (mục "Layouts V2 API"), chỉ thay `pageSettings.script` bằng script mới; xoá script → `""` hoặc `null` theo payload hiện tại của hệ thống.
 2. Ưu tiên dựng bằng `jq --rawfile` để giữ nguyên xuống dòng và dấu nháy; mẫu ở [references/layout-update-payload.md](references/layout-update-payload.md).
-3. `PUT`, rồi view lại và so sánh `data.pageSettings.script`. Lỗi hoặc không khớp → báo và dừng.
+3. `PUT`, rồi view lại và so sánh `data.pageSettings.script`. Lỗi hoặc không khớp → báo và dừng. Khớp → [kiểm tra trên giao diện](#kiểm-tra-trên-giao-diện) xem script có chạy.
 
 ## Cập nhật layout
 
 1. View layout, hiển thị cấu trúc hiện tại, thu thập thay đổi, dựng `content`/`pageSettings` mới theo quy tắc ở "Tạo layout".
 2. Payload theo allowlist; giữ nguyên phần không được yêu cầu thay đổi.
-3. Mặc định cập nhật ngay; `PUT` rồi view lại để xác minh.
+3. Mặc định cập nhật ngay; `PUT` rồi view lại để xác minh, sau đó [kiểm tra trên giao diện](#kiểm-tra-trên-giao-diện).
 
 ## Xoá layout
 
@@ -222,7 +235,7 @@ Chỉ thay đổi `pageSettings.script`; giữ `content`, `title`, quyền truy 
 3. Resolve layout đích bằng ID hoặc list layout của Object: cùng `objectTypeSlug`, `functionLayout: 2` hoặc `3` có `VIEW_EDIT`. Nhiều layout theo quyền hoặc web/mobile → không tự cập nhật tất cả; yêu cầu người dùng chọn khi chưa đủ ngữ cảnh.
 4. View layout ngay trước khi sửa; đọc `pageSettings.buttons`, chưa có thì khởi tạo theo schema trong reference.
 5. Chống trùng theo `buttonId`: đã có thì không thêm bản sao, chỉ đổi cấu hình hiển thị khi được yêu cầu. Giữ nguyên thứ tự và toàn bộ entry hiện có; chèn vào vị trí người dùng yêu cầu, không chỉ định thì append cuối. Dùng ID, slug, icon thật của button; mặc định quan sát được `type: "gray"`, `size: "medium"`, `customName: null`.
-6. Payload theo allowlist, chỉ thay `pageSettings.buttons`; `PUT` rồi view lại. Thành công khi `pageSettings.buttons.listButton` có đúng một entry với `buttonId` mục tiêu và các button cũ vẫn nguyên.
+6. Payload theo allowlist, chỉ thay `pageSettings.buttons`; `PUT` rồi view lại. Lưu thành công khi `pageSettings.buttons.listButton` có đúng một entry với `buttonId` mục tiêu và các button cũ vẫn nguyên; nút chỉ coi là xuất hiện sau khi [kiểm tra trên giao diện](#kiểm-tra-trên-giao-diện).
 
 Gỡ button khỏi layout chỉ làm button không hiển thị trên layout đó, không xoá Object Button. Xoá Object Button không tự gỡ tham chiếu trên layout → kiểm tra các layout liên quan trước khi xoá.
 
@@ -275,5 +288,7 @@ Quy trình:
 | Layout tham khảo có `content: null`, `[]` hoặc cấp con rỗng | Không dùng làm payload, không gọi API với nó; dựng `content` mới từ fields và asset mẫu rồi kiểm tra lại hierarchy |
 | API trả slug đã tồn tại | Tăng hậu tố số của slug và gọi lại |
 | Field người dùng nêu không có trong Object | Báo field không tồn tại trong Object và hỏi lại |
+| `42201` khi `PUT` | Đọc `meta`; thường do `title: null`, thiếu `pageSettings`/`type`/`updateRecordMode`. Bỏ `title` null hoặc dựng object, giữ đủ allowlist |
+| `PUT` `content` trả `r: 0` nhưng view vẫn rỗng | Layout tiêu chuẩn tự sinh; tạo layout custom, không thử lại |
 | Update trả thành công nhưng view không khớp | Báo dữ liệu chưa được lưu đúng và dừng; không fallback endpoint khác |
 | 401/403, 422 hoặc `r` khác `0`, 5xx | Theo `$cogover-api-auth`; hiển thị `r`, `msg`; không đổi endpoint hay cơ chế xác thực |

@@ -82,6 +82,7 @@
 - Mọi element BPMN-spec (`process`, `startEvent`, `endEvent`, `sequenceFlow`, `incoming`, `outgoing`, `extensionElements`, `userTask`, `exclusiveGateway`, `inclusiveGateway`, `parallelGateway`, ...) dùng prefix `bpmn2:`; `xmlns:bpmn2` là namespace duy nhất được khai báo. Không dùng `bpmn:`: prefix này không khai báo và một số element có thể bị server silent-strip khi CREATE. Giữ nguyên prefix tuỳ chỉnh `elEx:`, `configEx:`, `bpmndi:`, `dc:`, `di:`, `bioc:`, `xsi:`.
 - Node dùng `elEx:` (`elEx:httpTask`, `elEx:getRecordTask`, ...) cần thêm `xmlns:elEx="http://element-ex/schema"` vào `bpmn2:definitions`.
 - Response GET có thể serialize `incoming`, `outgoing`, `sequenceFlow` thành `bpmn:` (canonicalization phía server); không PUT/DELETE/recreate chỉ để đổi prefix. Request create/update do skill sinh vẫn chỉ dùng `bpmn2:`.
+- Sửa `xmlString` đọc từ view: đổi `<bpmn:`/`</bpmn:` về `bpmn2:` trước, rồi parse bằng thư viện XML và tìm phần tử theo namespace `http://www.omg.org/spec/BPMN/20100524/MODEL` và `id`. Không dùng regex dựa trên một prefix cố định. Tên node mới phải escape XML.
 - Tránh lỗi `NODE_HAS_NO_CONNECT_TO_ANYTHING`: khai báo mọi ID (node, flow, action, gateway, ...) thành biến dùng chung từ đầu và dùng nhất quán trong cả XML lẫn JSON; mỗi `sequenceFlow` có `sourceRef`/`targetRef` trỏ đúng `id` node; mỗi node liệt kê đủ `incoming`/`outgoing` (Start chỉ có outgoing, End chỉ có incoming); mọi `sequenceFlow` nằm bên trong `bpmn2:process`.
 
 ## Bố cục node (BPMNDiagram)
