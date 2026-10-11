@@ -40,11 +40,11 @@ Cách khuyến nghị là cài bộ skill dưới dạng plugin `cogover`; repos
 
 | Môi trường | Cài đặt | Cập nhật |
 |---|---|---|
-| Claude (app) | **Settings → Plugins → + Add → Add marketplace**, nhập `cogover/cogover-skills`, rồi cài plugin **Cogover** | Bật auto-update cho marketplace `cogover` |
+| Claude (app) | **Settings → Plugins → + Add → Add marketplace**, nhập `cogover/cogover-skills`, giữ **Sync automatically** bật, bấm **Sync**, rồi cài plugin **cogover** | Tự động khi **Sync automatically** bật |
 | Claude Code | `/plugin marketplace add cogover/cogover-skills` rồi `/plugin install cogover@cogover` | `/plugin` → **Marketplaces** → `cogover` → **Enable auto-update**; hoặc `/plugin marketplace update cogover` |
 | Codex | `codex plugin marketplace add cogover/cogover-skills` rồi `codex plugin add cogover@cogover` | `codex plugin marketplace upgrade cogover` |
 
-Marketplace bên thứ ba **mặc định tắt auto-update** trên Claude; bật một lần để nhận bản mới. Skill trong plugin có tiền tố `cogover:`, ví dụ `/cogover:object-info` trên Claude Code.
+Trên Claude Code, marketplace bên thứ ba **mặc định tắt auto-update**; bật một lần để nhận bản mới. Skill trong plugin có tiền tố `cogover:`, ví dụ `/cogover:object-info` trên Claude Code.
 
 ### Cài thủ công
 

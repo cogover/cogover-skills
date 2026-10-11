@@ -40,11 +40,11 @@ The recommended way is to install the collection as the `cogover` plugin; this r
 
 | Environment | Install | Update |
 |---|---|---|
-| Claude (app) | **Settings → Plugins → + Add → Add marketplace**, enter `cogover/cogover-skills`, then install the **Cogover** plugin | Enable auto-update for the `cogover` marketplace |
+| Claude (app) | **Settings → Plugins → + Add → Add marketplace**, enter `cogover/cogover-skills`, keep **Sync automatically** on, select **Sync**, then install the **cogover** plugin | Automatic while **Sync automatically** is on |
 | Claude Code | `/plugin marketplace add cogover/cogover-skills`, then `/plugin install cogover@cogover` | `/plugin` → **Marketplaces** → `cogover` → **Enable auto-update**; or `/plugin marketplace update cogover` |
 | Codex | `codex plugin marketplace add cogover/cogover-skills`, then `codex plugin add cogover@cogover` | `codex plugin marketplace upgrade cogover` |
 
-Claude **disables auto-update by default** for third-party marketplaces; enable it once to receive new releases. Plugin skills are namespaced with `cogover:`, for example `/cogover:object-info` in Claude Code.
+Claude Code **disables auto-update by default** for third-party marketplaces; enable it once to receive new releases. Plugin skills are namespaced with `cogover:`, for example `/cogover:object-info` in Claude Code.
 
 ### Manual installation
 
