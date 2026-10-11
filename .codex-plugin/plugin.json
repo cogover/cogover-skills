@@ -1,0 +1,27 @@
+{
+  "name": "cogover",
+  "version": "4.21.0",
+  "description": "Agent Skills for exploring and configuring Cogover Workspaces: data models, layouts, permissions, workflows, reports, AI Agents and Custom Modules.",
+  "author": {
+    "name": "Cogover",
+    "url": "https://cogover.com"
+  },
+  "homepage": "https://github.com/cogover/cogover-skills",
+  "repository": "https://github.com/cogover/cogover-skills",
+  "license": "MIT",
+  "keywords": [
+    "cogover",
+    "low-code",
+    "crm",
+    "workflow",
+    "skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Cogover",
+    "shortDescription": "Explore and configure Cogover Workspaces",
+    "developerName": "Cogover",
+    "category": "Productivity",
+    "websiteURL": "https://cogover.com"
+  }
+}

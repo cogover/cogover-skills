@@ -106,17 +106,52 @@ class ReleaseTests(unittest.TestCase):
 
     def test_changed_reference_requires_skill_and_release_bumps(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); skill = root / 'example-skill'; skill.mkdir()
-            text = '---\nname: example-skill\ndescription: Example\nmetadata:\n  author: example\n  version: "1.0.0"\n---\n\n# Example\n\n- **Phiên bản:** `1.0.0`\n- **Ngày phát hành:** `2026-01-01`\n'
-            (skill / 'SKILL.md').write_text(text); (skill / 'reference.md').write_text('old')
+            root = Path(directory); skill = root / 'skills' / 'example-skill'; skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text(SKILL_TEXT); (skill / 'reference.md').write_text('old')
             (root / 'VERSION.md').write_text('- Version: `1.0.0`\n- Release date: `2026-01-01`\n')
-            def git(*args):
-                subprocess.run(['git', '-C', directory, *args], check=True, capture_output=True)
-            git('init'); git('config', 'user.name', 'Example'); git('config', 'user.email', 'user@example.com'); git('add', '.'); git('commit', '-m', 'fixture')
+            git_fixture(directory)
             (skill / 'reference.md').write_text('new')
-            issues = release.check_changes(root, 'HEAD', ['example-skill/SKILL.md', 'example-skill/reference.md', 'VERSION.md'])
+            issues = release.check_changes(root, 'HEAD', ['skills/example-skill/SKILL.md', 'skills/example-skill/reference.md', 'VERSION.md'])
             self.assertIn('example-skill: SKILL_VERSION_NOT_BUMPED', issues)
             self.assertIn('VERSION.md: RELEASE_VERSION_NOT_BUMPED', issues)
+
+    def test_moving_legacy_root_skill_into_skills_dir_is_not_a_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); legacy = root / 'example-skill'; legacy.mkdir()
+            (legacy / 'SKILL.md').write_text(SKILL_TEXT); (legacy / 'reference.md').write_text('same')
+            (root / 'VERSION.md').write_text('- Version: `1.0.0`\n- Release date: `2026-01-01`\n')
+            git_fixture(directory)
+            (root / 'skills').mkdir(); legacy.rename(root / 'skills' / 'example-skill')
+            self.assertEqual([], release.check_changes(root, 'HEAD', ['skills/example-skill/SKILL.md', 'skills/example-skill/reference.md', 'VERSION.md']))
+            (root / 'skills' / 'example-skill' / 'reference.md').write_text('changed')
+            issues = release.check_changes(root, 'HEAD', ['skills/example-skill/SKILL.md', 'skills/example-skill/reference.md', 'VERSION.md'])
+            self.assertIn('example-skill: SKILL_VERSION_NOT_BUMPED', issues)
+
+    def test_plugin_manifests_follow_release_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'VERSION.md').write_text('- Version: `1.2.0`\n- Release date: `2026-01-01`\n')
+            for path in release.PLUGIN_MANIFESTS:
+                (root / path).parent.mkdir(parents=True, exist_ok=True)
+                (root / path).write_text(json.dumps({'name': 'cogover', 'version': '1.2.0'}))
+            for path in release.MARKETPLACE_MANIFESTS:
+                (root / path).parent.mkdir(parents=True, exist_ok=True)
+                (root / path).write_text(json.dumps({'plugins': [{'name': 'cogover', 'source': './'}]}))
+            self.assertEqual([], release.check_plugin(root))
+            (root / '.codex-plugin/plugin.json').write_text(json.dumps({'name': 'cogover', 'version': '1.1.0'}))
+            (root / '.claude-plugin/marketplace.json').write_text(json.dumps({'plugins': [{'name': 'cogover', 'version': '1.2.0'}]}))
+            issues = release.check_plugin(root)
+            self.assertIn('.codex-plugin/plugin.json: PLUGIN_VERSION_NOT_RELEASE_VERSION', issues)
+            self.assertIn('.claude-plugin/marketplace.json: VERSION_SET_IN_MARKETPLACE', issues)
+
+
+SKILL_TEXT = '---\nname: example-skill\ndescription: Example\nmetadata:\n  author: example\n  version: "1.0.0"\n---\n\n# Example\n\n- **Phiên bản:** `1.0.0`\n- **Ngày phát hành:** `2026-01-01`\n'
+
+
+def git_fixture(directory):
+    def git(*args):
+        subprocess.run(['git', '-C', directory, *args], check=True, capture_output=True)
+    git('init'); git('config', 'user.name', 'Example'); git('config', 'user.email', 'user@example.com'); git('add', '.'); git('commit', '-m', 'fixture')
 
 
 if __name__ == '__main__':

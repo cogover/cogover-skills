@@ -20,7 +20,7 @@ Instructions and examples should be understandable without access to private Cog
 
 ## Repository structure
 
-Each skill lives in a directory at the repository root. Its directory name must match `name` in the `SKILL.md` frontmatter. Keep supporting documentation in `references/`, executable helpers in `scripts/`, sample assets in `assets/`, and agent metadata in `agents/` where applicable.
+Each skill lives in a directory under `skills/`. Its directory name must match `name` in the `SKILL.md` frontmatter. The repository root also holds the plugin manifests (`.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`); their `version` must equal the release version in `VERSION.md`, and marketplace entries must not set `version`. Keep supporting documentation in `references/`, executable helpers in `scripts/`, sample assets in `assets/`, and agent metadata in `agents/` where applicable.
 
 Keep instructions focused on the skill's scope, and link to supporting references instead of duplicating long explanations. Resolve resource links relative to the document containing them. When editing the repository README, keep [English](README.md) and [Vietnamese](README.vi.md) content consistent.
 

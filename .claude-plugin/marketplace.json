@@ -1,0 +1,13 @@
+{
+  "name": "cogover",
+  "owner": { "name": "Cogover", "url": "https://cogover.com" },
+  "metadata": { "description": "Official Cogover plugins for Claude." },
+  "plugins": [
+    {
+      "name": "cogover",
+      "source": "./",
+      "description": "Agent Skills for exploring and configuring Cogover Workspaces.",
+      "category": "productivity"
+    }
+  ]
+}

@@ -10,33 +10,45 @@ For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGEL
 
 | Need | Skill |
 |---|---|
-| Understand the platform and choose the right capabilities | [cogover-overview](cogover-overview/SKILL.md) |
-| Coordinate an App project from requirements to deployment | [build-cogover-app](build-cogover-app/SKILL.md) |
-| Authenticate API requests and manage credentials | [cogover-api-auth](cogover-api-auth/SKILL.md) |
-| Build AI Agents, Skills, Tools, and knowledge retrieval; test conversations | [agent-builder](agent-builder/SKILL.md) |
-| Build custom frontends and backends | [cogover-custom-module](cogover-custom-module/SKILL.md) |
-| Design schemas in Excel | [create-cogover-objects](create-cogover-objects/SKILL.md) |
-| Look up and manage Objects, fields, and formulas | [object-info](object-info/SKILL.md) |
-| Read and write records, files, and rich text images | [object-record](object-record/SKILL.md) |
-| Configure Object layouts | [object-layout](object-layout/SKILL.md) |
-| Write scripts for interface logic | [layout-scripting](layout-scripting/SKILL.md) |
-| Configure Buttons and action chains | [object-button](object-button/SKILL.md) |
-| Configure filters and list columns | [object-filter](object-filter/SKILL.md) |
-| Create forms for collecting external submissions | [object-form](object-form/SKILL.md) |
-| Configure status transition rules | [object-transition-rule](object-transition-rule/SKILL.md) |
-| Provide stage guidance with a Path Component | [object-path-component](object-path-component/SKILL.md) |
-| Configure field history tracking | [object-history-tracking](object-history-tracking/SKILL.md) |
-| Manage members, organizational structure, roles, and data permissions | [user-permission](user-permission/SKILL.md) |
-| Build and test Process/BPMN workflows | [process-creator](process-creator/SKILL.md) |
-| Create Word, Excel, and HTML templates and export documents | [document-template](document-template/SKILL.md) |
-| Configure Report Types and reports | [report-builder](report-builder/SKILL.md) |
-| Configure dashboards and charts | [dashboard-builder](dashboard-builder/SKILL.md) |
-| Manage Apps and menus | [app-menu-manager](app-menu-manager/SKILL.md) |
-| Manage Button and App Menu icons | [cogover-icon](cogover-icon/SKILL.md) |
+| Understand the platform and choose the right capabilities | [cogover-overview](skills/cogover-overview/SKILL.md) |
+| Coordinate an App project from requirements to deployment | [build-cogover-app](skills/build-cogover-app/SKILL.md) |
+| Authenticate API requests and manage credentials | [cogover-api-auth](skills/cogover-api-auth/SKILL.md) |
+| Build AI Agents, Skills, Tools, and knowledge retrieval; test conversations | [agent-builder](skills/agent-builder/SKILL.md) |
+| Build custom frontends and backends | [cogover-custom-module](skills/cogover-custom-module/SKILL.md) |
+| Design schemas in Excel | [create-cogover-objects](skills/create-cogover-objects/SKILL.md) |
+| Look up and manage Objects, fields, and formulas | [object-info](skills/object-info/SKILL.md) |
+| Read and write records, files, and rich text images | [object-record](skills/object-record/SKILL.md) |
+| Configure Object layouts | [object-layout](skills/object-layout/SKILL.md) |
+| Write scripts for interface logic | [layout-scripting](skills/layout-scripting/SKILL.md) |
+| Configure Buttons and action chains | [object-button](skills/object-button/SKILL.md) |
+| Configure filters and list columns | [object-filter](skills/object-filter/SKILL.md) |
+| Create forms for collecting external submissions | [object-form](skills/object-form/SKILL.md) |
+| Configure status transition rules | [object-transition-rule](skills/object-transition-rule/SKILL.md) |
+| Provide stage guidance with a Path Component | [object-path-component](skills/object-path-component/SKILL.md) |
+| Configure field history tracking | [object-history-tracking](skills/object-history-tracking/SKILL.md) |
+| Manage members, organizational structure, roles, and data permissions | [user-permission](skills/user-permission/SKILL.md) |
+| Build and test Process/BPMN workflows | [process-creator](skills/process-creator/SKILL.md) |
+| Create Word, Excel, and HTML templates and export documents | [document-template](skills/document-template/SKILL.md) |
+| Configure Report Types and reports | [report-builder](skills/report-builder/SKILL.md) |
+| Configure dashboards and charts | [dashboard-builder](skills/dashboard-builder/SKILL.md) |
+| Manage Apps and menus | [app-menu-manager](skills/app-menu-manager/SKILL.md) |
+| Manage Button and App Menu icons | [cogover-icon](skills/cogover-icon/SKILL.md) |
 
 ## Install and update
 
-Download or clone this repository. Each subdirectory containing a `SKILL.md` file is a skill; keep all accompanying `references`, `scripts`, `assets`, and `agents` directories intact. Installing the full collection is recommended because the skills reference one another and share the same authentication contract.
+The recommended way is to install the collection as the `cogover` plugin; this repository is also a marketplace for Claude and Codex. The plugin contains all 23 skills in the `skills/` directory and follows [VERSION.md](VERSION.md).
+
+| Environment | Install | Update |
+|---|---|---|
+| Claude (app) | **Settings → Plugins → + Add → Add marketplace**, enter `cogover/cogover-skills`, keep **Sync automatically** on, select **Sync**, then install the **cogover** plugin | Automatic while **Sync automatically** is on |
+| Claude Code | `/plugin marketplace add cogover/cogover-skills`, then `/plugin install cogover@cogover` | `/plugin` → **Marketplaces** → `cogover` → **Enable auto-update**; or `/plugin marketplace update cogover` |
+| Codex | `codex plugin marketplace add cogover/cogover-skills`, then `codex plugin add cogover@cogover` | `codex plugin marketplace upgrade cogover` |
+
+Claude Code **disables auto-update by default** for third-party marketplaces; enable it once to receive new releases. Plugin skills are namespaced with `cogover:`, for example `/cogover:object-info` in Claude Code.
+
+### Manual installation
+
+Download or clone this repository. Each subdirectory of `skills/` containing a `SKILL.md` file is a skill; keep all accompanying `references`, `scripts`, `assets`, and `agents` directories intact. Installing the full collection is recommended because the skills reference one another and share the same authentication contract.
 
 In Codex, you can ask `$skill-installer` to install the skill directories from the published repository URL. Alternatively, copy the directories into the skill location configured for your environment; Codex supports repository-level `.agents/skills` directories and a user-level skills directory. Restart Codex if changes do not appear. See the [official guide](https://learn.chatgpt.com/docs/build-skills).
 
@@ -60,7 +72,7 @@ Prefer the spreadsheet and browser skills available in your environment. If no s
 
 ## Workspace and authentication
 
-The authoritative reference is [cogover-api-auth](cogover-api-auth/SKILL.md). An example origin is `https://tennant.cogover.com`. `COGOVER_BASE_URL` and `COGOVER_API_KEY` are the shared variable names; some examples support compatibility names explained in the authentication skill. Supply keys through a secret store or a scoped process environment, never through repository files or prompts.
+The authoritative reference is [cogover-api-auth](skills/cogover-api-auth/SKILL.md). An example origin is `https://tennant.cogover.com`. `COGOVER_BASE_URL` and `COGOVER_API_KEY` are the shared variable names; some examples support compatibility names explained in the authentication skill. Supply keys through a secret store or a scoped process environment, never through repository files or prompts.
 
 | API group | Authentication | Scope |
 |---|---|---|
@@ -89,7 +101,7 @@ configured Workspace, and prepare a design for my approval before implementation
 
 ## Sample data and validation
 
-Example IDs and domains are synthetic and must not be used directly in Workspace requests. Resolve IDs, slugs, and resources from the target metadata. A response snapshot is not necessarily a valid request payload. Read the [Process sample conventions](process-creator/samples/README.md) and use the relevant validator.
+Example IDs and domains are synthetic and must not be used directly in Workspace requests. Resolve IDs, slugs, and resources from the target metadata. A response snapshot is not necessarily a valid request payload. Read the [Process sample conventions](skills/process-creator/samples/README.md) and use the relevant validator.
 
 From the repository root:
 
