@@ -33,6 +33,10 @@ EMAIL = re.compile(r'\b[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b')
 TENANT = re.compile(r'https?://([a-z0-9-]+)\.cogover\.(?:net|com)\b', re.I)
 SECRET_KEY = re.compile(r'^(?:secret(?:AllVersions|Key|Token)?|api[_-]?key|access[_-]?token|refresh[_-]?token|password|basicPassword|authorization|cookie)$', re.I)
 RELEASE_TIMEZONE = dt.timezone(dt.timedelta(hours=7), name='ICT')
+SKILLS_DIR = 'skills'
+PLUGIN_NAME = 'cogover'
+PLUGIN_MANIFESTS = ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']
+MARKETPLACE_MANIFESTS = ['.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json']
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -142,6 +146,45 @@ def release_today() -> dt.date:
     return dt.datetime.now(RELEASE_TIMEZONE).date()
 
 
+def skill_dirs(root: Path) -> list[Path]:
+    base = root / SKILLS_DIR
+    if not base.is_dir():
+        return []
+    return sorted(p for p in base.iterdir() if p.is_dir() and (p / 'SKILL.md').is_file())
+
+
+def check_plugin(root: Path) -> list[str]:
+    """Claude and Codex manifests must ship the collection under one name and the VERSION.md release."""
+    issues = []
+    try:
+        release = release_version((root / 'VERSION.md').read_text())
+    except (ValueError, OSError):
+        return issues  # reported by check_versions
+    for path in PLUGIN_MANIFESTS:
+        try:
+            manifest = json.loads((root / path).read_text())
+        except (ValueError, OSError):
+            issues.append(path + ': INVALID_PLUGIN_MANIFEST')
+            continue
+        if manifest.get('name') != PLUGIN_NAME:
+            issues.append(path + ': PLUGIN_NAME_MISMATCH')
+        if manifest.get('version') != release:
+            issues.append(path + ': PLUGIN_VERSION_NOT_RELEASE_VERSION')
+    for path in MARKETPLACE_MANIFESTS:
+        try:
+            catalog = json.loads((root / path).read_text())
+        except (ValueError, OSError):
+            issues.append(path + ': INVALID_MARKETPLACE_MANIFEST')
+            continue
+        entries = [p for p in catalog.get('plugins', []) if p.get('name') == PLUGIN_NAME]
+        if len(entries) != 1:
+            issues.append(path + ': PLUGIN_ENTRY_MISSING')
+        elif 'version' in entries[0]:
+            # A marketplace version overrides plugin.json and silently blocks updates.
+            issues.append(path + ': VERSION_SET_IN_MARKETPLACE')
+    return issues
+
+
 def check_versions(root: Path, skills: list[Path]) -> list[str]:
     issues = []
     today = release_today()
@@ -179,25 +222,39 @@ def check_changes(root: Path, baseline: str, files: list[str]) -> list[str]:
     if listing.returncode:
         return ['BASE_REF_UNAVAILABLE']
     old_files = set(listing.stdout.decode().splitlines())
-    old_skills = {str(Path(p).parent) for p in old_files if p.count('/') == 1 and p.endswith('/SKILL.md')}
-    current_skills = {p.name for p in root.iterdir() if p.is_dir() and (p / 'SKILL.md').is_file()}
+    # Skill name -> directory in the baseline; accepts the legacy root layout.
+    old_skills = {}
+    for p in old_files:
+        parts = p.split('/')
+        if parts[-1] != 'SKILL.md':
+            continue
+        if len(parts) == 2:
+            old_skills.setdefault(parts[0], parts[0])
+        elif len(parts) == 3 and parts[0] == SKILLS_DIR:
+            old_skills[parts[1]] = SKILLS_DIR + '/' + parts[1]
+    current_skills = {p.name: SKILLS_DIR + '/' + p.name for p in skill_dirs(root)}
     changed = set()
     issues = []
-    for name in old_skills | current_skills:
-        names = {p for p in old_files | set(files) if p.startswith(name + '/')}
-        for path in names:
-            previous = git(root, 'show', baseline + ':' + path)
-            current = root / path
+    for name in set(old_skills) | set(current_skills):
+        old_dir, new_dir = old_skills.get(name), current_skills.get(name)
+        if not old_dir or not new_dir:
+            changed.add(name)
+            continue
+        relative = {p[len(old_dir) + 1:] for p in old_files if p.startswith(old_dir + '/')}
+        relative |= {p[len(new_dir) + 1:] for p in files if p.startswith(new_dir + '/')}
+        for path in relative:
+            previous = git(root, 'show', baseline + ':' + old_dir + '/' + path)
+            current = root / new_dir / path
             if previous.returncode or not current.is_file() or previous.stdout != current.read_bytes():
                 changed.add(name)
                 break
-    for name in changed & old_skills & current_skills:
-        old = frontmatter(git(root, 'show', baseline + ':' + name + '/SKILL.md').stdout.decode())
-        new_text = (root / name / 'SKILL.md').read_text()
+    for name in changed & set(old_skills) & set(current_skills):
+        old_text = git(root, 'show', baseline + ':' + old_skills[name] + '/SKILL.md').stdout.decode()
+        old = frontmatter(old_text)
+        new_text = (root / current_skills[name] / 'SKILL.md').read_text()
         new = frontmatter(new_text)
         if version_tuple(new['metadata']['version']) <= version_tuple(old['metadata']['version']):
             issues.append(name + ': SKILL_VERSION_NOT_BUMPED')
-        old_text = git(root, 'show', baseline + ':' + name + '/SKILL.md').stdout.decode()
         old_date = re.search(r'\*\*Ngày phát hành:\*\*\s*`([^`]+)`', old_text)
         new_date = re.search(r'\*\*Ngày phát hành:\*\*\s*`([^`]+)`', new_text)
         if not new_date or (old_date and new_date.group(1) < old_date.group(1)):
@@ -258,7 +315,7 @@ def check(root: Path, baseline: str | None = None, history: bool = False) -> tup
     files = sorted(set(p.decode() for p in listing.stdout.split(b'\0') if p))
     public_files = set(files)
     issues = []
-    skills = sorted(p for p in root.iterdir() if p.is_dir() and (p / 'SKILL.md').is_file())
+    skills = skill_dirs(root)
     for required in ['README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md', 'VERSION.md']:
         if not (root / required).is_file() or not is_public_path(root, root / required, public_files):
             issues.append(required + ': REQUIRED_FILE_MISSING')
@@ -293,17 +350,18 @@ def check(root: Path, baseline: str | None = None, history: bool = False) -> tup
                 if not (root / target).exists():
                     issues.append(name + ': STALE_RESOURCE_PATH')
     issues.extend(check_versions(root, skills))
+    issues.extend(check_plugin(root))
     if baseline:
         try:
             issues.extend(check_changes(root, baseline, files))
         except (ValueError, KeyError, TypeError, yaml.YAMLError):
             issues.append('BASELINE_METADATA_ERROR')
-    samples = sorted((root / 'process-creator/samples').glob('*.json'))
+    samples = sorted((root / SKILLS_DIR / 'process-creator/samples').glob('*.json'))
     for sample in samples:
-        result = subprocess.run([sys.executable, str(root / 'process-creator/scripts/validate_bpmn_geometry.py'), str(sample), '--mode', 'response'], capture_output=True)
+        result = subprocess.run([sys.executable, str(root / SKILLS_DIR / 'process-creator/scripts/validate_bpmn_geometry.py'), str(sample), '--mode', 'response'], capture_output=True)
         if result.returncode:
             issues.append(str(sample.relative_to(root)) + ': BPMN_GEOMETRY_FAILED')
-    result = subprocess.run([sys.executable, str(root / 'create-cogover-objects/scripts/validate_record_name.py'), str(root / 'create-cogover-objects/assets/Objects_for_CRM.xlsx')], capture_output=True)
+    result = subprocess.run([sys.executable, str(root / SKILLS_DIR / 'create-cogover-objects/scripts/validate_record_name.py'), str(root / SKILLS_DIR / 'create-cogover-objects/assets/Objects_for_CRM.xlsx')], capture_output=True)
     if result.returncode:
         issues.append('Objects_for_CRM.xlsx: RECORD_NAME_VALIDATION_FAILED')
     history_count = 0

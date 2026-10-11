@@ -10,33 +10,45 @@ Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.
 
 | Nhu cầu | Skill |
 |---|---|
-| Hiểu nền tảng và chọn khả năng phù hợp | [cogover-overview](cogover-overview/SKILL.md) |
-| Điều phối dự án App từ yêu cầu đến triển khai | [build-cogover-app](build-cogover-app/SKILL.md) |
-| Xác thực API và quản lý credential | [cogover-api-auth](cogover-api-auth/SKILL.md) |
-| Xây AI Agent, Skill, Tool, tra cứu kiến thức và kiểm thử hội thoại | [agent-builder](agent-builder/SKILL.md) |
-| Xây frontend/backend tùy chỉnh | [cogover-custom-module](cogover-custom-module/SKILL.md) |
-| Thiết kế schema bằng Excel | [create-cogover-objects](create-cogover-objects/SKILL.md) |
-| Tra cứu và quản lý Object/field/formula | [object-info](object-info/SKILL.md) |
-| Đọc/ghi record, file và ảnh rich text | [object-record](object-record/SKILL.md) |
-| Bố cục giao diện Object | [object-layout](object-layout/SKILL.md) |
-| Script cho logic giao diện | [layout-scripting](layout-scripting/SKILL.md) |
-| Button và chuỗi hành động | [object-button](object-button/SKILL.md) |
-| Bộ lọc và cột danh sách | [object-filter](object-filter/SKILL.md) |
-| Biểu mẫu thu thập dữ liệu bên ngoài | [object-form](object-form/SKILL.md) |
-| Quy tắc chuyển trạng thái | [object-transition-rule](object-transition-rule/SKILL.md) |
-| Path Component hướng dẫn theo giai đoạn | [object-path-component](object-path-component/SKILL.md) |
-| Cấu hình lịch sử thay đổi field | [object-history-tracking](object-history-tracking/SKILL.md) |
-| Thành viên, cơ cấu nhân sự, role và quyền dữ liệu | [user-permission](user-permission/SKILL.md) |
-| Process/BPMN và kiểm thử quy trình | [process-creator](process-creator/SKILL.md) |
-| Mẫu Word/Excel/HTML và export | [document-template](document-template/SKILL.md) |
-| Report Type và báo cáo | [report-builder](report-builder/SKILL.md) |
-| Dashboard và biểu đồ | [dashboard-builder](dashboard-builder/SKILL.md) |
-| App và menu | [app-menu-manager](app-menu-manager/SKILL.md) |
-| Icon Button và App Menu | [cogover-icon](cogover-icon/SKILL.md) |
+| Hiểu nền tảng và chọn khả năng phù hợp | [cogover-overview](skills/cogover-overview/SKILL.md) |
+| Điều phối dự án App từ yêu cầu đến triển khai | [build-cogover-app](skills/build-cogover-app/SKILL.md) |
+| Xác thực API và quản lý credential | [cogover-api-auth](skills/cogover-api-auth/SKILL.md) |
+| Xây AI Agent, Skill, Tool, tra cứu kiến thức và kiểm thử hội thoại | [agent-builder](skills/agent-builder/SKILL.md) |
+| Xây frontend/backend tùy chỉnh | [cogover-custom-module](skills/cogover-custom-module/SKILL.md) |
+| Thiết kế schema bằng Excel | [create-cogover-objects](skills/create-cogover-objects/SKILL.md) |
+| Tra cứu và quản lý Object/field/formula | [object-info](skills/object-info/SKILL.md) |
+| Đọc/ghi record, file và ảnh rich text | [object-record](skills/object-record/SKILL.md) |
+| Bố cục giao diện Object | [object-layout](skills/object-layout/SKILL.md) |
+| Script cho logic giao diện | [layout-scripting](skills/layout-scripting/SKILL.md) |
+| Button và chuỗi hành động | [object-button](skills/object-button/SKILL.md) |
+| Bộ lọc và cột danh sách | [object-filter](skills/object-filter/SKILL.md) |
+| Biểu mẫu thu thập dữ liệu bên ngoài | [object-form](skills/object-form/SKILL.md) |
+| Quy tắc chuyển trạng thái | [object-transition-rule](skills/object-transition-rule/SKILL.md) |
+| Path Component hướng dẫn theo giai đoạn | [object-path-component](skills/object-path-component/SKILL.md) |
+| Cấu hình lịch sử thay đổi field | [object-history-tracking](skills/object-history-tracking/SKILL.md) |
+| Thành viên, cơ cấu nhân sự, role và quyền dữ liệu | [user-permission](skills/user-permission/SKILL.md) |
+| Process/BPMN và kiểm thử quy trình | [process-creator](skills/process-creator/SKILL.md) |
+| Mẫu Word/Excel/HTML và export | [document-template](skills/document-template/SKILL.md) |
+| Report Type và báo cáo | [report-builder](skills/report-builder/SKILL.md) |
+| Dashboard và biểu đồ | [dashboard-builder](skills/dashboard-builder/SKILL.md) |
+| App và menu | [app-menu-manager](skills/app-menu-manager/SKILL.md) |
+| Icon Button và App Menu | [cogover-icon](skills/cogover-icon/SKILL.md) |
 
 ## Cài đặt và cập nhật
 
-Tải hoặc clone repository này. Mỗi thư mục con chứa `SKILL.md` là một skill; giữ nguyên toàn bộ `references`, `scripts`, `assets` và `agents` đi kèm. Nên cài cả bộ vì các skill tham chiếu chéo và dựa vào cùng contract xác thực.
+Cách khuyến nghị là cài bộ skill dưới dạng plugin `cogover`; repository này đồng thời là marketplace cho Claude và Codex. Plugin chứa đủ 23 skill trong thư mục `skills/` và cập nhật theo [VERSION.md](VERSION.md).
+
+| Môi trường | Cài đặt | Cập nhật |
+|---|---|---|
+| Claude (app) | **Settings → Plugins → + Add → Add marketplace**, nhập `cogover/cogover-skills`, rồi cài plugin **Cogover** | Bật auto-update cho marketplace `cogover` |
+| Claude Code | `/plugin marketplace add cogover/cogover-skills` rồi `/plugin install cogover@cogover` | `/plugin` → **Marketplaces** → `cogover` → **Enable auto-update**; hoặc `/plugin marketplace update cogover` |
+| Codex | `codex plugin marketplace add cogover/cogover-skills` rồi `codex plugin add cogover@cogover` | `codex plugin marketplace upgrade cogover` |
+
+Marketplace bên thứ ba **mặc định tắt auto-update** trên Claude; bật một lần để nhận bản mới. Skill trong plugin có tiền tố `cogover:`, ví dụ `/cogover:object-info` trên Claude Code.
+
+### Cài thủ công
+
+Tải hoặc clone repository này. Mỗi thư mục con của `skills/` chứa `SKILL.md` là một skill; giữ nguyên toàn bộ `references`, `scripts`, `assets` và `agents` đi kèm. Nên cài cả bộ vì các skill tham chiếu chéo và dựa vào cùng contract xác thực.
 
 Với Codex, có thể yêu cầu `$skill-installer` cài các thư mục skill từ URL repository đã public. Hoặc sao chép các thư mục vào vị trí skill được môi trường cấu hình; Codex hỗ trợ `.agents/skills` theo repository và thư mục skill người dùng. Nếu chưa thấy thay đổi, khởi động lại Codex. Xem [hướng dẫn chính thức](https://learn.chatgpt.com/docs/build-skills).
 
@@ -60,7 +72,7 @@ Khi cập nhật, so sánh version, sao lưu tùy chỉnh riêng rồi thay **to
 
 ## Workspace và xác thực
 
-Nguồn chuẩn: [cogover-api-auth](cogover-api-auth/SKILL.md). Cấu hình origin ví dụ là `https://tennant.cogover.com`. `COGOVER_BASE_URL` và `COGOVER_API_KEY` là tên biến chung; một số ví dụ hỗ trợ tên tương thích được giải thích trong skill auth. Cấp key qua secret store hoặc scoped environment của tiến trình, không dán vào repository hoặc prompt.
+Nguồn chuẩn: [cogover-api-auth](skills/cogover-api-auth/SKILL.md). Cấu hình origin ví dụ là `https://tennant.cogover.com`. `COGOVER_BASE_URL` và `COGOVER_API_KEY` là tên biến chung; một số ví dụ hỗ trợ tên tương thích được giải thích trong skill auth. Cấp key qua secret store hoặc scoped environment của tiến trình, không dán vào repository hoặc prompt.
 
 | Nhóm API | Xác thực | Phạm vi |
 |---|---|---|
@@ -89,7 +101,7 @@ tôi đã cấu hình và chuẩn bị thiết kế để tôi duyệt trước 
 
 ## Dữ liệu mẫu và kiểm tra
 
-Các ID và domain ví dụ là dữ liệu tổng hợp, không dùng trực tiếp để gọi Workspace. Resolve lại ID/slug/tài nguyên theo metadata đích. Snapshot response không mặc nhiên là request hợp lệ. Đọc [quy ước mẫu Process](process-creator/samples/README.md) và validator tương ứng.
+Các ID và domain ví dụ là dữ liệu tổng hợp, không dùng trực tiếp để gọi Workspace. Resolve lại ID/slug/tài nguyên theo metadata đích. Snapshot response không mặc nhiên là request hợp lệ. Đọc [quy ước mẫu Process](skills/process-creator/samples/README.md) và validator tương ứng.
 
 Từ root repository:
 
