@@ -8,6 +8,10 @@
   },
   "homepage": "https://github.com/cogover/cogover-skills",
   "repository": "https://github.com/cogover/cogover-skills",
+  "documentationUrl": "https://github.com/cogover/cogover-skills#readme",
+  "supportUrl": "https://github.com/cogover/cogover-skills/issues",
+  "privacyPolicyUrl": "https://cogover.com/en/privacy-policy",
+  "termsOfServiceUrl": "https://cogover.com/en/general-terms",
   "license": "MIT",
   "keywords": [
     "cogover",
