@@ -72,7 +72,7 @@ Prefer the spreadsheet and browser skills available in your environment. If no s
 
 ## Workspace and authentication
 
-The authoritative reference is [cogover-api-auth](skills/cogover-api-auth/SKILL.md). An example origin is `https://tennant.cogover.com`. `COGOVER_BASE_URL` and `COGOVER_API_KEY` are the shared variable names; some examples support compatibility names explained in the authentication skill. Supply keys through a secret store or a scoped process environment, never through repository files or prompts.
+The authoritative reference is [cogover-api-auth](skills/cogover-api-auth/SKILL.md). Use your Workspace origin, for example `https://tennant.cogover.com`, as the base URL. `COGOVER_BASE_URL` and `COGOVER_API_KEY` are the shared variable names; some examples accept compatibility names explained in the authentication skill. Supply keys through a secret store or a scoped process environment, never through repository files or prompts.
 
 | API group | Authentication | Scope |
 |---|---|---|
