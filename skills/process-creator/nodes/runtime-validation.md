@@ -27,7 +27,7 @@
 | Sub Process sync | Child instance/action chạy, output mapping về parent và gateway downstream kiểm tra giá trị; chỉ thấy `SUCCESS` mà output trống là PARTIAL |
 | Export Record | Output chứa FileValue/file tải được, mở được và thuộc đúng record/template |
 | Custom Module Action | GET-back giữ đúng action `CUSTOM_MODULE_ACTION`, `projectSlug`/`actionKey`, `inputs`, `runAs` và `output.result.children` theo `outputSchema`, không có lỗi `70`–`76`; đúng instance có `output.status = COMPLETED`, `output.result.*` đúng giá trị và bước sau dùng được; action ghi dữ liệu thì đọc lại record. Nhánh lỗi, danh tính và `continueOnFailure` theo `custom-module-action-task.md` |
-| AI Agent | GET-back giữ đúng action `AI_AGENT`, cấu hình và output resources; đúng instance có `output.status = COMPLETED`, câu trả lời đáp ứng instruction và bước sau đọc được output. Nếu yêu cầu tool/record change, phải đối chiếu hiệu ứng thực tế; nếu có schema, kiểm tra `output.result` đúng kiểu và dùng được downstream. Đọc `ai-agent-task.md` cho test phiên nối tiếp, lỗi và timeout |
+| AI Agent | GET-back giữ đúng action `AI_AGENT`, cấu hình và output resources; đúng instance có `output.status = COMPLETED`, câu trả lời đáp ứng instruction và bước sau đọc được output. Nếu yêu cầu tool/record change, phải đối chiếu hiệu ứng thực tế; nếu có schema, kiểm tra `output.result` đúng kiểu và dùng được downstream. Node có `delivery`: GET-back còn `delivery`; đúng instance có `output.deliveryStatus = SENT` kèm `deliveryConversationId`, người nhận xác nhận thấy tin trong hội thoại AI chat với agent và nhánh theo `deliveryStatus` chạy đúng; `output.status = COMPLETED` không chứng minh tin đã gửi. Lượt chạy thật gửi tin thật: dùng người nhận test đã biết trước. Đọc `ai-agent-task.md` cho test phiên nối tiếp, người nhận không hợp lệ, lỗi và timeout |
 
 ## Email workspace
 
@@ -89,8 +89,10 @@ Mã và thông điệp ghi theo response quan sát được, mỗi lỗi đã đ
 | Lưu | code `15` | Hai vế điều kiện khác kiểu | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy) |
 | Lưu | code `34` `expectedDataType ["NUMBER"]` | Gán Formula `TEXT` vào field số trong Create/Update Record | Đổi kiểu trả về của Formula |
 | Lưu | `TaskPerformerConfig: Resource not found: $flow.input.newRecord.<field>` | Performer hoặc nội dung trỏ field không có trên Object | Dùng field lấy từ `$object-info` |
+| Lưu | code `77` (`fieldKey` `delivery.*`) hoặc `65` (`runAs.personnelId`) ở node AI Agent | Người nhận hoặc nhân sự chạy thiếu, không thuộc Workspace, resource sai kiểu; `conversationMode` khác `NEW`/`LATEST` | [ai-agent-task.md](ai-agent-task.md#validate-khi-lưu) |
 | Kích hoạt | `Init schema failed: Object existed with slug ...` | Chưa xác định | [api-process-lifecycle.md mục 5](../api-process-lifecycle.md#5-lỗi-thường-gặp) |
-| Chạy | `CAN_NOT_COMPARE_BECAUSE_RESOURCE_VALUE_IS_NULL` | Gateway so sánh resource null | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy) |
+| Chạy | `CAN_NOT_COMPARE_BECAUSE_RESOURCE_VALUE_IS_NULL` | Gateway so sánh resource null, kể cả `output.deliveryStatus` của node AI Agent lỗi trước khi agent chạy | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy); AI Agent: xét `output.status` trước ([ai-agent-task.md](ai-agent-task.md#lỗi-và-nhánh-sau-ai-agent)) |
+| Chạy | AI Agent `output.errorCode` `RECIPIENT_NOT_FOUND`, `RECIPIENT_ACCESS_DENIED`, `RECIPIENT_AI_SEAT_REQUIRED`, hoặc `VALUE_RESOLVE_FAILED` kèm `RECIPIENT_NOT_FOUND` | Người nhận tin không tồn tại, không được dùng agent, chưa có seat AI Agent, hoặc resource người nhận rỗng | [ai-agent-task.md](ai-agent-task.md#lỗi-và-nhánh-sau-ai-agent) |
 | Chạy | `Boolean cannot be cast to Number` | Kiểu điều kiện không khớp kiểu field | [Điều kiện an toàn](gateway.md#điều-kiện-an-toàn-khi-chạy) |
 | Chạy | `ArrayList cannot be cast to String` ở Send Email | Lookup nhiều giá trị trong `to` | Loop từng người ([send-email-task.md](send-email-task.md#4-to-cc-bcc-replyto)) |
 | Chạy | `NullPointerException` ở Get Records | Sort theo field formula | [get-records-task.md](get-records-task.md#giới-hạn-đã-quan-sát-khi-chạy) |

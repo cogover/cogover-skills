@@ -1,0 +1,303 @@
+{
+  "name": "Nhắc việc cho nhân sự bằng AI Agent",
+  "slug": "ai_agent_proactive_chat_example",
+  "description": "Mẫu cấu trúc: thay AGENT_ID và sinh lại ID trước khi tạo; kiểm thử lại trên Workspace đích. Lượt chạy thật gửi tin nhắn chat thật cho người chạy.",
+  "id": "PEAICHATEXAMPLE01",
+  "processInfoId": "PIAICHATEXAMPLE01",
+  "type": "normal_flow",
+  "status": 2,
+  "progressStatus": "DRAFT",
+  "version": "V1",
+  "metadata": {},
+  "permissions": [
+    "VIEW",
+    "ADD",
+    "EDIT",
+    "DELETE",
+    "START_INSTANCE",
+    "CANCEL_INSTANCE",
+    "DELETE_INSTANCE",
+    "VIEW_INSTANCE_PROGRESS",
+    "VIEW_INSTANCE_FULL"
+  ],
+  "accessControls": [
+    {
+      "functions": [
+        "VIEW"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "processInstanceAccessControls": [
+    {
+      "functions": [
+        "START_INSTANCE"
+      ],
+      "type": "personnel",
+      "items": [
+        ""
+      ],
+      "option": 1
+    }
+  ],
+  "starterPermission": {
+    "CANCEL_INSTANCE": false,
+    "DELETE_INSTANCE": false,
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "SEQUENCE_STARTER_CAN_DISCONNECT": false,
+    "SEQUENCE_STARTER_CAN_ASSIGN_TASK": false,
+    "SEQUENCE_STARTER_CAN_EXECUTE_EVERY_TASK": false
+  },
+  "participantPermission": {
+    "VIEW_INSTANCE_PROGRESS": false,
+    "VIEW_INSTANCE_FULL": false,
+    "ANY_PERFORMER_CAN_REASSIGN_TASK": false,
+    "ANY_PERFORMER_CAN_VIEW_PROGRESS_OF_SEQUENCE": false
+  },
+  "overviewScreen": {
+    "layout": [],
+    "permissionGeneralInfo": []
+  },
+  "userTasks": [],
+  "gateWays": [
+    {
+      "isOpen": true,
+      "sourceNodeId": "NOAICHATEXAMPLE03",
+      "name": "Kết quả gửi tin",
+      "description": "",
+      "slug": "ket_qua_gui_tin",
+      "decisionOutcomes": [
+        {
+          "outcomeOrder": -1,
+          "isDefault": true,
+          "logicType": "AND",
+          "targetId": "NOAICHATEXAMPLE06",
+          "color": "#939393",
+          "customConditionLogic": "",
+          "processId": "PEAICHATEXAMPLE01",
+          "name": "Mặc định",
+          "id": "DOAICHATEXAMPLE01",
+          "flowId": "FLAICHATEXAMPLE05",
+          "slug": "_default",
+          "conditions": []
+        },
+        {
+          "outcomeOrder": 0,
+          "isDefault": false,
+          "logicType": "AND",
+          "targetId": "NOAICHATEXAMPLE04",
+          "color": "#ED5044",
+          "customConditionLogic": "1",
+          "processId": "PEAICHATEXAMPLE01",
+          "name": "Agent lỗi",
+          "id": "DOAICHATEXAMPLE02",
+          "flowId": "FLAICHATEXAMPLE03",
+          "slug": "agent_loi",
+          "conditions": [
+            {
+              "leftValueDataType": "TEXT",
+              "decisionOutcomeId": "DOAICHATEXAMPLE02",
+              "processId": "PEAICHATEXAMPLE01",
+              "leftValue": "$action.ai_notify.output.status",
+              "leftValueIsList": false,
+              "conditionOrder": 1,
+              "rightValue": "COMPLETED",
+              "valueType": 1,
+              "id": "DOCAICHATEXAMPLE01",
+              "leftValueName": "workflow_resource:list.aiAgent / Nhắc việc / Output / status",
+              "leftValueMetaDataType": {
+                "characterLimit": {
+                  "min": 0,
+                  "max": 131072,
+                  "warning": "warning limit note"
+                },
+                "richText": "false"
+              },
+              "operator": "!="
+            }
+          ]
+        },
+        {
+          "outcomeOrder": 1,
+          "isDefault": false,
+          "logicType": "AND",
+          "targetId": "NOAICHATEXAMPLE05",
+          "color": "#4CAF50",
+          "customConditionLogic": "1",
+          "processId": "PEAICHATEXAMPLE01",
+          "name": "Đã gửi",
+          "id": "DOAICHATEXAMPLE03",
+          "flowId": "FLAICHATEXAMPLE04",
+          "slug": "da_gui",
+          "conditions": [
+            {
+              "leftValueDataType": "TEXT",
+              "decisionOutcomeId": "DOAICHATEXAMPLE03",
+              "processId": "PEAICHATEXAMPLE01",
+              "leftValue": "$action.ai_notify.output.deliveryStatus",
+              "leftValueIsList": false,
+              "conditionOrder": 1,
+              "rightValue": "SENT",
+              "valueType": 1,
+              "id": "DOCAICHATEXAMPLE02",
+              "leftValueName": "workflow_resource:list.aiAgent / Nhắc việc / Output / deliveryStatus",
+              "leftValueMetaDataType": {
+                "characterLimit": {
+                  "min": 0,
+                  "max": 131072,
+                  "warning": "warning limit note"
+                },
+                "richText": "false"
+              },
+              "operator": "=="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "loops": [],
+  "actions": [
+    {
+      "id": "NOAICHATEXAMPLE02",
+      "processId": "PEAICHATEXAMPLE01",
+      "nodeId": "NOAICHATEXAMPLE02",
+      "type": "AI_AGENT",
+      "name": "Nhắc việc",
+      "slug": "ai_notify",
+      "description": "",
+      "data": "{\"agentId\":\"{AGENT_ID}\",\"instruction\":{\"type\":5,\"value\":\"Xem nội dung sau: $flow.request_text. Nếu có việc người nhận cần xử lý, gửi cho người nhận một tin nhắn ngắn bằng tiếng Việt nêu việc cần làm. Nếu không có việc cần xử lý thì không gửi tin. Không thay đổi dữ liệu.\"},\"contextVariables\":[],\"contextRecords\":[],\"session\":{\"mode\":\"NEW\"},\"runAs\":{\"mode\":\"AGENT_DEFAULT\"},\"approvalPolicy\":\"DENY\",\"timeoutInSeconds\":300,\"maxTurns\":null,\"continueOnFailure\":true,\"delivery\":{\"recipientPersonnelId\":{\"type\":4,\"value\":\"$currentUser\"},\"conversationMode\":\"LATEST\"}}"
+    }
+  ],
+  "resources": {
+    "system": [],
+    "custom": [
+      {
+        "id": "RSAICHATEXAMPLE01",
+        "processId": "PEAICHATEXAMPLE01",
+        "parentId": "PEAICHATEXAMPLE01",
+        "parentTable": "process",
+        "name": "Nội dung cần nhắc",
+        "slug": "request_text",
+        "absoluteSlug": "$flow.request_text",
+        "absolutePath": "workflow_resource:list.variable / Nội dung cần nhắc",
+        "defaultValue": "Có 3 yêu cầu hỗ trợ đang chờ xử lý quá 2 ngày.",
+        "dataType": "TEXT",
+        "type": 1,
+        "isList": false,
+        "editable": true,
+        "assignable": true,
+        "availableForInput": true,
+        "availableForOutput": false,
+        "isStandard": false,
+        "metaDataType": {
+          "characterLimit": {
+            "min": 0,
+            "max": 131072,
+            "warning": "warning limit note"
+          },
+          "richText": "false"
+        },
+        "resourcesUsedIn": [
+          {
+            "actionType": "AI_AGENT",
+            "name": "Nhắc việc",
+            "count": 1,
+            "id": "NOAICHATEXAMPLE02",
+            "parentTable": "action",
+            "slug": "ai_notify"
+          }
+        ]
+      }
+    ],
+    "userTasks": [],
+    "actions": [
+      {
+        "id": "NOAICHATEXAMPLE02",
+        "nodeId": "NOAICHATEXAMPLE02",
+        "name": "Nhắc việc",
+        "slug": "ai_notify",
+        "type": "AI_AGENT",
+        "resources": [
+          {
+            "id": "RSAICHATEXAMPLE02",
+            "processId": "PEAICHATEXAMPLE01",
+            "parentId": "NOAICHATEXAMPLE02",
+            "parentTable": "action",
+            "name": "Start At",
+            "slug": "startAt",
+            "absoluteSlug": "$action.ai_notify.startAt",
+            "absolutePath": "workflow_resource:list.aiAgent / Nhắc việc / Start At",
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          },
+          {
+            "id": "RSAICHATEXAMPLE03",
+            "processId": "PEAICHATEXAMPLE01",
+            "parentId": "NOAICHATEXAMPLE02",
+            "parentTable": "action",
+            "name": "End At",
+            "slug": "endAt",
+            "absoluteSlug": "$action.ai_notify.endAt",
+            "absolutePath": "workflow_resource:list.aiAgent / Nhắc việc / End At",
+            "dataType": "DATE_TIME",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": []
+          },
+          {
+            "id": "RSAICHATEXAMPLE04",
+            "processId": "PEAICHATEXAMPLE01",
+            "parentId": "NOAICHATEXAMPLE02",
+            "parentTable": "action",
+            "name": "Output",
+            "slug": "output",
+            "absoluteSlug": "$action.ai_notify.output",
+            "absolutePath": "workflow_resource:list.aiAgent / Nhắc việc / Output",
+            "dataType": "RECORD",
+            "type": 1,
+            "isList": false,
+            "isStandard": true,
+            "availableForInput": true,
+            "availableForOutput": true,
+            "defaultValue": "",
+            "parentMetadata": "",
+            "metaDataType": {},
+            "resourcesUsedIn": [
+              {
+                "name": "Kết quả gửi tin",
+                "gateWayType": "EXCLUSIVE_GATEWAY",
+                "count": 2,
+                "id": "NOAICHATEXAMPLE03",
+                "parentTable": "decision_outcome",
+                "slug": "ket_qua_gui_tin"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "loops": []
+  },
+  "externalResourcesUsedIn": [],
+  "xmlString": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn2:definitions xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:configEx=\"http://config-ex/schema\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:elEx=\"http://element-ex/schema\" id=\"cogover-diagram\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n  <bpmn2:process id=\"PEAICHATEXAMPLE01\">\n    <bpmn2:startEvent id=\"NOAICHATEXAMPLE01\" name=\"Bắt đầu\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"START_NORMAL_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:outgoing>FLAICHATEXAMPLE01</bpmn2:outgoing>\n    </bpmn2:startEvent>\n    <bpmn2:sendTask id=\"NOAICHATEXAMPLE02\" name=\"Nhắc việc\">\n      <bpmn2:extensionElements>\n        <elEx:aiAgentTask />\n        <configEx:elementInfo renderKey=\"AI_AGENT_TASK\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAICHATEXAMPLE01</bpmn2:incoming>\n      <bpmn2:outgoing>FLAICHATEXAMPLE02</bpmn2:outgoing>\n    </bpmn2:sendTask>\n    <bpmn2:exclusiveGateway id=\"NOAICHATEXAMPLE03\" name=\"Kết quả gửi tin\" default=\"FLAICHATEXAMPLE05\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo openedGateway=\"true\" />\n        <configEx:elementInfo renderKey=\"EXCLUSIVE_GATEWAY\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAICHATEXAMPLE02</bpmn2:incoming>\n      <bpmn2:outgoing>FLAICHATEXAMPLE03</bpmn2:outgoing>\n      <bpmn2:outgoing>FLAICHATEXAMPLE04</bpmn2:outgoing>\n      <bpmn2:outgoing>FLAICHATEXAMPLE05</bpmn2:outgoing>\n    </bpmn2:exclusiveGateway>\n    <bpmn2:endEvent id=\"NOAICHATEXAMPLE04\" name=\"Kết thúc (agent lỗi)\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"END_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAICHATEXAMPLE03</bpmn2:incoming>\n    </bpmn2:endEvent>\n    <bpmn2:endEvent id=\"NOAICHATEXAMPLE05\" name=\"Kết thúc (đã gửi)\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"END_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAICHATEXAMPLE04</bpmn2:incoming>\n    </bpmn2:endEvent>\n    <bpmn2:endEvent id=\"NOAICHATEXAMPLE06\" name=\"Kết thúc (không gửi)\">\n      <bpmn2:extensionElements>\n        <configEx:elementInfo renderKey=\"END_EVENT\" />\n      </bpmn2:extensionElements>\n      <bpmn2:incoming>FLAICHATEXAMPLE05</bpmn2:incoming>\n    </bpmn2:endEvent>\n    <bpmn2:sequenceFlow id=\"FLAICHATEXAMPLE01\" sourceRef=\"NOAICHATEXAMPLE01\" targetRef=\"NOAICHATEXAMPLE02\" />\n    <bpmn2:sequenceFlow id=\"FLAICHATEXAMPLE02\" sourceRef=\"NOAICHATEXAMPLE02\" targetRef=\"NOAICHATEXAMPLE03\" />\n    <bpmn2:sequenceFlow id=\"FLAICHATEXAMPLE03\" name=\"Agent lỗi\" sourceRef=\"NOAICHATEXAMPLE03\" targetRef=\"NOAICHATEXAMPLE04\" />\n    <bpmn2:sequenceFlow id=\"FLAICHATEXAMPLE04\" name=\"Đã gửi\" sourceRef=\"NOAICHATEXAMPLE03\" targetRef=\"NOAICHATEXAMPLE05\" />\n    <bpmn2:sequenceFlow id=\"FLAICHATEXAMPLE05\" name=\"Mặc định\" sourceRef=\"NOAICHATEXAMPLE03\" targetRef=\"NOAICHATEXAMPLE06\" />\n  </bpmn2:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_AICHAT\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_AICHAT\" bpmnElement=\"PEAICHATEXAMPLE01\">\n      <bpmndi:BPMNShape id=\"NOAICHATEXAMPLE01_di\" bpmnElement=\"NOAICHATEXAMPLE01\">\n        <dc:Bounds x=\"40\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"49\" y=\"330\" width=\"42\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAICHATEXAMPLE02_di\" bpmnElement=\"NOAICHATEXAMPLE02\">\n        <dc:Bounds x=\"200\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"203\" y=\"330\" width=\"54\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAICHATEXAMPLE03_di\" bpmnElement=\"NOAICHATEXAMPLE03\">\n        <dc:Bounds x=\"360\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"292\" y=\"330\" width=\"90\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAICHATEXAMPLE04_di\" bpmnElement=\"NOAICHATEXAMPLE04\">\n        <dc:Bounds x=\"560\" y=\"100\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"530\" y=\"170\" width=\"120\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAICHATEXAMPLE05_di\" bpmnElement=\"NOAICHATEXAMPLE05\">\n        <dc:Bounds x=\"560\" y=\"260\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"539\" y=\"330\" width=\"102\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"NOAICHATEXAMPLE06_di\" bpmnElement=\"NOAICHATEXAMPLE06\">\n        <dc:Bounds x=\"560\" y=\"420\" width=\"60\" height=\"60\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"530\" y=\"490\" width=\"120\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"FLAICHATEXAMPLE01_di\" bpmnElement=\"FLAICHATEXAMPLE01\">\n        <di:waypoint x=\"100\" y=\"290\" />\n        <di:waypoint x=\"200\" y=\"290\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FLAICHATEXAMPLE02_di\" bpmnElement=\"FLAICHATEXAMPLE02\">\n        <di:waypoint x=\"260\" y=\"290\" />\n        <di:waypoint x=\"360\" y=\"290\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FLAICHATEXAMPLE03_di\" bpmnElement=\"FLAICHATEXAMPLE03\">\n        <di:waypoint x=\"390\" y=\"260\" />\n        <di:waypoint x=\"390\" y=\"130\" />\n        <di:waypoint x=\"560\" y=\"130\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"448\" y=\"108\" width=\"54\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FLAICHATEXAMPLE04_di\" bpmnElement=\"FLAICHATEXAMPLE04\">\n        <di:waypoint x=\"420\" y=\"290\" />\n        <di:waypoint x=\"560\" y=\"290\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"472\" y=\"268\" width=\"36\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FLAICHATEXAMPLE05_di\" bpmnElement=\"FLAICHATEXAMPLE05\">\n        <di:waypoint x=\"390\" y=\"320\" />\n        <di:waypoint x=\"390\" y=\"450\" />\n        <di:waypoint x=\"560\" y=\"450\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"451\" y=\"428\" width=\"48\" height=\"16\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn2:definitions>"
+}

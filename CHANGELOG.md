@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.23.0 - 2026-10-13
+
+AI Agent chủ động nhắn chat cho nhân sự: cấu hình Tool và node AI Agent của Process. Nội dung đã kiểm chứng trên một Workspace thử nghiệm bằng API của từng skill; điểm chưa chạy thử (người nhận thiếu seat, giới hạn số tin) ghi theo tài liệu sản phẩm.
+
+- `agent-builder` 1.4.0:
+  - Bảng category/type thêm `PERSONNEL_CHAT` / `SEND_MESSAGE`; mục `PERSONNEL_CHAT` trong `references/tools.md`: config `{"conversationMode": "NEW" | "LATEST"}`, ví dụ tạo Tool, mã lỗi khi lưu, input của công cụ, điều kiện người nhận (thuộc Workspace, quyền `EXECUTE` trên Agent, seat AI Agent), dòng ghi người yêu cầu ở đầu tin, giới hạn số tin, phê duyệt từng tin, không có trong hội thoại với khách hàng, tắt Tool có hiệu lực ngay.
+  - Lượt chạy nền đã chỉ định người nhận (`deliverTo` của `agents.start`, người nhận trên node AI Agent của Process) không cần gắn Tool này.
+  - `references/chat-testing.md`: ca kiểm thử Tool `PERSONNEL_CHAT`; `references/api-gaps.md`: xác nhận người nhận khác đã thấy tin cần API đọc hội thoại của người đó.
+- `process-creator` 1.7.0:
+  - `nodes/ai-agent-task.md`: block `delivery` (`recipientPersonnelId` là ID cố định, resource hoặc "Current User"; `conversationMode` `NEW`/`LATEST`), bốn output `deliveryStatus`, `deliveryErrorCode`, `deliveryChatSessionId`, `deliveryConversationId`, mục Validate khi lưu (mã `65`, `77` kèm `fieldKey`), bảng lỗi người nhận lúc chạy và cách rẽ nhánh theo `deliveryStatus` (xét `output.status` trước để không so sánh giá trị `null`).
+  - Sửa hai quy tắc đã lỗi thời: `runAs.personnelId` nhận ActionValue (ID cố định, resource `TEXT`/`RECORD` nhân sự, "Current User" là người thao tác gần nhất trên lượt chạy); lượt chạy không có người khởi tạo với `AGENT_DEFAULT` dùng nhân sự mặc định của agent.
+  - Mẫu mới `samples/sample_ai_agent_proactive_chat.json`; `nodes/runtime-validation.md`, `SKILL.md` và `samples/README.md` cập nhật theo.
+  - `api-process-builder.md`: tạo Process thành công có thể trả HTTP `200` hoặc `201`.
+
 ## 4.22.0 - 2026-10-13
 
 - Cập nhật `cogover-custom-module` 1.20.0 theo `@cogover/sdk` 0.16.0: AI Agent chủ động nhắn chat cho một nhân sự từ code. `agents.start` nhận `deliverTo: { personnelId, conversation, title }` (`conversation` là `"new"`, mặc định, hoặc `"latest"` để nối hội thoại gần nhất của agent với người nhận; `title` một dòng tối đa 80 ký tự): agent tự soạn tin và tự quyết định có gửi hay không, tin tới AI chat của agent với nhân sự đó. Kết quả gửi nằm ở `delivery` của `agents.get` và `agentRun.delivery` của job `onResult` (`status` `SENT`/`NOT_SENT`/`BLOCKED`/`FAILED`, `errorCode`, `chatSessionId`, `conversationId`, `newConversation`; `null` khi không có `deliverTo`), tách khỏi `status` của lượt chạy. Người nhận phải là nhân sự của Workspace, được dùng agent và có seat AI Agent; không đạt thì `start` ném `CogoverApiError` `RECIPIENT_NOT_FOUND`, `RECIPIENT_ACCESS_DENIED`, `RECIPIENT_AI_SEAT_REQUIRED` hoặc `DELIVERY_UNAVAILABLE` (cùng mã ở `details.upstreamCode`) và không lượt chạy nào được tạo. Identity policy không cần mục riêng cho người nhận. Hai kiểu mới `AgentDeliveryTarget`, `AgentDelivery`.

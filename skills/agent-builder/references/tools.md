@@ -16,6 +16,7 @@ Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi 
 | `KNOWLEDGE_BASE` | `QDRANT` | Tra cứu tài liệu đã index trong Data của Workspace; cấu hình danh mục và ngưỡng truy xuất |
 | `DEEP_RESEARCH` | `DEEP_RESEARCH` | Nghiên cứu/tổng hợp sâu dựa trên công cụ kiến thức; cần Tool KNOWLEDGE_BASE khả dụng cùng lúc |
 | `CUSTOM_MODULE` | `INVOKE_ACTION` | Gọi một Custom Module Action: logic riêng của Workspace viết trong Custom Backend Module, có schema input/output. Config `{"projectSlug","actionKey"}`; xem [CUSTOM_MODULE](#custom_module) |
+| `PERSONNEL_CHAT` | `SEND_MESSAGE` | Agent chủ động gửi tin nhắn chat cho một nhân sự, vào hội thoại chat AI của người đó với Agent. Config `{"conversationMode"}`; xem [PERSONNEL_CHAT](#personnel_chat) |
 
 `RECORD`, `ACTIVITY`, `PROCESS` nhận `type` là mảng để chọn nhiều thao tác; các category còn lại dùng một chuỗi. Khi tái sử dụng Tool, giữ nguyên định dạng hợp lệ được trả về. Không trộn type của các category trong một Tool.
 
@@ -183,3 +184,58 @@ Gắn Tool vào Skill, cập nhật Agent, tạo hội thoại mới theo [chat 
 ### Agent do Custom Backend Module khởi chạy
 
 Module có thể chạy Agent nền bằng `agents.start` (không phải Tool). Khi thiết kế Agent cho cách gọi này: người dùng mà module chạy thay phải có quyền `EXECUTE` trên Agent; lời gọi không có người dùng hoặc `runAs: "agent"` cần Agent có `runAsPersonnelId`; `approvalPolicy` mặc định từ chối mọi Tool cần phê duyệt, nên Tool ghi mà lượt chạy nền phải dùng cần được thiết kế lại hoặc module phải được phép `autoApprove`. Agent khởi chạy lẫn nhau qua module được lồng tối đa 3 cấp. Code và identity policy của module thuộc `$cogover-custom-module`.
+
+Lượt chạy nền có thể chỉ định sẵn người nhận tin: `deliverTo` của `agents.start` (SDK từ `0.16.0`, xem `$cogover-custom-module`) hoặc cấu hình người nhận tin chủ động trên node AI Agent của Process (xem [$process-creator](../../process-creator/SKILL.md)). Khi đó Agent có một công cụ gửi tin tới **đúng người nhận đã chỉ định** và tự quyết định có gửi hay không; Agent **không cần** gắn Tool `PERSONNEL_CHAT`. Người nhận vẫn phải đạt điều kiện ở mục [PERSONNEL_CHAT](#personnel_chat) (tồn tại trong Workspace, quyền `EXECUTE` trên Agent, seat AI Agent), không đạt thì lượt chạy bị từ chối ngay khi khởi chạy. Chỉ gắn Tool `PERSONNEL_CHAT` khi Agent phải tự chọn người nhận.
+
+## PERSONNEL_CHAT
+
+Tool cho Agent **chủ động nhắn tin chat cho một nhân sự**: tin đến hội thoại chat AI của người đó với chính Agent này, người nhận được thông báo và trả lời ngay tại đó, không cần họ nhắn trước. Dùng khi Agent tự chọn người nhận trong lúc làm việc: chuyển lời theo yêu cầu của người đang chat, nhắc việc, cảnh báo cho người phụ trách. Người nhận đã được module hoặc Process chỉ định sẵn thì không cần Tool này, xem [Agent do Custom Backend Module khởi chạy](#agent-do-custom-backend-module-khởi-chạy).
+
+### Tạo Tool
+
+Thao tác 40, `config` là chuỗi JSON:
+
+```json
+{
+  "name":"Nhắn tin cho nhân sự",
+  "slug":"message_personnel",
+  "description":"Nhắn cho nhân sự phụ trách khi phiếu hỗ trợ quá hạn xử lý, hoặc khi người dùng nhờ chuyển lời tới một nhân sự cụ thể. Mỗi việc chỉ nhắn một lần.",
+  "category":"PERSONNEL_CHAT",
+  "type":"SEND_MESSAGE",
+  "config":"{\"conversationMode\":\"NEW\"}",
+  "requiresApproval":false,
+  "status":true,
+  "accessControls":[{"functions":["VIEW","EXECUTE"],"type":"role","option":2,"items":["{operator-role-id}"]}]
+}
+```
+
+- `conversationMode` bắt buộc, phân biệt hoa thường: `NEW` mở hội thoại mới cho mỗi tin; `LATEST` nối tin vào hội thoại gần nhất của Agent với người nhận. Thiếu key trả `4020`, giá trị khác trả `4021`; key lạ bị bỏ. Người cấu hình chọn chế độ, mô hình không chọn và không đổi được lúc chạy.
+- `type` là một chuỗi; type khác trả `4019`. Không dùng `parameters`: Agent nhận schema input cố định ở mục Khi chạy.
+- `description` bắt buộc (thiếu trả `4012`) và được đưa cho Agent như hướng dẫn của người cấu hình về **khi nào nên nhắn**: ghi điều kiện gửi, người nhận phù hợp và điều không được làm.
+- `requiresApproval` do người cấu hình chọn, không gửi thì `false`. Bật khi mỗi tin cần người đang chat duyệt trước khi gửi.
+- Tên công cụ Agent thấy luôn là `send_chat_to_personnel`, không lấy theo `slug`. Agent có nhiều Tool loại này thì chỉ Tool đầu tiên đang bật được dùng: mỗi Agent chỉ nên gắn một Tool.
+
+### Khi chạy
+
+Input do mô hình điền:
+
+| Trường | Ý nghĩa |
+|---|---|
+| `personnel_id` | Bắt buộc. ID bản ghi nhân sự của người nhận |
+| `message` | Bắt buộc. Nội dung tin, tối đa 4.000 ký tự, cho phép Markdown |
+| `title` | Tên hội thoại khi mở hội thoại mới, tối đa 80 ký tự; bỏ trống thì lấy 40 ký tự đầu của tin |
+| `handoff_note` | Ghi chú Agent để lại cho chính nó trong hội thoại của người nhận (người nhận không thấy). Chỉ có tác dụng ở lượt chạy nền; bị bỏ khi có người đang chat |
+
+- **Người nhận:** Agent tự chọn và cần đúng ID nhân sự. ID đến từ ngữ cảnh (người chat nêu, `${system.currentUserInfo}`, trường nhân sự của bản ghi Agent đọc được); khi chỉ biết tên hoặc email, Agent tra bằng Tool đọc dữ liệu nhân sự đã gắn. Không có nguồn ID thì gắn thêm Tool đọc phù hợp và ghi cách tra trong `fullInstructions`, không để Agent đoán ID.
+- **Điều kiện người nhận:** tồn tại trong Workspace, có quyền `EXECUTE` trên Agent và có seat AI Agent. Không đạt thì công cụ trả lỗi cho Agent, không mở hội thoại và không gửi gì. Trong lượt chat, Agent chỉ nhận một lý do chung (ID sai hoặc người đó chưa được thiết lập để dùng Agent), nên người chat không dò được nhân sự nào tồn tại hay có quyền.
+- **Hội thoại:** `LATEST` vẫn mở hội thoại mới khi Agent và người nhận chưa có hội thoại, người nhận đã xoá hội thoại gần nhất, hội thoại đó đang chạy một lượt khác hoặc có thêm người khác tham gia.
+- **Tin gửi từ một lượt chat** mở đầu bằng dòng “Tin nhắn gửi theo yêu cầu của {tên người đang chat}:” (Workspace tiếng Anh: “Sent at the request of {name}:”), để người nhận biết ai nhờ gửi. Tin từ lượt chạy nền không có dòng này.
+- **Người nhận trả lời** ngay trong hội thoại đó như một cuộc chat AI của chính họ: Agent chạy theo danh tính áp dụng cho người nhận (Agent nội bộ dùng quyền của người nhận), chỉ biết tin đã gửi và ai nhờ gửi, không mang nội dung cuộc chat hay quyền của người yêu cầu.
+- **Giới hạn mặc định** (ngày tính theo UTC): một Agent gửi tối đa 30 tin mỗi ngày cho một nhân sự; một người được nhờ Agent gửi tối đa 30 tin mỗi ngày trong các lượt chat của mình, tính chung mọi Agent và người nhận; một lượt chạy nền gửi tối đa 20 tin, trong đó tối đa 3 tin cho một nhân sự. Vượt giới hạn thì tin không được gửi và công cụ báo `RECIPIENT_RATE_LIMITED`.
+- **Hội thoại với khách hàng:** Agent đang trả lời khách trên kênh chat không có công cụ này, dù Tool đã gắn.
+- **Phê duyệt:** với `requiresApproval: true`, người đang chat nhận yêu cầu duyệt cho từng tin, gồm ID người nhận, tên hội thoại (nếu có) và toàn bộ nội dung tin; từ chối thì không gửi. Lượt chạy nền không có người duyệt nên tin bị từ chối theo `approvalPolicy` mặc định.
+- **Tắt Tool hoặc đổi `conversationMode`** có hiệu lực ở lần gọi kế tiếp, kể cả trong hội thoại đang mở: hội thoại mới không còn công cụ, hội thoại đang mở nhận lỗi công cụ đã bị tắt. Thay đổi khác (mô tả, phê duyệt) kiểm thử trên hội thoại mới.
+
+### Kiểm thử
+
+Gắn Tool vào Skill, cập nhật Agent, tạo hội thoại mới theo [chat và WebSocket](chat-testing.md) và các ca ở mục [Tool PERSONNEL_CHAT](chat-testing.md#tool-personnel_chat): yêu cầu nhắn cho một nhân sự hợp lệ làm Agent gọi `send_chat_to_personnel` và báo đã gửi; ID sai hoặc người nhận chưa đủ điều kiện làm Agent báo không gửi được, không báo thành công giả; bật phê duyệt thì từ chối không gửi tin, chấp thuận gửi đúng nội dung đã duyệt. Mỗi lần gửi thử là **tin thật** tới người nhận và tính vào giới hạn ngày: dùng người nhận đã biết trước việc kiểm thử, gửi ít lần nhất có thể.

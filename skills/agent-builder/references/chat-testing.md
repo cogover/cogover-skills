@@ -82,6 +82,19 @@ Message mới có `type: 2`, `service: 116`, `body.object_type: "message"` và `
 
 Lọc đúng `conversation_id` **và** `custom_data.chatSessionId`, sau đó `turnId` khi có. Khử trùng theo message `id`; không ghép một hội thoại khác hoặc frame cập nhật danh sách hội thoại vào câu trả lời. Với deployment cũ thiếu `turnId`, chỉ dùng `userMsgChatServerId`/sequence khi đã có contract xác định tương quan lượt; nếu chưa có, yêu cầu người dùng cung cấp trước khi kết luận test. Không tự ghép sự kiện theo thời gian đến. Không giả định có streaming từng token; có thể nhận cả block văn bản.
 
+### Tool PERSONNEL_CHAT
+
+Tool gửi **tin thật** cho nhân sự và tính vào giới hạn ngày (xem [PERSONNEL_CHAT](tools.md#personnel_chat)): chọn người nhận đã biết trước việc kiểm thử, gửi ít lần nhất có thể.
+
+| Ca | Cách chạy | Bằng chứng |
+|---|---|---|
+| Gửi được | Tạo hội thoại mới (service 10), yêu cầu Agent nhắn cho `{personnel-id}` hợp lệ | `LOOP_OUTPUT` có `data.type: TOOL_USE`, `data.name: send_chat_to_personnel`; câu trả lời cuối báo đã gửi; lượt kết thúc không lỗi |
+| Người nhận không hợp lệ | Yêu cầu nhắn cho một ID không tồn tại, hoặc cho nhân sự chưa có quyền `EXECUTE` trên Agent hay chưa có seat AI Agent | Agent gọi công cụ rồi báo không gửi được; không báo thành công giả |
+| Phê duyệt, từ chối | Bật `requiresApproval`, tạo hội thoại mới, trả lời service 12 với `approved: false` | `TOOL_APPROVAL_REQUEST` có `data.toolName`, `data.toolInput` (`personnel_id`, `message`) và `data.summary`; sau khi từ chối không có tin nào được gửi |
+| Phê duyệt, chấp thuận | Như trên với `approved: true`, chỉ khi người dùng cho phép gửi tin thật | Tin được gửi theo `toolInput` đã duyệt; câu trả lời cuối báo đã gửi |
+
+Sự kiện `TOOL_USE` chỉ có tên công cụ; input chỉ xuất hiện trong `TOOL_APPROVAL_REQUEST`. Câu trả lời của Agent chưa chứng minh người nhận đã thấy tin. Khi **người kiểm thử cũng là người nhận** (`personnelId` của phiên, đã có quyền `EXECUTE` trên Agent và seat AI Agent), cùng WebSocket nhận tin ở một `conversation_id` khác, `custom_data.proactive: true`, `text` mở đầu bằng dòng ghi người yêu cầu; ca này `LATEST` luôn mở hội thoại mới vì hội thoại gần nhất của Agent với người nhận chính là hội thoại đang chat. Trả lời vào hội thoại đó bằng service 11 với `chatSessionId` trong `custom_data` của tin để kiểm tra Agent chỉ biết tin đã gửi. Người nhận là người khác thì cần phiên của chính người đó hoặc API đọc hội thoại, xem [API cần bổ sung](api-gaps.md); không dùng phiên của người khác khi chưa được phép.
+
 ## Probe kèm skill
 
 `scripts/chat_probe.py` tạo đúng một hội thoại mới, dùng câu hỏi kiểm tra kết nối không yêu cầu Tool, chờ TEXT cuối và `LOOP_COMPLETE`. Script không kích hoạt Agent, sửa quyền, duyệt Tool hay tự gửi lại tin nhắn khi kết nối lỗi. Nếu cần test nghiệp vụ/ghi/RAG hoặc duyệt Tool, dùng HTTP/WebSocket client theo luồng trên và ma trận phía dưới. Giới hạn của probe không phải thiếu API và không phải lý do mở trình duyệt.
@@ -107,6 +120,7 @@ Probe trả kết quả JSON và exit code khác 0 nếu lỗi, chờ duyệt, h
 | Thiếu thông tin | Agent hỏi đúng dữ liệu cần thiết, chưa thực hiện thay đổi sai |
 | Ngoài phạm vi/thiếu quyền | Agent từ chối hoặc hướng dẫn đúng; không lộ dữ liệu không được phép |
 | Tool cần duyệt | Nhận đúng sự kiện/yêu cầu, gửi quyết định qua service 12; từ chối không tạo side effect; chỉ test chấp thuận khi được phép |
+| Tool PERSONNEL_CHAT | Agent gọi `send_chat_to_personnel`; người nhận không hợp lệ không được báo thành công; tin đến người nhận được xác minh bằng phiên của người nhận, theo mục [Tool PERSONNEL_CHAT](#tool-personnel_chat) |
 | Reasoning | Mặc định bật, override hợp lệ được nhận, lựa chọn ngoài policy bị từ chối/không khả dụng |
 | RAG có/không có đáp án | Có nguồn đúng khi tìm thấy; không bịa khi không tìm thấy |
 | Ghi dữ liệu | Đọc lại record/Process và so kết quả, không chỉ tin câu trả lời Agent |

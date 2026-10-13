@@ -1,15 +1,15 @@
 ---
 name: agent-builder
-description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
+description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module và Tool PERSONNEL_CHAT cho Agent chủ động nhắn tin chat cho nhân sự), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.3.0`
-- **Ngày phát hành:** `2026-09-30`
+- **Phiên bản:** `1.4.0`
+- **Ngày phát hành:** `2026-10-13`
 
 ## Phạm vi
 
@@ -26,7 +26,7 @@ Khi thiếu API hoặc schema cần thiết, báo người dùng cung cấp cont
 ## A. Chuẩn bị
 
 1. Dùng [$cogover-api-auth](../cogover-api-auth/SKILL.md), đọc đầy đủ tài liệu xác thực của skill đó. Các endpoint trong skill này dùng phiên Web App: đổi API Key tại `/bapi/v1/auth-token`, sau đó gửi đủ cookie và CSRF/XSRF. Áp dụng quản lý credential, binding Workspace, xử lý lỗi và đọc lại sau ghi của skill xác thực.
-2. Xác định Agent phục vụ nhân sự hay khách hàng; nghiệp vụ, nguồn dữ liệu, thao tác được phép và người sử dụng. Chỉ hỏi phần còn thiếu ảnh hưởng trực tiếp đến model, danh tính hoặc phạm vi quyền.
+2. Xác định Agent phục vụ nhân sự hay khách hàng; nghiệp vụ, nguồn dữ liệu, thao tác được phép và người sử dụng. Chỉ hỏi phần còn thiếu ảnh hưởng trực tiếp đến model, danh tính hoặc phạm vi quyền. Agent cần chủ động nhắn tin chat cho nhân sự thì làm rõ ai chọn người nhận: Agent tự chọn (Tool `PERSONNEL_CHAT`) hay Process/Custom Backend Module chỉ định sẵn (không cần Tool).
 3. Đọc [API cấu hình](references/config-api.md), lấy danh sách Agent, model, Skill và Tool hiện có. Tái sử dụng tài nguyên phù hợp; đọc chi tiết trước khi sửa tài nguyên dùng chung. Không ghi khi người dùng chỉ yêu cầu khảo sát/thiết kế.
 
 ## B. Xây Agent
@@ -80,6 +80,8 @@ Giới hạn form: tên/slug 250 ký tự, mô tả 500, hướng dẫn Skill 2.
 
 Logic riêng của Workspace đã viết trong Custom Backend Module (tính toán, kiểm tra điều kiện, đọc/ghi theo quy tắc nghiệp vụ) dùng Tool `CUSTOM_MODULE` gọi Custom Module Action mở cho AI Agent: lấy action từ danh mục `GET /api/v1/ts-projects/actions?consumer=agent`, Agent nhận schema input và mô tả của action, `requiresApproval` mặc định theo `effect` (`write` cần phê duyệt), action chạy dưới danh tính Agent đang dùng; chi tiết tại [CUSTOM_MODULE](references/tools.md#custom_module). Action chưa có hoặc thiếu input/output thì chuyển sang [$cogover-custom-module](../cogover-custom-module/SKILL.md), không thay bằng HTTP Tool gọi module.
 
+Agent cần chủ động nhắn tin chat cho nhân sự và **tự chọn người nhận** (chuyển lời theo yêu cầu của người đang chat, nhắc việc, cảnh báo cho người phụ trách) dùng Tool `PERSONNEL_CHAT`: người cấu hình chọn `conversationMode` (`NEW` hoặc `LATEST`), viết `description` nêu khi nào nên nhắn, và bảo đảm Agent có nguồn ID nhân sự; người nhận phải có quyền `EXECUTE` trên Agent và seat AI Agent. Agent không có công cụ này trong hội thoại với khách hàng, và lượt chạy nền đã được Process hoặc Custom Backend Module chỉ định người nhận thì không cần Tool; chi tiết tại [PERSONNEL_CHAT](references/tools.md#personnel_chat).
+
 Tách công cụ đọc khỏi công cụ ghi khi cần chính sách khác nhau. Đặt `requiresApproval` theo nghiệp vụ và ý định đã được người dùng cho phép; kiểm thử luồng chấp thuận/từ chối bằng sự kiện WebSocket và API chat service 12 theo [hướng dẫn test](references/chat-testing.md). Không mở thêm thao tác ghi chỉ để khắc phục lỗi thiếu công cụ. Đọc lại Tool, gắn vào Skill và kiểm tra Agent gọi đúng công cụ thực tế.
 
 ### 6. Data/RAG khi cần
@@ -92,7 +94,7 @@ Upload thành công chưa có nghĩa Agent tra cứu được. Không xem `agent
 
 1. Đọc lại Agent, Skill, Tool, quyền, model/reasoning và các liên kết; bật tài nguyên cần dùng. Kích hoạt Agent bằng thao tác đổi trạng thái được tài liệu hỗ trợ.
 2. Tạo **hội thoại mới** sau thay đổi cấu hình. Đọc [chat và WebSocket](references/chat-testing.md); kết nối WebSocket trước, tạo chat bằng HTTP, đọc phản hồi/công cụ/yêu cầu duyệt từ sự kiện. Dùng script probe cho kiểm tra kết nối cơ bản; test nghiệp vụ bằng HTTP/WebSocket client theo cùng contract, không chuyển sang trình duyệt khi probe chưa hỗ trợ tình huống.
-3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data; Tool `CUSTOM_MODULE` theo mục Kiểm thử của [CUSTOM_MODULE](references/tools.md#custom_module) (gọi đúng action với input hợp lệ, phê duyệt action `write`, từ chối không tạo thay đổi). Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
+3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data; Tool `CUSTOM_MODULE` theo mục Kiểm thử của [CUSTOM_MODULE](references/tools.md#custom_module) (gọi đúng action với input hợp lệ, phê duyệt action `write`, từ chối không tạo thay đổi); Tool `PERSONNEL_CHAT` theo các ca [gửi được, người nhận không hợp lệ, phê duyệt/từ chối](references/chat-testing.md#tool-personnel_chat), với người nhận đã biết trước vì đây là tin thật. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
 4. Kết luận dựa trên nội dung trả lời và kết quả nghiệp vụ. HTTP `r: 0` hoặc thông báo “ACCEPTED” chỉ xác nhận nhận yêu cầu. Với WebSocket cần đúng hội thoại/lượt, câu trả lời cuối và sự kiện hoàn tất không lỗi.
 
 ## Bàn giao

@@ -8,6 +8,7 @@
 | Rà soát nội dung Data sau chuyển đổi trước khi duyệt | Field/endpoint lấy đầy đủ bản chuyển đổi; định dạng, phân trang hoặc tải nội dung và quyền đọc | Upload, tạo file, chuyển đổi và theo dõi trạng thái; dừng bước duyệt phụ thuộc rà soát |
 | Chẩn đoán conversion/index lỗi khi response hiện có không đủ | Field/endpoint chi tiết lỗi/trạng thái tác vụ, mã lỗi và cách liên kết với file ID | Theo dõi trạng thái qua service 73; báo chưa index thành công |
 | Đọc lại kết quả sau mất WebSocket hoặc xem lịch sử test | API lịch sử tin nhắn/trạng thái lượt hoặc replay, tham số session/conversation/turn/cursor, phân trang và thứ tự sự kiện | Test qua socket đang kết nối; giữ ID đã có, không tự gửi lại tin để đoán kết quả |
+| Xác nhận một nhân sự khác đã nhận tin Agent chủ động gửi (Tool `PERSONNEL_CHAT`) | API đọc danh sách hội thoại chat AI hoặc tin nhắn của một hội thoại theo quyền người gọi: tham số, phân trang, trường nhận diện tin chủ động; hoặc phiên của chính người nhận | Kiểm thử với người nhận là nhân sự của phiên đang chat và đọc tin trên WebSocket của phiên đó, theo [Tool PERSONNEL_CHAT](chat-testing.md#tool-personnel_chat); báo rõ phần “người nhận đã thấy tin” chưa xác minh với người nhận khác |
 
 Các thiếu hụt tùy Workspace khác cần báo theo dữ liệu thực tế: metadata model/reasoning không đủ ràng buộc; Tool category/type chưa có schema; sự kiện thiếu trường để xác định lượt hoặc xác minh tool/nguồn RAG. Chỉ nêu trường hoặc thao tác còn thiếu, không khẳng định toàn bộ API tương ứng chưa có.
 

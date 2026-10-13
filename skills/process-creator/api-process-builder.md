@@ -29,11 +29,11 @@ Ba validation bắt buộc trước khi gửi:
 - Với mọi field User Task có `required` và `readOnly` truthy, bắt buộc `canSendData: true` ngay trên component trong `userTasks[].content`. Đây là checkbox **Gửi dữ liệu**, quyết định field có được đưa vào payload submit form gửi tới `run-workflow-server` hay không. Không dùng `availableForOutput` và không đồng bộ cờ này sang resource.
 
 **Response:**
-- `201` - Tạo thành công (`r = 0`)
+- `200` hoặc `201` - Tạo thành công (`r = 0`)
 - `400` - Lỗi nghiệp vụ (`r != 0`)
 - `500` - Lỗi hệ thống
 
-### Response thành công (201)
+### Response thành công (200 hoặc 201)
 
 ```json
 {
