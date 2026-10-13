@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.15.0` ngày `2026-09-30`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.16.0` ngày `2026-10-13`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy, `deliverTo` để agent chủ động nhắn chat cho một nhân sự và kết quả `delivery`), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -708,8 +708,15 @@ export const jobs = [
   giới hạn số lượt chạy agent mỗi ngày (`maxRunsPerDay`, mặc định 200).
 - `processes.get` và `agents.get` đọc trạng thái hiện tại của lượt chạy mà project đã
   khởi chạy. Đừng chờ kết quả bên trong route: hãy dùng job.
-- Với Cogover Dev CLI, lần start là thật, nhưng `onComplete` và `onResult` bị từ chối
-  với `NOT_SUPPORTED`; hãy thử job sau khi publish.
+- Để agent chủ động nhắn cho một người, thêm
+  `deliverTo: { personnelId, conversation: "new" | "latest" }` vào `agents.start`. Khi đó
+  agent có thể gửi tin nhắn chat cho nhân sự đó trong AI chat của agent, và lượt chạy báo
+  kết quả trong `delivery` (`SENT`, `NOT_SENT`, `BLOCKED` hoặc `FAILED`) ở `agents.get`
+  và ở job `onResult`. Người nhận phải được dùng agent và có seat AI Agent; nếu không,
+  `start` ném `CogoverApiError` với một mã `RECIPIENT_...`.
+- Với Cogover Dev CLI, lần start là thật, tin nhắn gửi qua `deliverTo` cũng là thật,
+  nhưng `onComplete` và `onResult` bị từ chối với `NOT_SUPPORTED`; hãy thử job sau khi
+  publish.
 
 Xem [tài liệu tham chiếu Process và AI Agent](cogover-sdk-api-reference.md#process-và-ai-agent)
 để biết mọi tuỳ chọn, giới hạn và lỗi.

@@ -3796,6 +3796,7 @@ interface AgentStartOptions {
   readonly timeoutSeconds?: number;
   readonly idempotencyKey?: string;
   readonly onResult?: AgentResultCompletion;
+  readonly deliverTo?: AgentDeliveryTarget;
 }
 
 interface AgentRecordReference {
@@ -3807,6 +3808,12 @@ interface AgentRecordReference {
 interface AgentResultCompletion {
   readonly job: string;
   readonly payload?: unknown;
+}
+
+interface AgentDeliveryTarget {
+  readonly personnelId: string;
+  readonly conversation?: "new" | "latest";
+  readonly title?: string;
 }
 
 interface AgentStartResult {
@@ -3827,7 +3834,8 @@ const { runId } = await agents.start("AGXXXXXXXXXXXX", {
 ```
 
 `agentId` là ID của một AI Agent: từ 1 đến 64 chữ cái, chữ số, `_` hoặc `-`. Mỗi lượt
-chạy mở một cuộc hội thoại mới của agent.
+chạy làm việc trong một phiên mới của riêng nó, không người nào nhìn thấy; `deliverTo`
+là cách để lượt chạy nhắn tới một người.
 
 | Tuỳ chọn | Quy tắc và ý nghĩa |
 |---|---|
@@ -3840,10 +3848,58 @@ chạy mở một cuộc hội thoại mới của agent.
 | `timeoutSeconds` | Số nguyên từ 10 đến 1800; mặc định `300`. Giới hạn thời gian của lượt chạy. |
 | `idempotencyKey` | Cùng quy tắc như với `processes.start`. |
 | `onResult` | `job` là key của một job mà version đang active khai báo; `payload` là giá trị JSON tuỳ chọn tối đa 8.192 byte UTF-8 được chuyển cho job đó. |
+| `deliverTo` | Cho phép agent gửi tin nhắn chat cho một nhân sự trong lượt chạy; xem [Gửi tin nhắn chat cho một nhân sự](#gửi-tin-nhắn-chat-cho-một-nhân-sự). |
 
 Kết quả là `runId` của lượt chạy mới, và `duplicate: true` khi một lần start trước với
 cùng `idempotencyKey` đã trả về lượt chạy đó thay vì tạo mới. Tham số không hợp lệ ném
 `ValidationError` trước khi gửi bất cứ gì.
+
+#### Gửi tin nhắn chat cho một nhân sự
+
+```typescript
+const { runId } = await agents.start("AGXXXXXXXXXXXX", {
+  instruction: "Check the overdue invoices of this account. If any are overdue, "
+    + "tell the account owner which ones and what to do next.",
+  records: [{ objectSlug: "account", recordId: accountId }],
+  runAs: "agent",
+  deliverTo: { personnelId: ownerPersonnelId, conversation: "latest", title: "Overdue invoices" },
+  idempotencyKey: `overdue:${accountId}:${today}`,
+  onResult: { job: "after_reminder", payload: { accountId } },
+});
+```
+
+Với `deliverTo`, agent có thể chủ động mở chat với một nhân sự: tin nhắn đến hội thoại
+AI chat của agent đó với nhân sự đó, người nhận được thông báo như thường lệ và trả lời
+ngay tại đó.
+
+| Thành phần | Quy tắc và ý nghĩa |
+|---|---|
+| `personnelId` | Bắt buộc. Personnel ID của người nhận: từ 1 đến 128 chữ cái, chữ số, `_` hoặc `-`. |
+| `conversation` | `"new"` (mặc định): tin nhắn luôn mở một hội thoại mới. `"latest"`: tin nhắn nối tiếp hội thoại gần nhất của agent với người nhận, và mở hội thoại mới khi chưa có hội thoại nào, khi hội thoại đó đang bận với một lượt chạy khác hoặc khi người nhận đã xoá nó. |
+| `title` | Tên của hội thoại mà lượt chạy mở: một dòng từ 1 đến 80 ký tự, không để trống, không chứa ký tự điều khiển. Mặc định lấy phần đầu của tin nhắn. |
+
+- Agent tự viết tin nhắn và tự quyết định có gửi hay không, nên hãy nêu trong
+  `instruction` người nhận cần biết gì và khi nào thì đáng gửi tin. Câu trả lời cuối của
+  agent (`text`) và `result` vẫn chỉ trả về cho code của bạn; chúng không được gửi cho
+  người nhận.
+- Lượt chạy báo kết quả gửi tin trong `delivery` (xem
+  [`agents.get`](#agentsgetrunid-promiseagentrunstate)). `status` của lượt chạy không
+  phụ thuộc vào đó: lượt chạy có thể `COMPLETED` trong khi tin nhắn không được gửi.
+- Người nhận phải tồn tại trong Workspace, được dùng agent và có seat AI Agent. Cogover
+  kiểm tra khi lượt chạy bắt đầu, không đạt thì ném `CogoverApiError` với `code` là
+  `RECIPIENT_NOT_FOUND`, `RECIPIENT_ACCESS_DENIED` hoặc `RECIPIENT_AI_SEAT_REQUIRED`
+  (xem [Lỗi](#lỗi)): không có lượt chạy nào được tạo và không có gì được gửi. Identity
+  policy không cần khai báo gì cho người nhận, và lần thực thi không có người dùng vẫn
+  dùng được `deliverTo`.
+- Hội thoại của người nhận tách khỏi lượt chạy. Hội thoại đó nhận tin nhắn và một ghi
+  chú agent để lại cho chính nó về lý do nhắn. Khi người nhận trả lời, agent chạy dưới
+  danh tính người nhận, với quyền của người nhận, không phải quyền của lượt chạy đã gửi
+  tin.
+- Cogover giới hạn số tin nhắn một agent được gửi cho một nhân sự trong một lượt chạy và
+  trong một ngày. Tin nhắn vượt giới hạn không được gửi, và `delivery` báo `BLOCKED` với
+  `RECIPIENT_RATE_LIMITED`.
+- Khi phát triển local bằng Cogover Dev CLI, lượt chạy có `deliverTo` gửi tin nhắn thật
+  cho người thật. Hãy dùng người nhận đã biết trước việc này.
 
 ### `agents.get(runId): Promise<AgentRunState>`
 
@@ -3854,6 +3910,15 @@ interface AgentRunState<TResult = unknown> {
   readonly text: string | null;
   readonly result: TResult | null;
   readonly error: { readonly code: string; readonly message: string } | null;
+  readonly delivery: AgentDelivery | null;
+}
+
+interface AgentDelivery {
+  readonly status: "SENT" | "NOT_SENT" | "BLOCKED" | "FAILED";
+  readonly errorCode: string | null;
+  readonly chatSessionId: string | null;
+  readonly conversationId: string | null;
+  readonly newConversation: boolean;
 }
 ```
 
@@ -3865,10 +3930,42 @@ trong `RESULT_SCHEMA_MISMATCH`, `TIMEOUT`, `CALLER_TIMEOUT`, `CANCELLED`, `MAX_T
 `GUARDRAIL_REJECTED`, `APPROVAL_DENIED`, `SERVER_RESTARTED`, `SESSION_BUSY`,
 `SESSION_EVICTED`, `AGENT_INACTIVE`, `AGENT_ACCESS_DENIED`, `AGENT_CONFIG_INVALID`,
 `CONFIG_LOAD_FAILED`, `LLM_HTTP_ERROR`, `LLM_NETWORK`, `LLM_RESPONSE_FAILED`, `LLM_PARSE`,
-`OUTPUT_TRUNCATED`, `INTERNAL_ERROR`, hoặc `AGENT_ERROR` với mọi lý do khác, và
+`OUTPUT_TRUNCATED`, `INTERNAL_ERROR`, một trong các mã tính phí credit AI
+`INSUFFICIENT_CREDITS`, `AI_SUBSCRIPTION_REQUIRED`, `AI_SEAT_REQUIRED`,
+`AGENT_CREDIT_LIMIT_EXCEEDED`, `MODEL_NOT_PRICED` (ý nghĩa như ở [Lỗi](#lỗi)) khi lượt
+chạy bị dừng vì tính phí, hoặc `AGENT_ERROR` với mọi lý do khác, và
 `error.message` là mô tả tiếng Anh cố định của mã đó: nội dung từ nhà cung cấp mô hình
 AI không bao giờ được chuyển tiếp. Job `onResult` nhận cùng `error` đó. Lượt chạy không
 do project này khởi chạy ném `NotFoundError`.
+
+`delivery` là kết quả của `deliverTo`, và là `null` với lượt chạy được khởi chạy không
+có tuỳ chọn này. Hãy đọc nó khi lượt chạy đã có trạng thái cuối: khi lượt chạy còn đang
+diễn ra, giá trị này chưa phải kết quả cuối và có thể vẫn là `null`. Job `onResult` nhận
+cùng giá trị đó.
+
+| `delivery.status` | Ý nghĩa |
+|---|---|
+| `SENT` | Người nhận đã nhận ít nhất một tin nhắn. `chatSessionId` và `conversationId` xác định hội thoại, và `newConversation` là `true` khi lượt chạy đã mở hội thoại đó. |
+| `NOT_SENT` | Agent không gửi tin nào, ví dụ vì không có gì cần báo. |
+| `BLOCKED` | Agent đã thử gửi và tin nhắn bị từ chối. `errorCode` cho biết lý do. |
+| `FAILED` | Agent đã thử gửi và việc gửi thất bại. `errorCode` cho biết lý do. |
+
+`delivery.errorCode` là `null` với `SENT` và `NOT_SENT`. Ngược lại nó là một trong:
+
+| `delivery.errorCode` | Ý nghĩa |
+|---|---|
+| `RECIPIENT_NOT_FOUND` | Người nhận không còn là nhân sự của Workspace. |
+| `RECIPIENT_ACCESS_DENIED` | Người nhận không được dùng agent. |
+| `RECIPIENT_AI_SEAT_REQUIRED` | Người nhận chưa được gán seat AI Agent. |
+| `RECIPIENT_RATE_LIMITED` | Agent đã gửi cho người nhận này đủ số tin nhắn mà một lượt chạy hoặc một ngày cho phép. |
+| `INVALID_DELIVERY` | Tin nhắn rỗng hoặc quá dài, hoặc agent không active. |
+| `NOT_ALLOWED_IN_CUSTOMER_CHAT` | Lượt chạy thuộc một hội thoại với khách hàng bên ngoài, nơi không được nhắn cho nhân sự. |
+| `CHAT_SERVER_ERROR` | Không mở được hội thoại hoặc không gửi được tin nhắn. |
+| `DELIVERY_UNAVAILABLE` | Lỗi tạm thời khi kiểm tra người nhận hoặc lưu hội thoại. |
+| `INSUFFICIENT_CREDITS`, `AI_SUBSCRIPTION_REQUIRED`, `AGENT_CREDIT_LIMIT_EXCEEDED`, `MODEL_NOT_PRICED` | Tin nhắn bị dừng vì tính phí credit AI (ý nghĩa như ở [Lỗi](#lỗi)). |
+| `DELIVERY_ERROR` | Mọi lý do khác. |
+
+`chatSessionId` và `conversationId` là `null` trừ khi đã có tin nhắn được gửi.
 
 ### Job nhận kết quả AI Agent
 
@@ -3882,14 +3979,28 @@ interface AgentResultJobPayload<TPayload = unknown, TResult = unknown> {
     readonly result: TResult | null;
     readonly error: { readonly code: string; readonly message: string } | null;
     readonly usage: Record<string, unknown> | null;
+    readonly delivery: AgentDelivery | null;
   };
 }
 ```
 
 Khi lượt chạy được khởi chạy với `onResult` kết thúc, Cogover enqueue một lần chạy của
 job với giá trị này làm `payload`: `payload` là `onResult.payload` (hoặc `null`),
-`agentRun.text` bị cắt còn 32 KiB, `agentRun.result` là `null` khi lớn hơn 16 KiB, và
-`agentRun.usage` cho biết `inputTokens`, `outputTokens`, `iterations` và `durationMs`.
+`agentRun.text` bị cắt còn 32 KiB, `agentRun.result` là `null` khi lớn hơn 16 KiB,
+`agentRun.usage` cho biết `inputTokens`, `outputTokens`, `iterations` và `durationMs`,
+và `agentRun.delivery` là kết quả của `deliverTo` đúng như `agents.get` trả về (`null`
+với lượt chạy được khởi chạy không có tuỳ chọn này).
+
+```typescript
+defineJob<AgentResultJobPayload<{ accountId: string }>>({ key: "after_reminder" }, async ({ payload, log }) => {
+  const delivery = payload?.agentRun.delivery;
+  if (delivery?.status === "SENT") {
+    log.info("Owner reminded", { conversationId: delivery.conversationId });
+  } else if (delivery !== null && delivery !== undefined && delivery.status !== "NOT_SENT") {
+    log.warn("Reminder not delivered", { status: delivery.status, errorCode: delivery.errorCode });
+  }
+});
+```
 
 ### Quy tắc của job nhận kết quả
 
@@ -3918,12 +4029,16 @@ job với giá trị này làm `payload`: `payload` là `onResult.payload` (ho�
   project, hoặc lần thực thi không có người dùng, gửi cùng key sẽ nhận
   `CogoverApiError` với `code: "IDEMPOTENCY_CONFLICT"`, không bao giờ nhận lượt chạy của
   danh tính kia. Hãy đưa người dùng vào key khi nhiều người có thể dùng chung key.
+- Key chỉ định lượt chạy đầu tiên, bất kể các tuỳ chọn khác của nó: lần `agents.start`
+  thứ hai với cùng key nhưng `deliverTo` khác trả về lượt chạy đầu tiên với
+  `duplicate: true` và không gửi gì cho người nhận kia. Hãy đưa người nhận vào key khi
+  một công việc nhắn cho nhiều người.
 - `RetryableError` báo lỗi tạm thời. Khi `details.writesMayHaveCompleted` là `false`,
   chưa có gì được khởi chạy. Khi giá trị này là `true`, lượt chạy có thể đã được tạo:
   hãy thử lại sau với cùng `idempotencyKey`, Cogover sẽ hoàn tất lần start đó thay vì
   tạo lượt chạy thứ hai; lần thử lại quá sớm có thể lại ném `RetryableError`. Sau một
-  lần từ chối dứt khoát, như `ValidationError` hoặc `PermissionDeniedError`, key được
-  dùng lại.
+  lần từ chối dứt khoát, như `ValidationError`, `PermissionDeniedError`, một mã tính
+  phí credit AI hoặc một mã về người nhận của `deliverTo`, key được dùng lại.
 - Trong job, key suy ra từ `payload` của job hoặc `job.id`, và trong action, key suy ra
   từ `action.runId`, giúp handler được thử lại không khởi chạy cùng một việc hai lần.
 
@@ -3945,6 +4060,9 @@ job với giá trị này làm `payload`: `payload` là `onResult.payload` (ho�
   `code: "AGENT_DEPTH_EXCEEDED"`.
 - Action `"read"` và phiên phát triển local chỉ đọc được gọi `get` nhưng không được
   gọi `start`: `start` ném `PermissionDeniedError`.
+- Cogover giới hạn số tin nhắn một lượt chạy được gửi cho người nhận của `deliverTo`,
+  trong lượt chạy và trong một ngày (xem
+  [Gửi tin nhắn chat cho một nhân sự](#gửi-tin-nhắn-chat-cho-một-nhân-sự)).
 
 ### Lỗi
 
@@ -3958,14 +4076,39 @@ job với giá trị này làm `payload`: `payload` là `onResult.payload` (ho�
 | `CogoverApiError` | `MAX_HOP_EXCEEDED` | Ngân sách tự động hoá đã hết. |
 | `CogoverApiError` | `IDEMPOTENCY_CONFLICT` | Một danh tính khác của project đã dùng `idempotencyKey` này. |
 | `CogoverApiError` | `AGENT_DEPTH_EXCEEDED` | Các AI Agent sẽ gọi lẫn nhau sâu quá 3 cấp. |
+| `CogoverApiError` | `INSUFFICIENT_CREDITS` | Workspace đã hết credit AI. |
+| `CogoverApiError` | `AI_SUBSCRIPTION_REQUIRED` | Workspace không có gói AI Agent trả phí hoặc gói dùng thử. |
+| `CogoverApiError` | `AI_SEAT_REQUIRED` | Người dùng chưa được gán seat AI Agent. |
+| `CogoverApiError` | `AGENT_CREDIT_LIMIT_EXCEEDED` | Agent đã dùng hết hạn mức credit AI của tháng. |
+| `CogoverApiError` | `MODEL_NOT_PRICED` | Model AI của agent chưa có giá hoặc đã bị tắt. |
+| `CogoverApiError` | `RECIPIENT_NOT_FOUND` | Người nhận của `deliverTo` không phải nhân sự của Workspace. |
+| `CogoverApiError` | `RECIPIENT_ACCESS_DENIED` | Người nhận của `deliverTo` không được dùng agent. |
+| `CogoverApiError` | `RECIPIENT_AI_SEAT_REQUIRED` | Người nhận của `deliverTo` chưa được gán seat AI Agent. |
+| `CogoverApiError` | `DELIVERY_UNAVAILABLE` | Tạm thời chưa kiểm tra được người nhận của `deliverTo`; hãy thử lại sau. |
 | `CogoverApiError` | `NOT_SUPPORTED` | `onComplete` hoặc `onResult` trong phiên phát triển local. |
 | `CogoverApiError` | `PROCESSES_DISABLED`, `AGENTS_DISABLED` | Tính năng không khả dụng trong môi trường này. |
+
+Năm mã tính phí credit AI (từ `INSUFFICIENT_CREDITS` tới `MODEL_NOT_PRICED`) chỉ do
+`agents.start` ném, khi dịch vụ AI Agent từ chối lượt chạy: không có lượt chạy nào được
+tạo, `details.upstreamCode` giữ cùng mã và `details.writesMayHaveCompleted` là `false`.
+Hãy báo người dùng việc cần làm (nạp thêm credit, đăng ký gói, gán seat, nâng hạn mức của
+agent hoặc chọn model khác) thay vì thử lại ngay. Lượt chạy đã bắt đầu mà bị dừng vì cùng
+lý do sẽ kết thúc với `error.code` là mã đó.
+
+Bốn mã về người nhận (từ `RECIPIENT_NOT_FOUND` tới `DELIVERY_UNAVAILABLE`) chỉ do
+`agents.start` có `deliverTo` ném: không có lượt chạy nào được tạo, không có gì được gửi,
+và `details.upstreamCode` giữ cùng mã. Các mã này nói về người nhận, không bao giờ về
+người dùng của lần thực thi; lỗi của chính người dùng đó là `AI_SEAT_REQUIRED` và
+`PermissionDeniedError` với `AGENT_RUN_DENIED`. `DELIVERY_UNAVAILABLE` là lỗi tạm thời, nên thử lại sau; ba mã còn lại
+cần thay đổi trong Workspace trước. Khi cùng vấn đề đó chỉ xuất hiện lúc lượt chạy đang
+gửi tin, lượt chạy vẫn kết thúc bình thường và `delivery.errorCode` giữ mã đó.
 
 ### Phát triển local
 
 Khi code chạy local bằng Cogover Dev CLI, `start` tạo lượt chạy Process và lượt chạy
 agent thật, dưới danh tính người dùng của Project key, và phiên chỉ đọc sẽ từ chối
-lời gọi này. `onComplete` và `onResult` bị từ chối bằng `CogoverApiError`
+lời gọi này. Lượt chạy có `deliverTo` gửi tin nhắn chat thật cho người nhận, đúng như
+version đã publish. `onComplete` và `onResult` bị từ chối bằng `CogoverApiError`
 `code: "NOT_SUPPORTED"`, vì job của chúng chỉ chạy trong version đã publish: hãy thử
 lần start mà không có hai tuỳ chọn này và đọc kết quả bằng `get`, rồi publish project
 để thử job.
@@ -4129,7 +4272,10 @@ bại với `CogoverApiError` có `code` là `MAX_HOP_EXCEEDED` khi ngân sách 
 hết, `IDEMPOTENCY_CONFLICT` khi một danh tính khác của project đã dùng `idempotencyKey`,
 `AGENT_DEPTH_EXCEEDED` khi các AI Agent khởi chạy lẫn nhau quá sâu, `NOT_SUPPORTED` với
 `onComplete` hoặc `onResult` trong phiên phát triển local, và `PROCESSES_DISABLED` hoặc
-`AGENTS_DISABLED` khi tính năng không khả dụng. Node Process hoặc AI Agent gọi một
+`AGENTS_DISABLED` khi tính năng không khả dụng. `agents.start` còn thất bại với
+`CogoverApiError` có `code` là `INSUFFICIENT_CREDITS`, `AI_SUBSCRIPTION_REQUIRED`,
+`AI_SEAT_REQUIRED`, `AGENT_CREDIT_LIMIT_EXCEEDED` hoặc `MODEL_NOT_PRICED` khi dịch vụ AI
+Agent từ chối lượt chạy vì tính phí credit AI. Node Process hoặc AI Agent gọi một
 Custom Module Action nhận các lỗi mô tả ở
 [Lỗi bên gọi nhận được](#lỗi-bên-gọi-nhận-được).
 
