@@ -19,9 +19,25 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Cogover",
-    "shortDescription": "Explore and configure Cogover Workspaces",
+    "shortDescription": "Configure Cogover Workspaces",
+    "longDescription": "Cogover is a low-code platform for building business apps such as CRM, sales, service and operations. This plugin gives Codex 23 Agent Skills for exploring and configuring a Cogover Workspace through the Cogover API: design Objects and fields, configure layouts, buttons, filters, forms and status transitions, manage members, roles and data permissions, build Process (BPMN) workflows, reports, dashboards, document templates and AI Agents, and develop Custom Modules.\n\nIntended for Cogover administrators, implementation partners and developers. You need access to a Cogover Workspace and an API key you create in that Workspace; the skills use only the permissions of that key. The skills are written to ask for confirmation before destructive changes such as deleting records or configuration. The plugin contains no MCP server; the skills call the Cogover API of your own Workspace.",
     "developerName": "Cogover",
     "category": "Productivity",
-    "websiteURL": "https://cogover.com"
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://cogover.com",
+    "supportURL": "https://github.com/cogover/cogover-skills/issues",
+    "privacyPolicyURL": "https://cogover.com/en/privacy-policy",
+    "termsOfServiceURL": "https://cogover.com/en/general-terms",
+    "defaultPrompt": [
+      "List the Objects and fields in my Cogover Workspace.",
+      "Design a simple CRM data model for Cogover in Excel.",
+      "Create an approval Process for purchase requests in Cogover."
+    ],
+    "brandColor": "#FF3D57",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
   }
 }
