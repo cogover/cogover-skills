@@ -19,6 +19,7 @@ Unit test do sub-agent Backend tự viết theo cách hiểu của chính nó n�
   - Input đọc trước khi lấy khoá rồi dùng để ghi; trigger/job dựa vào rollup/formula vừa đổi; retry gặp bước ghi dở dang; after-change không chạy mà không có đối soát.
   - Before-change đọc tuần tự nhiều Object, không thoát sớm, có thể hết `timeoutMs` và chặn thao tác ghi (fail-closed).
   - Policy rộng hơn thao tác code thực sự làm; ngân sách lần thực thi với khối lượng lớn nhất dự kiến; test còn thiếu cho các ca trên.
+- Review bảo mật do sub-agent Review bảo mật làm theo [Review bảo mật](security-review.md), đo hiệu năng do sub-agent Hiệu năng làm theo [Kiểm thử hiệu năng](performance-testing.md). Phát hiện bảo mật hoặc hiệu năng thấy trong lúc review vẫn ghi vào bảng phát hiện và báo agent chính.
 
 ## 3. Kiểm thử end-to-end trên Workspace
 
@@ -31,7 +32,7 @@ Unit test do sub-agent Backend tự viết theo cách hiểu của chính nó n�
   - Route chỉ dành cho Super Admin/role trả `403` với persona không có quyền.
   - Ca bị transition rule hoặc khoá field chặn ghi `BLOCKED`, kèm mã lỗi và cách kiểm chứng gián tiếp.
 - Không sửa tay số liệu do module hoặc backend khác duy trì, không xoá record. Ca cần sửa tay để tiếp tục thì dừng và báo agent chính. Ca làm lệch số được đưa về bằng chính đường ghi nghiệp vụ (sửa lại record nguồn) và ghi lại.
-- Dọn dẹp và báo phần dư theo bước 9 mục 11 của skill.
+- Dọn dẹp và báo phần dư theo bước 9 mục 12 của skill.
 
 ## 4. Báo cáo
 

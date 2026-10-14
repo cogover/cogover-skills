@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.24.0 - 2026-10-14
+
+- `cogover-custom-module` 1.21.0: thêm hai vai sub-agent độc lập, review bảo mật và kiểm thử hiệu năng. Cả hai chỉ báo lỗi kèm bằng chứng, không sửa source hay commit; sub-agent phụ trách code sửa.
+  - `references/security-review.md` (mới): bắt buộc với mọi project có code, chạy ở bước 8 trên commit sẽ publish và review phần chênh lệch của mỗi commit publish sau đó. Danh mục backend (danh tính và quyền, input, secret và crypto, inbound webhook, gửi ra ngoài, lạm dụng tài nguyên, lỗi và log), frontend (secret trong bundle, phân quyền chỉ ở giao diện, XSS, phiên và lưu trữ), dependency, repository và gói publish. Năm mức phát hiện: Nghiêm trọng/Cao chặn publish và không giới hạn số vòng sửa (sau 2 vòng chưa đóng thì báo người dùng); Trung bình/Thấp sửa tối đa 2 vòng, phần còn lại ghi rủi ro chấp nhận và báo người dùng trước khi publish; phát hiện Nghiêm trọng/Cao `PLAUSIBLE` chỉ được publish để preview, chưa activate. Không thử khai thác trên Workspace; ca cần chứng minh lúc chạy chuyển sang bước 9.
+  - `references/performance-testing.md` (mới): bắt buộc khi route, action, trigger hoặc job xử lý nhiều record, có trigger before-change, báo cáo/dashboard hoặc frontend tải nhiều dữ liệu. Ngưỡng nằm trong contract và được xác nhận cùng 1A, kèm ngưỡng đề xuất khi người dùng chưa nêu (mỗi loại ngân sách không quá 70% `limit`, thời gian không quá 50% giới hạn). Đo ở bước 9 trên version đã activate và đã PASS kiểm thử chức năng, với dữ liệu đại diện trên Workspace test; không load test, gặp `429` thì dừng. Cách đo từng loại (preview service `6` với `showDebugData`, production service `3`, `durationMs` của action, trigger runner, `jobs run`, service `200`, trình duyệt). Tối đa 2 vòng sửa, hết 2 vòng thì dừng và báo người dùng số đo cùng phương án, không tự nới ngưỡng.
+  - `SKILL.md`: mô tả, bảng tài liệu theo nhánh, bảng phân vai sub-agent và quy tắc độc lập; bước 1 mục 5 thêm khối lượng dữ liệu lớn nhất và ngưỡng hiệu năng vào contract; 1A nêu review bảo mật và đo hiệu năng; điều kiện kết thúc bước 8 thêm cổng review bảo mật; bước 9 thêm mục 10 Hiệu năng (mục Process thành 11, dọn dẹp thành 12); bàn giao kèm báo cáo bảo mật và hiệu năng. `references/backend-review-and-testing.md` nêu ranh giới với hai vai mới và cập nhật số mục dọn dẹp.
+
 ## 4.23.1 - 2026-10-14
 
 - `cogover-custom-module` 1.20.1: quy định bố cục repository cho dự án Custom Module, để tài liệu, ảnh và E2E không nằm ở thư mục cha ngoài mọi repository.
