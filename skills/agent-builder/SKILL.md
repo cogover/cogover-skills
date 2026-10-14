@@ -3,12 +3,12 @@ name: agent-builder
 description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module và Tool PERSONNEL_CHAT cho Agent chủ động nhắn tin chat cho nhân sự), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.5.0`
+- **Phiên bản:** `1.6.0`
 - **Ngày phát hành:** `2026-10-14`
 
 ## Phạm vi
@@ -37,6 +37,7 @@ Khi thiếu API hoặc schema cần thiết, báo người dùng cung cấp cont
 - **Reasoning:** mặc định bật `defaultReasoningSettings.enabled: true` và `allowUserReasoningOverride: true`. Chọn effort/budget hợp lệ theo metadata model; đây là mặc định của workflow này, không phải khẳng định mọi form có sẵn đều bật. Model không hỗ trợ reasoning thì chọn model phù hợp khác hoặc hỏi người dùng nếu họ đã chỉ định model đó. Không gửi trường mà model không hỗ trợ. Xem [reasoning](references/config-api.md#model-và-reasoning).
 - **Danh tính thực thi:** Agent nội bộ dùng “Quyền của nhân sự chat với Agent (Agent nội bộ)”, tương ứng `runAsPersonnelId: null`. Agent CSKH chọn một nhân sự có quyền phù hợp. Khi chưa rõ, có thể đề xuất nhân sự của người yêu cầu dựa trên `personnelId` trả về từ bước tạo phiên, rồi chốt lựa chọn trước khi gán quyền cố định. Không coi API Key là bằng chứng người yêu cầu muốn cho khách hàng dùng toàn bộ quyền của mình.
 - **Số vòng tối đa (`maxTurns`):** số lần gọi model cho mỗi câu hỏi, 1–80, mặc định 25; mỗi vòng tính credit. Giữ mặc định cho đa số Agent; tăng khi một câu hỏi cần nhiều bước tra cứu/ghi, giảm để giới hạn chi phí của Agent trả lời ngắn. Chạm giới hạn thì Agent trả lời bằng thông tin đã có và nêu phần còn thiếu, không báo lỗi; node AI Agent của Process chỉ hạ được giá trị này. Xem [Payload Agent](references/config-api.md#payload-agent).
+- **Chạy code phân tích dữ liệu (`codeExecutionEnabled`):** mặc định bật, cho Agent công cụ `run_code` chỉ đọc theo danh tính thực thi. Giữ bật cho Agent nội bộ cần so khớp/thống kê nhiều bản ghi; Agent CSKH chạy bằng nhân sự cố định thì tắt nếu không cần. Ngày giờ dùng công cụ `convert_datetime` có sẵn. Xem [Công cụ hệ thống](references/tools.md#công-cụ-hệ-thống).
 - **System Prompt:** viết đầy đủ vai trò, mục tiêu, phạm vi dữ liệu, quy trình xử lý theo từng nhóm yêu cầu, thông tin cần hỏi thêm, giới hạn thao tác, quy tắc chuyển cho người phụ trách và hình thức trả lời. Không chỉ dùng một câu “bạn là trợ lý hữu ích”. Với RAG, yêu cầu dẫn nguồn và nói rõ khi tài liệu không đủ; với thao tác ghi, chỉ báo thành công sau kết quả công cụ và kiểm tra lại. Mẫu tại [API cấu hình](references/config-api.md#system-prompt-mẫu).
 - **Không viết cơ chế Skill/Tool vào System Prompt:** không nhắc `activate_skill`, `deactivate_skill`, loại CORE/EXTENDED, slug Skill hay tên công cụ hệ thống. Lúc chạy, nền tảng tự chèn hướng dẫn của Skill CORE, danh sách Skill EXTENDED và quy tắc kích hoạt vào ngữ cảnh; hướng dẫn cách gọi công cụ chỉ nằm trong `fullInstructions` của Skill. Lặp lại trong System Prompt tạo hai nguồn hướng dẫn, dễ khiến Agent kích hoạt nhầm Skill CORE đã nạp sẵn và lệch khi nền tảng thay đổi. Mô tả nghiệp vụ thay cho cơ chế: yêu cầu nào cần dữ liệu gì, kết quả ra sao, giới hạn nào.
 - Giữ nguyên biến template ở cuối prompt; không thay bằng ngày hay danh tính tại lúc cấu hình:

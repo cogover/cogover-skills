@@ -34,7 +34,7 @@ Model: **53** (List). Prompt template: **83** (List, payload `{}`). Model/provid
 
 - Đổi trạng thái: `{"ids":["{resource-id}"],"status":true}`. `status` là boolean.
 - Cập nhật: `id` bắt buộc; chỉ gửi trường cần sửa. Với `skills`, `tools`, `accessControls`, `agentIds` hoặc `skillIds`, đọc trạng thái hiện tại và xây lại danh sách đầy đủ cần giữ; không giả định đây là thao tác append.
-- Nhân bản: `id`, `name`, `slug`; có thể thêm `description`, `accessControls`, với Agent thêm `maxTurns` (không gửi thì kế thừa Agent nguồn). Đọc lại liên kết, danh tính và quyền trước khi dùng bản sao.
+- Nhân bản: `id`, `name`, `slug`; có thể thêm `description`, `accessControls`, với Agent thêm `maxTurns`, `codeExecutionEnabled` (không gửi thì kế thừa Agent nguồn). Đọc lại liên kết, danh tính và quyền trước khi dùng bản sao.
 - Xóa: `id` hoặc `ids` cho Agent/Skill/Tool. Chỉ dùng khi người dùng yêu cầu xóa đúng tài nguyên và đã xem các liên kết bị ảnh hưởng; không tự xóa tài nguyên dùng chung sau test.
 - Mã lỗi thường gặp: `4004` không tìm thấy, `4005` trùng slug; `4320`–`4324` liên quan model/reasoning. Cùng một mã có thể mang nghĩa khác giữa Agent, Skill và Tool, nên đọc kèm `msg`.
   - Agent: `4024` `maxTurns` không hợp lệ, xem [Payload Agent](#payload-agent).
@@ -101,6 +101,8 @@ List (13) hỗ trợ `ids`, `keyword`, `modelIds`, `skillIds`, `status`, `page`,
 `maxTurns` là số lần gọi model (vòng) tối đa cho mỗi câu hỏi của người dùng; mỗi vòng tính credit. Giá trị là số nguyên 1–80 hoặc `null`; giá trị khác trả `4024`. Tạo (10): không gửi hoặc `null` dùng mặc định 25. Cập nhật (11): không gửi thì giữ nguyên, `null` đặt lại mặc định. Nhân bản (14): không gửi thì kế thừa Agent nguồn.
 
 Khi chạm giới hạn, Agent không báo lỗi `MAX_TURNS` nữa: vòng cuối chạy không có công cụ và Agent trả lời bằng thông tin đã thu thập, nêu phần còn thiếu. `maxTurns` của node AI Agent trong Process chỉ hạ được, không vượt giá trị của Agent.
+
+`codeExecutionEnabled` (boolean, form: "Cho phép chạy code để phân tích dữ liệu") bật công cụ hệ thống `run_code`, xem [Công cụ hệ thống](tools.md#công-cụ-hệ-thống). Tạo (10): không gửi hoặc `null` là bật. Cập nhật (11): không gửi hoặc `null` thì giữ nguyên. Nhân bản (14): không gửi thì kế thừa Agent nguồn. Response của Agent luôn có `true` hoặc `false`; Agent tạo trước khi có trường này cũng bật. Agent CSKH chạy bằng nhân sự cố định: cân nhắc gửi `false` khi không cần phân tích dữ liệu.
 
 `agentTemplateId` tùy chọn, lấy từ danh sách prompt template. Đọc template trước khi chọn và vẫn hoàn thiện `systemPrompt` của Agent. Trạng thái tạo không nằm trong payload tạo chuẩn; xem trạng thái response/list, đổi qua 17 hoặc update 11 khi cần.
 
