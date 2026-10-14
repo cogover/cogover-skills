@@ -8,7 +8,7 @@ Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi 
 
 | `category` | `type` | Chức năng và cấu hình |
 |---|---|---|
-| `RECORD` | `CREATE`, `GET`, `UPDATE`, `DELETE`, `LIST` | Thao tác bản ghi của các Object đã chọn. Có `app`, `object_slug` hoặc `object_slugs` |
+| `RECORD` | `CREATE`, `GET`, `UPDATE`, `DELETE`, `LIST` | Thao tác bản ghi của các Object đã chọn; `LIST` gồm cả đếm và thống kê theo nhóm. `app` tùy chọn và đúng một trong `object_slug`, `object_slugs`; xem [RECORD](#record-và-activity) |
 | `ACTIVITY` | `CREATE`, `GET`, `UPDATE`, `DELETE`, `LIST` | Thao tác công việc/hoạt động. `app` cung cấp ngữ cảnh App khi tạo/cập nhật; không coi đó là bộ lọc bảo mật cho mọi lệnh đọc |
 | `PROCESS` | Xem bảng dưới | Tìm Process, bắt đầu và quản lý lượt chạy, xem/hoàn thành User Task; cấu hình cơ bản `{}` |
 | `HTTP` | `HTTP_REQUEST` | Gọi API HTTPS với URL, method và xác thực đã cấu hình |
@@ -19,6 +19,8 @@ Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi 
 | `PERSONNEL_CHAT` | `SEND_MESSAGE` | Agent chủ động gửi tin nhắn chat cho một nhân sự, vào hội thoại chat AI của người đó với Agent. Config `{"conversationMode"}`; xem [PERSONNEL_CHAT](#personnel_chat) |
 
 `RECORD`, `ACTIVITY`, `PROCESS` nhận `type` là mảng để chọn nhiều thao tác; các category còn lại dùng một chuỗi. Khi tái sử dụng Tool, giữ nguyên định dạng hợp lệ được trả về. Không trộn type của các category trong một Tool.
+
+Không có category `REPORT`: tạo Tool với category này bị từ chối `4017` (`category must be one of: ...`); Tool `REPORT` nếu Workspace còn từ trước cũng không hoạt động, không tái sử dụng. Câu hỏi dạng báo cáo (đếm, thống kê theo nhóm) dùng `count_records`/`aggregate_records` của Tool `RECORD` type `LIST`, xem [Đếm và thống kê](#đếm-thống-kê-và-lọc-theo-quan-hệ). Số liệu cần saved report (nhiều Object, công thức, định dạng của báo cáo) dùng Tool [CUSTOM_MODULE](#custom_module) gọi action đọc saved report: report do [$report-builder](../../report-builder/SKILL.md) tạo, action do [$cogover-custom-module](../../cogover-custom-module/SKILL.md) viết.
 
 | Type PROCESS | Ý nghĩa |
 |---|---|
@@ -36,6 +38,8 @@ Nếu Workspace trả Tool có category/type khác bảng, chỉ tái sử dụn
 
 ## RECORD và ACTIVITY
 
+### Phạm vi Object và App
+
 Một Object:
 
 ```json
@@ -48,19 +52,65 @@ Nhiều Object:
 {"app":"{app-slug}","object_slugs":["{object-slug-a}","{object-slug-b}"]}
 ```
 
-- Resolve App/Object bằng metadata và các skill tương ứng trước khi ghi.
-- Ưu tiên chọn Object tường minh. Khi có `object_slugs`, trường này được ưu tiên kể cả mảng rỗng. Mảng rỗng không có nghĩa “tất cả”.
-- Nếu chỉ đặt `app`, phạm vi có thể dựa vào Object truy cập được qua App; nó không thay thế quyền record/field. Không dùng config rỗng để mong cấp toàn Workspace.
-- Công cụ RECORD có thể được gộp theo thao tác khi chạy. `slug` cấu hình không nhất thiết là tên công cụ hiển thị trong chat; kiểm tra tool thực tế và phạm vi Object, không chỉ so tên.
+- Resolve App/Object bằng metadata và các skill tương ứng trước khi ghi; menu của App xem bằng [$app-menu-manager](../../app-menu-manager/SKILL.md).
+- Gửi **đúng một** trong `object_slug`, `object_slugs`; `object_slugs` là mảng không rỗng. Thiếu cả hai (config chỉ có `app`), gửi cả hai hoặc mảng rỗng đều bị từ chối `4020`. Không dùng config rỗng để mong cấp cả App hay toàn Workspace.
+- Có `app` thì App phải tồn tại và **mọi** slug phải là Object có trên menu của App đó; không thì tạo/cập nhật bị từ chối `4021` (`app '{app}' not found` hoặc `object_slug '{slug}' does not belong to app '{app}'`). Ví dụ `campaign` thuộc App Marketing nên không đi cùng `app` của App Sales; `campaign_member` không thuộc App nào nên không đi cùng `app` nào.
+- Phạm vi trải nhiều App hoặc có Object ngoài mọi App: bỏ `app` (`{"object_slugs":[...]}` được nhận; link bản ghi Agent trả về khi đó có dạng `/settings/o/{object-slug}/{record-id}` thay vì `/{app-slug}/o/...`), hoặc tách mỗi App một Tool kèm một Tool không có `app` cho các Object ngoài App.
+- Tool cũ có `object_slug` rỗng kèm `app` (lưu từ form khi chưa chọn Object) dùng các Object trên menu App. `app` không thay thế quyền record/field.
 - ACTIVITY dùng `{"app":"{app-slug}"}`. Không thay thế thao tác Activity chuyên biệt bằng RECORD nếu nghiệp vụ cần hành vi Activity.
 
-Ví dụ Tool chỉ đọc, thao tác 40:
+### Công cụ Agent nhận
+
+Các Tool RECORD của một Agent được gộp theo type khi chạy: phạm vi Object là hợp của các Tool cùng type, và cả nhóm cần phê duyệt nếu một Tool trong nhóm bật `requiresApproval`. Tên công cụ cố định theo type, không lấy theo `slug` của Tool; kiểm tra công cụ thực tế trong sự kiện chat và phạm vi Object, không chỉ so tên.
+
+| `type` | Công cụ |
+|---|---|
+| `LIST` | `list_records` (danh sách có lọc, phân trang), `count_records`, `aggregate_records` |
+| `GET` | `get_record`, `read_record_file` (đọc file đính kèm của bản ghi) |
+| `CREATE` | `create_record` |
+| `UPDATE` | `update_record` |
+| `DELETE` | `delete_records` |
+| Mọi type | `get_object_schema`: field và toán tử lọc của các Object trong phạm vi |
+
+### Đếm, thống kê và lọc theo quan hệ
+
+Type `LIST` cho Agent cả `count_records` và `aggregate_records`, cùng phạm vi Object và quyền với `list_records`; không có type cấu hình riêng. Câu hỏi “bao nhiêu”, “theo từng nhóm”, tổng/trung bình thì cấu hình type `LIST` và trong `fullInstructions` hướng dẫn dùng hai công cụ này thay vì đọc nhiều trang `list_records`: một lần gọi `aggregate_records` thay cho nhiều lần liệt kê rồi tự đếm. Kết quả theo quyền dữ liệu của danh tính thực thi (Agent nội bộ: người đang chat).
+
+Ba công cụ dùng chung bộ lọc: `filter_type` (`AND` mặc định, `OR`, `CUSTOM`), `filter_logic` (khi `CUSTOM`, ví dụ `1 AND (2 OR 3)` theo vị trí trong `filters`), `filters` (mảng `{"field","op","params"}`, toán tử theo `get_object_schema`).
+
+- `count_records`: input `object_slug` và bộ lọc; trả một dòng tổng số bản ghi khớp. `list_records` với `size: 0` cũng chỉ trả một dòng tổng số (trước đây `size` tối thiểu là 1).
+- `aggregate_records`: nhóm bản ghi khớp bộ lọc theo **một** field, đếm mỗi nhóm và tùy chọn tính một chỉ số trên field số.
+
+| Input của `aggregate_records` | Ý nghĩa |
+|---|---|
+| `object_slug` | Object cần thống kê |
+| `group_by` | Slug field nhóm: text ngắn (`short_text`, `email`), `single_choice`, `multi_choices`, `boolean`, lookup/reference, `date`, `numeric`; không nhóm theo `long_text`, `phone`, file, formula |
+| `metric` | Tùy chọn `{"op":"sum"\|"avg"\|"min"\|"max","field":"{number-field}"}` |
+| `sort_by` | `count` (mặc định), `metric`, `group` |
+| `order` | `desc` (mặc định), `asc` |
+| `top_n` | 1–200, mặc định 50: số nhóm hiển thị; các nhóm còn lại gộp thành một dòng “Các nhóm khác: X nhóm, Y bản ghi” |
+| `include_empty` | Mặc định `true`: thêm nhóm “(trống)” cho bản ghi không có giá trị |
+| `filter_type`, `filter_logic`, `filters` | Như trên |
+
+Kết quả là bảng gọn kèm tổng số bản ghi, tính chính xác trên toàn bộ bản ghi khớp bộ lọc. Công cụ chỉ nhận các nhóm lớn nhất, tới giới hạn của công cụ; khi còn nhiều nhóm hơn, công cụ báo danh sách nhóm bị cắt. Với `multi_choices`, một bản ghi được đếm ở mỗi giá trị nó có, nên tổng các nhóm có thể lớn hơn số bản ghi.
+
+**Lọc theo bản ghi liên quan:** toán tử `in_query` / `not in_query` trên field lookup/reference giữ (hoặc loại) bản ghi có lookup trỏ tới một bản ghi của Object đích khớp bộ lọc con. Ví dụ Cơ hội có Lead nguồn thuộc chiến dịch X, phần tử của `filters` khi lọc Object Cơ hội:
+
+```json
+{"field":"{lead-lookup-field}","op":"in_query","params":{"filter_type":"AND","filters":[{"field":"{campaign-lookup-field}","op":"=","params":"{campaign-record-id}"}]}}
+```
+
+Object đích (ở ví dụ là Lead) cũng phải nằm trong phạm vi Object của Tool RECORD; bộ lọc con khớp tối đa 10.000 bản ghi đích; không lồng `in_query` trong bộ lọc con. Dùng được với cả ba công cụ trên.
+
+### Ví dụ Tool chỉ đọc
+
+Thao tác 40; type `LIST` cho Agent cả công cụ đếm và thống kê:
 
 ```json
 {
   "name":"Tra cứu phiếu hỗ trợ",
   "slug":"support_ticket_read",
-  "description":"Tìm và xem phiếu hỗ trợ trong phạm vi quyền của nhân sự thực thi; không sửa hoặc xóa phiếu.",
+  "description":"Tìm, đếm, thống kê và xem phiếu hỗ trợ trong phạm vi quyền của nhân sự thực thi; không sửa hoặc xóa phiếu.",
   "category":"RECORD",
   "type":["LIST","GET"],
   "config":"{\"app\":\"{app-slug}\",\"object_slug\":\"{ticket-object-slug}\"}",
@@ -70,7 +120,7 @@ Ví dụ Tool chỉ đọc, thao tác 40:
 }
 ```
 
-Tạo Tool ghi riêng nếu cần xác nhận. Tránh nhiều Tool cùng loại ACTIVITY/PROCESS với cấu hình hoặc yêu cầu duyệt mâu thuẫn trong cùng Agent; không giả định chúng chạy thành các bản độc lập. Với RECORD cũng kiểm tra lại hành vi khi nhiều Skill cấp cùng thao tác.
+Tạo Tool ghi riêng nếu cần xác nhận. Tránh nhiều Tool cùng loại ACTIVITY/PROCESS với cấu hình hoặc yêu cầu duyệt mâu thuẫn trong cùng Agent; không giả định chúng chạy thành các bản độc lập. Với RECORD, Tool cùng type được gộp nên phạm vi và phê duyệt cũng gộp theo type; kiểm tra lại khi nhiều Skill cấp cùng thao tác.
 
 ## HTTP
 

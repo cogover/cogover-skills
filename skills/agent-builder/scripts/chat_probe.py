@@ -109,6 +109,7 @@ def decode_object(value):
 
 @dataclass
 class TurnResult:
+    """Events of one user turn. Pass turn_id when the HTTP response returned it (service 11)."""
     session_id: str
     conversation_id: str
     turn_id: str | None = None
@@ -116,6 +117,10 @@ class TurnResult:
     final_texts: list = field(default_factory=list)
     completed: bool = False
     error: str | None = None
+    turn_from_http: bool = field(init=False, default=False)
+
+    def __post_init__(self):
+        self.turn_from_http = self.turn_id is not None
 
     def accept(self, frame):
         if frame.get("type") != 2 or frame.get("service") != 116:
@@ -132,17 +137,20 @@ class TurnResult:
             if not custom or custom.get("chatSessionId") != self.session_id:
                 continue
             event = custom.get("agentMessageType")
-            # Priming/welcome events do not represent the user turn being tested.
-            if not custom.get("userMsgChatServerId"):
-                if event == "LOOP_ERROR":
-                    self.error = "AGENT_START_ERROR"
-                continue
             turn = custom.get("turnId")
-            if not turn:
-                self.error = "TURN_ID_MISSING_API_CONTRACT_REQUIRED"
-                continue
-            if self.turn_id is None:
-                self.turn_id = turn
+            if not self.turn_from_http:
+                # Service 10: priming/welcome events carry no user-message id and are not the
+                # tested turn; the first user message carries userMsgChatServerId.
+                if not custom.get("userMsgChatServerId"):
+                    if event == "LOOP_ERROR":
+                        self.error = "AGENT_START_ERROR"
+                    continue
+                if not turn:
+                    self.error = "TURN_ID_MISSING_API_CONTRACT_REQUIRED"
+                    continue
+                if self.turn_id is None:
+                    self.turn_id = turn
+            # Service 11 events carry userMsgSeqId and turnId, never userMsgChatServerId.
             if turn != self.turn_id:
                 continue
             identifier = message.get("id")
@@ -173,7 +181,12 @@ class TurnResult:
                 and "\n".join(self.final_texts).strip() == EXPECTED)
 
 
-def live_probe(agent_id, timeout, effort):
+def turn_summary(turn):
+    return {"turnId": turn.turn_id, "completed": turn.completed, "expectedTextMatched": turn.passed,
+            "error": turn.error or (None if turn.passed else "UNEXPECTED_FINAL_TEXT")}
+
+
+def live_probe(agent_id, timeout, effort, follow_up=False):
     try:
         import websocket
     except ImportError:
@@ -184,7 +197,8 @@ def live_probe(agent_id, timeout, effort):
     headers, workspace_id = make_session(origin, timeout)
     client_id, request_id = "web-" + str(uuid.uuid4()), 1
     sock = None
-    result = None
+    result = follow = None
+    stage = "first-turn"
     deadline = time.monotonic() + timeout
 
     def receive():
@@ -209,6 +223,23 @@ def live_probe(agent_id, timeout, effort):
             return None
         return frame
 
+    def wait_for(turn):
+        while True:
+            frame = receive()
+            if frame:
+                turn.accept(frame)
+                if turn.error or (turn.completed and turn.final_texts):
+                    return
+
+    def send(service, payload):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ProbeError("CHAT_TIMEOUT_BEFORE_" + stage.upper().replace("-", "_"))
+        if effort:
+            payload["reasoning"] = {"enabled": True, "effort": effort}
+        return result_body(post_json(origin + "/api/v1/ai-agent",
+            {**headers, "x-req-type": "1", "x-req-service": service}, payload, min(45, remaining)))
+
     try:
         sock = websocket.create_connection(
             "wss://" + urllib.parse.urlsplit(origin).netloc + "/websocket",
@@ -225,35 +256,35 @@ def live_probe(agent_id, timeout, effort):
             if actual_workspace != workspace_id:
                 raise ProbeError("WEBSOCKET_WORKSPACE_MISMATCH")
             break
-        payload = {"agentId": agent_id, "message": MESSAGE}
-        if effort:
-            payload["reasoning"] = {"enabled": True, "effort": effort}
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            raise ProbeError("CHAT_TIMEOUT_BEFORE_START")
-        started = result_body(post_json(origin + "/api/v1/ai-agent",
-            {**headers, "x-req-type": "1", "x-req-service": "10"}, payload, min(45, remaining)))
-        data = started.get("data") or {}
+        # Service 10 response has no turnId: the turn is locked from its events.
+        data = send("10", {"agentId": agent_id, "message": MESSAGE}).get("data") or {}
         if not data.get("chatSessionId") or not data.get("chatServerConvId"):
             raise ProbeError("START_RESPONSE_MISSING_CONVERSATION_IDS")
         result = TurnResult(data["chatSessionId"], data["chatServerConvId"])
-        while True:
-            frame = receive()
-            if not frame:
-                continue
-            result.accept(frame)
-            if result.error or (result.completed and result.final_texts):
-                break
-        return {"passed": result.passed, "chatSessionId": result.session_id,
-                "chatServerConvId": result.conversation_id, "turnId": result.turn_id,
-                "completed": result.completed, "expectedTextMatched": result.passed,
-                "error": result.error or (None if result.passed else "UNEXPECTED_FINAL_TEXT")}
+        wait_for(result)
+        output = {"passed": result.passed, "chatSessionId": result.session_id,
+                  "chatServerConvId": result.conversation_id, **turn_summary(result)}
+        if not follow_up or not result.passed:
+            return output
+        # Service 11 returns the turnId; its events are filtered by that turnId.
+        stage = "follow-up"
+        turn_id = (send("11", {"chatSessionId": result.session_id, "message": MESSAGE}).get("data") or {}).get("turnId")
+        if not isinstance(turn_id, str) or not turn_id:
+            raise ProbeError("FOLLOW_UP_TURN_ID_MISSING")
+        follow = TurnResult(result.session_id, result.conversation_id, turn_id)
+        wait_for(follow)
+        output["followUp"] = turn_summary(follow)
+        output["passed"], output["error"] = follow.passed, output["followUp"]["error"]
+        return output
     except ProbeError as exc:
         if result is None:
             raise
-        return {"passed": False, "error": str(exc), "retried": False,
-                "chatSessionId": result.session_id, "chatServerConvId": result.conversation_id,
-                "turnId": result.turn_id, "completed": result.completed}
+        partial = {"passed": False, "error": str(exc), "retried": False, "stage": stage,
+                   "chatSessionId": result.session_id, "chatServerConvId": result.conversation_id,
+                   "turnId": result.turn_id, "completed": result.completed}
+        if follow is not None:
+            partial["followUp"] = {"turnId": follow.turn_id, "completed": follow.completed}
+        return partial
     except Exception:
         # Transport exceptions may contain handshake headers; never print them.
         raise ProbeError("WEBSOCKET_OR_PROTOCOL_ERROR_NO_RETRY") from None
@@ -267,10 +298,16 @@ def live_probe(agent_id, timeout, effort):
 
 def self_test():
     def frame(event, identifier, *, conversation="conversation-example", turn="turn-example",
-              text=None, final=False, status="COMPLETED", as_string=True):
-        custom = {"chatSessionId": "session-example", "turnId": turn,
-                  "userMsgChatServerId": "user-message-example", "agentMessageType": event,
+              text=None, final=False, status="COMPLETED", as_string=True,
+              user_message="user-message-example", user_seq=1):
+        # user_message=None models priming events (no user-message id, user_seq=None) and
+        # service 11 turns (userMsgSeqId + turnId, no userMsgChatServerId).
+        custom = {"chatSessionId": "session-example", "turnId": turn, "agentMessageType": event,
                   "isFinalResponse": final, "status": status}
+        if user_message is not None:
+            custom["userMsgChatServerId"] = user_message
+        if user_seq is not None:
+            custom["userMsgSeqId"] = user_seq
         if text is not None:
             custom["data"] = {"type": "TEXT", "text": text}
         return {"type": 2, "service": 116, "body": {"object_type": "message", "messages": [
@@ -307,6 +344,29 @@ def self_test():
     old = TurnResult("session-example", "conversation-example")
     old.accept(frame("LOOP_COMPLETE", "old-message", turn=None))
     assert old.error == "TURN_ID_MISSING_API_CONTRACT_REQUIRED"
+    # Service 10: priming/welcome events are skipped; the turn locks on the first user message.
+    primed = TurnResult("session-example", "conversation-example")
+    primed.accept(frame("LOOP_OUTPUT", "welcome", turn="priming-turn", text=EXPECTED, final=True,
+                        user_message=None, user_seq=None))
+    primed.accept(frame("LOOP_COMPLETE", "welcome-complete", turn="priming-turn", user_message=None, user_seq=None))
+    assert not primed.seen and primed.turn_id is None and not primed.completed
+    primed.accept(output)
+    primed.accept(done)
+    assert primed.passed and primed.turn_id == "turn-example"
+    start_error = TurnResult("session-example", "conversation-example")
+    start_error.accept(frame("LOOP_ERROR", "welcome-error", turn=None, user_message=None, user_seq=None))
+    assert start_error.error == "AGENT_START_ERROR"
+    # Service 11: events have the turnId of the HTTP response and no userMsgChatServerId.
+    follow = TurnResult("session-example", "conversation-example", "turn-follow-up")
+    follow.accept(frame("LOOP_OUTPUT", "late-first-turn", text="wrong", final=True))
+    follow.accept(frame("LOOP_OUTPUT", "follow-final", turn="turn-follow-up", text=EXPECTED, final=True,
+                        user_message=None, user_seq=2))
+    follow.accept(frame("LOOP_COMPLETE", "follow-complete", turn="turn-follow-up", user_message=None, user_seq=2))
+    assert follow.passed and follow.final_texts == [EXPECTED] and follow.turn_id == "turn-follow-up"
+    later = TurnResult("session-example", "conversation-example", "turn-follow-up")
+    later.accept(frame("LOOP_COMPLETE", "turnless", turn=None, user_message=None, user_seq=2))
+    later.accept(frame("LOOP_ERROR", "next-turn", turn="turn-next", user_message=None, user_seq=3))
+    assert not later.seen and not later.completed and not later.error
     assert result_body({"body": {"r": 0, "data": []}})["data"] == []
     for invalid in ({"body": {"r": 4}}, {"r": 5, "body": {"r": 0}}, {}):
         try:
@@ -324,6 +384,8 @@ def main():
     parser.add_argument("--agent-id")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--reasoning-effort")
+    parser.add_argument("--follow-up", action="store_true",
+                        help="after a passing first turn, send one more turn (service 11) in the same conversation")
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -331,7 +393,7 @@ def main():
     if not args.agent_id or not 10 <= args.timeout <= 600:
         parser.error("--agent-id is required and --timeout must be between 10 and 600 seconds")
     try:
-        result = live_probe(args.agent_id, args.timeout, args.reasoning_effort)
+        result = live_probe(args.agent_id, args.timeout, args.reasoning_effort, args.follow_up)
     except ProbeError as exc:
         result = {"passed": False, "error": str(exc), "retried": False}
     print(json.dumps(result, ensure_ascii=False))

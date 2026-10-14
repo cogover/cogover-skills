@@ -64,8 +64,8 @@ Form tài liệu nhận MD, TXT, CSV, XLSX, XLSM, DOCX, DOC, PDF, JPG/JPEG, PNG,
 | Trạng thái số | Ý nghĩa | Bước tiếp theo |
 |---:|---|---|
 | -1 | `PENDING_CONVERSION` | Chuyển đổi bằng 74 nếu chưa tự chuyển đổi |
-| -2 | `PENDING_APPROVAL` | Đọc nội dung chuyển đổi qua API rồi duyệt bằng 75 khi đã được phép |
-| 0 | `NOT_INDEXED` | Bắt đầu index theo mục dưới |
+| -2 | `PENDING_APPROVAL` | Đọc nội dung chuyển đổi qua API rồi duyệt bằng 75 khi đã được phép; duyệt xong file tự được gửi index |
+| 0 | `NOT_INDEXED` | Index chưa chạy, lỗi, bị chặn vì tính phí hoặc đã gỡ: index lại bằng 77 theo mục dưới |
 | 1 | `INDEXING` | Chờ và đọc lại; không gửi index lặp |
 | 2 | `INDEXED` | Có thể test truy xuất; vẫn cần kiểm tra đáp án |
 | 3 | `DELETING_INDEX` | Chờ thao tác đang chạy hoàn tất |
@@ -74,23 +74,22 @@ Các thao tác file trên `/api/v1/config-server`, type 9:
 
 - **71** cập nhật: `id` và trường cần sửa; không giả định có thể đổi `dataLibraryId` bằng API cập nhật file.
 - **73** List/chi tiết: `{"ids":["{file-id}"],"page":1,"limit":1}` hoặc lọc `dataLibraryId`.
-- **74** chuyển đổi, **75** duyệt, **76** gỡ index, **77** index lại: `{"ids":["{file-id}"]}`. Dùng đúng hành động khả dụng theo trạng thái; đặc biệt 77 dùng cho file ở trạng thái chưa index, không mặc định gọi thẳng lên file đang/đã index.
+- **74** chuyển đổi, **75** duyệt, **76** gỡ index, **77** index lại: `{"ids":["{file-id}"]}`. Mỗi thao tác chỉ nhận file ở đúng trạng thái: 74 `PENDING_CONVERSION` (khác thì `4142`), 75 `PENDING_APPROVAL` (`4144`), 76 `INDEXED` (`4145`), 77 `NOT_INDEXED` (`4146`). Cần quyền `EXECUTE` trên danh mục (`4003`); file không có trong Workspace trả `4141`.
 - **72** xóa tài liệu: `ids`. Không tự xóa dữ liệu/tài liệu người dùng để dọn test.
 
-API index một tài liệu đã sẵn sàng:
+### Index
 
-```http
-POST /api/v1/ai-agent
-Content-Type: application/json
-x-req-type: 1
-x-req-service: 20
+Index chạy qua chính các thao tác cấu hình trên, không có API index riêng cho phiên Web App (gọi `/api/v1/ai-agent` để index nhận HTTP `403`):
 
-{"fileId":"{file-id}"}
-```
+1. File Markdown (`.md`) tạo bằng 70 được gửi index ngay. File loại khác qua chuyển đổi (`isAutoConvert` hoặc 74) và duyệt (`isAutoApprove` hoặc 75); duyệt xong file được gửi index.
+2. Theo dõi bằng 73 tới `INDEXED` (2), với thời hạn chờ phù hợp kích thước file.
+3. File ở `NOT_INDEXED` (0) sau khi đã tạo/duyệt (index chưa chạy, bị chặn vì tính phí, hoặc đã gỡ bằng 76): gửi 77 `{"ids":["{file-id}"]}` rồi quay lại bước 2.
 
-Endpoint này dùng cùng cookie/CSRF của phiên, không nhận API Key trực tiếp. `fileId` là ID tài nguyên file từ thao tác 70/73, **không phải** `file_id` từ upload. Bắt đầu index trả về ngay; kiểm tra cả envelope thành công và dữ liệu trạng thái nếu có. Chỉ gọi khi file đã qua chuyển đổi/duyệt và đang `NOT_INDEXED`; không dùng API này để bỏ qua duyệt.
+`ids` là ID tài nguyên file từ thao tác 70/73, **không phải** `file_id` từ upload. Không dùng 77 để bỏ qua chuyển đổi/duyệt.
 
-Theo dõi bằng 73 với thời hạn chờ phù hợp kích thước file. Nếu quay lại 0, chưa thể kết luận thành công; báo index thất bại/chưa hoàn tất và đọc thông tin lỗi được API trả về. Nếu response không đủ để chẩn đoán, yêu cầu contract API chi tiết lỗi; không mở UI để xem lỗi. Khi đã ở 2, muốn thay nội dung hoặc index lại thì dùng 76 gỡ index → chờ 0 qua 73 → cập nhật nội dung nếu cần theo contract → index; không xóa/tạo lại tài liệu một cách mù quáng.
+Workspace chưa có gói AI Agent hoặc hết credit AI thì thao tác gửi index (70 với file Markdown, 75, 77) trả `r: 4402` (HTTP 400) với `data.errorCode` `AI_SUBSCRIPTION_REQUIRED` hoặc `INSUFFICIENT_CREDITS`; rẽ nhánh theo `data.errorCode`, `msg` chỉ để hiển thị. File vẫn được tạo/duyệt và ở `NOT_INDEXED` (với 70, `data` là file vừa tạo): không tạo lại file, báo người dùng và index bằng 77 khi Workspace đã có gói/credit.
+
+Nếu file đã `INDEXING` rồi quay lại 0, index thất bại: báo index chưa hoàn tất và đọc thông tin lỗi được API trả về, không gọi 77 lặp lại. Nếu response không đủ để chẩn đoán, yêu cầu contract API chi tiết lỗi; không mở UI để xem lỗi. Khi đã ở 2, muốn thay nội dung hoặc index lại thì dùng 76 gỡ index → chờ 0 qua 73 → cập nhật nội dung nếu cần theo contract → 77; không xóa/tạo lại tài liệu một cách mù quáng.
 
 Contract hiện tại chưa mô tả trường/endpoint đọc đầy đủ nội dung đã chuyển đổi để rà soát, hoặc chi tiết lỗi conversion/index. Khi bước duyệt hay chẩn đoán cần thông tin đó, báo người dùng cung cấp [API còn thiếu](api-gaps.md). Không đoán URL tải nội dung và không duyệt 75 khi workflow yêu cầu rà soát mà chưa đọc được bản chuyển đổi. Vẫn tiếp tục các phần cấu hình độc lập.
 

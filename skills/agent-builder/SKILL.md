@@ -3,13 +3,13 @@ name: agent-builder
 description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module và Tool PERSONNEL_CHAT cho Agent chủ động nhắn tin chat cho nhân sự), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.4.0`
-- **Ngày phát hành:** `2026-10-13`
+- **Phiên bản:** `1.5.0`
+- **Ngày phát hành:** `2026-10-14`
 
 ## Phạm vi
 
@@ -36,6 +36,7 @@ Khi thiếu API hoặc schema cần thiết, báo người dùng cung cấp cont
 - **Model:** chọn từ danh sách thực tế của Workspace. Ưu tiên khả năng làm theo hướng dẫn và gọi công cụ cho nghiệp vụ nhiều bước; cân nhắc độ trễ và chi phí cho chat CSKH. Nêu ngắn lý do chọn; hỏi nếu các lựa chọn có đánh đổi mà yêu cầu chưa làm rõ. Không cố định tên model hoặc tự cấu hình khóa của nhà cung cấp model.
 - **Reasoning:** mặc định bật `defaultReasoningSettings.enabled: true` và `allowUserReasoningOverride: true`. Chọn effort/budget hợp lệ theo metadata model; đây là mặc định của workflow này, không phải khẳng định mọi form có sẵn đều bật. Model không hỗ trợ reasoning thì chọn model phù hợp khác hoặc hỏi người dùng nếu họ đã chỉ định model đó. Không gửi trường mà model không hỗ trợ. Xem [reasoning](references/config-api.md#model-và-reasoning).
 - **Danh tính thực thi:** Agent nội bộ dùng “Quyền của nhân sự chat với Agent (Agent nội bộ)”, tương ứng `runAsPersonnelId: null`. Agent CSKH chọn một nhân sự có quyền phù hợp. Khi chưa rõ, có thể đề xuất nhân sự của người yêu cầu dựa trên `personnelId` trả về từ bước tạo phiên, rồi chốt lựa chọn trước khi gán quyền cố định. Không coi API Key là bằng chứng người yêu cầu muốn cho khách hàng dùng toàn bộ quyền của mình.
+- **Số vòng tối đa (`maxTurns`):** số lần gọi model cho mỗi câu hỏi, 1–80, mặc định 25; mỗi vòng tính credit. Giữ mặc định cho đa số Agent; tăng khi một câu hỏi cần nhiều bước tra cứu/ghi, giảm để giới hạn chi phí của Agent trả lời ngắn. Chạm giới hạn thì Agent trả lời bằng thông tin đã có và nêu phần còn thiếu, không báo lỗi; node AI Agent của Process chỉ hạ được giá trị này. Xem [Payload Agent](references/config-api.md#payload-agent).
 - **System Prompt:** viết đầy đủ vai trò, mục tiêu, phạm vi dữ liệu, quy trình xử lý theo từng nhóm yêu cầu, thông tin cần hỏi thêm, giới hạn thao tác, quy tắc chuyển cho người phụ trách và hình thức trả lời. Không chỉ dùng một câu “bạn là trợ lý hữu ích”. Với RAG, yêu cầu dẫn nguồn và nói rõ khi tài liệu không đủ; với thao tác ghi, chỉ báo thành công sau kết quả công cụ và kiểm tra lại. Mẫu tại [API cấu hình](references/config-api.md#system-prompt-mẫu).
 - **Không viết cơ chế Skill/Tool vào System Prompt:** không nhắc `activate_skill`, `deactivate_skill`, loại CORE/EXTENDED, slug Skill hay tên công cụ hệ thống. Lúc chạy, nền tảng tự chèn hướng dẫn của Skill CORE, danh sách Skill EXTENDED và quy tắc kích hoạt vào ngữ cảnh; hướng dẫn cách gọi công cụ chỉ nằm trong `fullInstructions` của Skill. Lặp lại trong System Prompt tạo hai nguồn hướng dẫn, dễ khiến Agent kích hoạt nhầm Skill CORE đã nạp sẵn và lệch khi nền tảng thay đổi. Mô tả nghiệp vụ thay cho cơ chế: yêu cầu nào cần dữ liệu gì, kết quả ra sao, giới hạn nào.
 - Giữ nguyên biến template ở cuối prompt; không thay bằng ngày hay danh tính tại lúc cấu hình:
@@ -78,6 +79,8 @@ Giới hạn form: tên/slug 250 ký tự, mô tả 500, hướng dẫn Skill 2.
 
 Đọc [danh mục và cấu hình Tool](references/tools.md) trước khi tạo. Chọn đúng cặp `category`/`type`, viết mô tả công cụ theo hành động và kết quả, cấu hình phạm vi Object/App/Data rõ ràng. `config` là **chuỗi JSON**, không phải object JSON lồng trực tiếp.
 
+Tool `RECORD`: có `app` thì mọi Object trong `object_slug(s)` phải nằm trên menu của App đó, không thì lưu bị từ chối `4021`; phạm vi trải nhiều App hoặc có Object ngoài App thì bỏ `app` hoặc tách mỗi App một Tool, xem [phạm vi Object và App](references/tools.md#phạm-vi-object-và-app). Câu hỏi đếm, thống kê theo nhóm, tổng/trung bình cấu hình type `LIST`: Agent có thêm `count_records`, `aggregate_records` và lọc theo bản ghi liên quan (`in_query`); `fullInstructions` hướng dẫn dùng chúng thay vì đọc nhiều trang `list_records`, xem [Đếm và thống kê](references/tools.md#đếm-thống-kê-và-lọc-theo-quan-hệ). Không có category `REPORT` (`4017`); số liệu cần saved report dùng Tool `CUSTOM_MODULE` gọi action đọc report.
+
 Logic riêng của Workspace đã viết trong Custom Backend Module (tính toán, kiểm tra điều kiện, đọc/ghi theo quy tắc nghiệp vụ) dùng Tool `CUSTOM_MODULE` gọi Custom Module Action mở cho AI Agent: lấy action từ danh mục `GET /api/v1/ts-projects/actions?consumer=agent`, Agent nhận schema input và mô tả của action, `requiresApproval` mặc định theo `effect` (`write` cần phê duyệt), action chạy dưới danh tính Agent đang dùng; chi tiết tại [CUSTOM_MODULE](references/tools.md#custom_module). Action chưa có hoặc thiếu input/output thì chuyển sang [$cogover-custom-module](../cogover-custom-module/SKILL.md), không thay bằng HTTP Tool gọi module.
 
 Agent cần chủ động nhắn tin chat cho nhân sự và **tự chọn người nhận** (chuyển lời theo yêu cầu của người đang chat, nhắc việc, cảnh báo cho người phụ trách) dùng Tool `PERSONNEL_CHAT`: người cấu hình chọn `conversationMode` (`NEW` hoặc `LATEST`), viết `description` nêu khi nào nên nhắn, và bảo đảm Agent có nguồn ID nhân sự; người nhận phải có quyền `EXECUTE` trên Agent và seat AI Agent. Agent không có công cụ này trong hội thoại với khách hàng, và lượt chạy nền đã được Process hoặc Custom Backend Module chỉ định người nhận thì không cần Tool; chi tiết tại [PERSONNEL_CHAT](references/tools.md#personnel_chat).
@@ -86,14 +89,14 @@ Tách công cụ đọc khỏi công cụ ghi khi cần chính sách khác nhau.
 
 ### 6. Data/RAG khi cần
 
-Đọc [Data và index tài liệu](references/data-rag.md). Quy trình: tạo/chọn danh mục → upload tài liệu → tạo file `CONTENT` → chuyển đổi/duyệt theo trạng thái → gọi index nếu cần → chờ `INDEXED` → cấu hình Tool `KNOWLEDGE_BASE` với slug danh mục trong `allowedCategories` → gắn Tool vào Skill của Agent.
+Đọc [Data và index tài liệu](references/data-rag.md). Quy trình: tạo/chọn danh mục → upload tài liệu → tạo file `CONTENT` (70; file Markdown được index ngay) → chuyển đổi/duyệt theo trạng thái (duyệt 75 xong thì file được index) → theo dõi 73 tới `INDEXED`, file còn `NOT_INDEXED` thì index lại bằng 77 → cấu hình Tool `KNOWLEDGE_BASE` với slug danh mục trong `allowedCategories` → gắn Tool vào Skill của Agent. Tất cả qua API cấu hình, không có API index riêng.
 
 Upload thành công chưa có nghĩa Agent tra cứu được. Không xem `agentIds` trả về của danh mục là cách thay thế Tool liên kết. File loại `SKILL` trong Data cũng không tự tạo tài nguyên Skill hay liên kết CORE/EXTENDED.
 
 ## C. Kích hoạt và kiểm thử
 
 1. Đọc lại Agent, Skill, Tool, quyền, model/reasoning và các liên kết; bật tài nguyên cần dùng. Kích hoạt Agent bằng thao tác đổi trạng thái được tài liệu hỗ trợ.
-2. Tạo **hội thoại mới** sau thay đổi cấu hình. Đọc [chat và WebSocket](references/chat-testing.md); kết nối WebSocket trước, tạo chat bằng HTTP, đọc phản hồi/công cụ/yêu cầu duyệt từ sự kiện. Dùng script probe cho kiểm tra kết nối cơ bản; test nghiệp vụ bằng HTTP/WebSocket client theo cùng contract, không chuyển sang trình duyệt khi probe chưa hỗ trợ tình huống.
+2. Tạo **hội thoại mới** sau thay đổi cấu hình. Đọc [chat và WebSocket](references/chat-testing.md); kết nối WebSocket trước, tạo chat bằng HTTP, đọc phản hồi/công cụ/yêu cầu duyệt từ sự kiện. Gắn sự kiện với lượt theo [Lọc sự kiện theo lượt](references/chat-testing.md#lọc-sự-kiện-theo-lượt): lượt gửi bằng service 11 lọc theo `turnId` trong response (sự kiện không có `userMsgChatServerId`); service 10 bỏ sự kiện mồi rồi khóa theo `turnId` đầu tiên của tin người dùng. Dùng script probe cho kiểm tra kết nối cơ bản; test nghiệp vụ bằng HTTP/WebSocket client theo cùng contract, không chuyển sang trình duyệt khi probe chưa hỗ trợ tình huống.
 3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data; Tool `CUSTOM_MODULE` theo mục Kiểm thử của [CUSTOM_MODULE](references/tools.md#custom_module) (gọi đúng action với input hợp lệ, phê duyệt action `write`, từ chối không tạo thay đổi); Tool `PERSONNEL_CHAT` theo các ca [gửi được, người nhận không hợp lệ, phê duyệt/từ chối](references/chat-testing.md#tool-personnel_chat), với người nhận đã biết trước vì đây là tin thật. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
 4. Kết luận dựa trên nội dung trả lời và kết quả nghiệp vụ. HTTP `r: 0` hoặc thông báo “ACCEPTED” chỉ xác nhận nhận yêu cầu. Với WebSocket cần đúng hội thoại/lượt, câu trả lời cuối và sự kiện hoàn tất không lỗi.
 

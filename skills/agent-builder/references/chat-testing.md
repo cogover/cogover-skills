@@ -28,7 +28,7 @@ API chat trả `r`, `msg`, `data` ở **root**, như API cấu hình. Response t
 | 12 | Trả lời yêu cầu duyệt công cụ | `chatSessionId`, `toolUseId`, `approved` |
 | 13 | Hủy một lượt đang chạy | `chatSessionId`, `turnId` |
 
-Request tiếp theo được chấp nhận có thể trả `status: "ACCEPTED"` và `turnId`; tiếp tục chờ sự kiện cuối. Không gửi đồng thời nhiều câu hỏi trong cùng hội thoại khi đang xác minh.
+Service 11 được chấp nhận trả `data.status: "ACCEPTED"` và `data.turnId`: giữ `turnId` để lọc sự kiện của lượt đó theo [Lọc sự kiện theo lượt](#lọc-sự-kiện-theo-lượt), rồi chờ sự kiện cuối. Response của service 10 không có `turnId`. Không gửi đồng thời nhiều câu hỏi trong cùng hội thoại khi đang xác minh.
 
 ### Reasoning lúc chat
 
@@ -37,7 +37,7 @@ Bỏ `reasoning` để test mặc định của Agent. Để test override, gử
 ### Test bằng HTTP và WebSocket
 
 1. Đọc trạng thái/quyền Agent bằng API cấu hình; kích hoạt tài nguyên cần dùng qua các thao tác đổi trạng thái đã có contract. Probe không thực hiện bước này.
-2. Lấy phiên theo skill xác thực, kết nối và đăng nhập WebSocket như mục dưới, rồi gọi HTTP service 10 để tạo hội thoại mới. Đọc câu trả lời cuối và sự kiện hoàn tất đúng hội thoại/lượt.
+2. Lấy phiên theo skill xác thực, kết nối và đăng nhập WebSocket như mục dưới, rồi gọi HTTP service 10 để tạo hội thoại mới. Đọc câu trả lời cuối và sự kiện hoàn tất đúng hội thoại/lượt; lượt tiếp theo (service 11) lọc theo `turnId` của response.
 3. Với kiểm tra nghiệp vụ, dùng HTTP/WebSocket client gửi câu hỏi thực tế qua service 10/11 và giữ kết nối để đọc các sự kiện. Đối chiếu công cụ được gọi, kết quả, nguồn RAG và dữ liệu nghiệp vụ qua API tương ứng. Nếu thiếu schema sự kiện để xác minh một điều kiện, báo cần bổ sung contract; không suy ra PASS từ lời tự báo của Agent.
 4. Khi nhận `TOOL_APPROVAL_REQUEST`, lấy `data.toolUseId`, trình bày thao tác cần duyệt dựa trên dữ liệu sự kiện và áp dụng quyết định đã được người dùng cho phép. Gửi service 12 với `chatSessionId`, `toolUseId`, `approved: true/false`; tiếp tục chờ kết quả và `LOOP_COMPLETE`. Không coi HTTP chấp nhận quyết định là bằng chứng công cụ đã chạy. Chỉ yêu cầu xác nhận với thao tác chưa được cho phép; không thêm vòng duyệt lặp vào việc đã được ủy quyền.
 5. Khi timeout/mất kết nối, giữ các ID đã nhận và báo phần chưa xác minh. Không tự gửi lại yêu cầu tạo chat hoặc tin nhắn có thể gây thao tác ghi. Khôi phục kết quả chỉ khi có contract lịch sử/replay; xem [API cần bổ sung](api-gaps.md).
@@ -64,11 +64,18 @@ Message mới có `type: 2`, `service: 116`, `body.object_type: "message"` và `
 {
   "chatSessionId":"{chat-session-id}",
   "turnId":"{turn-id}",
+  "userMsgSeqId":2,
   "agentMessageType":"LOOP_OUTPUT",
   "isFinalResponse":true,
   "data":{"type":"TEXT","text":"AGENT_BUILDER_OK"}
 }
 ```
+
+Trường gắn sự kiện với tin của người dùng khác nhau theo cách gửi tin:
+
+- Sự kiện mồi/lời chào khi mở hội thoại: không có id tin người dùng (không có `userMsgChatServerId`; `userMsgSeqId` không có hoặc bằng `0`).
+- Lượt của tin đầu (service 10): `turnId`, `userMsgSeqId` và `userMsgChatServerId`.
+- Lượt gửi bằng service 11: `turnId` (trùng `data.turnId` của response) và `userMsgSeqId`, **không** có `userMsgChatServerId`.
 
 | `agentMessageType` | Cách xử lý |
 |---|---|
@@ -80,7 +87,14 @@ Message mới có `type: 2`, `service: 116`, `body.object_type: "message"` và `
 
 `LOOP_COMPLETE` có thể có `isFinalResponse: false` và text rỗng — đây là bình thường; câu trả lời ở frame TEXT trước đó. Không dùng số lượng frame, độ dài nội dung hay sự xuất hiện reasoning làm tiêu chí PASS.
 
-Lọc đúng `conversation_id` **và** `custom_data.chatSessionId`, sau đó `turnId` khi có. Khử trùng theo message `id`; không ghép một hội thoại khác hoặc frame cập nhật danh sách hội thoại vào câu trả lời. Với deployment cũ thiếu `turnId`, chỉ dùng `userMsgChatServerId`/sequence khi đã có contract xác định tương quan lượt; nếu chưa có, yêu cầu người dùng cung cấp trước khi kết luận test. Không tự ghép sự kiện theo thời gian đến. Không giả định có streaming từng token; có thể nhận cả block văn bản.
+### Lọc sự kiện theo lượt
+
+Lọc đúng `conversation_id` **và** `custom_data.chatSessionId`, rồi theo lượt:
+
+- **Service 11:** chỉ nhận sự kiện có `turnId` bằng `data.turnId` của response. Không đòi `userMsgChatServerId`, vì sự kiện của lượt này không có trường đó.
+- **Service 10:** bỏ sự kiện mồi/lời chào (không có `userMsgChatServerId`; `LOOP_ERROR` ở đây là lỗi khởi động Agent), khóa theo `turnId` của sự kiện đầu tiên có `userMsgChatServerId`, sau đó chỉ nhận sự kiện cùng `turnId`.
+
+Khử trùng theo message `id`; không ghép một hội thoại khác hoặc frame cập nhật danh sách hội thoại vào câu trả lời. Sự kiện của lượt cần kiểm tra mà thiếu `turnId` thì không tự ghép theo thời gian đến hay sequence; yêu cầu contract tương quan lượt trước khi kết luận test. Không giả định có streaming từng token; có thể nhận cả block văn bản.
 
 ### Tool PERSONNEL_CHAT
 
@@ -93,22 +107,23 @@ Tool gửi **tin thật** cho nhân sự và tính vào giới hạn ngày (xem 
 | Phê duyệt, từ chối | Bật `requiresApproval`, tạo hội thoại mới, trả lời service 12 với `approved: false` | `TOOL_APPROVAL_REQUEST` có `data.toolName`, `data.toolInput` (`personnel_id`, `message`) và `data.summary`; sau khi từ chối không có tin nào được gửi |
 | Phê duyệt, chấp thuận | Như trên với `approved: true`, chỉ khi người dùng cho phép gửi tin thật | Tin được gửi theo `toolInput` đã duyệt; câu trả lời cuối báo đã gửi |
 
-Sự kiện `TOOL_USE` chỉ có tên công cụ; input chỉ xuất hiện trong `TOOL_APPROVAL_REQUEST`. Câu trả lời của Agent chưa chứng minh người nhận đã thấy tin. Khi **người kiểm thử cũng là người nhận** (`personnelId` của phiên, đã có quyền `EXECUTE` trên Agent và seat AI Agent), cùng WebSocket nhận tin ở một `conversation_id` khác, `custom_data.proactive: true`, `text` mở đầu bằng dòng ghi người yêu cầu; ca này `LATEST` luôn mở hội thoại mới vì hội thoại gần nhất của Agent với người nhận chính là hội thoại đang chat. Trả lời vào hội thoại đó bằng service 11 với `chatSessionId` trong `custom_data` của tin để kiểm tra Agent chỉ biết tin đã gửi. Người nhận là người khác thì cần phiên của chính người đó hoặc API đọc hội thoại, xem [API cần bổ sung](api-gaps.md); không dùng phiên của người khác khi chưa được phép.
+Sự kiện `TOOL_USE` chỉ có tên công cụ; input chỉ xuất hiện trong `TOOL_APPROVAL_REQUEST`. Câu trả lời của Agent chưa chứng minh người nhận đã thấy tin. Khi **người kiểm thử cũng là người nhận** (`personnelId` của phiên, đã có quyền `EXECUTE` trên Agent và seat AI Agent), cùng WebSocket nhận tin ở một `conversation_id` khác, `custom_data.proactive: true`, `text` mở đầu bằng dòng ghi người yêu cầu; ca này `LATEST` luôn mở hội thoại mới vì hội thoại gần nhất của Agent với người nhận chính là hội thoại đang chat. Trả lời vào hội thoại đó bằng service 11 với `chatSessionId` trong `custom_data` của tin (lọc sự kiện theo `turnId` của response) để kiểm tra Agent chỉ biết tin đã gửi. Người nhận là người khác thì cần phiên của chính người đó hoặc API đọc hội thoại, xem [API cần bổ sung](api-gaps.md); không dùng phiên của người khác khi chưa được phép.
 
 ## Probe kèm skill
 
-`scripts/chat_probe.py` tạo đúng một hội thoại mới, dùng câu hỏi kiểm tra kết nối không yêu cầu Tool, chờ TEXT cuối và `LOOP_COMPLETE`. Script không kích hoạt Agent, sửa quyền, duyệt Tool hay tự gửi lại tin nhắn khi kết nối lỗi. Nếu cần test nghiệp vụ/ghi/RAG hoặc duyệt Tool, dùng HTTP/WebSocket client theo luồng trên và ma trận phía dưới. Giới hạn của probe không phải thiếu API và không phải lý do mở trình duyệt.
+`scripts/chat_probe.py` tạo đúng một hội thoại mới, dùng câu hỏi kiểm tra kết nối không yêu cầu Tool, chờ TEXT cuối và `LOOP_COMPLETE`. Với `--follow-up`, sau khi lượt đầu đạt, script gửi thêm một lượt bằng service 11 trong cùng hội thoại và kiểm tra lượt đó theo `turnId` của response (kết quả ở `followUp`). Script không kích hoạt Agent, sửa quyền, duyệt Tool hay tự gửi lại tin nhắn khi kết nối lỗi. Nếu cần test nghiệp vụ/ghi/RAG hoặc duyệt Tool, dùng HTTP/WebSocket client theo luồng trên và ma trận phía dưới. Giới hạn của probe không phải thiếu API và không phải lý do mở trình duyệt.
 
 Yêu cầu Python 3.10+; chạy live cần thư viện **websocket-client** trong môi trường Python đang dùng. Dùng thư viện đã có; nếu thiếu, cài theo quy định môi trường (package này không được đóng gói trong skill). `--self-test` chỉ dùng thư viện chuẩn, không gọi mạng:
 
 ```bash
 python3 scripts/chat_probe.py --self-test
 python3 scripts/chat_probe.py --agent-id '{agent-id}' --timeout 120
+python3 scripts/chat_probe.py --agent-id '{agent-id}' --timeout 180 --follow-up
 ```
 
 Chạy từ thư mục skill hoặc thay đường dẫn script bằng đường dẫn đã resolve. Credential `COGOVER_BASE_URL` và `COGOVER_API_KEY` được cung cấp qua scoped environment/secret store như skill xác thực; không điền literal key vào lệnh, prompt hoặc file. Có thể thêm `--reasoning-effort` với giá trị hợp lệ để test override; bỏ cờ để test mặc định.
 
-Probe trả kết quả JSON và exit code khác 0 nếu lỗi, chờ duyệt, hết hạn hoặc đáp án không khớp. Script chỉ kiểm tra kết nối/câu trả lời, không chứng minh quyền nghiệp vụ, chất lượng model, hiệu lực giới hạn Skill, Tool hay RAG. Probe trả `TURN_ID_MISSING_API_CONTRACT_REQUIRED` khi không có `turnId`: cần contract tương quan lượt phù hợp để viết client bổ sung. `TOOL_APPROVAL_REQUIRED` nghĩa là probe không tự duyệt; API duyệt service 12 đã có trong tài liệu, không cần xin lại API này. Cả hai trường hợp đều không tự chuyển sang trình duyệt.
+Probe trả kết quả JSON và exit code khác 0 nếu lỗi, chờ duyệt, hết hạn hoặc đáp án không khớp. Script chỉ kiểm tra kết nối/câu trả lời, không chứng minh quyền nghiệp vụ, chất lượng model, hiệu lực giới hạn Skill, Tool hay RAG. Probe trả `TURN_ID_MISSING_API_CONTRACT_REQUIRED` khi sự kiện của lượt đầu không có `turnId`, hoặc `FOLLOW_UP_TURN_ID_MISSING` khi response service 11 không có `turnId`: cần contract tương quan lượt phù hợp để viết client bổ sung. `TOOL_APPROVAL_REQUIRED` nghĩa là probe không tự duyệt; API duyệt service 12 đã có trong tài liệu, không cần xin lại API này. Cả hai trường hợp đều không tự chuyển sang trình duyệt.
 
 ## Ma trận xác minh
 

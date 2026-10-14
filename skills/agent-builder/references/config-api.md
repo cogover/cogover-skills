@@ -34,9 +34,13 @@ Model: **53** (List). Prompt template: **83** (List, payload `{}`). Model/provid
 
 - Đổi trạng thái: `{"ids":["{resource-id}"],"status":true}`. `status` là boolean.
 - Cập nhật: `id` bắt buộc; chỉ gửi trường cần sửa. Với `skills`, `tools`, `accessControls`, `agentIds` hoặc `skillIds`, đọc trạng thái hiện tại và xây lại danh sách đầy đủ cần giữ; không giả định đây là thao tác append.
-- Nhân bản: `id`, `name`, `slug`; có thể thêm `description`, `accessControls`. Đọc lại liên kết, danh tính và quyền trước khi dùng bản sao.
+- Nhân bản: `id`, `name`, `slug`; có thể thêm `description`, `accessControls`, với Agent thêm `maxTurns` (không gửi thì kế thừa Agent nguồn). Đọc lại liên kết, danh tính và quyền trước khi dùng bản sao.
 - Xóa: `id` hoặc `ids` cho Agent/Skill/Tool. Chỉ dùng khi người dùng yêu cầu xóa đúng tài nguyên và đã xem các liên kết bị ảnh hưởng; không tự xóa tài nguyên dùng chung sau test.
-- Mã lỗi thường gặp: `4004` không tìm thấy, `4005` trùng slug; `4320`–`4324` liên quan model/reasoning; với Tool `CUSTOM_MODULE`: `4020`/`4021` config thiếu hoặc sai định dạng, `4047` (HTTP 400, `data.errorCode` `CUSTOM_MODULE_ACTION_NOT_FOUND`) action không có hoặc không mở cho AI Agent, HTTP 503 với `data.errorCode` `CUSTOM_MODULE_ACTION_UNAVAILABLE` khi chưa kiểm tra được action (thử lại sau), xem [CUSTOM_MODULE](tools.md#custom_module). Báo mã và thông điệp đã lọc bí mật, không dò phiên bản API khác để thử tiếp.
+- Mã lỗi thường gặp: `4004` không tìm thấy, `4005` trùng slug; `4320`–`4324` liên quan model/reasoning. Cùng một mã có thể mang nghĩa khác giữa Agent, Skill và Tool, nên đọc kèm `msg`.
+  - Agent: `4024` `maxTurns` không hợp lệ, xem [Payload Agent](#payload-agent).
+  - Tool: `4017` category không được hỗ trợ (`category must be one of: ...`), gồm cả `REPORT`, xem [chọn category](tools.md#chọn-category-và-type). `4020`/`4021` config thiếu hoặc sai: với `RECORD`, `4020` khi không có đúng một trong `object_slug`/`object_slugs` hoặc `object_slugs` rỗng, `4021` khi `app` không tồn tại hoặc Object không có trên menu của `app` (`object_slug '{slug}' does not belong to app '{app}'`), xem [RECORD](tools.md#phạm-vi-object-và-app); với `CUSTOM_MODULE`, thiếu key hoặc sai định dạng.
+  - Tool `CUSTOM_MODULE`: `4047` (HTTP 400, `data.errorCode` `CUSTOM_MODULE_ACTION_NOT_FOUND`) action không có hoặc không mở cho AI Agent; HTTP 503 với `data.errorCode` `CUSTOM_MODULE_ACTION_UNAVAILABLE` khi chưa kiểm tra được action (thử lại sau), xem [CUSTOM_MODULE](tools.md#custom_module).
+  - Báo mã và thông điệp đã lọc bí mật, không dò phiên bản API khác để thử tiếp.
 
 ## Model và reasoning
 
@@ -93,6 +97,10 @@ List (13) hỗ trợ `ids`, `keyword`, `modelIds`, `skillIds`, `status`, `page`,
 ```
 
 `languages` dùng locale như `vi-VN`, `en-US`, không gửi mã cờ `vn`, `us`. Cấu hình reasoning mẫu cần bổ sung effort/budget nếu model yêu cầu. Agent nội bộ đổi `runAsPersonnelId` thành `null`. Mẫu quyền trên chỉ là nhóm cấu hình ban đầu; bổ sung người dùng đích theo nghiệp vụ.
+
+`maxTurns` là số lần gọi model (vòng) tối đa cho mỗi câu hỏi của người dùng; mỗi vòng tính credit. Giá trị là số nguyên 1–80 hoặc `null`; giá trị khác trả `4024`. Tạo (10): không gửi hoặc `null` dùng mặc định 25. Cập nhật (11): không gửi thì giữ nguyên, `null` đặt lại mặc định. Nhân bản (14): không gửi thì kế thừa Agent nguồn.
+
+Khi chạm giới hạn, Agent không báo lỗi `MAX_TURNS` nữa: vòng cuối chạy không có công cụ và Agent trả lời bằng thông tin đã thu thập, nêu phần còn thiếu. `maxTurns` của node AI Agent trong Process chỉ hạ được, không vượt giá trị của Agent.
 
 `agentTemplateId` tùy chọn, lấy từ danh sách prompt template. Đọc template trước khi chọn và vẫn hoàn thiện `systemPrompt` của Agent. Trạng thái tạo không nằm trong payload tạo chuẩn; xem trạng thái response/list, đổi qua 17 hoặc update 11 khi cần.
 

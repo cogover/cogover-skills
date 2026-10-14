@@ -1,15 +1,15 @@
 ---
 name: object-record
-description: "Quản lý bản ghi Cogover Object qua Records API `/bapi/v1/records` (lấy danh sách có lọc/phân trang, tạo, cập nhật, xoá) và upload/gắn file, chèn ảnh local vào long-text WYSIWYG bằng phiên Web App. Dùng khi cần thao tác record, tạo record kèm file hoặc ảnh trong cùng request, hoặc đính kèm file vào record hiện có; xoá phải xác nhận trước."
+description: "Quản lý bản ghi Cogover Object qua Records API `/bapi/v1/records` (lấy danh sách có lọc/phân trang, đếm và thống kê theo nhóm, tạo, cập nhật, xoá) và upload/gắn file, chèn ảnh local vào long-text WYSIWYG bằng phiên Web App. Dùng khi cần thao tác record, tạo record kèm file hoặc ảnh trong cùng request, hoặc đính kèm file vào record hiện có; xoá phải xác nhận trước."
 metadata:
   author: cogover
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Object Record
 
-- **Phiên bản:** `1.1.0`
-- **Ngày phát hành:** `2026-10-06`
+- **Phiên bản:** `1.2.0`
+- **Ngày phát hành:** `2026-10-14`
 
 Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác gọi skill này khi cần đọc/ghi record. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Các API record dùng `/bapi/v1` với API Key Bearer; riêng upload file và gắn file vào record đã tồn tại dùng `/api/v1` bằng phiên Web App (đổi từ API Key qua `$cogover-api-auth`; không tạo được phiên thì dừng và báo người dùng, không gọi `/api/v1` bằng API Key).
 
@@ -17,7 +17,7 @@ Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác g
 
 - Object ID, `object_slug` và fields của Object: lấy qua `$object-info` nếu chưa có. Với field file luôn lấy `slug`, `fieldType` và `multiple` từ metadata; không suy đoán từ tên hiển thị.
 - Upload file/ảnh WYSIWYG: cần đường dẫn tuyệt đối tới file (tồn tại, không rỗng), metadata field đích và phiên Web App; chỉ cần ID bản ghi khi gắn vào record đã tồn tại.
-- Các khả năng A–E độc lập, không cần gọi theo thứ tự.
+- Các khả năng A–F độc lập, không cần gọi theo thứ tự.
 
 ## A. Lấy danh sách — `POST /bapi/v1/records/list`
 
@@ -39,7 +39,7 @@ Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác g
 - `logic_sequence`: `""` khi `type` là `1`/`2`; khi `3` là biểu thức như `"1 AND (2 OR 3)"` (số là thứ tự phần tử trong `filters`, bắt đầu từ 1).
 - `filters[]`: `{"field": "<slug>", "op": "<toán tử>", "params": <null | string | number | array>, "fieldType": "<fieldType từ $object-info>"}`. Toán tử và kiểu `params` theo từng `fieldType`: [records_filter_conditions.md](records_filter_conditions.md); field và đường dẫn không lọc được: [Trường hợp không hỗ trợ](records_filter_conditions.md#trường-hợp-không-hỗ-trợ). Lấy tất cả bản ghi: `{"field": "id", "op": "not null", "params": null, "fieldType": "short_text"}`; lọc trạng thái: `{"field": "status", "op": "in", "params": ["new", "nurturing"], "fieldType": "single_choice"}`.
 - `sorts`: field mặc định `updated`; `order` là `desc` (mới nhất trước) hoặc `asc`.
-- `size`: mặc định `20`, tối đa `200`. Phân trang: lần đầu `"search_after": []`, các lần sau truyền `data.search_after` của response trước.
+- `size`: mặc định `20`, tối đa `100` (lớn hơn được hạ về 100); `0` chỉ trả `data.total` (đếm, không lấy bản ghi). Phân trang: lần đầu `"search_after": []`, các lần sau truyền `data.search_after` của response trước. Cần đếm hoặc thống kê theo nhóm thì dùng `size: 0` hoặc [F. Đếm và thống kê](#f-đếm-và-thống-kê--post-bapiv1recordsaggregate), không phân trang qua mọi bản ghi rồi tự tính.
 
 Response: `data.total` (tổng bản ghi phù hợp), `data.rows[]` (mỗi bản ghi gồm `id`, `name`, `created`, `updated`, `created_by{id,name}` và các field theo Object), `data.search_after` (mảng, dùng cho trang tiếp); ngoài `data` còn `personnelId`, `workspaceDomain`, `workspaceId`. Giá trị trong `rows`:
 
@@ -126,6 +126,45 @@ Thực hiện bằng API, không dùng trình duyệt. Đọc [references/upload
 5. Sau khi mọi upload thành công, gắn metadata bằng `POST /api/v1/records`; có thể gắn nhiều field trong cùng request, không tái sử dụng metadata cho field khác. Field đơn (`multiple=false`) gửi object, field đa (`multiple=true`) gửi mảng; nếu người dùng muốn thêm file mà không thay file cũ, đọc giá trị hiện tại và nối metadata mới trước khi gửi.
 6. Hoàn tất chỉ khi request gắn file trả HTTP `2xx` và `r: 0` (kiểm tra cả `body.r`). Báo tên file, Object/field slug, cờ đơn/đa, ID bản ghi và kết quả từng bước.
 
+## F. Đếm và thống kê — `POST /bapi/v1/records/aggregate`
+
+Đếm và tính số liệu theo nhóm trên toàn bộ bản ghi khớp bộ lọc trong một request. Cùng API Key Bearer và giới hạn tần suất như `/records/list`.
+
+```json
+{
+  "object_slug": "{OBJECT_SLUG}",
+  "type": 1,
+  "logic_sequence": "",
+  "filters": [{"field": "status", "op": "in", "params": ["new"], "fieldType": "single_choice"}],
+  "group_by": ["{GROUP_FIELD_SLUG}"],
+  "stats": [{"type": "count"}, {"type": "sum", "field": "{NUMBER_FIELD_SLUG}"}],
+  "group_limit": 1000
+}
+```
+
+| Trường | Quy tắc |
+|---|---|
+| `object_slug` | Bắt buộc |
+| `type`, `logic_sequence`, `filters` | Như [A](#a-lấy-danh-sách--post-bapiv1recordslist); `filters` rỗng hoặc thiếu là mọi bản ghi. Không lọc theo field của bản ghi liên quan (`owner.name`): lọc theo ID lookup |
+| `group_by` | 0–3 slug field; rỗng là đúng một nhóm `{"key":{}}` gồm mọi bản ghi khớp. Không nhóm được `long_text`, `phone`, file, formula, rollup; `reference` chỉ nhóm một mình |
+| `stats` | Tối đa 10 phần tử `{type, field}`: `count` (luôn có), `sum`/`avg` trên field số, `min`/`max` trên field số hoặc ngày, `distinct` (số giá trị khác nhau của `field`, gần đúng khi rất nhiều giá trị) |
+| `group_limit` | 1–10000, mặc định 1000; nhóm xếp theo `count` giảm dần |
+
+Response:
+
+```json
+{"r":0,"msg":"OK","data":{"total":2095,"groups":[{"key":{"owner":{"id":"PER00000000003","name":"Nguyễn Văn A"}},"count":872,"sum_amount":1500000}],"truncated":false}}
+```
+
+- `data.total`: số bản ghi khớp bộ lọc trong phạm vi quyền của người gọi. Mỗi phần tử `groups[]` có `key` (slug field → giá trị), `count` và `<type>_<field>` cho mỗi chỉ số thêm (ví dụ `sum_amount`).
+- Giá trị trong `key`: lookup/reference `{id, name}`; lựa chọn là slug option; boolean `true`/`false`; `date` chuỗi `YYYY-MM-DD`; `date_time` timestamp (ms); số là number; text là string, có thể trả về dạng chữ thường.
+- Nhóm theo một field: bản ghi không có giá trị thành một nhóm có giá trị `key` là `null`. Nhóm theo nhiều field không có nhóm này; với field một giá trị, số bản ghi trống là `total` trừ tổng `count`.
+- `truncated: true` khi số nhóm vượt `group_limit`: tăng `group_limit` hoặc thu hẹp bộ lọc trước khi kết luận về các nhóm nhỏ.
+- Áp dụng quyền Object/record của người gọi; field bị ẩn với người gọi không dùng được trong `group_by`, `stats`, `filters`.
+- Lỗi trả HTTP 400 với `r`: `80` body sai, `81` field không có hoặc không nhóm/tính được, `82` field bị ẩn với người gọi, `83` API Key không gắn nhân sự, `40` không có quyền xem Object, `1` Object không tồn tại; `14` lỗi tìm kiếm phía server (thử lại sau).
+
+Chỉ cần tổng số thì dùng `/records/list` với `size: 0`. Báo cáo cần lưu lại, kết hợp nhiều Object hoặc dùng lại trên dashboard: dùng [$report-builder](../report-builder/SKILL.md).
+
 ## Dữ liệu kiểm thử
 
 Nguồn chung cho dữ liệu kiểm thử của bộ skill; skill khác chỉ ghi phần riêng.
@@ -140,7 +179,7 @@ Nguồn chung cho dữ liệu kiểm thử của bộ skill; skill khác chỉ g
 
 ## Trả kết quả
 
-- Người dùng gọi trực tiếp: bảng hoặc danh sách dễ đọc. Danh sách: các trường quan trọng (`id`, `name`, `status`, `created`...); nhiều bản ghi thì tóm tắt và hỏi có xem thêm không. Tạo: kèm ID bản ghi mới. Xoá: nhấn mạnh bản ghi đã bị xoá vĩnh viễn. Upload: như bước 6 của E.
+- Người dùng gọi trực tiếp: bảng hoặc danh sách dễ đọc. Danh sách: các trường quan trọng (`id`, `name`, `status`, `created`...); nhiều bản ghi thì tóm tắt và hỏi có xem thêm không. Thống kê: bảng nhóm kèm `total`, nêu rõ khi `truncated: true`. Tạo: kèm ID bản ghi mới. Xoá: nhấn mạnh bản ghi đã bị xoá vĩnh viễn. Upload: như bước 6 của E.
 - Skill khác gọi: trả dữ liệu có cấu trúc để skill gọi dùng trực tiếp.
 
 ## Xử lý lỗi
@@ -149,6 +188,7 @@ Nguồn chung cho dữ liệu kiểm thử của bộ skill; skill khác chỉ g
 |---|---|
 | `r: 27` — Invalid filter type | Request `/records/list` thiếu hoặc sai `type`: thêm `type` số `1`/`2`/`3` ở cấp cao nhất và đối chiếu `logic_sequence`. Không thay `filters[].fieldType` để chữa. |
 | `r: 1` — Record not existed | RECORD_ID sai hoặc bản ghi đã bị xoá; kiểm tra lại hoặc dùng A để tìm. |
+| HTTP 400, `r` `81`/`82` khi gọi `/records/aggregate` | `81`: field không có hoặc không nhóm/tính được theo kiểu; `82`: field bị ẩn với người gọi. Đối chiếu field và request theo [F](#f-đếm-và-thống-kê--post-bapiv1recordsaggregate), bỏ field đó hoặc kiểm tra quyền theo [$user-permission](../user-permission/SKILL.md); không thử lại bằng key khác. |
 | `r: 47` — `Field [...] is not editable` | Field không cho sửa qua API: `manualModifyAllow: false`, formula, rollup, field hệ thống hoặc field do backend App quản lý (ví dụ `status` của một số Object App chuẩn). Đọc metadata field qua `$object-info` trước khi `PUT`; đổi trạng thái bằng Object Button, Process hoặc action của App, không thử lại `PUT`. |
 | `r: 37` — `You don't have permission to update this record` | Security rule hoặc khoá sửa theo trạng thái chặn field/record, áp dụng cả Super Admin. Báo đúng field bị chặn; không thử lại bằng key khác, không tự mở rule. Sửa dữ liệu đã khoá: theo [Khoá sửa theo trạng thái](../user-permission/SKILL.md#khoá-sửa-theo-trạng-thái), hỏi người dùng phạm vi trước. |
 | `r: 48` — target value không được phép | Transition rule không có flow từ giá trị hiện tại sang giá trị đích. Đọc rule qua [$object-transition-rule](../object-transition-rule/SKILL.md); không nhảy cóc trạng thái. |
