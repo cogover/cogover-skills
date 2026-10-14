@@ -106,10 +106,28 @@ cogover-dev git token delete <id> [--account <account-id>] [--yes]
 - Mặc định lưu source của mọi Project lên repository này, trừ khi người dùng không muốn. Lần đầu báo người dùng repository nào và ai xem được (SuperAdmin, collaborator của repository).
 - `git setup` chạy một lần trong thư mục có `cogover.json` (backend và frontend riêng), dùng cùng Workspace API key với `publish`: tạo repository và tài khoản Git nếu chưa có, lưu access token vào credential store của hệ điều hành, `git init` khi cần, cấu hình credential helper và thêm remote `origin`, hoặc `cogover` khi `origin` trỏ nơi khác. Lệnh không commit hay push.
 - Commit và push: bản khởi tạo, mỗi tính năng hoặc lần sửa lỗi đã qua test local, trước mỗi lần publish. Activate xong thì gắn tag `cogover-<VERSION_ID>` vào commit đã publish và push tag. Push không publish version.
-- Trước commit đầu, `.gitignore` phải loại `.env*`, `.cogover-session.curl`, file phiên/trace/báo cáo E2E (chứa cookie phiên), `node_modules/`, `dist/`, ZIP; mỗi lần commit xem lại file staged.
+- Trước commit đầu, `.gitignore` phải loại `.env*`, `.cogover-session.curl`, file phiên và artifact của lần chạy E2E (trace, HAR, video, screenshot, báo cáo, log chạy, file lưu ID record đã tạo; có thể chứa cookie phiên hoặc dữ liệu thật), `node_modules/`, `dist/`, ZIP; mỗi lần commit xem lại file staged. Tài liệu, ảnh và script E2E được commit vào repository theo [Bố cục repository](#bố-cục-repository).
 - Chỉ push lên remote do `git setup` cấu hình, không force push; push bị từ chối thì `git pull --rebase` rồi push lại, có conflict thì dừng và báo người dùng.
 - Không lưu được (Workspace chưa bật hoặc chưa hỗ trợ Git, chưa cài Git, `CREDENTIAL_STORE_UNAVAILABLE`, không phải SuperAdmin) thì báo một lần rồi làm tiếp, không tự cài phần mềm hay nới quyền. Thiếu credential store: cài lại CLI bằng `npm install --global @cogover/dev-cli --allow-scripts=keytar` (npm từ 12). Git gọi `cogover-dev git credential`, nên CLI phải có trên `PATH`.
 - Token chỉ nằm trong credential store: không in, ghi file, đưa vào URL remote hay commit; `--print-token` chỉ khi người dùng cần token cho công cụ khác. Quản lý repository qua API: mục Repository của module trong [Backend API Reference](custom-backend-module-api-reference.md#repository-của-module) và [Frontend API Reference](custom-frontend-module-api-reference.md#repository-của-module).
+
+## Bố cục repository
+
+Mỗi Project (thư mục có `cogover.json`) là một repository; file nằm ngoài thư mục Project không thuộc repository nào và không được lưu. Full-stack có một repository cho backend và một cho mỗi frontend: thư mục cha (nếu có) chỉ chứa các thư mục Project, ví dụ `backend/` và `frontend/`; không đặt tài liệu, ảnh, E2E hay file nào khác của dự án ở thư mục cha hoặc thành project ngang hàng. Quy tắc áp dụng cả khi người dùng chưa lưu source lên Git.
+
+| Nội dung | Repository và thư mục |
+|---|---|
+| Tài liệu chỉ thuộc một phía | `docs/` của repository đó |
+| Tài liệu chung cho các phía (contract API, kiến trúc, bàn giao) | `docs/` của repository backend; README của frontend dẫn tới tài liệu này. Dự án không có backend thì đặt ở repository frontend |
+| Ảnh, font, icon dùng trong giao diện | Repository frontend, nơi build đóng gói được (`src/assets/` với template) |
+| Ảnh minh hoạ tài liệu (screenshot, sơ đồ) | Cùng repository với tài liệu dùng nó, ví dụ `docs/images/`, tham chiếu bằng đường dẫn tương đối |
+| E2E gọi API của backend (route, trigger, job, action, webhook trên Workspace) | `e2e/` của repository backend |
+| E2E trên trình duyệt, kể cả luồng đi từ frontend tới backend | `e2e/` của repository frontend đang được kiểm thử |
+| File phiên, artifact và log của lần chạy test, file lưu ID record đã tạo | Không commit: thêm vào `.gitignore` của repository chứa E2E |
+
+- `docs/` và `e2e/` nằm ngoài `src/` nên không vào ZIP publish: backend chỉ đóng gói `src/`, frontend chỉ đóng gói `dist/`. Tài liệu và test không chứa credential, cookie hay token; cấu hình E2E qua biến môi trường.
+- E2E chạy bằng lệnh riêng (ví dụ `npm run test:e2e`), không nằm trong `npm test` hay lệnh unit test và không tính vào coverage, vì E2E gọi Workspace thật và có thể ghi dữ liệu. E2E có `tsconfig` riêng (ví dụ `e2e/tsconfig.json`) và không nằm trong `include` của tsconfig ứng dụng, để build, typecheck, lint và `npm run dev` của ứng dụng không phụ thuộc dependency của E2E.
+- Sub-agent E2E và sub-agent Review backend chỉ tạo/sửa file trong `e2e/` của repository được giao và không commit; agent chính xem lại rồi commit `e2e/`. Sub-agent Frontend/Backend không sửa file trong `e2e/` và không stage thư mục này trong commit của mình.
 
 ## Tạo session cho cURL
 

@@ -4,7 +4,7 @@ Tổng hợp phần kết nối từ hướng dẫn sản phẩm `build-full-sta
 
 ## Local
 
-Giữ `backend/` và `frontend/` độc lập. Backend chạy bằng Cogover Dev CLI trên port loopback riêng; Vite proxy route API sang local runner:
+Giữ `backend/` và `frontend/` độc lập, mỗi thư mục là một Project và một repository; tài liệu, ảnh và E2E đặt trong repository theo [Bố cục repository](cli-session-and-delivery.md#bố-cục-repository), không đặt ở thư mục cha. Backend chạy bằng Cogover Dev CLI trên port loopback riêng; Vite proxy route API sang local runner:
 
 ```typescript
 import { defineConfig } from "vite";

@@ -7,13 +7,13 @@
 - Agent chính giao một **sub-agent E2E riêng**, khác sub-agent Frontend và Backend. Agent đã viết code frontend không viết hoặc chấm E2E cho chính code đó; agent chính không tự nhận vai E2E. Không có công cụ sub-agent thì báo rõ yêu cầu E2E độc lập chưa đáp ứng.
 - Gói giao việc: contract nghiệp vụ, tiêu chí nghiệm thu, dạng frontend đã xác nhận ở 1A, URL/route, mapping Object/field và record fixture, quy ước selector, danh sách persona, nguồn phiên test (mục 3), phạm vi dữ liệu được ghi, lịch dùng chung fixture với các agent khác. Chỉ truyền cách truy cập credential an toàn, không truyền giá trị.
 - Viết test từ contract và tiêu chí nghiệm thu theo kiểu hộp đen, không bám chi tiết cài đặt. Selector dùng role/label accessible hoặc `data-testid` đã thống nhất trong contract; tránh CSS/XPath theo cấu trúc DOM.
-- Sub-agent E2E không sửa source ứng dụng; test fail thì báo agent chính kèm bước tái hiện và bằng chứng, agent chính giao sub-agent phụ trách sửa rồi chạy lại E2E. Sub-agent Frontend không sửa, nới assertion, skip hay xoá test E2E để test pass; đổi test chỉ khi contract đổi và được agent chính duyệt.
+- Sub-agent E2E không sửa source ứng dụng, chỉ tạo/sửa file trong `e2e/` của repository frontend và không commit; agent chính xem lại rồi commit. Test fail thì báo agent chính kèm bước tái hiện và bằng chứng, agent chính giao sub-agent phụ trách sửa rồi chạy lại E2E. Sub-agent Frontend không sửa, nới assertion, skip hay xoá test E2E để test pass; đổi test chỉ khi contract đổi và được agent chính duyệt.
 
 ## 2. Công cụ và cấu trúc
 
-- E2E là script chạy lại được trên trình duyệt thật, không chỉ thao tác tay: thư mục riêng tách khỏi `src/` (ví dụ `e2e/`) hoặc project test riêng, lệnh tái chạy (ví dụ `npm run test:e2e`), exit code khác 0 khi có test fail. Khuyến nghị Playwright với TypeScript và Chromium; công cụ tương đương dùng được nếu chạy trình duyệt thật và tái chạy được. Công cụ điều khiển trình duyệt của môi trường agent chỉ dùng để quan sát hoặc debug, không thay script.
+- E2E là script chạy lại được trên trình duyệt thật, không chỉ thao tác tay: thư mục `e2e/` ở root repository frontend, tách khỏi `src/`, theo [Bố cục repository](cli-session-and-delivery.md#bố-cục-repository); không đặt E2E ở thư mục cha hay thành project ngang hàng vì khi đó không thuộc repository nào. Lệnh tái chạy riêng (ví dụ `npm run test:e2e`), exit code khác 0 khi có test fail; `tsconfig` riêng cho E2E, không nằm trong `include` của tsconfig ứng dụng. Khuyến nghị Playwright với TypeScript và Chromium; công cụ tương đương dùng được nếu chạy trình duyệt thật và tái chạy được. Công cụ điều khiển trình duyệt của môi trường agent chỉ dùng để quan sát hoặc debug, không thay script.
 - Cấu hình (base URL, hostname Workspace, record ID fixture, persona) qua biến môi trường hoặc file cấu hình không chứa secret.
-- E2E không tính vào line coverage của unit tests. Thư mục E2E, file phiên, báo cáo và artifact test không vào ZIP publish hay commit.
+- E2E không tính vào line coverage của unit tests và không chạy trong lệnh unit test. Script E2E được commit cùng repository frontend; `e2e/` không vào ZIP publish (frontend chỉ đóng gói `dist/`). File phiên, trace, HAR, video, screenshot, báo cáo và artifact của lần chạy không commit: thêm vào `.gitignore`.
 
 ## 3. Xác thực trình duyệt test
 
@@ -82,4 +82,4 @@ Sau khi activate version frontend mới: tải lại cứng, không có lỗi kh
 
 ## 8. Báo cáo
 
-Sub-agent E2E trả cho agent chính: lệnh chạy; môi trường (URL, hostname Workspace, version frontend/backend đang active); trình duyệt và phiên bản; persona (`personnelId`, nguồn phiên, không kèm credential); số test pass/fail/skip; bảng tiêu chí nghiệm thu → test → kết quả; lỗi kèm bước tái hiện và screenshot an toàn; fixture đã tạo và đã dọn; ca chưa chạy được cùng lý do. Test skip/todo không tính PASS. Agent chính kiểm tra bằng chứng; thông báo "đã chạy xong" không phải bằng chứng PASS.
+Sub-agent E2E trả cho agent chính: các file đã tạo/sửa trong `e2e/` và lệnh chạy; môi trường (URL, hostname Workspace, version frontend/backend đang active); trình duyệt và phiên bản; persona (`personnelId`, nguồn phiên, không kèm credential); số test pass/fail/skip; bảng tiêu chí nghiệm thu → test → kết quả; lỗi kèm bước tái hiện và screenshot an toàn; fixture đã tạo và đã dọn; ca chưa chạy được cùng lý do. Test skip/todo không tính PASS. Agent chính kiểm tra bằng chứng; thông báo "đã chạy xong" không phải bằng chứng PASS.

@@ -8,11 +8,11 @@ Unit test do sub-agent Backend tự viết theo cách hiểu của chính nó n�
 
 - Agent chính giao một **sub-agent Review backend**, khác sub-agent Backend; agent chính không tự nhận vai này. Phần review code và phần kiểm thử trên Workspace có thể giao một hoặc hai sub-agent, đều khác sub-agent Backend. Không có công cụ sub-agent thì báo rõ yêu cầu review độc lập chưa đáp ứng.
 - Gói giao việc: contract và tiêu chí nghiệm thu; thiết kế (bất biến, công thức, bảng trigger/job/route); kết quả khảo sát và spike nếu có; đường dẫn source và commit đã dựng version; version ID đang active; identity policy ở mức metadata; phạm vi dữ liệu test được ghi; lịch dùng chung dữ liệu với agent khác. Chỉ truyền cách truy cập credential an toàn.
-- Sub-agent không sửa source, không commit, không publish/activate, không sửa identity policy. Lỗi báo agent chính kèm bằng chứng; agent chính giao sub-agent Backend sửa rồi giao review/kiểm thử lại phần sửa.
+- Sub-agent không sửa source ứng dụng, không commit, không publish/activate, không sửa identity policy; script kiểm thử chỉ ghi vào `e2e/` của repository backend (mục 3). Lỗi báo agent chính kèm bằng chứng; agent chính giao sub-agent Backend sửa rồi giao review/kiểm thử lại phần sửa.
 
 ## 2. Review code
 
-- Review đúng commit đã dựng version (working tree sạch). Chạy lại typecheck, `npm test` và lệnh coverage; ghi số test, coverage, và báo khi `npm test` không chạy test nghiệp vụ.
+- Review đúng commit đã dựng version (working tree sạch, ngoài thư mục `e2e/`). Chạy lại typecheck, `npm test` và lệnh coverage; ghi số test, coverage, và báo khi `npm test` không chạy test nghiệp vụ.
 - Ghi phạm vi đã kiểm là đúng (công thức, idempotency key, thứ tự khoá, danh tính, field ghi), rồi bảng phát hiện: mức (Cao, Trung bình, Thấp, Thông tin), file:dòng, mô tả, kịch bản lỗi bằng số cụ thể, đề xuất sửa. Phát hiện phụ thuộc hành vi nền tảng chưa đo thì ghi `PLAUSIBLE` kèm cách đo.
 - Điểm cần soát:
   - Mọi đường làm đổi giá trị được kiểm soát có trigger: record con làm đổi rollup/formula của record cha, xoá, chuyển trạng thái do Process hoặc backend của App chuẩn ghi (bước 1 mục 5 của skill).
@@ -22,7 +22,7 @@ Unit test do sub-agent Backend tự viết theo cách hiểu của chính nó n�
 
 ## 3. Kiểm thử end-to-end trên Workspace
 
-- Chạy sau khi version cần kiểm thử đã activate, trên dữ liệu test có marker, bằng script chạy lại được với log máy đọc được và file lưu ID record đã tạo. Dữ liệu test theo [Dữ liệu kiểm thử](../../object-record/SKILL.md#dữ-liệu-kiểm-thử) của `$object-record`; snapshot record tổng hợp bị ảnh hưởng trước, giữa và sau.
+- Chạy sau khi version cần kiểm thử đã activate, trên dữ liệu test có marker, bằng script chạy lại được với log máy đọc được và file lưu ID record đã tạo. Script đặt ở `e2e/` của repository backend theo [Bố cục repository](cli-session-and-delivery.md#bố-cục-repository), chạy bằng lệnh riêng (ví dụ `npm run test:e2e`), không nằm trong `npm test` hay coverage; log chạy và file ID record là file cục bộ trong `.gitignore`. Agent chính xem lại script rồi commit. Dữ liệu test theo [Dữ liệu kiểm thử](../../object-record/SKILL.md#dữ-liệu-kiểm-thử) của `$object-record`; snapshot record tổng hợp bị ảnh hưởng trước, giữa và sau.
 - Đi luồng như người dùng và hệ thống thật: đổi trạng thái giống thao tác trên giao diện, để Process và backend của App chuẩn chạy thật, submit User Task bằng phiên của người thực hiện. After-change và job: đọc lại sau vài giây, ghi run/job ID cùng giá trị đọc lại.
 - Mỗi tiêu chí nghiệm thu có ca thường và ca biên (đúng bằng giới hạn, vượt một đơn vị). Thêm:
   - Chạy lặp: gọi lại cùng route hoặc enqueue lại cùng job, số liệu không đổi lần hai.
@@ -35,4 +35,4 @@ Unit test do sub-agent Backend tự viết theo cách hiểu của chính nó n�
 
 ## 4. Báo cáo
 
-Gồm: commit/version đã review và kiểm thử; kết quả lệnh; bảng phát hiện; bảng tiêu chí (bước, kỳ vọng, thực tế, run ID, `PASS`/`FAIL`/`BLOCKED`); snapshot record tổng hợp; dọn dẹp và phần dư không hoàn tác; giới hạn (ca chưa thử, đường ghi chưa thử trực tiếp). Sau mỗi version sửa lỗi, thêm mục retest với ca lỗi và ca hồi quy.
+Gồm: commit/version đã review và kiểm thử; đường dẫn script trong `e2e/` và lệnh chạy; kết quả lệnh; bảng phát hiện; bảng tiêu chí (bước, kỳ vọng, thực tế, run ID, `PASS`/`FAIL`/`BLOCKED`); snapshot record tổng hợp; dọn dẹp và phần dư không hoàn tác; giới hạn (ca chưa thử, đường ghi chưa thử trực tiếp). Sau mỗi version sửa lỗi, thêm mục retest với ca lỗi và ca hồi quy.

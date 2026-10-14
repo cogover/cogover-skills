@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.23.1 - 2026-10-14
+
+- `cogover-custom-module` 1.20.1: quy định bố cục repository cho dự án Custom Module, để tài liệu, ảnh và E2E không nằm ở thư mục cha ngoài mọi repository.
+  - `references/cli-session-and-delivery.md` thêm mục Bố cục repository: mỗi Project là một repository, thư mục cha chỉ chứa các thư mục Project. Tài liệu riêng một phía ở `docs/` của repository đó, tài liệu chung ở `docs/` của repository backend (README frontend dẫn tới). Ảnh dùng trong giao diện ở repository frontend, ảnh minh hoạ tài liệu đi cùng tài liệu. E2E gọi API ở `e2e/` của repository backend, E2E trình duyệt ở `e2e/` của repository frontend. File phiên, artifact, log chạy và file ID record vào `.gitignore`.
+  - E2E chạy bằng lệnh riêng, không nằm trong `npm test` hay coverage, có `tsconfig` riêng để không ảnh hưởng build/typecheck/lint của ứng dụng. Sub-agent E2E và Review backend chỉ ghi vào `e2e/` và không commit; agent chính commit `e2e/`; sub-agent Frontend/Backend không sửa và không stage `e2e/`.
+  - Sửa `references/frontend-e2e-testing.md` từng ghi thư mục E2E không được commit và cho phép đặt E2E thành project ngang hàng: nay script E2E được commit cùng repository frontend, chỉ artifact của lần chạy bị loại.
+  - `references/backend-review-and-testing.md`: script kiểm thử API ở `e2e/` của repository backend, working tree sạch tính ngoài `e2e/`, báo cáo nêu đường dẫn script. `SKILL.md` cập nhật bước 7, phân vai sub-agent, bảng tài liệu theo nhánh và mục Git của bàn giao; `references/full-stack-integration.md` dẫn tới quy tắc bố cục.
+
 ## 4.23.0 - 2026-10-13
 
 AI Agent chủ động nhắn chat cho nhân sự: cấu hình Tool và node AI Agent của Process. Nội dung đã kiểm chứng trên một Workspace thử nghiệm bằng API của từng skill; điểm chưa chạy thử (người nhận thiếu seat, giới hạn số tin) ghi theo tài liệu sản phẩm.
