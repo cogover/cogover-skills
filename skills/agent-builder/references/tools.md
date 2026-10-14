@@ -4,7 +4,7 @@
 
 ## Chọn category và type
 
-Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi tên công cụ có thể xuất hiện trong chat là một loại Tool cho phép tự tạo; các công cụ như `activate_skill` do Agent cung cấp khi có Skill mở rộng.
+Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi tên công cụ có thể xuất hiện trong chat là một loại Tool cho phép tự tạo; các công cụ như `activate_skill` do Agent cung cấp khi có Skill mở rộng, `convert_datetime` và `run_code` là [công cụ hệ thống](#công-cụ-hệ-thống) có sẵn, không tạo Tool.
 
 | `category` | `type` | Chức năng và cấu hình |
 |---|---|---|
@@ -35,6 +35,25 @@ Không có category `REPORT`: tạo Tool với category này bị từ chối `4
 Các lệnh này không tạo/sửa định nghĩa Process. Khi cần thiết kế quy trình, dùng [$process-creator](../../process-creator/SKILL.md).
 
 Nếu Workspace trả Tool có category/type khác bảng, chỉ tái sử dụng sau khi xác minh mô tả, schema đầu vào và hoạt động qua metadata API/tài liệu API tương ứng. Nếu chưa đủ contract, báo người dùng cung cấp trước khi tạo hoặc sử dụng; không tự tạo payload hoặc mở UI để dò.
+
+## Công cụ hệ thống
+
+Mọi Agent có sẵn hai công cụ sau, không cần tạo Tool hay gắn Skill; Skill bật/tắt không làm mất chúng.
+
+| Công cụ | Có khi | Dùng để |
+|---|---|---|
+| `convert_datetime` | Luôn có | Đổi và tính mốc ngày giờ theo múi giờ: text → epoch mili giây, epoch → ngày giờ, đầu/cuối ngày, tuần (thứ Hai–Chủ nhật), tháng, quý, năm, cộng/trừ phút đến năm. Một lần gọi xử lý nhiều mốc; không đọc dữ liệu |
+| `run_code` | Agent bật `codeExecutionEnabled` (mặc định bật), xem [Payload Agent](config-api.md#payload-agent) | Chạy một đoạn JavaScript chỉ đọc trên Cogover để so khớp, giao/trừ tập, join, tính toán trên hàng trăm bản ghi trở lên hoặc chia nhóm theo tuần/quý, rồi chỉ đưa kết quả đã tổng hợp vào câu trả lời |
+
+Múi giờ mặc định của Agent: múi giờ tài khoản của người dùng, chưa đặt thì múi giờ Workspace, cuối cùng `Asia/Ho_Chi_Minh`. Thông tin người dùng hiện tại trong prompt có dòng múi giờ; giờ hiện tại được cập nhật ở đầu mỗi lượt chat. Bộ lọc field `date_time` của `list_records`, `count_records`, `aggregate_records` nhận text ngày giờ (`2026-10-07 00:00`, ISO 8601 có offset như `2026-10-07T00:00:00+07:00`) hoặc epoch; kết quả `list_records`/`get_record` có thêm `<slug>_text` là dạng đọc kèm offset của field ngày giờ (chỉ để đọc, lọc và ghi dùng field gốc).
+
+`run_code`:
+
+- Code chạy theo **danh tính thực thi** của Agent (Agent nội bộ: người đang chat; Agent CSKH: nhân sự cố định), chỉ đọc bản ghi và schema mà danh tính đó được xem. Không sửa dữ liệu, không gọi mạng, không gửi email/thông báo, không dùng quyền hệ thống. Người chat không đọc được một Object thì code cũng không đọc được.
+- Giới hạn mỗi lần chạy (khoảng 20 giây, đọc tối đa khoảng 20 000 bản ghi) và kết quả đưa vào ngữ cảnh được cắt khi quá lớn; lỗi trả tên lỗi, message và dòng/cột để Agent tự sửa code. Đếm hoặc thống kê đơn giản vẫn ưu tiên `count_records`/`aggregate_records`.
+- Agent CSKH (nhận nội dung từ khách, chạy bằng nhân sự cố định): code đọc được mọi dữ liệu nhân sự đó xem được và có thể đưa vào câu trả lời cho khách; form Agent cảnh báo khi công tắc đang bật. Tắt `codeExecutionEnabled` nếu Agent không cần phân tích dữ liệu.
+- Tắt công tắc có hiệu lực từ tin nhắn tiếp theo của hội thoại đang mở; bật lại có hiệu lực ở hội thoại mới.
+- Không cần viết hướng dẫn gọi hai công cụ này trong System Prompt hay `fullInstructions`: mô tả công cụ do nền tảng cung cấp.
 
 ## RECORD và ACTIVITY
 

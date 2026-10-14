@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.26.0 - 2026-10-14
+
+AI Agent có sẵn hai công cụ hệ thống: đổi và tính ngày giờ theo múi giờ, chạy code chỉ đọc để phân tích dữ liệu.
+
+- `agent-builder` 1.6.0:
+  - `references/tools.md`: mục Công cụ hệ thống. `convert_datetime` luôn có (text ↔ epoch, đầu/cuối ngày, tuần, tháng, quý, năm, cộng/trừ thời gian, nhiều mốc mỗi lần gọi); `run_code` có khi Agent bật `codeExecutionEnabled`, chạy JavaScript chỉ đọc theo danh tính thực thi để so khớp, join, tính toán trên nhiều bản ghi, có giới hạn thời gian và số bản ghi đọc. Múi giờ mặc định (tài khoản người dùng → Workspace → `Asia/Ho_Chi_Minh`), bộ lọc `date_time` nhận text ngày giờ, kết quả bản ghi có `<slug>_text`. Lưu ý Agent CSKH chạy bằng nhân sự cố định.
+  - `references/config-api.md`: trường Agent `codeExecutionEnabled` (tạo mặc định bật, cập nhật không gửi thì giữ nguyên, nhân bản kế thừa Agent nguồn, response luôn `true`/`false`).
+  - `SKILL.md`: quyết định `codeExecutionEnabled` ở bước tạo Agent.
+
 ## 4.25.0 - 2026-10-14
 
 AI Agent trả lời câu hỏi đếm và thống kê trên bản ghi, cấu hình `maxTurns`, sửa hướng dẫn index tài liệu và tương quan sự kiện chat theo lượt; Records API thêm endpoint thống kê.
