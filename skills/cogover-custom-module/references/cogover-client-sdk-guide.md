@@ -13,8 +13,7 @@ Nguồn chuẩn cho props, input và output là `node_modules/@cogover/client-sd
 ## Chọn cách dùng theo dạng frontend
 
 1. **Custom component và Federation Page** (template [`custom-frontend-module-template`](https://github.com/cogover/custom-frontend-module-template)):
-   - Template đã cài sẵn gói; chỉ import từ gốc `@cogover/client-sdk`, riêng stylesheet là `@cogover/client-sdk/styles.css`. Không import đường dẫn con (`/ui`, `/data`, `/provider`, `/http`, `/socket`) dù README của gói có ví dụ như vậy: nền tảng chỉ chia sẻ gói gốc, import con bị đóng gói riêng, không thấy `LibraryProvider` của nền tảng và tạo thêm một bản SDK trong bundle.
-   - Không tự bọc `LibraryProvider`. Khi nhúng vào Cogover, nền tảng đã đặt sẵn; ở chế độ dev standalone, `src/providers` của template đã bọc.
+   - Template đã cài sẵn gói; chỉ import từ gốc `@cogover/client-sdk`, riêng stylesheet là `@cogover/client-sdk/styles.css`. Không import đường dẫn con (`/ui`, `/data`, `/provider`, `/http`, `/socket`) dù README của gói có ví dụ như vậy: nền tảng chỉ chia sẻ gói gốc, import con bị đóng gói thêm một bản SDK vào bundle của module.
    - Quy ước chi tiết theo skill trong `.agents/skills` của template đã clone: `custom-module-foundation` (UI component, icon, layout trang), `custom-module-list-page` (màn danh sách), `custom-module-api` (data hook, `FilterGenerator`, nhận push).
 2. **Single page app** (HTML, CSS, JavaScript thuần hoặc stack tự chọn, mở qua `/{slugSlot}/index.html`):
    - Không dùng UI component và data hook của SDK; giao diện và lời gọi API do project tự viết.
@@ -38,7 +37,7 @@ Nguồn chuẩn cho props, input và output là `node_modules/@cogover/client-sd
 1. Dùng component của SDK thay vì tự viết bảng, phân trang, dropdown, date picker, modal, tooltip, toast hoặc panel kéo đổi kích thước; giao diện và hành vi theo đúng Cogover.
 2. Nhãn và control trong form dùng `FormItem` (`label`, `component`). Icon dùng icon của SDK; chỉ dùng SVG riêng khi SDK chưa có icon phù hợp.
 3. Màn danh sách theo skill `custom-module-list-page` của template: `ListViewTable`, `Pagination`, `ResizableMenu`, `FilterGenerator`.
-4. Thông báo trong module dùng `ToastContainer` cùng `showToastMessage`/`ToastMessage` của SDK, không cài thêm thư viện toast.
+4. Thông báo trong module chỉ gọi `showToastMessage` của SDK; template đã mount sẵn `ToastContainer` trong `App.tsx`, không mount thêm và không cài thêm thư viện toast.
 
 ## Data hook (chỉ template React)
 
@@ -83,7 +82,7 @@ export function OrderPanel({ recordId }: { recordId: string }) {
 }
 ```
 
-`subscribe` và `unsubscribe` ổn định giữa các lần render, đưa vào dependency của `useEffect` an toàn. Hook tự lấy workspace và tra ID Object theo `objectSlug` từ `LibraryProvider`.
+`subscribe` và `unsubscribe` ổn định giữa các lần render, đưa vào dependency của `useEffect` an toàn. Hook tự biết workspace hiện tại và tự tra ID Object theo `objectSlug`.
 
 ### Single page app: `createSocketListener`
 
@@ -101,7 +100,7 @@ listener.unsubscribe('message', onMessage);
 ```
 
 1. `workspaceId` không bắt buộc; có thì frame của workspace khác bị bỏ.
-2. Không có `LibraryProvider` nên nhận push theo record phải truyền `objectId`, hoặc truyền `resolveObjectId: async (slug) => objectId` vào `createSocketListener` để dùng `objectSlug` (project tự tra ID qua API). Thiếu cả hai, đăng ký theo record không nhận push gửi `"viewers"` và SDK ghi lỗi ra console.
+2. Nhận push theo record phải truyền `objectId`, hoặc truyền `resolveObjectId: async (slug) => objectId` vào `createSocketListener` để dùng `objectSlug` (project tự tra ID qua API). Truyền `objectSlug` mà không có `resolveObjectId` thì không nhận push gửi `"viewers"` và SDK ghi lỗi ra console; truyền `recordId` mà không có `objectId`/`objectSlug` thì chỉ nhận push gửi đích danh.
 3. `subscribe` trả về hàm huỷ đăng ký; `onStatusChange` trả về hàm huỷ theo dõi trạng thái.
 
 ### Event, payload và tuỳ chọn
@@ -123,7 +122,7 @@ Trạng thái kết nối (`status` hoặc `getStatus()`): `idle`, `connecting`,
 
 1. Đăng ký trong `useEffect` (hoặc khi màn hình JavaScript thuần được mở) và luôn huỷ đăng ký khi rời màn hình hoặc khi `recordId` đổi; truyền đúng hàm handler đã đăng ký vào `unsubscribe`.
 2. Màn hình theo record chỉ đăng ký khi đã có `recordId`; push gửi `"viewers"` chỉ tới người đang đăng ký đúng record đó.
-3. Trong Cogover, web app đã tự hiển thị toast và tải lại record đang mở; module chỉ xử lý phần riêng của mình (tải lại dữ liệu của module, cập nhật trạng thái), không hiện lại toast lần nữa. Single page app chạy ngoài khung Cogover nên tự hiển thị nếu cần.
+3. Với push do backend gửi: trong Cogover, web app đã tự hiển thị toast và tải lại record đang mở; module chỉ xử lý phần riêng của mình (tải lại dữ liệu của module, cập nhật trạng thái), không hiện lại toast lần nữa. Single page app chạy ngoài khung Cogover nên tự hiển thị nếu cần.
 4. `data` của `message` đến từ bất kỳ ai gọi được route backend: kiểm tra kiểu và giá trị trước khi dùng, không render thành HTML (`innerHTML`, `dangerouslySetInnerHTML`). `links` của toast đã được SDK lọc chỉ còn `http(s)`, `mailto:` và đường dẫn tương đối, nhưng vẫn render bằng thẻ link, không chèn HTML.
 5. Push là best-effort và có thể lặp: handler phải chịu được việc nhận trùng hoặc thiếu push; dữ liệu đúng lấy từ lần đọc lại API, không dựa hoàn toàn vào nội dung push.
 6. Custom component và Federation Page cần nền tảng chạy SDK từ `0.3.0` (kiểm tra theo mục Phiên bản SDK); chưa đạt thì không dùng listener và báo người dùng thay vì tự mở WebSocket.
