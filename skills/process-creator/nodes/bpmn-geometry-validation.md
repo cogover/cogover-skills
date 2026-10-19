@@ -61,6 +61,7 @@ Input hỗ trợ XML trực tiếp, object có `xmlString`, hoặc response có 
 |---|---|
 | `MISSING_DI`, `DUPLICATE_DI_REFERENCE`, `UNKNOWN_DI_REFERENCE` | Mỗi node phải có đúng một shape, mỗi flow đúng một edge theo `bpmnElement`; không chỉ so tổng số lượng |
 | `DUPLICATE_ID`, `UNKNOWN_NODE_REFERENCE`, `FLOW_DECLARATION_MISMATCH` | Dùng bảng ID chung; đối chiếu đầy đủ và đúng chiều incoming/outgoing |
+| `NODE_SIZE_NOT_STANDARD` | Bounds của node khác 60×60 (dung sai như trên). Mode `request`: lỗi — đặt `width="60" height="60"`, giữ tâm node, tính lại waypoint. Mode `response`: chỉ cảnh báo, không tự ghi lại process đã lưu; báo người dùng nếu cần sửa hiển thị |
 | `INVALID_BOUNDS`, `INVALID_WAYPOINTS`, `ZERO_LENGTH_SEGMENT` | Bounds phải hữu hạn và có kích thước dương; mỗi edge có ít nhất hai điểm hữu hạn, không có đoạn liên tiếp dài bằng 0 |
 | `ENDPOINT_OFF_NODE` | Điểm đầu phải bám biên source, điểm cuối bám biên target; tâm gateway/event không phải điểm nối hợp lệ |
 | `SEGMENT_THROUGH_NODE` | Chọn tuyến khác: một đoạn đang đi xuyên node, kể cả xuyên chính source/target do chọn sai cạnh |
@@ -77,6 +78,7 @@ Dùng dữ liệu giả, ID/tên tổng quát; không chép snapshot Workspace v
 - Node → End Process cùng cột: nối dọc từ hai cạnh đối diện; không tạo đoạn ngang trong node End.
 - Đường quay lại/loop: chọn cạnh/tuyến vòng đúng hướng, tránh đi xuyên các node giữa đường.
 - Đủ số edge nhưng lặp `bpmnElement`, thiếu edge của flow khác → phải lỗi.
+- Task bounds 200×80 (hoặc 100×80 mặc định bpmn.io) → mode `request` phải lỗi `NODE_SIZE_NOT_STANDARD`; 60×60 → đạt.
 
 ## Giới hạn
 

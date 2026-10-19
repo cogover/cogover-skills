@@ -15,6 +15,10 @@ MODEL = "http://www.omg.org/spec/BPMN/20100524/MODEL"
 DI = "http://www.omg.org/spec/BPMN/20100524/DI"
 DC = "http://www.omg.org/spec/DD/20100524/DC"
 WAYPOINT = "{http://www.omg.org/spec/DD/20100524/DI}waypoint"
+# Size the Cogover designer uses for every task/event/gateway it drops on the canvas.
+# The icon is drawn square inside the bounds, so wider/taller bounds leave empty
+# margins and edges end away from the icon (seen with an AI-generated 200x80 task).
+NODE_SIZE = 60.0
 
 
 def local(element):
@@ -188,6 +192,11 @@ def validate(text, mode="request", tolerance=1.0):
                 if len(bounds) != 1:
                     raise ValueError("Expected one bounds element")
                 polygons[nid] = outline(node, bounds[0].attrib)
+                size = [float(bounds[0].attrib[k]) for k in ("width", "height")]
+                if any(abs(v - NODE_SIZE) > tolerance for v in size):
+                    issue = dict(code="NODE_SIZE_NOT_STANDARD", nodeId=nid, width=size[0], height=size[1],
+                                 message="Node bounds must be 60x60; recompute edge waypoints after resizing")
+                    (errors if mode == "request" else warnings).append(issue)
             except (ValueError, KeyError):
                 error("INVALID_BOUNDS", nodeId=nid)
         for direction, ref in (("incoming", "targetRef"), ("outgoing", "sourceRef")):

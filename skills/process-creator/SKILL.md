@@ -3,13 +3,13 @@ name: process-creator
 description: "Thiết kế, tạo, kích hoạt, xuất bản, quản lý version và kiểm thử end-to-end Cogover Process qua API (`/bapi/v1/processes` và Web App API lượt chạy: tạo, theo dõi node, form User Task, tạm dừng/huỷ). Manual, Normal, Scheduled, Triggered record/webhook, Sequence; BPMN XML, gateway, loop, action gồm AI Agent (gọi agent, cho agent chủ động nhắn chat một nhân sự) và Custom Module Action (gọi action của Custom Backend Module); phối hợp $object-info, $object-record, $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.7.0"
+  version: "1.7.1"
 ---
 
 # Cogover Process Creator
 
-- **Phiên bản:** `1.7.0`
-- **Ngày phát hành:** `2026-10-13`
+- **Phiên bản:** `1.7.1`
+- **Ngày phát hành:** `2026-10-19`
 
 Trước khi dùng JSON mẫu, đọc [quy ước fixture và giới hạn kiểm thử](samples/README.md). Resolve ID và tài nguyên của Workspace đích; không coi snapshot response hoặc metadata kiểm tra cũ là kết quả validation cho lần triển khai mới.
 
@@ -118,6 +118,7 @@ Template XML, quy tắc bố cục, công thức waypoint và `BPMNLabel`: [refe
 
 - Chỉ dùng prefix `bpmn2:` cho element BPMN-spec (namespace duy nhất được khai báo); `bpmn:` không khai báo và có thể bị server silent-strip khi CREATE. Giữ nguyên `elEx:`, `configEx:`, `bpmndi:`, `dc:`, `di:`, `bioc:`, `xsi:`. Node dùng `elEx:` cần `xmlns:elEx="http://element-ex/schema"` trong `bpmn2:definitions`.
 - Mọi `sequenceFlow` nằm trong `bpmn2:process`, `sourceRef`/`targetRef` trỏ đúng `id` node; mỗi node liệt kê đủ `incoming`/`outgoing` (Start chỉ có outgoing, End chỉ có incoming).
+- Mọi node (task, event, gateway) có `dc:Bounds` đúng `width="60" height="60"` — kích thước trình thiết kế dùng khi kéo thả. Không dùng kích thước mặc định của bpmn.io/Camunda (task 100×80) hay tự nới rộng cho vừa tên: trình thiết kế vẽ icon vuông giữa bounds, bounds rộng hơn để khoảng trống hai bên icon và đường nối dừng ở mép khung, không chạm icon. Tên dài đặt ở `BPMNLabel`, không phải bounds của node. Validator chặn lỗi này ở mode `request` (`NODE_SIZE_NOT_STANDARD`).
 - Mỗi node có tọa độ riêng theo cấu trúc flow (không xếp tất cả trên một hàng); mỗi `BPMNEdge` có waypoint tính từ bounds thật của node nguồn/đích, không hardcode; mỗi `BPMNShape` chứa `BPMNLabel` có `dc:Bounds`. Thiếu label: API vẫn trả `r: 0`, `isValid: true` nhưng node biến mất khỏi sơ đồ khi người dùng Save trong editor (silent fail).
 - Sau khi sinh XML, chạy `scripts/validate_bpmn_geometry.py --mode request` trước POST (mục 4.1).
 
