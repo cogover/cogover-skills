@@ -14,6 +14,7 @@ Nguồn chuẩn cho props, input và output là `node_modules/@cogover/client-sd
 
 1. **Custom component và Federation Page** (template [`custom-frontend-module-template`](https://github.com/cogover/custom-frontend-module-template)):
    - Template đã cài sẵn gói; chỉ import từ gốc `@cogover/client-sdk`, riêng stylesheet là `@cogover/client-sdk/styles.css`. Không import đường dẫn con (`/ui`, `/data`, `/provider`, `/http`, `/socket`) dù README của gói có ví dụ như vậy: nền tảng chỉ chia sẻ gói gốc, import con bị đóng gói thêm một bản SDK vào bundle của module.
+   - Không tự bọc `LibraryProvider`. Khi nhúng vào Cogover, nền tảng đã đặt sẵn; ở chế độ dev standalone, `src/providers` của template đã bọc.
    - Quy ước chi tiết theo skill trong `.agents/skills` của template đã clone: `custom-module-foundation` (UI component, icon, layout trang), `custom-module-list-page` (màn danh sách), `custom-module-api` (data hook, `FilterGenerator`, nhận push).
 2. **Single page app** (HTML, CSS, JavaScript thuần hoặc stack tự chọn, mở qua `/{slugSlot}/index.html`):
    - Không dùng UI component và data hook của SDK; giao diện và lời gọi API do project tự viết.
