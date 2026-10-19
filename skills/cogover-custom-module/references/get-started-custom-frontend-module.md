@@ -41,6 +41,8 @@ app.innerHTML = `
 
 Chạy local bằng `npm run dev`.
 
+Single page app không dùng UI component và data hook của `@cogover/client-sdk`; cần nhận push message từ Custom Backend Module thì chỉ dùng socket listener theo [Dùng `@cogover/client-sdk` ở frontend](cogover-client-sdk-guide.md).
+
 ## 3. Build và đóng gói
 
 ```bash

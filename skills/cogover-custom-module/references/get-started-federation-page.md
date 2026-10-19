@@ -47,7 +47,7 @@ Clone (sao chép) repo template [`custom-frontend-module-template`](https://gith
 npm ci
 ```
 
-Template đã có React, cấu hình Module Federation và thư viện `@cogover/client-sdk`.
+Template đã có React, cấu hình Module Federation và thư viện `@cogover/client-sdk` (cách dùng: [Dùng `@cogover/client-sdk` ở frontend](cogover-client-sdk-guide.md)).
 
 Tham khảo skill (hướng dẫn dành cho công cụ hỗ trợ lập trình) `custom-module-foundation` tại `.agents/skills/custom-module-foundation/SKILL.md` để biết các quy tắc về cấu trúc trang, đường dẫn và tài nguyên tĩnh.
 

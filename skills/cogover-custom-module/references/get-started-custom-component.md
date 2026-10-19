@@ -49,7 +49,7 @@ Tải hoặc clone (sao chép kho mã nguồn) [`custom-frontend-module-template
 npm install
 ```
 
-Template đã có React, cấu hình build (biên dịch), `@cogover/client-sdk` và kiểu dữ liệu Form Builder.
+Template đã có React, cấu hình build (biên dịch), `@cogover/client-sdk` (cách dùng: [Dùng `@cogover/client-sdk` ở frontend](cogover-client-sdk-guide.md)) và kiểu dữ liệu Form Builder.
 
 ### 2.2. Tạo dự án trên Workspace
 
