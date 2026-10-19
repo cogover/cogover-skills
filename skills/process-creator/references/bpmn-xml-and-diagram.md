@@ -91,7 +91,7 @@ Mỗi node có tọa độ riêng phù hợp cấu trúc flow; không đặt t�
 
 ### Quy tắc chung
 
-- Kích thước mọi node: `width=60, height=60`.
+- Kích thước mọi node (task, event, gateway): `width=60, height=60`, bắt buộc. Không dùng 100×80 của bpmn.io hay nới bounds theo độ dài tên — tên nằm ở `BPMNLabel`. Bounds khác 60×60 làm khung chọn rộng hơn icon và đường nối không chạm icon; validator báo `NODE_SIZE_NOT_STANDARD`.
 - Luồng chính: `y=260`; node đầu tiên `x=40, y=260`.
 - Bước bố trí ban đầu giữa hai node liên tiếp cùng hàng: `x += 160`; tăng khi tên node/tên nhánh cần thêm chỗ. Tính khoảng trống theo cả node và label, không chỉ icon 60×60.
 - Trước khi chốt tọa độ, đọc [bố cục gọn và khoảng trống cho nhãn](../nodes/bpmn-geometry-validation.md#bố-cục-gọn-và-khoảng-trống-cho-nhãn): nhánh ngắn đặt gần gateway của nó, nhánh ở vùng x khác nhau có thể dùng chung hàng, không tăng y theo thứ tự gateway trên toàn sơ đồ. `ok: true` của validator hình học chưa chứng minh bố cục dễ đọc.
@@ -121,7 +121,7 @@ Sinh node bounds và edge từ cùng một bảng node ID → bounds. Chốt v�
 
 Thuật ngữ với node bounds tại `(x, y)`, kích thước 60×60: right center `(x+60, y+30)`; left center `(x, y+30)`; top center `(x+30, y)`; bottom center `(x+30, y+60)`.
 
-Các công thức 60×60 dưới đây dùng cho node mới. Với process đang sửa, tính tâm/cạnh từ `BPMNShape/Bounds` thực tế; không ép mọi node về 60×60. Case 1–4 giả định target nằm bên phải và tuyến không đi xuyên node; dùng Case 5–6 khi giả định này không đúng.
+Các công thức 60×60 dưới đây dùng cho node mới. Với process đang sửa, tính tâm/cạnh từ `BPMNShape/Bounds` thực tế. Node cũ có bounds khác 60×60 (thường do công cụ ngoài tạo): đưa về 60×60 giữ nguyên tâm, rồi tính lại mọi waypoint nối vào node đó — chỉ đổi hiển thị, không đổi logic. Case 1–4 giả định target nằm bên phải và tuyến không đi xuyên node; dùng Case 5–6 khi giả định này không đúng.
 
 | Case | Điều kiện | Waypoint |
 |---|---|---|

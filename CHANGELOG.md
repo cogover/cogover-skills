@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.26.1 - 2026-10-19
+
+Quy trình do AI tạo hiển thị task đúng kích thước như khi kéo thả trong trình thiết kế.
+
+- `process-creator` 1.7.1: mọi node (task, event, gateway) bắt buộc `dc:Bounds` 60×60. Bounds khác (vd task 200×80 hoặc 100×80 mặc định của bpmn.io) làm trình thiết kế vẽ icon vuông giữa khung rộng: khoảng trống hai bên icon, đường nối dừng ở mép khung không chạm icon. `scripts/validate_bpmn_geometry.py` thêm mã `NODE_SIZE_NOT_STANDARD` — lỗi ở mode `request`, cảnh báo ở mode `response`. Sửa process cũ có node lệch cỡ: đưa về 60×60 giữ tâm rồi tính lại waypoint.
+
 ## 4.26.0 - 2026-10-14
 
 AI Agent có sẵn hai công cụ hệ thống: đổi và tính ngày giờ theo múi giờ, chạy code chỉ đọc để phân tích dữ liệu.
