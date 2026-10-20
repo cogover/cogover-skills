@@ -32,6 +32,7 @@ Nguồn chuẩn cho props, input và output là `node_modules/@cogover/client-sd
 |---|---|
 | `useSocketListener`, `createSocketListener`, entry `@cogover/client-sdk/socket` | `0.3.0` |
 | Toast chỉ giữ link an toàn, bỏ frame không có workspace khi đã biết workspace | `0.3.1` |
+| Dùng chung kết nối socket của nền tảng, mỗi tab chỉ một websocket | `0.4.1` |
 
 ## UI component (chỉ template React)
 
@@ -50,7 +51,7 @@ Nguồn chuẩn cho props, input và output là `node_modules/@cogover/client-sd
 
 ## Nhận push message từ Custom Backend Module
 
-Backend gửi bằng `push.refreshRecords`, `push.toast`, `push.message` (mục [Push message](cogover-sdk-api-reference.md#push-message) của SDK API reference). SDK mở một kết nối socket riêng tới Workspace cho mỗi tab (xác thực bằng phiên trình duyệt) khi handler đầu tiên đăng ký, đóng khi không còn handler; mọi listener trên trang dùng chung kết nối này. Chỉ ba loại push trên được chuyển tới handler, lưu lượng socket khác bị bỏ qua.
+Backend gửi bằng `push.refreshRecords`, `push.toast`, `push.message` (mục [Push message](cogover-sdk-api-reference.md#push-message) của SDK API reference). Trong Cogover (custom component, Federation Page), SDK nhận push qua kết nối socket sẵn có của nền tảng nên tab không mở thêm websocket. Không có nền tảng (single page app chạy riêng, hoặc nền tảng chạy SDK dưới `0.4.1`), SDK tự mở một kết nối riêng cho mỗi tab (xác thực bằng phiên trình duyệt) khi handler đầu tiên đăng ký, đóng khi không còn handler. Mọi listener trên trang dùng chung một kết nối. Chỉ ba loại push trên được chuyển tới handler, lưu lượng socket khác bị bỏ qua.
 
 ### Custom component và Federation Page: `useSocketListener`
 
@@ -117,7 +118,7 @@ listener.unsubscribe('message', onMessage);
 | `objectSlug` + `recordId` (React) hoặc `objectId` + `recordId` (JavaScript thuần) | Đăng ký record đang hiển thị: nhận thêm push gửi `"viewers"` của đúng record đó. Không truyền thì chỉ nhận push gửi đích danh người dùng hiện tại. |
 | `source` | Chỉ áp dụng cho `message`: giữ message có `data.source` bằng giá trị này. Backend nên đặt `source` cố định trong JSON `content` để các module trên cùng trang không nhận nhầm message của nhau. |
 
-Trạng thái kết nối (`status` hoặc `getStatus()`): `idle`, `connecting`, `connected`, `unauthorized`. `unauthorized` nghĩa là không có phiên đăng nhập, SDK ngừng kết nối lại; hiển thị thông báo đăng nhập thay vì chờ.
+Trạng thái kết nối (`status` hoặc `getStatus()`): `idle`, `connecting`, `connected`, `unauthorized`. `unauthorized` chỉ có khi SDK tự mở kết nối: không có phiên đăng nhập, SDK ngừng kết nối lại; hiển thị thông báo đăng nhập thay vì chờ. Khi dùng kết nối của nền tảng, mất kết nối hiện là `connecting` và nền tảng tự kết nối lại.
 
 ### Quy tắc
 
