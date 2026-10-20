@@ -3,13 +3,13 @@ name: cogover-custom-module
 description: "Điều phối vòng đời Cogover Custom Module: khảo sát App/Object, chọn backend/frontend và dạng frontend (single page app, custom component, Federation Page), người dùng xác nhận trước khi code, schema duyệt bằng Excel, security rules, quy tắc nghiệp vụ theo Super Admin/role của người gọi, record trigger before/after-change, background job (enqueue, lịch cron, retry) hoặc Process, Custom Module Action cho node Process và tool AI Agent gọi (`defineAction`, schema `s`, `effect`, danh tính chạy), khởi chạy Process/AI Agent từ code (`processes.start`, `agents.start`, job nhận kết quả, mục `processes`/`agents` của identity policy, `deliverTo` để agent chủ động nhắn chat một nhân sự), push message (làm mới record, toast) và nhận push ở frontend, dùng `@cogover/client-sdk` (UI component, data hook, socket listener), gửi notification và email từ hộp thư được grant, đọc cơ cấu tổ chức (phòng ban, vị trí, chuỗi quản lý người duyệt), secret/credential cho fetch, crypto (SHA-256, HMAC, mã hoá AES/RSA, chữ ký RSA/ECDSA), inbound webhook (KEY/HMAC), đọc record chỉ field cần dùng (`fields`, `expandLookups` khi cần), số liệu đơn giản bằng `records.aggregate` và báo cáo/dashboard lấy từ saved report của $report-builder thay vì quét record, thiết kế trong ngân sách mỗi lần thực thi (`limits.usage()`, việc nặng chia trang sang background job), Project/policy/key, code/test theo template, E2E frontend trên trình duyệt, review và kiểm thử backend, review bảo mật và đo hiệu năng bằng sub-agent độc lập, publish qua Dev CLI, bàn giao. Không thay skill cấu hình Object/Process đơn lẻ."
 metadata:
   author: cogover
-  version: "1.22.0"
+  version: "1.22.1"
 ---
 
 # Cogover Custom Module
 
-- **Phiên bản:** `1.22.0`
-- **Ngày phát hành:** `2026-10-19`
+- **Phiên bản:** `1.22.1`
+- **Ngày phát hành:** `2026-10-20`
 
 ## Tổng quan và phạm vi
 

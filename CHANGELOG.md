@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.27.1 - 2026-10-20
+
+Socket listener của `@cogover/client-sdk` dùng chung kết nối socket của nền tảng từ `0.4.1`.
+
+- `cogover-custom-module` 1.22.1:
+  - `references/cogover-client-sdk-guide.md`: trong Cogover, SDK nhận push qua kết nối socket của nền tảng nên tab không mở thêm websocket; chỉ single page app chạy riêng (hoặc nền tảng chạy SDK dưới `0.4.1`) mới tự mở kết nối. `unauthorized` chỉ có khi SDK tự mở kết nối. Thêm `0.4.1` vào bảng phiên bản tối thiểu.
+
 ## 4.27.0 - 2026-10-19
 
 Frontend của Custom Module có hướng dẫn dùng `@cogover/client-sdk`, gồm nhận push message của Custom Backend Module.
