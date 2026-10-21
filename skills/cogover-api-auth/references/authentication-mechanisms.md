@@ -156,6 +156,8 @@ curl --url 'https://{workspace-domain}/api/v1/accounts?limit=20&order=last_join_
 
 Trình duyệt tự gửi cookie đã lưu tới đúng workspace. Web App đọc cookie `XSRF-TOKEN` và đặt cùng giá trị vào hai header trước khi gửi request.
 
+Ghi bản ghi bằng phiên đổi từ `/bapi/v1/auth-token` mặc định là ghi hàng loạt (`write_mode: import`, Process kích hoạt theo bản ghi chạy dần); gửi `write_mode: "interactive"` khi cần Process chạy ngay như thao tác trên giao diện. Chi tiết: [$object-record](../../object-record/SKILL.md#chế-độ-ghi-write_mode-dùng-cho-b-c-d).
+
 ## 4. Vòng đời phiên
 
 - Tạo lại phiên trước `HttpSessionExpiresAt`.

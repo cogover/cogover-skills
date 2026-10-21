@@ -3,13 +3,13 @@ name: process-creator
 description: "Thiết kế, tạo, kích hoạt, xuất bản, quản lý version và kiểm thử end-to-end Cogover Process qua API (`/bapi/v1/processes` và Web App API lượt chạy: tạo, theo dõi node, form User Task, tạm dừng/huỷ). Manual, Normal, Scheduled, Triggered record/webhook, Sequence; BPMN XML, gateway, loop, action gồm AI Agent (gọi agent, cho agent chủ động nhắn chat một nhân sự) và Custom Module Action (gọi action của Custom Backend Module); phối hợp $object-info, $object-record, $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.7.1"
+  version: "1.7.2"
 ---
 
 # Cogover Process Creator
 
-- **Phiên bản:** `1.7.1`
-- **Ngày phát hành:** `2026-10-19`
+- **Phiên bản:** `1.7.2`
+- **Ngày phát hành:** `2026-10-21`
 
 Trước khi dùng JSON mẫu, đọc [quy ước fixture và giới hạn kiểm thử](samples/README.md). Resolve ID và tài nguyên của Workspace đích; không coi snapshot response hoặc metadata kiểm tra cũ là kết quả validation cho lần triển khai mới.
 
@@ -304,7 +304,7 @@ Body, response và mã lỗi từng API: [api-process-runtime.md mục 2](api-pr
 - **Normal:** `/api/v1/run-workflow-server` service `10` với `{"processId", "instanceName"}`; lấy `data.instanceId`. `r: 206`: chưa `ACTIVATED`/chưa xuất bản; `r: 9`: thiếu `START_INSTANCE` trong `processInstanceAccessControls`.
 - **Manual:** đọc form Root bằng `/api/v1/workflow` service `29` với `instanceId` rỗng, dựng `data` theo `content` (đủ field `required`, đúng kiểu, `date` dạng `"YYYY-MM-DD"`, không gửi field `readOnly` trừ khi `canSendData`), rồi submit `/api/v1/run-workflow-server` service `1` với `instanceId` rỗng, `nodeId` Root và `submittedButton` (slug nút trong form; form không có nút thì gửi chuỗi bất kỳ); lấy `data.instanceId`. Lỗi `30002` kèm `meta.more` liệt kê field sai kiểu/thiếu bắt buộc.
 - **Scheduled:** process có trước phiên này hoặc đang phục vụ người dùng thật: tạo version lịch thử là đổi version hiện hành, nên theo Quy tắc an toàn phải nêu version ID, lịch hiện tại, lịch thử, thời điểm khôi phục rồi hỏi xác nhận; bị chặn thì dừng và báo, không tìm đường vòng. Trước khi thay đổi, lưu snapshot chính xác `scheduleRules` theo yêu cầu người dùng. Tạm đặt thời gian bắt đầu gần thời điểm kiểm tra bằng version mới (mục 4.4), kích hoạt/xuất bản version test, theo dõi bằng API danh sách lượt chạy (service `35` lọc theo `process_info_id`) hoặc `Process_Debug_data` xem lượt chạy có được sinh đúng thời điểm không. Trong cleanup bắt buộc, khôi phục nguyên cấu hình lịch người dùng yêu cầu bằng version mới, kích hoạt/xuất bản lại, rồi GET-back đối chiếu với snapshot. Không để lịch test tiếp tục chạy.
-- **Triggered record:** dùng `$object-record` tạo bản ghi test phù hợp Object, event và conditions của trigger; trigger cần update thì cập nhật đúng field/giá trị để đưa bản ghi qua điều kiện kích hoạt. Dùng marker test duy nhất và theo dõi mọi record ID. Trigger delete: tuân thủ quy tắc xác nhận xoá của `$object-record`, chỉ xoá record test sau khi đã liệt kê ID cụ thể và người dùng xác nhận. Tìm lượt chạy sinh ra bằng service `35` hoặc `Process_Debug_data`.
+- **Triggered record:** dùng `$object-record` tạo bản ghi test phù hợp Object, event và conditions của trigger; trigger cần update thì cập nhật đúng field/giá trị để đưa bản ghi qua điều kiện kích hoạt. Dùng marker test duy nhất và theo dõi mọi record ID. Ghi bản ghi test với `write_mode: "interactive"` để lượt chạy sinh gần như ngay; mặc định `import` có thể chậm vài giây tới vài phút ([Chế độ ghi](../object-record/SKILL.md#chế-độ-ghi-write_mode-dùng-cho-b-c-d)). Trigger delete: tuân thủ quy tắc xác nhận xoá của `$object-record`, chỉ xoá record test sau khi đã liệt kê ID cụ thể và người dùng xác nhận. Tìm lượt chạy sinh ra bằng service `35` hoặc `Process_Debug_data`.
 - **Triggered webhook:** lấy URL webhook từ `metadata.url` (version hiện tại) hoặc `metadata.urlAllVersions` trong response view, gửi request với body hợp lệ theo `sampleData`/`parseToDataType` cùng đúng cơ chế xác thực đã cấu hình. Kiểm tra cả HTTP response và lượt chạy được sinh. Chỉ giữ token/secret trong tiến trình cần cho request; không đưa cookie, secret hoặc token vào file, log, commentary hay báo cáo.
 - **Sequence:** chọn hoặc tạo bằng `$object-record` một bản ghi thật thuộc `metadata.objectTypeId`/`objectTypeSlug`, rồi gọi `/api/v1/run-workflow-server` service `7` với `{"list": [{"processId", "flowObjectRecordId"}]}`; không thay API call bằng thao tác **Sequence → Kết nối** trên giao diện.
 

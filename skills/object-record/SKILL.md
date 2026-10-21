@@ -3,13 +3,13 @@ name: object-record
 description: "Quản lý bản ghi Cogover Object qua Records API `/bapi/v1/records` (lấy danh sách có lọc/phân trang, đếm và thống kê theo nhóm, tạo, cập nhật, xoá) và upload/gắn file, chèn ảnh local vào long-text WYSIWYG bằng phiên Web App. Dùng khi cần thao tác record, tạo record kèm file hoặc ảnh trong cùng request, hoặc đính kèm file vào record hiện có; xoá phải xác nhận trước."
 metadata:
   author: cogover
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Object Record
 
-- **Phiên bản:** `1.2.0`
-- **Ngày phát hành:** `2026-10-14`
+- **Phiên bản:** `1.3.0`
+- **Ngày phát hành:** `2026-10-21`
 
 Sub-agent thao tác bản ghi (record) của một Cogover Object; skill khác gọi skill này khi cần đọc/ghi record. Credential, header và quy ước response/lỗi chung: theo [$cogover-api-auth](../cogover-api-auth/SKILL.md). Các API record dùng `/bapi/v1` với API Key Bearer; riêng upload file và gắn file vào record đã tồn tại dùng `/api/v1` bằng phiên Web App (đổi từ API Key qua `$cogover-api-auth`; không tạo được phiên thì dừng và báo người dùng, không gọi `/api/v1` bằng API Key).
 
@@ -56,6 +56,21 @@ Response: `data.total` (tổng bản ghi phù hợp), `data.rows[]` (mỗi bản
 
 `data` chứa các cặp `field_slug: value` đúng kiểu theo bảng dưới, gồm mọi field bắt buộc. Thành công: `r: 0`, `data.id` là ID bản ghi mới (dùng cho cập nhật/xoá); lỗi: `r: 1` kèm `msg`.
 
+### Chế độ ghi `write_mode` (dùng cho B, C, D)
+
+Tham số tuỳ chọn ở cấp cao nhất của body (cạnh `object_slug`/`object_type`), chữ thường; quyết định Process kích hoạt theo bản ghi chạy ngay hay chạy dần:
+
+| Giá trị | Hành vi | Khi dùng |
+|---|---|---|
+| `import` (mặc định khi không gửi) | Coi là ghi hàng loạt: Process kích hoạt theo bản ghi được xếp hàng và chạy dần, có thể chậm vài giây tới vài phút khi tải cao, không ảnh hưởng thao tác thường của người dùng. Lượt chạy sinh ra từ đó khi ghi bản ghi khác cũng ghi theo `import` | Đồng bộ, nhập, sửa hàng loạt |
+| `interactive` | Như thao tác trên giao diện: Process kích hoạt gần như ngay | Tích hợp cần phản hồi tức thì, ví dụ biểu mẫu web tạo khách hàng tiềm năng; kiểm thử Process Triggered record |
+
+```json
+{"object_slug": "{OBJECT_SLUG}", "write_mode": "interactive", "data": {"{FIELD_SLUG}": {VALUE}}}
+```
+
+Giá trị khác trả HTTP 400, `r: 100006`. Phiên Web App đổi từ `/bapi/v1/auth-token` ghi bản ghi qua `/api/v1` (như bước 5 của [E](#e-gắn-file-vào-bản-ghi-hiện-có)) cũng mặc định `import` và nhận `write_mode`; phiên đăng nhập Web thường luôn là thao tác thường. Nhập dữ liệu từ file Excel luôn là `import`.
+
 ### Giá trị theo kiểu trường (dùng cho B và C)
 
 | Kiểu trường | Giá trị | Ví dụ |
@@ -101,7 +116,7 @@ Theo [references/wysiwyg-long-text-images.md](references/wysiwyg-long-text-image
 {"object_slug": "{OBJECT_SLUG}", "data": {"{FIELD_SLUG}": {VALUE}}}
 ```
 
-`data` chỉ chứa các field cần cập nhật, giá trị theo bảng ở B. `RECORD_ID` lấy từ kết quả A hoặc từ người dùng. Thành công: `r: 0`, `data: {}`. `r: 1` với `msg: "Record not existed"`: RECORD_ID sai hoặc bản ghi đã bị xoá; báo người dùng kiểm tra lại hoặc dùng A để tìm.
+`data` chỉ chứa các field cần cập nhật, giá trị theo bảng ở B; `write_mode` tuỳ chọn theo [Chế độ ghi](#chế-độ-ghi-write_mode-dùng-cho-b-c-d). `RECORD_ID` lấy từ kết quả A hoặc từ người dùng. Thành công: `r: 0`, `data: {}`. `r: 1` với `msg: "Record not existed"`: RECORD_ID sai hoặc bản ghi đã bị xoá; báo người dùng kiểm tra lại hoặc dùng A để tìm.
 
 ## D. Xoá — `POST /bapi/v1/records/delete`
 
@@ -111,7 +126,7 @@ Hành động không thể hoàn tác. BẮT BUỘC liệt kê ID (và tên nế
 {"object_type": "{OBJECT_TYPE_ID}", "ids": ["{RECORD_ID_1}", "{RECORD_ID_2}"]}
 ```
 
-`object_type` là ID của Object (ví dụ `OT00000000011`, lấy qua `$object-info`); `ids` nhận nhiều bản ghi cùng lúc. Thành công: `r: 0`, `data.deleted[]` (đã xoá) và `data.not_deleted[]` (không xoá được). `r: 1` với `msg: "Record not existed"`: có ID sai hoặc đã bị xoá trước đó.
+`object_type` là ID của Object (ví dụ `OT00000000011`, lấy qua `$object-info`); `ids` nhận nhiều bản ghi cùng lúc; `write_mode` tuỳ chọn theo [Chế độ ghi](#chế-độ-ghi-write_mode-dùng-cho-b-c-d). Thành công: `r: 0`, `data.deleted[]` (đã xoá) và `data.not_deleted[]` (không xoá được). `r: 1` với `msg: "Record not existed"`: có ID sai hoặc đã bị xoá trước đó.
 
 Record của Object mà backend App chuẩn duy trì số liệu (ví dụ chứng từ đang giữ chỗ ngân sách): xoá record có thể không hoàn lại số liệu backend đã cập nhật (*quan sát*: số giữ chỗ còn treo sau khi xoá chứng từ đang chờ duyệt). Ưu tiên huỷ, từ chối hoặc đóng bằng trạng thái/action của App; chỉ xoá khi người dùng xác nhận đã biết tác động. Hành vi từng App: `$cogover-overview`.
 
@@ -187,6 +202,8 @@ Nguồn chung cho dữ liệu kiểm thử của bộ skill; skill khác chỉ g
 | Lỗi | Cách xử lý |
 |---|---|
 | `r: 27` — Invalid filter type | Request `/records/list` thiếu hoặc sai `type`: thêm `type` số `1`/`2`/`3` ở cấp cao nhất và đối chiếu `logic_sequence`. Không thay `filters[].fieldType` để chữa. |
+| HTTP 400, `r: 100006` khi tạo/cập nhật/xoá | `write_mode` sai giá trị: chỉ gửi `import` hoặc `interactive` (chữ thường), hoặc bỏ tham số để dùng mặc định `import`. |
+| Process kích hoạt theo bản ghi chạy chậm sau khi ghi qua API | Hành vi của `write_mode: import` (mặc định); gửi `interactive` khi cần phản hồi tức thì, xem [Chế độ ghi](#chế-độ-ghi-write_mode-dùng-cho-b-c-d). |
 | `r: 1` — Record not existed | RECORD_ID sai hoặc bản ghi đã bị xoá; kiểm tra lại hoặc dùng A để tìm. |
 | HTTP 400, `r` `81`/`82` khi gọi `/records/aggregate` | `81`: field không có hoặc không nhóm/tính được theo kiểu; `82`: field bị ẩn với người gọi. Đối chiếu field và request theo [F](#f-đếm-và-thống-kê--post-bapiv1recordsaggregate), bỏ field đó hoặc kiểm tra quyền theo [$user-permission](../user-permission/SKILL.md); không thử lại bằng key khác. |
 | `r: 47` — `Field [...] is not editable` | Field không cho sửa qua API: `manualModifyAllow: false`, formula, rollup, field hệ thống hoặc field do backend App quản lý (ví dụ `status` của một số Object App chuẩn). Đọc metadata field qua `$object-info` trước khi `PUT`; đổi trạng thái bằng Object Button, Process hoặc action của App, không thử lại `PUT`. |

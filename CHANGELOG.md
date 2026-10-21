@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.28.0 - 2026-10-21
+
+Records API nhận tham số `write_mode` để chọn Process kích hoạt theo bản ghi chạy ngay hay chạy dần.
+
+- `object-record` 1.3.0: mục Chế độ ghi `write_mode` cho tạo, cập nhật, xoá (`import` mặc định: ghi hàng loạt, Process kích hoạt theo bản ghi được xếp hàng chạy dần và lượt chạy sinh ra cũng ghi theo `import`; `interactive`: như thao tác trên giao diện, Process kích hoạt gần như ngay). Phiên đổi từ `/bapi/v1/auth-token` ghi qua `/api/v1` cũng mặc định `import` và nhận `write_mode`; phiên đăng nhập Web thường và nhập từ file Excel không đổi được. Bảng lỗi thêm `r: 100006` (giá trị `write_mode` sai) và cách xử lý khi Process chạy chậm sau khi ghi qua API.
+- `process-creator` 1.7.2: kiểm thử Triggered record ghi bản ghi test với `write_mode: "interactive"`.
+- `cogover-api-auth` 1.1.1: mục gọi `/api/v{N}` bằng phiên nhắc mặc định `import` khi ghi bản ghi và cách chọn `interactive`.
+
 ## 4.27.1 - 2026-10-20
 
 Socket listener của `@cogover/client-sdk` dùng chung kết nối socket của nền tảng từ `0.4.1`.
