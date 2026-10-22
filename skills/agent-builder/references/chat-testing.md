@@ -109,6 +109,21 @@ Tool gửi **tin thật** cho nhân sự và tính vào giới hạn ngày (xem 
 
 Sự kiện `TOOL_USE` chỉ có tên công cụ; input chỉ xuất hiện trong `TOOL_APPROVAL_REQUEST`. Câu trả lời của Agent chưa chứng minh người nhận đã thấy tin. Khi **người kiểm thử cũng là người nhận** (`personnelId` của phiên, đã có quyền `EXECUTE` trên Agent và seat AI Agent), cùng WebSocket nhận tin ở một `conversation_id` khác, `custom_data.proactive: true`, `text` mở đầu bằng dòng ghi người yêu cầu; ca này `LATEST` luôn mở hội thoại mới vì hội thoại gần nhất của Agent với người nhận chính là hội thoại đang chat. Trả lời vào hội thoại đó bằng service 11 với `chatSessionId` trong `custom_data` của tin (lọc sự kiện theo `turnId` của response) để kiểm tra Agent chỉ biết tin đã gửi. Người nhận là người khác thì cần phiên của chính người đó hoặc API đọc hội thoại, xem [API cần bổ sung](api-gaps.md); không dùng phiên của người khác khi chưa được phép.
 
+### Tool SPEECH
+
+Mỗi lần chuyển giọng nói thật tính credit theo thời lượng âm thanh (xem [SPEECH](tools.md#speech)): dùng file ngắn, đếm số lần gọi thật.
+
+| Ca | Cách chạy | Bằng chứng |
+|---|---|---|
+| Chuyển lần đầu | Hội thoại mới, yêu cầu phân tích bản ghi `{record-id}` có file ghi âm, field đích trống | `LOOP_OUTPUT` có `data.type: TOOL_USE`, `data.name` là slug của Tool; câu trả lời phân tích đúng nội dung ghi âm; đọc lại bản ghi thấy field đích có các dòng `[mm:ss] Vai: ...`, vai đúng với kênh đã cấu hình |
+| Dùng lại transcript | Hội thoại mới, hỏi lại cùng bản ghi, không yêu cầu chuyển lại | Agent gọi Tool và nhận nội dung đã có; field đích không đổi thời điểm cập nhật; không phát sinh thêm credit |
+| Chuyển lại | Yêu cầu rõ "chuyển lại" | Agent gọi Tool với `overwrite: true`; field đích được ghi lại |
+| Không có file | Bản ghi không có file trong field nguồn | Agent báo bản ghi không có file ghi âm, không báo đã phân tích |
+| Ngôn ngữ / một kênh | File tiếng Anh hoặc Hindi, file một kênh với `MIXED` | Kết quả công cụ ghi ngôn ngữ nhận diện đúng; transcript dùng "Người nói 1, 2…" |
+| Cấu hình sai | Đổi `targetFieldSlug` sang field không phải `long_text` | Công cụ báo field sai kiểu ngay, chưa tốn credit |
+
+**Agent trả lời như không có công cụ** (xin người dùng gửi file, nói không mở được liên kết bản ghi): kiểm tra hội thoại đang chat đúng Agent đã gắn Skill. Đọc Agent theo `agentId` dùng để tạo hội thoại (service 10) và danh sách `skills` của Agent đó; hội thoại tạo với Agent khác, Skill chưa gắn vào Agent, Skill hoặc Tool đang tắt đều cho triệu chứng này. Trên giao diện chat, ô chọn Agent có thể không hiện đủ khi Workspace có nhiều Agent đang bật: sắp xếp Agent cần dùng lên đầu hoặc tắt Agent thử nghiệm không còn dùng, rồi mở hội thoại mới. Sửa Skill/Tool xong thì kiểm thử trên hội thoại mới.
+
 ## Probe kèm skill
 
 `scripts/chat_probe.py` tạo đúng một hội thoại mới, dùng câu hỏi kiểm tra kết nối không yêu cầu Tool, chờ TEXT cuối và `LOOP_COMPLETE`. Với `--follow-up`, sau khi lượt đầu đạt, script gửi thêm một lượt bằng service 11 trong cùng hội thoại và kiểm tra lượt đó theo `turnId` của response (kết quả ở `followUp`). Script không kích hoạt Agent, sửa quyền, duyệt Tool hay tự gửi lại tin nhắn khi kết nối lỗi. Nếu cần test nghiệp vụ/ghi/RAG hoặc duyệt Tool, dùng HTTP/WebSocket client theo luồng trên và ma trận phía dưới. Giới hạn của probe không phải thiếu API và không phải lý do mở trình duyệt.
@@ -136,6 +151,7 @@ Probe trả kết quả JSON và exit code khác 0 nếu lỗi, chờ duyệt, h
 | Ngoài phạm vi/thiếu quyền | Agent từ chối hoặc hướng dẫn đúng; không lộ dữ liệu không được phép |
 | Tool cần duyệt | Nhận đúng sự kiện/yêu cầu, gửi quyết định qua service 12; từ chối không tạo side effect; chỉ test chấp thuận khi được phép |
 | Tool PERSONNEL_CHAT | Agent gọi `send_chat_to_personnel`; người nhận không hợp lệ không được báo thành công; tin đến người nhận được xác minh bằng phiên của người nhận, theo mục [Tool PERSONNEL_CHAT](#tool-personnel_chat) |
+| Tool SPEECH | Agent gọi công cụ chuyển giọng nói; transcript ghi đúng field, đúng vai; hỏi lại không chuyển lại; bản ghi không có file không được báo đã phân tích, theo mục [Tool SPEECH](#tool-speech) |
 | Reasoning | Mặc định bật, override hợp lệ được nhận, lựa chọn ngoài policy bị từ chối/không khả dụng |
 | RAG có/không có đáp án | Có nguồn đúng khi tìm thấy; không bịa khi không tìm thấy |
 | Ghi dữ liệu | Đọc lại record/Process và so kết quả, không chỉ tin câu trả lời Agent |

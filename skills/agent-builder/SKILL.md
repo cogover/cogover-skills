@@ -1,15 +1,15 @@
 ---
 name: agent-builder
-description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module và Tool PERSONNEL_CHAT cho Agent chủ động nhắn tin chat cho nhân sự), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
+description: "Tạo, cấu hình và kiểm thử Cogover AI Agent: model/reasoning, danh tính thực thi, System Prompt, Skill CORE/EXTENDED, Tool (gồm Tool CUSTOM_MODULE gọi Custom Module Action của Custom Backend Module và Tool PERSONNEL_CHAT cho Agent chủ động nhắn tin chat cho nhân sự, Tool SPEECH chuyển ghi âm trong field file của bản ghi thành văn bản để Agent phân tích cuộc gọi), phân quyền và Data/RAG qua Web App API; kích hoạt và kiểm tra câu trả lời bằng chat/WebSocket. Phối hợp $cogover-api-auth, $cogover-custom-module."
 metadata:
   author: cogover
-  version: "1.6.0"
+  version: "1.7.0"
 ---
 
 # Agent Builder
 
-- **Phiên bản:** `1.6.0`
-- **Ngày phát hành:** `2026-10-14`
+- **Phiên bản:** `1.7.0`
+- **Ngày phát hành:** `2026-10-22`
 
 ## Phạm vi
 
@@ -86,6 +86,8 @@ Logic riêng của Workspace đã viết trong Custom Backend Module (tính toá
 
 Agent cần chủ động nhắn tin chat cho nhân sự và **tự chọn người nhận** (chuyển lời theo yêu cầu của người đang chat, nhắc việc, cảnh báo cho người phụ trách) dùng Tool `PERSONNEL_CHAT`: người cấu hình chọn `conversationMode` (`NEW` hoặc `LATEST`), viết `description` nêu khi nào nên nhắn, và bảo đảm Agent có nguồn ID nhân sự; người nhận phải có quyền `EXECUTE` trên Agent và seat AI Agent. Agent không có công cụ này trong hội thoại với khách hàng, và lượt chạy nền đã được Process hoặc Custom Backend Module chỉ định người nhận thì không cần Tool; chi tiết tại [PERSONNEL_CHAT](references/tools.md#personnel_chat).
 
+Agent cần phân tích **ghi âm** (cuộc gọi khách hàng, cuộc họp) dùng Tool `SPEECH` type `SPEECH_TO_TEXT`: người cấu hình chọn Object, field file chứa ghi âm, field `long_text` nhận transcript, ngôn ngữ (`auto`/`vi`/`en`/`hi`) và cách gán kênh (ghi âm 2 kênh: kênh nào là khách hàng; một kênh: tự tách người nói); với `call_log` kênh trái luôn là khách hàng và field nguồn mặc định `record_file`. Agent chỉ truyền `record_id`, transcript được ghi vào bản ghi và trả lại để phân tích ngay; bản ghi đã có transcript thì không chuyển lại (không tốn credit). Viết `fullInstructions` mô tả tiêu chí phân tích (chất lượng tư vấn, nhu cầu khách hàng…) và yêu cầu trích mốc `[mm:ss]` làm bằng chứng; chi tiết tại [SPEECH](references/tools.md#speech).
+
 Tách công cụ đọc khỏi công cụ ghi khi cần chính sách khác nhau. Đặt `requiresApproval` theo nghiệp vụ và ý định đã được người dùng cho phép; kiểm thử luồng chấp thuận/từ chối bằng sự kiện WebSocket và API chat service 12 theo [hướng dẫn test](references/chat-testing.md). Không mở thêm thao tác ghi chỉ để khắc phục lỗi thiếu công cụ. Đọc lại Tool, gắn vào Skill và kiểm tra Agent gọi đúng công cụ thực tế.
 
 ### 6. Data/RAG khi cần
@@ -98,7 +100,7 @@ Upload thành công chưa có nghĩa Agent tra cứu được. Không xem `agent
 
 1. Đọc lại Agent, Skill, Tool, quyền, model/reasoning và các liên kết; bật tài nguyên cần dùng. Kích hoạt Agent bằng thao tác đổi trạng thái được tài liệu hỗ trợ.
 2. Tạo **hội thoại mới** sau thay đổi cấu hình. Đọc [chat và WebSocket](references/chat-testing.md); kết nối WebSocket trước, tạo chat bằng HTTP, đọc phản hồi/công cụ/yêu cầu duyệt từ sự kiện. Gắn sự kiện với lượt theo [Lọc sự kiện theo lượt](references/chat-testing.md#lọc-sự-kiện-theo-lượt): lượt gửi bằng service 11 lọc theo `turnId` trong response (sự kiện không có `userMsgChatServerId`); service 10 bỏ sự kiện mồi rồi khóa theo `turnId` đầu tiên của tin người dùng. Dùng script probe cho kiểm tra kết nối cơ bản; test nghiệp vụ bằng HTTP/WebSocket client theo cùng contract, không chuyển sang trình duyệt khi probe chưa hỗ trợ tình huống.
-3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data; Tool `CUSTOM_MODULE` theo mục Kiểm thử của [CUSTOM_MODULE](references/tools.md#custom_module) (gọi đúng action với input hợp lệ, phê duyệt action `write`, từ chối không tạo thay đổi); Tool `PERSONNEL_CHAT` theo các ca [gửi được, người nhận không hợp lệ, phê duyệt/từ chối](references/chat-testing.md#tool-personnel_chat), với người nhận đã biết trước vì đây là tin thật. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
+3. Chạy tình huống chính, thiếu dữ liệu, ngoài phạm vi, CORE/EXTENDED (gồm kiểm tra Agent không gọi `activate_skill` cho Skill CORE), quyền không đủ, reasoning mặc định/override; thêm RAG có đáp án/không có đáp án nếu dùng Data; Tool `CUSTOM_MODULE` theo mục Kiểm thử của [CUSTOM_MODULE](references/tools.md#custom_module) (gọi đúng action với input hợp lệ, phê duyệt action `write`, từ chối không tạo thay đổi); Tool `PERSONNEL_CHAT` theo các ca [gửi được, người nhận không hợp lệ, phê duyệt/từ chối](references/chat-testing.md#tool-personnel_chat), với người nhận đã biết trước vì đây là tin thật; Tool `SPEECH` theo các ca [chuyển lần đầu, dùng lại transcript, không có file, cấu hình sai](references/chat-testing.md#tool-speech), dùng file ghi âm ngắn vì mỗi lần chuyển tính credit. Test ghi chỉ trên dữ liệu thử thuộc phạm vi người dùng cho phép.
 4. Kết luận dựa trên nội dung trả lời và kết quả nghiệp vụ. HTTP `r: 0` hoặc thông báo “ACCEPTED” chỉ xác nhận nhận yêu cầu. Với WebSocket cần đúng hội thoại/lượt, câu trả lời cuối và sự kiện hoàn tất không lỗi.
 
 ## Bàn giao

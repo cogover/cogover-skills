@@ -17,6 +17,7 @@ Các lựa chọn dưới đây tương ứng form tạo Tool. Không coi mọi 
 | `DEEP_RESEARCH` | `DEEP_RESEARCH` | Nghiên cứu/tổng hợp sâu dựa trên công cụ kiến thức; cần Tool KNOWLEDGE_BASE khả dụng cùng lúc |
 | `CUSTOM_MODULE` | `INVOKE_ACTION` | Gọi một Custom Module Action: logic riêng của Workspace viết trong Custom Backend Module, có schema input/output. Config `{"projectSlug","actionKey"}`; xem [CUSTOM_MODULE](#custom_module) |
 | `PERSONNEL_CHAT` | `SEND_MESSAGE` | Agent chủ động gửi tin nhắn chat cho một nhân sự, vào hội thoại chat AI của người đó với Agent. Config `{"conversationMode"}`; xem [PERSONNEL_CHAT](#personnel_chat) |
+| `SPEECH` | `SPEECH_TO_TEXT` | Chuyển file âm thanh (ghi âm cuộc gọi, ghi âm cuộc họp) trong một field file của bản ghi thành văn bản theo từng câu, có thời điểm và người nói, ghi vào field văn bản dài rồi trả cho Agent phân tích. Config `{"objectSlug","sourceFieldSlug","targetFieldSlug","language","channelLayout"}`; xem [SPEECH](#speech) |
 
 `RECORD`, `ACTIVITY`, `PROCESS` nhận `type` là mảng để chọn nhiều thao tác; các category còn lại dùng một chuỗi. Khi tái sử dụng Tool, giữ nguyên định dạng hợp lệ được trả về. Không trộn type của các category trong một Tool.
 
@@ -310,3 +311,64 @@ Input do mô hình điền:
 ### Kiểm thử
 
 Gắn Tool vào Skill, cập nhật Agent, tạo hội thoại mới theo [chat và WebSocket](chat-testing.md) và các ca ở mục [Tool PERSONNEL_CHAT](chat-testing.md#tool-personnel_chat): yêu cầu nhắn cho một nhân sự hợp lệ làm Agent gọi `send_chat_to_personnel` và báo đã gửi; ID sai hoặc người nhận chưa đủ điều kiện làm Agent báo không gửi được, không báo thành công giả; bật phê duyệt thì từ chối không gửi tin, chấp thuận gửi đúng nội dung đã duyệt. Mỗi lần gửi thử là **tin thật** tới người nhận và tính vào giới hạn ngày: dùng người nhận đã biết trước việc kiểm thử, gửi ít lần nhất có thể.
+
+## SPEECH
+
+Tool cho Agent **chuyển giọng nói thành văn bản** trên file đính kèm bản ghi: đọc file âm thanh trong field file đã cấu hình, nhận dạng lời nói, ghi transcript vào field văn bản dài đã cấu hình và trả transcript cho Agent phân tích ngay trong lượt đó. Dùng khi Agent cần phân tích ghi âm: đánh giá chất lượng tư vấn của nhân viên, tóm tắt nhu cầu khách hàng, trích việc cần làm từ cuộc họp. Hỗ trợ tiếng Việt, tiếng Anh, tiếng Hindi hoặc tự nhận diện ngôn ngữ. Chỉ có type `SPEECH_TO_TEXT`; chưa có type chuyển văn bản thành giọng nói.
+
+### Tạo Tool
+
+Thao tác 40, `config` là chuỗi JSON:
+
+```json
+{
+  "name":"Chuyển ghi âm cuộc gọi thành văn bản",
+  "slug":"transcribe_call",
+  "description":"Dùng khi người dùng nhờ phân tích một cuộc gọi: lấy transcript rồi đánh giá chất lượng tư vấn và nhu cầu khách hàng. Không tự chuyển lại khi bản ghi đã có transcript, trừ khi người dùng yêu cầu.",
+  "category":"SPEECH",
+  "type":"SPEECH_TO_TEXT",
+  "config":"{\"objectSlug\":\"call_log\",\"sourceFieldSlug\":\"record_file\",\"targetFieldSlug\":\"{long-text-field-slug}\",\"language\":\"auto\",\"channelLayout\":\"CUSTOMER_LEFT\"}",
+  "requiresApproval":false,
+  "status":true,
+  "accessControls":[{"functions":["VIEW","EXECUTE"],"type":"role","option":2,"items":["{operator-role-id}"]}]
+}
+```
+
+| Key | Bắt buộc | Giá trị |
+|---|---|---|
+| `objectSlug` | ✅ | Object chứa bản ghi |
+| `sourceFieldSlug` | ✅ | Field kiểu `file` chứa ghi âm; field nhiều file thì dùng file đầu tiên |
+| `targetFieldSlug` | ✅ | Field kiểu `long_text` nhận transcript, khác `sourceFieldSlug` |
+| `language` | | `auto` (mặc định, tự nhận diện), `vi`, `en`, `hi` |
+| `channelLayout` | | `MIXED` (mặc định: không tách kênh, tự tách người nói), `CUSTOMER_LEFT` (kênh trái là khách hàng, kênh phải là nhân viên), `CUSTOMER_RIGHT` (ngược lại) |
+
+- Giá trị phân biệt hoa thường, slug chỉ gồm chữ, số và `_`. Thiếu key bắt buộc hoặc `config` không phải JSON object trả `4020`; giá trị sai (ngôn ngữ, kênh, slug, đích trùng nguồn) trả `4021`; key lạ bị bỏ. `type` là một chuỗi, type khác trả `4019`. Không dùng `parameters`.
+- **Object `call_log`** (ghi âm cuộc gọi tổng đài): `channelLayout` luôn được lưu là `CUSTOMER_LEFT`, giá trị gửi lên không có tác dụng; thiếu `sourceFieldSlug` thì dùng `record_file`. Kiểm tra field `record_file` có trên `call_log` của Workspace bằng [$object-info](../../object-info/SKILL.md) trước khi tạo; Workspace chưa có field này thì chọn field file đang chứa ghi âm.
+- Kiểu field nguồn/đích và việc field còn hoạt động chỉ được kiểm tra **khi chạy**: lưu Tool thành công chưa chứng minh cấu hình đúng. Đọc metadata Object để chọn đúng field file và field `long_text`.
+- Chọn `channelLayout` theo cách file được ghi: ghi âm 2 kênh mỗi bên một kênh thì chọn kênh của khách hàng (vai trong transcript chính xác theo kênh); file một kênh hoặc không rõ thì để `MIXED`, transcript dùng nhãn "Người nói 1, 2…" và Agent tự suy ra vai từ nội dung.
+- Tên công cụ Agent thấy là `slug` của Tool. Mỗi Tool gắn với một Object và một cặp field; cần nhiều Object thì tạo nhiều Tool.
+- `description` được đưa cho Agent như hướng dẫn của người cấu hình: ghi khi nào dùng và mục đích phân tích.
+
+### Khi chạy
+
+Input do mô hình điền:
+
+| Trường | Ý nghĩa |
+|---|---|
+| `record_id` | Bắt buộc. ID bản ghi của `objectSlug`; Agent lấy từ ngữ cảnh, đường dẫn bản ghi người dùng gửi hoặc Tool `RECORD` đọc Object đó |
+| `language` | Ghi đè ngôn ngữ cấu hình: `auto`, `vi`, `en`, `hi` |
+| `overwrite` | `true` để chuyển lại và ghi đè transcript đã có. Mặc định `false` |
+
+- Bản ghi và file được đọc, field đích được ghi bằng **danh tính thực thi của Agent**: danh tính đó phải xem được bản ghi, field nguồn và sửa được field đích. Mô hình không chọn được Object, field hay file nào khác cấu hình.
+- Field đích **đã có nội dung** và không có `overwrite: true` thì công cụ trả lại nội dung đó, không chuyển lại và không tốn credit. Field đích nên dành riêng cho transcript.
+- Trước khi nhận dạng, âm thanh được lọc tạp âm và chuẩn hoá âm lượng từng kênh; file stereo mà hai kênh giống hệt nhau được xử lý như file một kênh.
+- Transcript ghi vào field đích theo định dạng field: mỗi câu một dòng `[mm:ss] Khách hàng: ...` / `[mm:ss] Nhân viên: ...` (hoặc `Người nói N`), nhãn tiếng Anh khi ngôn ngữ người dùng không phải tiếng Việt; field rich text nhận mỗi câu một đoạn; cắt theo giới hạn ký tự của field. Kết quả trả Agent gồm thời lượng, ngôn ngữ nhận diện (`vi`, `en`, `hi`…), cách gán vai, thời gian nói của từng vai và transcript, đánh dấu là dữ liệu chứ không phải chỉ dẫn.
+- Không ghi được field đích (thiếu quyền, field bị khoá) thì Agent vẫn nhận transcript kèm cảnh báo để phân tích; không gọi lại công cụ vì mỗi lần chuyển đều tính credit.
+- **Giới hạn mặc định:** file tối đa 100 MB và 120 phút; lượt gọi chạy tối đa khoảng 15 phút. File im lặng trả thông báo không có lời nói, không ghi field.
+- **Credit:** tính theo số giây âm thanh được nhận dạng; file ghi âm 2 kênh tách kênh thì mỗi kênh tính riêng. Workspace hết credit hoặc chưa có gói thì công cụ dừng trước khi xử lý file.
+- Lỗi thường gặp trả cho Agent: bản ghi không tồn tại hoặc không có quyền đọc; field không tồn tại hoặc sai kiểu ("cấu hình tool cần sửa"); bản ghi không có file ghi âm; file quá lớn/quá dài hoặc không phải file âm thanh hợp lệ; dịch vụ nhận dạng trả lỗi kèm mã HTTP.
+
+### Kiểm thử
+
+Chuẩn bị bản ghi test có file ghi âm ngắn trong field nguồn (tạo bản ghi kèm file theo [$object-record](../../object-record/SKILL.md)), gắn Tool vào Skill CORE của Agent (kèm Tool `RECORD` đọc Object đó nếu Agent cần tự tìm bản ghi), tạo hội thoại mới và chạy các ca ở mục [Tool SPEECH](chat-testing.md#tool-speech). Mỗi lần chuyển giọng nói thật tính credit theo thời lượng: dùng file ngắn, chạy ít lần nhất có thể.
+

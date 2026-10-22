@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.29.0 - 2026-10-22
+
+AI Agent có Tool chuyển giọng nói thành văn bản để phân tích ghi âm trong bản ghi.
+
+- `agent-builder` 1.7.0:
+  - `references/tools.md`: category `SPEECH` type `SPEECH_TO_TEXT` — config `objectSlug`, `sourceFieldSlug` (field file), `targetFieldSlug` (field `long_text`), `language` (`auto`/`vi`/`en`/`hi`), `channelLayout` (`MIXED`, `CUSTOMER_LEFT`, `CUSTOMER_RIGHT`); quy tắc `call_log` (kênh trái luôn là khách hàng, nguồn mặc định `record_file`); mã lỗi `4019`/`4020`/`4021`; input `record_id`, `language`, `overwrite`; dùng lại transcript đã có không tốn credit, định dạng transcript `[mm:ss] Vai: ...`, giới hạn file, credit theo giây âm thanh (mỗi kênh tính riêng).
+  - `references/chat-testing.md`: ca kiểm thử Tool SPEECH, dòng trong ma trận xác minh, cách xử lý khi Agent trả lời như không có công cụ (hội thoại tạo với Agent khác, Skill/Tool chưa gắn hoặc đang tắt, ô chọn Agent không hiện đủ khi nhiều Agent).
+  - `SKILL.md`: mô tả, hướng dẫn chọn Tool SPEECH khi Agent cần phân tích ghi âm và các ca kiểm thử.
+
 ## 4.28.0 - 2026-10-21
 
 Records API nhận tham số `write_mode` để chọn Process kích hoạt theo bản ghi chạy ngay hay chạy dần.
