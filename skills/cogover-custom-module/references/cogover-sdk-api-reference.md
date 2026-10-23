@@ -2645,6 +2645,7 @@ interface NotificationMessage {
   readonly link?: NotificationLink;
   readonly sender?: NotificationSender;
   readonly channel?: string;
+  readonly categories?: readonly string[];
   readonly email?: boolean;
   readonly idempotencyKey?: string;
 }
@@ -2669,6 +2670,7 @@ const result = await notifications.send({
   content: "A leave request of 3 days was submitted and needs your decision.",
   link: { url: `/app/leave_request/${recordId}` },
   channel: approvalChannelId,
+  categories: ["process"],
   idempotencyKey: `leave-approval:${recordId}`,
 });
 // result.notified: số tài khoản được gửi; result.skippedPersonnelIds: personnel chưa có tài khoản
@@ -2714,6 +2716,20 @@ cài đặt thông báo của riêng mình. Không có `channel` thì mọi hìn
 bật. Kênh không tồn tại ném `NotFoundError` với `resource` là `"notificationChannel"`;
 workspace chưa thiết lập notification ném `NotFoundError` với `resource` là
 `"object"` và `resourceId` là `"notification_channel"`.
+
+**Danh mục thông báo** (SDK từ `0.17.0`). `categories` xếp notification vào tối đa 10
+danh mục thông báo (notification category) của workspace; người nhận dùng danh mục để
+lọc danh sách thông báo của mình. Mỗi phần tử là `code` của một danh mục, ví dụ
+`"process"`, `"sales"` hoặc `"system"`, hoặc record ID của một danh mục; `code` giữ
+nguyên ở mọi workspace có danh mục đó, còn record ID chỉ thuộc về một workspace. Mỗi
+phần tử gồm 1 đến 64 chữ cái, chữ số, `_` hoặc `-`; phần tử trùng được loại bỏ, và
+danh sách rỗng tương đương không truyền. Danh mục chỉ dùng để nhóm notification trong
+danh sách, không thay đổi cách gửi — việc đó do `channel` quyết định. Cogover không
+kiểm tra các phần tử khi gọi `send`: phần tử không ứng với danh mục đang hoạt động của
+workspace bị bỏ qua, và khi không còn phần tử nào thì notification được xếp vào danh
+mục `system` (nếu đang hoạt động). Không truyền `categories` thì dùng các danh mục mà
+workspace gán cho loại notification này, cũng quay về `system` khi không có. Workspace
+chưa có danh mục thông báo lưu notification mà không gắn danh mục.
 
 `email: false` bỏ bản sao email kể cả khi kênh bật email. Bản sao dùng `title` làm
 subject và `content` làm nội dung, được gửi từ một địa chỉ thông báo của Cogover chứ

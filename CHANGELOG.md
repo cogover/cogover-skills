@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.30.0 - 2026-10-23
+
+Notification gửi từ Custom Backend Module được xếp vào danh mục thông báo để người nhận lọc trong danh sách.
+
+- `cogover-custom-module` 1.23.0:
+  - `notifications.send` nhận `categories` (`@cogover/sdk` từ `0.17.0`): tối đa 10 `code` (ví dụ `process`, `sales`, `system`; ổn định giữa các Workspace) hoặc record ID của Object `notification_category`, mỗi phần tử khớp `^[A-Za-z0-9_-]{1,64}$`, bỏ trùng; danh mục không tồn tại hoặc không hoạt động bị bỏ qua, không còn danh mục hợp lệ thì vào `system`, không truyền thì Workspace gán theo loại notification. Danh mục chỉ nhóm notification, khác `channel` quyết định hình thức gửi.
+  - `references/cogover-sdk-api-reference.md`, `references/cogover-sdk-usage-guide.md`: kiểu `NotificationMessage.categories`, ví dụ và quy tắc trên.
+  - `SKILL.md`: bảng tài liệu theo nhánh, bảng chọn capability, hướng dẫn code notification và kiểm thử danh mục trên Workspace thật.
+
 ## 4.29.0 - 2026-10-22
 
 AI Agent có Tool chuyển giọng nói thành văn bản để phân tích ghi âm trong bản ghi.

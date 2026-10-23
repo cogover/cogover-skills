@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.16.0` ngày `2026-10-13`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy, `deliverTo` để agent chủ động nhắn chat cho một nhân sự và kết quả `delivery`), gửi notification và email (người nhận, notification channel, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.16.0` ngày `2026-10-13`, bổ sung `categories` của `notifications.send` (`0.17.0`) ngày `2026-10-23`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy, `deliverTo` để agent chủ động nhắn chat cho một nhân sự và kết quả `delivery`), gửi notification và email (người nhận, notification channel, danh mục thông báo `categories`, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -766,6 +766,8 @@ export const triggers = [
         content: "A leave request was submitted and needs your decision.",
         link: { url: `/app/leave_request/${record.id}` },
         channel: APPROVAL_CHANNEL,
+        // Code danh mục: giống nhau ở mọi workspace, khác với record ID của kênh.
+        categories: ["process"],
         // Cùng một thay đổi của cùng một record luôn tạo ra cùng một key.
         idempotencyKey: `leave-approval:${trigger.changeId}:${record.id}`,
       });
@@ -783,6 +785,11 @@ export const triggers = [
   `email: false` để không bao giờ gửi bản sao email. Bản sao được gửi từ một địa chỉ
   thông báo của Cogover và được tính vào hạn mức email thông báo hằng ngày theo gói
   của workspace.
+- `categories` (SDK từ `0.17.0`) xếp notification vào tối đa 10 danh mục thông báo,
+  giúp người nhận lọc danh sách thông báo của mình. Truyền code danh mục như
+  `"process"` hoặc `"sales"` (hoặc record ID của danh mục); danh mục không tồn tại
+  hoặc không hoạt động bị bỏ qua, và khi không còn danh mục dùng được thì notification
+  vào `system`. Danh mục không thay đổi cách gửi — việc đó do `channel` quyết định.
 - `link.url` là path của web app bắt đầu bằng `/` hoặc URL tuyệt đối `http(s)`.
   `contentType: "html"` chỉ giữ định dạng cơ bản như đoạn văn, danh sách, bảng và
   liên kết.
