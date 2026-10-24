@@ -225,6 +225,7 @@ HTTP `201` trả về module object:
   "workspaceId": "WSXXXXXXXXXXXXX",
   "name": "Order automation",
   "description": "Synchronize order data",
+  "maxConcurrentRuns": null,
   "slug": "order_automation",
   "status": "DRAFT",
   "activeVersionId": null,
@@ -245,6 +246,10 @@ HTTP `201` trả về module object:
 
 `lockVersion` là dấu phiên bản đồng thời dạng opaque; client không được tự thay đổi. Mọi module object (tạo, liệt kê,
 đọc, cập nhật và xóa) có `git`, mô tả ở [Repository của module](#repository-của-module).
+
+Mọi module object cũng có `maxConcurrentRuns`: `null` khi các lời gọi module theo giới hạn của Workspace (mặc định,
+và là giá trị của module mới tạo), hoặc một số nguyên từ `1` đến `64` đặt bằng
+[Cập nhật module](#cập-nhật-module). Xem [Lời gọi module chạy đồng thời](#lời-gọi-module-chạy-đồng-thời).
 
 ### Liệt kê module
 
@@ -300,11 +305,33 @@ Content-Type: application/json
 ```json
 {
   "name": "Order automation v2",
-  "description": null
+  "description": null,
+  "maxConcurrentRuns": 1
 }
 ```
 
-Gửi ít nhất một trong hai field `name` hoặc `description`. `description: null` xóa mô tả. Request có field `slug`, kể cả giữ nguyên giá trị cũ, sẽ bị từ chối.
+Gửi ít nhất một trong các field `name`, `description` hoặc `maxConcurrentRuns`; request không có field nào trong số
+đó trả `400` với `msg: "At least name, description or maxConcurrentRuns must be provided"`. `description: null` xóa mô
+tả. Request có field `slug`, kể cả giữ nguyên giá trị cũ, sẽ bị từ chối.
+
+`maxConcurrentRuns` giới hạn số lời gọi của module này được chạy cùng lúc:
+
+- `null` (mặc định): các lời gọi module theo giới hạn của Workspace.
+- Số nguyên từ `1` đến `64`: tối đa bấy nhiêu lời gọi của module chạy cùng lúc; các lời gọi tiếp theo của module chờ
+  tới khi một lời gọi đang chạy kết thúc. `1` chạy các lời gọi của module lần lượt từng lời gọi, như trước đây.
+
+Giới hạn của Workspace vẫn áp dụng: module đặt `64` cũng không bao giờ chạy cùng lúc nhiều lời gọi hơn mức Workspace
+cho phép. Mọi giá trị khác, ví dụ `0`, `65`, `2.5` hoặc `"4"`, trả `400`:
+
+```json
+{
+  "r": 400,
+  "msg": "maxConcurrentRuns must be null or a whole number from 1 to 64"
+}
+```
+
+HTTP `200` trả về module object sau khi cập nhật. Giá trị `maxConcurrentRuns` mới áp dụng cho các lời gọi bắt đầu sau
+khi cập nhật; lời gọi đang chạy không bị ảnh hưởng.
 
 ### Xóa module
 
@@ -1872,11 +1899,47 @@ Mọi lỗi khác, như exception JavaScript không được bắt hoặc vượ
 
 Cả `writesMayHaveCompleted: true` lẫn message này đều không có nghĩa là thao tác ghi đã thành công; hãy kiểm tra dữ liệu trước khi retry lời gọi có ghi.
 
-Mỗi lời gọi chạy trong giới hạn của nền tảng về thời gian thực thi và về số lượng, kích thước các SDK call; giá trị do nền tảng đặt và có thể khác nhau giữa các môi trường. Giới hạn thời gian tính từ lúc handler bắt đầu chạy; vượt quá thì lời gọi kết thúc với response `422` ở trên. SDK call vượt ngân sách call, hoặc một call quá lớn, bị từ chối trước khi gửi bằng lỗi mà handler bắt được. Khi Workspace đã có quá nhiều lời gọi đang chờ, lời gọi mới bị từ chối trước khi chạy với `429` và `code: "RATE_LIMITED"`; hãy thử lại sau.
+Mỗi lời gọi chạy trong giới hạn của nền tảng về thời gian thực thi và về số lượng, kích thước các SDK call; giá trị do nền tảng đặt và có thể khác nhau giữa các môi trường. Giới hạn thời gian tính từ lúc handler bắt đầu chạy; vượt quá thì lời gọi kết thúc với response `422` ở trên. SDK call vượt ngân sách call, hoặc một call quá lớn, bị từ chối trước khi gửi bằng lỗi mà handler bắt được. Khi Workspace đã có quá nhiều lời gọi đang chờ đến mức một lời gọi mới không thể bắt đầu kịp, lời gọi mới bị từ chối ngay, trước khi chạy bất cứ gì:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 3
+Content-Type: application/json
+
+{
+  "r": 429,
+  "code": "RATE_LIMITED",
+  "msg": "The request limit has been exceeded. Please try again later.",
+  "writesMayHaveCompleted": false,
+  "retryAfterMillis": 2400
+}
+```
+
+`Retry-After` (số giây nguyên) và `retryAfterMillis` cho biết khi nào dự kiến có chỗ trống trở lại; hai giá trị này có mặt khi Cogover ước lượng được. Hãy chờ ít nhất khoảng đó rồi mới gửi lại cùng request; nếu không có, chờ vài giây và tăng dần thời gian chờ sau mỗi lần bị từ chối. Chưa có gì chạy nên có thể gửi lại nguyên request; với lời gọi ghi dữ liệu, hãy gửi kèm `Idempotency-Key` để lần gửi lại sau khi mất response không ghi hai lần. Lời gọi bị từ chối không chiếm `Idempotency-Key`: lần gửi lại với cùng key chạy bình thường. Khi client cần chạy cùng một route nhiều lần liên tiếp, hãy gửi đều theo nhịp thay vì gửi dồn một lúc, hoặc chuyển việc sang background job.
 
 `Idempotency-Key` không bắt buộc nhưng nên dùng cho request có thể ghi dữ liệu. Retry đã hoàn tất với cùng caller, version deploy, method, route và key sẽ phát lại kết quả đầu tiên trong tối đa 6 giờ. Request trùng đang chạy trả `409`. Kết quả đầu tiên lớn hơn 32 KiB, hoặc vượt hạn mức phát lại theo giờ của Workspace, không được lưu: retry cùng key khi đó trả `409` mà không chạy lại handler. Idempotency không biến nhiều thao tác dữ liệu thành một transaction.
 
 Module mà code chỉ khai báo record trigger hoặc background job và không có HTTP handler mặc định thì không có endpoint để gọi: mọi URI gọi module đó trả `404`. Record trigger và job không bao giờ truy cập được qua URI gọi module; trigger chỉ chạy khi bản ghi thay đổi và job chỉ chạy khi được enqueue hoặc theo lịch.
+
+### Lời gọi module chạy đồng thời
+
+Các lời gọi module của một Workspace không còn chạy lần lượt từng lời gọi: nhiều lời gọi, kể cả lời gọi inbound webhook, có thể chạy cùng lúc, tối đa một giới hạn do nền tảng đặt cho mỗi Workspace. Vượt giới hạn đó, lời gọi mới chờ tới khi có chỗ hoặc bị từ chối với response `429` ở trên. `maxConcurrentRuns` của module (xem [Cập nhật module](#cập-nhật-module)) có thể hạ giới hạn này cho riêng một module. Vì vậy hai request, hoặc một request cùng một record trigger after-change hay một background job, có thể chạy xen kẽ nhau, và handler không thể giả định rằng trong lúc đó không có lời gọi nào khác sửa cùng dữ liệu:
+
+- Code đọc một bản ghi hoặc một state key, sửa rồi ghi lại phải giữ lock của `locks` trong suốt chuỗi thao tác đó, hoặc ghi state bằng `state.set` kèm `expectedVersion`, để hai lời gọi không ghi đè thay đổi của nhau.
+- Client gửi lại một thao tác ghi, ví dụ sau khi hết thời gian chờ hoặc nhận `429`, nên gửi kèm `Idempotency-Key` để thao tác ghi không bị áp dụng hai lần.
+- Module có code dựa vào việc các lời gọi chạy lần lượt từng lời gọi có thể đặt `maxConcurrentRuns: 1`.
+
+Cogover Dev CLI chạy các lời gọi local lần lượt từng lời gọi; lời gọi chạy đồng thời chỉ xảy ra ở module đã deploy.
+
+### SDK call song song
+
+Các SDK call mà handler bắt đầu cùng lúc, ví dụ bằng `Promise.all([...])`, chạy song song, tối đa một số lời gọi đồng thời do nền tảng đặt; lời gọi vượt quá sẽ chờ tới khi có chỗ. Handler `await` từng lời gọi trước khi bắt đầu lời gọi tiếp theo vẫn chạy lần lượt như trước. Mỗi lời gọi vẫn tính vào ngân sách của lời gọi module như cũ, và lời gọi được bắt đầu mà không `await` vẫn chạy xong trước khi lời gọi module kết thúc. Khi các lời gọi chạy song song:
+
+- Thứ tự của chúng không cố định. Push message và notification gửi cùng lúc có thể tới theo thứ tự bất kỳ, và `push.refreshRecords` bắt đầu trong cùng `Promise.all` với thao tác cập nhật mà nó báo có thể tới người dùng trước khi cập nhật được lưu: hãy `await` thao tác ghi trước rồi mới refresh.
+- Hai lời gọi `state.set` cùng key không có `expectedVersion` thì giá trị còn lại là một trong hai; hãy dùng `expectedVersion` hoặc lock khi kết quả quan trọng.
+- Không dùng cùng một `idempotencyKey` cho hai lời gọi trong cùng một `Promise.all`: lời gọi thứ hai thất bại với `DUPLICATE_IN_PROGRESS` hoặc `RETRYABLE` thay vì trả kết quả đầu tiên với `duplicate: true`.
+
+Cogover Dev CLI vẫn chạy các SDK call của một lời gọi local lần lượt từng lời gọi: chạy local chậm hơn, còn kết quả không đổi.
 
 ## Gọi inbound webhook
 

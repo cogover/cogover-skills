@@ -1179,7 +1179,8 @@ và concurrency đều có quota.
 - Body của response được giải mã theo UTF-8: byte không hợp lệ theo UTF-8 thành U+FFFD,
   nên không đọc chính xác được nội dung nhị phân.
 - Host name phân giải ra địa chỉ không phải public thất bại với `FETCH_FAILED`.
-- Các lời gọi bắt đầu cùng lúc, ví dụ bằng `Promise.all`, được gửi lần lượt từng lời gọi.
+- Các lời gọi bắt đầu cùng lúc, ví dụ bằng `Promise.all`, chạy song song tới một số lời
+  gọi `fetch` đồng thời do nền tảng đặt; lời gọi vượt quá chờ tới khi có chỗ thay vì thất bại.
 - Trigger before-change không được gọi `fetch`: lời gọi ném `PermissionDeniedError` có
   `details.reason` là `"TRIGGER_READ_ONLY"`. Preview version chế độ chỉ đọc chỉ cho phép
   `GET` và `HEAD` không có `credential`, các lời gọi khác bị từ chối bằng
@@ -2434,7 +2435,16 @@ API; không dùng để lưu secret, file hoặc dữ liệu lớn.
 ## Distributed locks
 
 Lock là lease phân tán theo workspace, project, namespace và key, dùng để ngăn các
-execution đồng thời chạy cùng một đoạn xử lý. Cách an toàn mặc định là `withLock`:
+execution đồng thời chạy cùng một đoạn xử lý.
+
+Nhiều execution của cùng một Workspace có thể chạy cùng lúc: hai request, hoặc một request
+cùng một record trigger after-change hay một background job, có thể chạy xen kẽ nhau. Khi
+code đọc một bản ghi hoặc một state key, sửa rồi ghi lại, hãy giữ lock trên bản ghi hoặc
+key đó trong suốt chuỗi thao tác, hoặc dùng `expectedVersion` của `state.set`; nếu không,
+execution này có thể ghi đè thay đổi của execution khác. Client gửi lại một thao tác ghi
+cũng nên gửi kèm `Idempotency-Key`.
+
+Cách an toàn mặc định là `withLock`:
 
 ```typescript
 interface LockOptions {
@@ -4389,8 +4399,8 @@ chúng do nền tảng thiết lập và có thể khác giữa các môi trư�
   `timeoutMs` của nó, background job dùng `timeoutMs` của job. Custom Module Action có
   ngân sách của một HTTP route và `timeoutMs` riêng, tối đa 8 giây. Vượt thời gian sẽ kết thúc
   toàn bộ lần thực thi: script không bắt được, và HTTP route trả response HTTP 422 chung.
-  Các capability call của một lần thực thi chạy lần lượt, kể cả khi được bắt đầu cùng lúc
-  bằng `Promise.all`.
+  Các lời gọi bắt đầu cùng lúc chạy song song (xem [Lời gọi song song](#lời-gọi-song-song)),
+  giúp giảm thời gian chờ.
 - Một capability request, đã mã hoá JSON cùng tham số, không được vượt quá 262.144
   byte. Request lớn hơn bị từ chối trước khi gửi bằng `ValidationError`, hoặc
   `CogoverApiError` có `code: "FETCH_REQUEST_TOO_LARGE"` với `fetch`; `details.limit` là
@@ -4398,13 +4408,64 @@ chúng do nền tảng thiết lập và có thể khác giữa các môi trư�
   (`FETCH_RESPONSE_TOO_LARGE` với `fetch`): hãy yêu cầu ít record hơn, hoặc nêu field
   thay cho `"*"`. Bản thân
   thao tác vẫn đã chạy, nên thao tác ghi có thể đã hoàn tất.
-- Khi Workspace đã có quá nhiều lần thực thi đang chờ, lời gọi HTTP mới bị từ chối với
-  HTTP 429 và `code: "RATE_LIMITED"` trước khi chạy bất cứ gì; hãy thử lại sau. Lỗi này
-  không có `details.budget`.
+- Khi Workspace đã có quá nhiều lần thực thi đang chờ đến mức một lời gọi HTTP mới không
+  thể bắt đầu kịp, lời gọi đó bị từ chối ngay với HTTP 429 và `code: "RATE_LIMITED"` trước
+  khi chạy bất cứ gì. Lỗi này không có `details.budget`; nó kèm header `Retry-After` (số
+  giây) và `retryAfterMillis` trong body khi Cogover ước lượng được lúc nên gửi lại. Bên
+  gọi nên chờ ít nhất khoảng đó, và gửi `Idempotency-Key` với lời gọi ghi dữ liệu để gửi
+  lại an toàn.
 
 Một số API còn có quota riêng cho mỗi lần thực thi, như 20 lời gọi `fetch`, 20 lần đọc
 secret, 20 lời gọi `processes.start` hoặc 5 lời gọi `agents.start`. Vượt các quota này
 cũng được báo bằng `RateLimitError`.
+
+## Lời gọi song song
+
+Các capability call mà handler bắt đầu cùng lúc chạy song song, tối đa một số lời gọi
+đồng thời do nền tảng đặt; lời gọi vượt quá sẽ chờ tới khi có chỗ. Handler `await` từng
+lời gọi trước khi bắt đầu lời gọi tiếp theo thì các lời gọi chạy lần lượt. Vì vậy có thể
+gộp các thao tác đọc và ghi độc lập bằng `Promise.all`:
+
+```typescript
+import { defineScript } from "@cogover/sdk";
+
+export default defineScript(async ({ data, input }) => {
+  const { orderId, customerId } = input as { orderId: string; customerId: string };
+  const [order, customer] = await Promise.all([
+    data.object("order").records.get(orderId, { fields: ["amount", "status"] }),
+    data.object("customer").records.get(customerId, { fields: ["credit_limit"] }),
+  ]);
+  return { order, customer };
+});
+```
+
+- Mỗi lời gọi vẫn tính vào ngân sách của lần thực thi như cũ, dù chạy riêng hay song
+  song. Nên dùng một `records.getMany` hoặc `records.batchInsert` thay cho nhiều lời gọi
+  `get` hoặc `create` song song: đó là một capability call thay vì nhiều.
+- Lời gọi được bắt đầu mà không `await` vẫn chạy xong trước khi lần thực thi kết thúc,
+  trong giới hạn thời gian.
+- Thứ tự của các lời gọi song song không cố định. Push message và notification gửi cùng
+  lúc có thể tới theo thứ tự bất kỳ, và `push.refreshRecords` bắt đầu trong cùng
+  `Promise.all` với thao tác cập nhật mà nó báo có thể tới người dùng trước khi cập nhật
+  được lưu: hãy `await` thao tác ghi trước rồi mới refresh.
+- Hai lời gọi `state.set` cùng key không có `expectedVersion` thì giá trị còn lại là một
+  trong hai. Hãy dùng `expectedVersion` hoặc lock khi kết quả quan trọng.
+- Không dùng cùng một `idempotencyKey` cho hai lời gọi trong cùng một `Promise.all`: lời
+  gọi thứ hai thất bại với `DUPLICATE_IN_PROGRESS` hoặc `RETRYABLE` thay vì trả kết quả
+  đầu tiên với `duplicate: true`.
+- Khi một lời gọi trong `Promise.all` thất bại, các lời gọi khác vẫn chạy; dữ liệu chúng đã
+  ghi không bị hoàn tác.
+- Khi chạy local bằng Cogover Dev CLI, các lời gọi chạy lần lượt: kết quả như nhau, chỉ
+  chậm hơn.
+
+Các lần thực thi khác nhau cũng có thể chạy cùng lúc. Nhiều lời gọi module của cùng một
+Workspace, ví dụ hai request, hoặc một request cùng một record trigger after-change hay
+một background job, có thể chạy xen kẽ nhau, tối đa một giới hạn do nền tảng đặt cho mỗi
+Workspace. Code đọc một bản ghi hoặc một state key, sửa rồi ghi lại phải giữ lock của
+`locks` trong suốt chuỗi thao tác đó, hoặc ghi state bằng `state.set` kèm
+`expectedVersion` (xem [Project state và lock](#project-state)). Một project cũng có
+thể bị giới hạn số lời gọi chạy cùng lúc ít hơn, tới mức một lời gọi mỗi lúc, bằng thiết
+lập `maxConcurrentRuns` của project. Cogover Dev CLI chạy các lần thực thi local lần lượt.
 
 ## Đọc giới hạn trong code
 

@@ -419,6 +419,44 @@ toán JWT tương ứng.
 - Số tổng và số đếm không cần đọc record: `records.aggregate` chỉ tốn một capability
   call dù có bao nhiêu record.
 - Request ghi không được tự retry khi timeout vì kết quả commit có thể chưa rõ.
+- Khi Workspace có quá nhiều lần thực thi đang chờ, lời gọi HTTP mới bị từ chối ngay với
+  HTTP 429, `code: "RATE_LIMITED"` và header `Retry-After`. Bên gọi nên chờ khoảng đó rồi
+  mới gửi lại request, kèm `Idempotency-Key` với thao tác ghi.
+
+## Chạy các lời gọi độc lập cùng lúc
+
+Các lời gọi bắt đầu cùng lúc, ví dụ bằng `Promise.all`, chạy song song, còn lời gọi được
+`await` trước khi lời gọi tiếp theo bắt đầu thì chạy riêng. Hãy gộp các thao tác đọc không
+phụ thuộc nhau, ghi nhiều record của một Object bằng một `records.batchInsert` hoặc
+`records.batchUpdate`, rồi gửi các thao tác ghi độc lập cùng lúc:
+
+```typescript
+router.post("/orders/:orderId/confirm", async ({ data, request }) => {
+  const orderId = request.params.orderId ?? "";
+  const orders = data.object("order");
+  const lines = data.object("order_line");
+  const [order, products] = await Promise.all([
+    orders.records.get(orderId, { fields: ["customer", "status"] }),
+    data.object("product").records.list({ fields: ["price"], limit: 50 }),
+  ]);
+  if (order === null) return { confirmed: false };
+  const [, inserted] = await Promise.all([
+    orders.records.update(order.id, { status: "confirmed" }),
+    lines.records.batchInsert(products.items.map(product => ({
+      order: order.id,
+      product: product.id,
+      price: product.fields.price,
+    }))),
+  ]);
+  return { confirmed: inserted.success };
+});
+```
+
+Mỗi lời gọi vẫn tính vào ngân sách. Các lời gọi song song không có thứ tự cố định: hãy
+`await` thao tác ghi trước `push.refreshRecords` báo về thao tác đó, và không dùng cùng
+một `idempotencyKey` cho hai lời gọi trong cùng một `Promise.all`. Khi chạy local, Cogover
+Dev CLI chạy các lời gọi lần lượt, kết quả như nhau. Xem
+[Lời gọi song song](cogover-sdk-api-reference.md#lời-gọi-song-song).
 
 ## Lưu tiến độ nhỏ bằng state
 

@@ -112,6 +112,17 @@ export const applyAllocation = defineJob<{ allocationId: string }>(
 );
 ```
 
+## Lời gọi đồng thời của cùng module
+
+Trên Cogover, nhiều lời gọi của một Workspace chạy cùng lúc (route, inbound webhook, trigger after-change, background job), tối đa một giới hạn nền tảng đặt cho mỗi Workspace; Cogover Dev CLI chạy local lần lượt nên lỗi ghi đè chỉ lộ ra sau khi deploy. Xem [Lời gọi module chạy đồng thời](custom-backend-module-api-reference.md#lời-gọi-module-chạy-đồng-thời).
+
+- Chuỗi đọc → sửa → ghi trên cùng record hoặc state key: giữ `locks.withLock` suốt chuỗi, hoặc ghi state bằng `state.set` kèm `expectedVersion` và xử lý `StateConflictError`. Không giả định không có lời gọi khác chen vào giữa hai lệnh `await`.
+- Module có code dựa vào việc chạy lần lượt mà chưa sửa kịp: đặt `maxConcurrentRuns: 1` cho module qua [Cập nhật module](custom-backend-module-api-reference.md#cập-nhật-module) (`null` = theo Workspace, 1–64). Đây là biện pháp tạm, đổi lại thời gian chờ khi tải cao.
+- Client gửi lại thao tác ghi sau timeout hoặc `429` kèm `Idempotency-Key` để không áp dụng hai lần.
+- HTTP `429` `RATE_LIMITED` không có `details.budget` (Workspace đang có quá nhiều lời gọi chờ, bị từ chối trước khi chạy, chưa ghi gì): client chờ đúng `Retry-After` (giây) rồi gửi lại, giới hạn số lần; không gửi lại ngay. Mẫu client trong [Ghi record hiệu quả](write-records-efficiently.md#6-khi-workspace-đang-bận-http-429).
+- Trong một lời gọi, các call độc lập chạy song song bằng `Promise.all` (tối đa một số call đồng thời do nền tảng đặt), call phụ thuộc kết quả của nhau thì `await` theo thứ tự. Giảm số call trước (`records.getMany`, `batchInsert`, `batchUpdate`), song song sau; `await` thao tác ghi xong rồi mới `push.refreshRecords`; không dùng cùng `idempotencyKey` cho hai call trong cùng `Promise.all`. Xem [Lời gọi song song](cogover-sdk-api-reference.md#lời-gọi-song-song).
+- Kiểm thử: gửi đồng thời nhiều request cùng dữ liệu lên version đã publish (không phải local), rồi đọc record/state để chứng minh không mất cập nhật.
+
 ## Bằng chứng nghiệm thu
 
 - Local và production: preview đúng phép tính; apply rồi đọc record thật; apply lặp cùng job không cộng dồn; hai request đồng thời cùng job không ghi trùng; sửa fixture sau preview rồi xác minh apply từ chối; tra cứu lại job sau refresh.

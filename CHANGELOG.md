@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.31.0 - 2026-10-24
+
+Hướng dẫn tối ưu ghi dữ liệu và xử lý tải cao cho Custom Backend Module, theo việc nâng năng lực chạy đồng thời của TypeScript Runtime.
+
+- `cogover-custom-module` 1.24.0:
+  - `references/write-records-efficiently.md` (mới): ví dụ kích hoạt bảo hành từ bản tuần tự sang `getMany` + `batchInsert`/`batchUpdate` chạy song song bằng `Promise.all`, client xử lý HTTP `429` với `Retry-After`, kích hoạt hàng loạt bằng background job và các lưu ý khi gọi song song.
+  - `references/custom-backend-module-api-reference.md`: response `429` `RATE_LIMITED` có header `Retry-After` khi Workspace bận, lời gọi module chạy đồng thời, field `maxConcurrentRuns` của module (`null` hoặc 1–64), SDK call song song.
+  - `references/cogover-sdk-api-reference.md`, `references/cogover-sdk-usage-guide.md`: mục Lời gọi song song, lưu ý `state.set` và lock khi nhiều lời gọi chạy cùng lúc.
+  - `references/batch-writes-and-checkpoints.md`: mục Lời gọi đồng thời của cùng module (`locks`, `expectedVersion`, `maxConcurrentRuns: 1`, `Idempotency-Key`, chờ `Retry-After`, kiểm thử đồng thời trên version đã publish).
+  - `SKILL.md`: mô tả, hai dòng bảng tài liệu theo nhánh, hướng dẫn code ghi nhiều/gọi song song và lời gọi đồng thời, ngày snapshot tài liệu.
+
 ## 4.30.0 - 2026-10-23
 
 Notification gửi từ Custom Backend Module được xếp vào danh mục thông báo để người nhận lọc trong danh sách.
