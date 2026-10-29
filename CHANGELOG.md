@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.32.0 - 2026-10-29
+
+Gửi Mẫu email tới từng Liên hệ/Lead như thao tác Soạn Email trên bản ghi, thay cho việc dựng Process + nút để gửi hàng loạt.
+
+- `record-email` 1.0.0 (mới):
+  - `SKILL.md`: quy trình nhập danh sách từ Excel (báo dòng thiếu/sai/trùng email trước khi tạo bản ghi), chọn mẫu, hộp thư dùng chung và bố cục, cá nhân hoá `{$record.*}` (nhãn option, field trống, `--var`), chạy thử, gửi thử cho chính người dùng, xác nhận rồi mới gửi, chia đợt theo giới hạn hộp thư, báo cáo trạng thái gửi/mở.
+  - `scripts/record_email.py`: lệnh `mailboxes`, `templates`, `layouts`, `send` (mặc định chạy thử, `--apply` mới gửi; chống gửi trùng mẫu, chặn biến chưa thay, nghỉ giữa các email, giới hạn số bản ghi mỗi lần), `status`.
+  - `references/api-contract.md`: payload gửi email của màn Soạn Email, cách ghép bố cục/chữ ký, các field của `email_template`, `email_layout`, `email_message` và giới hạn đã kiểm chứng.
+
 ## 4.31.0 - 2026-10-24
 
 Hướng dẫn tối ưu ghi dữ liệu và xử lý tải cao cho Custom Backend Module, theo việc nâng năng lực chạy đồng thời của TypeScript Runtime.

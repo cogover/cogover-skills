@@ -2,7 +2,7 @@
 
 **English** | [Tiếng Việt](README.vi.md)
 
-A collection of 23 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows and AI Agents, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
+A collection of 24 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows and AI Agents, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
 
 For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGELOG.md). Each skill has its own version in its frontmatter and below its heading.
 
@@ -18,6 +18,7 @@ For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGEL
 | Design schemas in Excel | [create-cogover-objects](skills/create-cogover-objects/SKILL.md) |
 | Look up and manage Objects, fields, and formulas | [object-info](skills/object-info/SKILL.md) |
 | Read and write records, files, and rich text images | [object-record](skills/object-record/SKILL.md) |
+| Send email templates to contacts and leads | [record-email](skills/record-email/SKILL.md) |
 | Configure Object layouts | [object-layout](skills/object-layout/SKILL.md) |
 | Write scripts for interface logic | [layout-scripting](skills/layout-scripting/SKILL.md) |
 | Configure Buttons and action chains | [object-button](skills/object-button/SKILL.md) |
@@ -36,7 +37,7 @@ For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGEL
 
 ## Install and update
 
-The recommended way is to install the collection as the `cogover` plugin; this repository is also a marketplace for Claude and Codex. The plugin contains all 23 skills in the `skills/` directory and follows [VERSION.md](VERSION.md).
+The recommended way is to install the collection as the `cogover` plugin; this repository is also a marketplace for Claude and Codex. The plugin contains all 24 skills in the `skills/` directory and follows [VERSION.md](VERSION.md).
 
 | Environment | Install | Update |
 |---|---|---|
