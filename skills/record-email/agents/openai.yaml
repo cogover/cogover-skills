@@ -1,0 +1,4 @@
+interface:
+  display_name: "Record Email"
+  short_description: "Send Cogover email templates to contacts and leads"
+  default_prompt: "Use $record-email to send a Cogover email template to each selected contact or lead from a shared Workspace mailbox, with a dry run, a test send and confirmation before sending."
