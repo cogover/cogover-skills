@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.33.0 - 2026-10-29
+
+Gửi Mẫu email cho Liên hệ/Lead đã có sẵn theo link bộ lọc.
+
+- `record-email` 1.1.0:
+  - `scripts/record_email.py`: lệnh `recipients --filter <link|ID|slug> [--out]` và `send --filter`; Object lấy từ link (`/o/<object>`), nhận `?filter=<ID>` hoặc `?filter=<slug>`, chạy đúng điều kiện và logic AND/OR/tuỳ chỉnh của bộ lọc đã lưu, cảnh báo bộ lọc dùng `$currentUser`, dừng khi `--object` khác Object của link.
+  - `SKILL.md`, `references/api-contract.md`: luồng lấy người nhận từ link bộ lọc và cách chuyển điều kiện bộ lọc sang `records/list`.
+
 ## 4.32.0 - 2026-10-29
 
 Gửi Mẫu email tới từng Liên hệ/Lead như thao tác Soạn Email trên bản ghi, thay cho việc dựng Process + nút để gửi hàng loạt.

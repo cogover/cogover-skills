@@ -1,14 +1,14 @@
 ---
 name: record-email
-description: "Gửi Mẫu email (Email Template) tới từng bản ghi Liên hệ/Lead (hoặc Object khác có trường email) giống thao tác Soạn Email trên bản ghi: email đi từ hộp thư dùng chung của Workspace, hiện ở tab Hoạt động của bản ghi, có theo dõi mở. Gồm nhập danh sách từ Excel, chọn mẫu và hộp thư, cá nhân hoá biến `{$record.*}`, bọc Bố cục email, chạy thử, gửi thử cho chính người dùng, chống gửi trùng mẫu, gửi theo đợt và báo cáo trạng thái gửi/mở. Dùng khi người dùng muốn gửi email hàng loạt theo mẫu, gửi lại mẫu cho danh sách khách, hoặc xem ai đã nhận/mở email của một mẫu."
+description: "Gửi Mẫu email (Email Template) tới từng bản ghi Liên hệ/Lead (hoặc Object khác có trường email) giống thao tác Soạn Email trên bản ghi: email đi từ hộp thư dùng chung của Workspace, hiện ở tab Hoạt động của bản ghi, có theo dõi mở. Gồm nhập danh sách từ Excel hoặc lấy người nhận từ link bộ lọc đã lưu, chọn mẫu và hộp thư, cá nhân hoá biến `{$record.*}`, bọc Bố cục email, chạy thử, gửi thử cho chính người dùng, chống gửi trùng mẫu, gửi theo đợt và báo cáo trạng thái gửi/mở. Dùng khi người dùng muốn gửi email hàng loạt theo mẫu, gửi lại mẫu cho danh sách khách, hoặc xem ai đã nhận/mở email của một mẫu."
 metadata:
   author: cogover
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Record Email
 
-- **Phiên bản:** `1.0.0`
+- **Phiên bản:** `1.1.0`
 - **Ngày phát hành:** `2026-10-29`
 
 Gửi một Mẫu email tới từng bản ghi bằng chính request của màn **Soạn Email** trên trang bản ghi. Mỗi người nhận là một email riêng, gắn vào bản ghi đó (tab Hoạt động), được đếm lượt mở như khi người dùng tự bấm Gửi. Email đã gửi không thu hồi được, nên mọi lần gửi thật phải qua chạy thử và xác nhận của người dùng.
@@ -26,6 +26,7 @@ Không dùng skill này khi cần gửi tự động theo sự kiện hoặc l�
 | `mailboxes` | Hộp thư dùng chung đã từng gửi email: ID, địa chỉ, tên hiển thị, số email, lần gửi cuối |
 | `templates [--search <tên>]` | Mẫu email: ID, tên, tiêu đề, Object liên quan, các biến `{$...}` trong mẫu |
 | `layouts` | Bố cục email (bọc nội dung tại `{$currentContent}`) |
+| `recipients --filter <link\|ID\|slug> [--out ids.txt]` | Bản ghi của một bộ lọc đã lưu: Object lấy từ link, số bản ghi có/không có email, ghi danh sách ID ra file |
 | `send ...` | Render và gửi; mặc định chạy thử, thêm `--apply` mới gửi |
 | `status --template <ID> [--ids ...] [--since YYYY-MM-DD]` | Trạng thái gửi (`sent`/`error`/đang chờ) và số lần mở từng email |
 
@@ -34,7 +35,9 @@ Không dùng skill này khi cần gửi tự động theo sự kiện hoặc l�
 ### 1. Lấy danh sách người nhận
 
 - **Từ Excel:** đọc file, chuẩn hoá email (bỏ khoảng trắng, chữ thường), rồi báo người dùng **trước khi tạo bản ghi**: số dòng hợp lệ, dòng thiếu email, dòng email sai định dạng, dòng trùng email trong file, dòng trùng với bản ghi đã có (lọc `emails` `=` theo [$object-record](../object-record/SKILL.md)). Chỉ tạo bản ghi cho dòng hợp lệ và chưa có; dòng trùng dùng lại ID bản ghi sẵn có. Map cột theo field thật của Object ([$object-info](../object-info/SKILL.md)); giá trị không khớp option của field lựa chọn thì để trống và báo, không tự thêm option.
-- **Từ dữ liệu có sẵn:** lấy ID bản ghi theo điều kiện người dùng nêu bằng [$object-record](../object-record/SKILL.md). Ghi danh sách ID ra file (mỗi dòng một ID) để dùng `--ids-file`.
+- **Từ link bộ lọc** (ví dụ `https://{workspace-domain}/sales/o/lead?filter=FIXXXXXXXXXXXX`, nhận cả `?filter=<slug>` như `all` và ID/slug trần): chạy `recipients --filter "<link>"` để báo người dùng tên bộ lọc, Object, số bản ghi, số bản ghi không có email; rồi `send --filter "<link>"` (hoặc `--ids-file` từ `--out`). Object lấy theo link, không cần `--object`; truyền `--object` khác Object của link thì script dừng. Danh sách lấy đúng điều kiện đã lưu của bộ lọc tại thời điểm chạy, không gồm ô tìm kiếm hay bộ lọc tạm người dùng đang gõ trên màn hình: hỏi lại nếu người dùng nói đã lọc thêm.
+- Bộ lọc có điều kiện `$currentUser` (ví dụ "Liên hệ của tôi"): giá trị này là chủ API Key, không phải người gửi link; script in cảnh báo. Báo người dùng và xác nhận đúng danh sách trước khi gửi.
+- **Từ điều kiện người dùng mô tả:** lấy ID bản ghi bằng [$object-record](../object-record/SKILL.md), ghi ra file (mỗi dòng một ID) để dùng `--ids-file`.
 
 ### 2. Chọn mẫu, hộp thư, bố cục
 
@@ -59,6 +62,9 @@ Không dùng skill này khi cần gửi tự động theo sự kiện hoặc l�
 ```bash
 python3 scripts/record_email.py send --template QRXXXXXXXXXXXX --from sales@example.com \
   --layout FXXXXXXXXXXXXX --object contact --ids-file recipients.txt --preview first.html
+# hoặc theo link bộ lọc (Object lấy từ link):
+python3 scripts/record_email.py send --template QRXXXXXXXXXXXX --from sales@example.com \
+  --filter "https://{workspace-domain}/sales/o/lead?filter=FIXXXXXXXXXXXX" --preview first.html
 # kiểm tra xong, người dùng đồng ý:
 python3 scripts/record_email.py send ... --apply
 ```

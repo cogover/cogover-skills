@@ -13,6 +13,12 @@ Contract đã kiểm chứng trên Workspace thật (gửi tới Liên hệ và 
 - Hộp thư dùng chung: phần tử `from` có `type: "workspace"`; `id` của nó là giá trị gửi vào `data.from.id`. Lọc `{"field":"from","op":"like","params":"\"type\":\"workspace\"","fieldType":"long_text"}`. Workspace không có endpoint liệt kê hộp thư cho API Key, nên danh sách chỉ gồm hộp thư đã gửi ít nhất một email.
 - Email đã gửi theo một mẫu cho một bản ghi: lọc `template` `=` `<ID mẫu>` (`short_text`) **và** `to_meta` `like` `<ID bản ghi>` (`long_text`).
 
+## Bộ lọc đã lưu làm danh sách người nhận
+
+- `POST /bapi/v1/filters/view` `{"id": "FI..."}` trả `objectTypeId`, `logicType` (`AND`/`OR`/khác), `logic`, `conditions`. Link chỉ có slug (`?filter=all`): `POST /bapi/v1/filters/list` `{"objectTypeId": "...", "objectTypeIdOperator": "IN"}` rồi khớp `slug`. `objectTypeId` của slug Object: `POST /api/v1/objects/object/get-by-slug` `{"slug": "lead", "withFields": 0}`.
+- `conditions` dùng cùng dạng `{field, op, params, fieldType}` với `/bapi/v1/records/list`: gửi nguyên, `type` = 1 (`AND`), 2 (`OR`), 3 kèm `logic_sequence` = `logic` (tuỳ chỉnh). Bộ lọc không có điều kiện: dùng `id` `not null`. Đã chạy được với các toán tử `in`, `=`, `is null`, `is not null`, `Last week`, `This week` (kể cả `logicType: OR`); nên đối chiếu số bản ghi với con số bộ lọc hiển thị trên giao diện trước khi gửi.
+- `$currentUser` trong `params` được hiểu là chủ API Key.
+
 ## Gửi (`POST /api/v1/dashboard-server`, phiên Web App)
 
 Header: cookie phiên + `x-csrf-token`/`x-xsrf-token` theo [$cogover-api-auth](../../cogover-api-auth/SKILL.md), thêm `x-req-service: 7`, `x-req-type: 9`, `x-app-slug: <slug App của trang bản ghi>` (`sales` cho Liên hệ/Lead).

@@ -5,6 +5,7 @@ Commands (all read-only except `send --apply`):
   mailboxes  Shared Workspace mailboxes that have already sent email (ID, address, display name).
   templates  Email Templates with subject and the {$record.*} variables they contain.
   layouts    Email Layouts (wrap the template body at {$currentContent}).
+  recipients Records of a saved filter (link, ID or slug), optionally written to an ID file.
   send       Render the template per record and send it. Dry-run unless --apply.
   status     Delivery status and opens of emails sent with a template.
 
@@ -74,12 +75,12 @@ class Client:
         self.bearer = {"Authorization": "Bearer " + api_key}
         self._session: dict[str, str] | None = None
 
-    def records(self, object_slug: str, filters: list[dict], limit: int = 1000) -> list[dict]:
+    def records(self, object_slug: str, filters: list[dict], limit: int = 1000, kind: int = 1, logic: str = "") -> list[dict]:
         rows: list[dict] = []
         search_after: list = []
         while len(rows) < limit:
             status, data = call(self.base + "/bapi/v1/records/list", {
-                "object_slug": object_slug, "type": 1, "logic_sequence": "", "filters": filters,
+                "object_slug": object_slug, "type": kind, "logic_sequence": logic, "filters": filters,
                 "sorts": [{"created": {"order": "desc"}}], "order_direction": "next",
                 "search_after": search_after, "size": 100, "show_detail_on_record": False,
             }, self.bearer)
@@ -119,6 +120,21 @@ class Client:
             return {}
         return {f["slug"]: {o.get("slug"): o.get("value") for o in f.get("options") or []}
                 for f in info.get("fields") or [] if f.get("slug")}
+
+    def object_id(self, object_slug: str) -> str | None:
+        status, data = call(self.base + "/api/v1/objects/object/get-by-slug", {"slug": object_slug, "withFields": 0}, self.session())
+        info = (data or {}).get("data")
+        info = info[0] if isinstance(info, list) and info else info
+        return info.get("id") if status == 200 and isinstance(info, dict) else None
+
+    def saved_filter(self, filter_id: str) -> dict | None:
+        status, data = call(self.base + "/bapi/v1/filters/view", {"id": filter_id}, self.bearer)
+        return data.get("data") if status == 200 and data and data.get("r") == 0 else None
+
+    def saved_filters(self, object_type_id: str) -> list[dict]:
+        status, data = call(self.base + "/bapi/v1/filters/list", {"objectTypeId": object_type_id, "objectTypeIdOperator": "IN", "page": 1, "limit": 200}, self.bearer)
+        rows = (data or {}).get("data") or []
+        return rows if isinstance(rows, list) else rows.get("rows") or []
 
     def compose_email(self, payload: dict, app_slug: str) -> tuple[int, Any]:
         headers = {**self.session(), "x-req-service": "7", "x-req-type": "9", "x-app-slug": app_slug}
@@ -184,6 +200,48 @@ def mailbox_list(client: Client, limit: int) -> list[dict]:
     return sorted(boxes.values(), key=lambda b: -b["last"])
 
 
+def parse_filter_ref(ref: str) -> tuple[str | None, str]:
+    """Filter link, ID or slug -> (object slug from the link or None, filter ID or slug)."""
+    ref = ref.strip()
+    object_slug = None
+    match = re.search(r"/o/([A-Za-z0-9_]+)", ref)
+    if match:
+        object_slug = match.group(1)
+    match = re.search(r"[?&]filter=([A-Za-z0-9_-]+)", ref) or re.search(r"/filter/([A-Za-z0-9_-]+)", ref)
+    return object_slug, (match.group(1) if match else ref)
+
+
+def filter_records(client: Client, ref: str, object_slug: str | None, limit: int) -> tuple[str, dict, list[dict]]:
+    link_object, key = parse_filter_ref(ref)
+    if link_object and object_slug and link_object != object_slug:
+        raise SystemExit(f"Filter link is for Object '{link_object}' but --object is '{object_slug}'.")
+    object_slug = link_object or object_slug or "contact"
+    object_type_id = client.object_id(object_slug)
+    if not object_type_id:
+        raise SystemExit(f"Object '{object_slug}' not found.")
+    found = client.saved_filter(key) if key.startswith("FI") else None
+    if not found:
+        matches = [f for f in client.saved_filters(object_type_id) if key in (f.get("id"), f.get("slug"))]
+        found = client.saved_filter(matches[0]["id"]) if len(matches) == 1 else None
+    if not found:
+        raise SystemExit(f"Saved filter '{key}' not found on Object '{object_slug}'.")
+    if found.get("objectTypeId") and found["objectTypeId"] != object_type_id:
+        raise SystemExit(f"Saved filter '{key}' belongs to another Object.")
+    conditions = found.get("conditions") or []
+    logic_type = (found.get("logicType") or "AND").upper()
+    kind = {"AND": 1, "OR": 2}.get(logic_type, 3)
+    rows = client.records(object_slug, conditions or [{"field": "id", "op": "not null", "params": None, "fieldType": "short_text"}],
+                          limit, kind=kind, logic=found.get("logic") or "")
+    return object_slug, found, rows
+
+
+def describe_filter(found: dict, total: int) -> str:
+    note = f"Filter: {found.get('name')} ({found.get('id')}) | {total} records"
+    if "$currentUser" in json.dumps(found.get("conditions") or []):
+        note += "\nWARNING: this filter uses $currentUser, which resolves to the owner of the API Key, not to the person reading the link."
+    return note
+
+
 def fmt_time(ms: int) -> str:
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(ms / 1000)) if ms else ""
 
@@ -227,9 +285,16 @@ def cmd_send(client: Client, args: argparse.Namespace) -> int:
     ids = [i.strip() for i in (args.ids or "").split(",") if i.strip()]
     if args.ids_file:
         ids += [l.strip() for l in Path(args.ids_file).read_text(encoding="utf-8").splitlines() if l.strip()]
+    if args.filter:
+        args.object, found, rows = filter_records(client, args.filter, args.object, args.max + 1)
+        print(describe_filter(found, len(rows)))
+        ids += [r["id"] for r in rows]
+    args.object = args.object or "contact"
+    if not args.related_field:
+        args.related_field = "contacts" if args.object == "contact" else args.object
     ids = list(dict.fromkeys(ids))
     if not ids:
-        raise SystemExit("No record IDs (--ids / --ids-file).")
+        raise SystemExit("No records (--ids / --ids-file / --filter).")
     if len(ids) > args.max:
         raise SystemExit(f"{len(ids)} records exceeds --max {args.max}. Split the list or raise --max deliberately.")
 
@@ -300,6 +365,21 @@ def cmd_send(client: Client, args: argparse.Namespace) -> int:
     return 1 if counts["error"] else 0
 
 
+def cmd_recipients(client: Client, args: argparse.Namespace) -> int:
+    object_slug, found, rows = filter_records(client, args.filter, args.object, args.limit)
+    print(describe_filter(found, len(rows)) + f" | Object: {object_slug}")
+    no_email = 0
+    for row in rows:
+        emails = row.get("emails") if isinstance(row.get("emails"), list) else [row.get("emails")] if row.get("emails") else []
+        no_email += not emails
+        print(f"{row['id']}\t{row.get('name')}\t{', '.join(e for e in emails if e) or '(no email)'}")
+    if args.out:
+        Path(args.out).write_text("\n".join(r["id"] for r in rows) + "\n", encoding="utf-8")
+    print(f"\n{len(rows)} records, {len(rows) - no_email} with email, {no_email} without email"
+          + (f" (limit {args.limit} reached)" if len(rows) >= args.limit else ""))
+    return 0
+
+
 def cmd_status(client: Client, args: argparse.Namespace) -> int:
     filters = [{"field": "template", "op": "=", "params": args.template, "fieldType": "short_text"}]
     if args.since:
@@ -334,7 +414,8 @@ def main() -> int:
     p.add_argument("--from", dest="sender", required=True, help="shared mailbox ID or its email address")
     p.add_argument("--ids", help="comma-separated record IDs")
     p.add_argument("--ids-file", help="file with one record ID per line")
-    p.add_argument("--object", default="contact", help="record Object slug (contact, lead, ...)")
+    p.add_argument("--filter", help="saved filter link, ID or slug; recipients are its records")
+    p.add_argument("--object", help="record Object slug (contact, lead, ...); default contact or the Object in --filter link")
     p.add_argument("--related-field", help="relatedObjectRecords field slug (default: contacts for contact, else the Object slug)")
     p.add_argument("--app-slug", default="sales", help="App slug of the record page (x-app-slug)")
     p.add_argument("--layout", help="Email Layout ID")
@@ -348,17 +429,21 @@ def main() -> int:
     p.add_argument("--preview", help="write the first rendered email to this HTML file")
     p.add_argument("--apply", action="store_true", help="really send (default is dry-run)")
 
+    p = sub.add_parser("recipients")
+    p.add_argument("--filter", required=True, help="saved filter link, ID or slug")
+    p.add_argument("--object", help="Object slug when --filter is not a link (default contact)")
+    p.add_argument("--limit", type=int, default=5000)
+    p.add_argument("--out", help="write record IDs to this file (for send --ids-file)")
+
     p = sub.add_parser("status")
     p.add_argument("--template", required=True)
     p.add_argument("--ids", help="only these record IDs")
     p.add_argument("--since", help="YYYY-MM-DD")
 
     args = parser.parse_args()
-    if args.command == "send" and not args.related_field:
-        args.related_field = "contacts" if args.object == "contact" else args.object
     client = Client(*load_credentials(args.env_file))
     return {"mailboxes": cmd_mailboxes, "templates": cmd_templates, "layouts": cmd_layouts,
-            "send": cmd_send, "status": cmd_status}[args.command](client, args)
+            "send": cmd_send, "recipients": cmd_recipients, "status": cmd_status}[args.command](client, args)
 
 
 if __name__ == "__main__":
