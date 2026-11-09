@@ -345,25 +345,41 @@ def simulate(client: Client, callbot_id: str, says: list[str]) -> None:
             pass
 
 
+PHONE_KEYS = {"from", "to"}
+# biến hệ thống/nội bộ của phiên (số khách, số gọi, id bản ghi trong phạm vi...): không in
+HIDDEN_VAR_PREFIXES = ("system.", "system_", "_")
+
+
+def mask_phone(value: Any) -> Any:
+    """Che số điện thoại, chỉ giữ 3 số cuối (đủ để đối chiếu với dữ liệu test)."""
+    if not isinstance(value, str) or len(value) < 5:
+        return value
+    return "*" * (len(value) - 3) + value[-3:]
+
+
+def safe_row(row: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
+    return {k: (mask_phone(row.get(k)) if k in PHONE_KEYS else row.get(k)) for k in keys}
+
+
 def sessions(client: Client, callbot_id: str, minutes: int) -> None:
     query = {"limit": "20", "callbotId": callbot_id, "from": str(int((time.time() - minutes * 60) * 1000))}
     data = client.rpc({"action": "list_sessions", "query": query})
     for row in data.get("items", []):
-        print(json.dumps({k: row.get(k) for k in ("sessionId", "callId", "direction", "from", "to", "startedAt",
-                                                   "botDurationSec", "endReason", "endBy", "outcome",
-                                                   "toolCallCount")}, ensure_ascii=False))
+        print(json.dumps(safe_row(row, ("sessionId", "callId", "direction", "from", "to", "startedAt",
+                                         "botDurationSec", "endReason", "endBy", "outcome", "toolCallCount")),
+                         ensure_ascii=False))
 
 
 def session(client: Client, session_id: str) -> None:
     d = client.rpc({"action": "get_session", "sessionId": session_id})
-    print(json.dumps({k: d.get(k) for k in ("sessionId", "callId", "callbotId", "direction", "from", "to",
-                                            "botDurationSec", "endReason", "endBy", "outcome")}, ensure_ascii=False))
+    print(json.dumps(safe_row(d, ("sessionId", "callId", "callbotId", "direction", "from", "to",
+                                  "botDurationSec", "endReason", "endBy", "outcome")), ensure_ascii=False))
     events = [(l["at"], f"{l['role']}: {l['text']}") for l in d.get("transcript") or []]
     events += [(t["at"], f"  [tool {t['name']} {t.get('status')} {t.get('latencyMs')}ms] {t.get('argsMasked') or ''}")
                for t in d.get("toolCalls") or []]
     for _, line in sorted(events, key=lambda e: e[0]):
         print(line)
-    variables = {k: v for k, v in (d.get("variables") or {}).items() if not k.startswith("system.")}
+    variables = {k: v for k, v in (d.get("variables") or {}).items() if not k.startswith(HIDDEN_VAR_PREFIXES)}
     if variables:
         print("variables:", json.dumps(variables, ensure_ascii=False))
     for flag in d.get("securityFlags") or []:

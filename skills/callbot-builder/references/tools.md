@@ -46,8 +46,8 @@ Tối đa 20 tool mỗi callbot. Service trả `params` theo thứ tự khác l�
 
 Hành vi lúc chạy:
 
-- Số khách: gọi ra là số được gọi, gọi vào là số gọi đến, mô phỏng là số trong hồ sơ nhân sự của người chạy mô phỏng (không có số thì giá trị lọc rỗng, tool trả `adapter_400`). Service gửi nguyên số này làm điều kiện `=` trên field điện thoại. Đã kiểm chứng: số Việt Nam lưu `+84...` khớp khi lọc bằng `84...` hoặc `0...`, nhưng số quốc gia khác thì không (cuộc gọi từ `91...` không tìm thấy bản ghi lưu `+91...`, bot đi nhánh tạo lead mới). Lưu số điện thoại đúng định dạng tổng đài/dialer gửi sang (có thể lưu thêm dạng đó vào field nhiều giá trị) và gọi thử một cuộc từ số thật của quốc gia đó trước khi chạy chiến dịch.
-- `search` không có kết quả trả câu "không tìm thấy" như kết quả bình thường; lỗi hệ thống trả mã `adapter_<r>` (ví dụ `adapter_400` khi Object chưa nhận field vừa thêm).
+- Số khách: gọi ra là số được gọi, gọi vào là số gọi đến, mô phỏng là số trong hồ sơ nhân sự của người chạy mô phỏng (không có số thì tool trả lỗi tra cứu `adapter_400`). Service gửi nguyên số này làm điều kiện `=` trên field điện thoại. Đã kiểm chứng: số Việt Nam lưu `+84...` khớp khi lọc bằng `84...` hoặc `0...`, nhưng số quốc gia khác thì không (cuộc gọi từ `91...` không tìm thấy bản ghi lưu `+91...`, bot đi nhánh tạo lead mới). Lưu số điện thoại đúng định dạng tổng đài/dialer gửi sang (có thể lưu thêm dạng đó vào field nhiều giá trị) và gọi thử một cuộc từ số thật của quốc gia đó trước khi chạy chiến dịch.
+- `search` không có kết quả trả câu "không tìm thấy" như kết quả bình thường; lỗi khi đọc/ghi dữ liệu trả mã dạng `adapter_<r>` ("hệ thống tạm thời không tra cứu được"), ví dụ `adapter_400` khi Object chưa nhận field vừa thêm.
 - `update` có `callerScopeField` và model không gửi `id`: service tự tìm bản ghi của chính người gọi (bản ghi cập nhật gần nhất). Không tìm thấy thì báo lỗi, không tạo mới. `get`/`update` với `id` chỉ chấp nhận id đã xuất hiện trong phiên.
 - `create` chỉ ghi các field trong `writableFields` mà model gửi; field bắt buộc của Object (ví dụ `name`, `last_name` của Lead) phải có trong tham số. Field điện thoại nhận chuỗi.
 - Thiếu `runAsPersonnelId` hoặc thiếu `callerScopeField` ở `search`/`count`: tool trả "chưa được cấu hình".
@@ -65,7 +65,7 @@ Hành vi lúc chạy:
 | `name` | `config` | Ghi chú |
 |---|---|---|
 | `end_call` | — | Bot gọi sau khi chào tạm biệt; tham số `reason`: `normal`, `announcement`, `voicemail`, `wrong_person` |
-| `set_outcome` | `{"outcomes": [{"value", "description", "campaignAction"}], "fields": [...]}` | `value` theo `^[a-z][a-z0-9_]{0,31}$`, mô tả cắt ở 300 ký tự, ≤ 20 outcome; `campaignAction`: `done`, `callback`, `retry`, `do_not_call`, `none`. `fields` (≤ 10, `key`, `type`: `string`/`number`/`boolean`/`datetime`, `required`, `enum`, `maxLength`) để trích thêm dữ liệu. Outcome có `campaignAction: do_not_call` bị từ chối khi khách chưa nói đủ 2 lượt, và phải qua bước khách xác nhận như thao tác ghi |
+| `set_outcome` | `{"outcomes": [{"value", "description", "campaignAction"}], "fields": [...]}` | `value` theo `^[a-z][a-z0-9_]{0,31}$`, mô tả cắt ở 300 ký tự, ≤ 20 outcome; `campaignAction`: `done`, `callback`, `retry`, `do_not_call`, `none`. `fields` (≤ 10, `key`, `type`: `string`/`number`/`boolean`/`datetime`, `required`, `enum`, `maxLength`) để trích thêm dữ liệu. Outcome có `campaignAction: do_not_call` chỉ được nhận khi chính khách yêu cầu trong cuộc gọi, và phải qua bước khách xác nhận như thao tác ghi |
 | `switch_to_consultant` | `{"queues": ["Tên hàng đợi"]}` (1–20 tên) | Chuyển cuộc gọi sang hàng đợi agent; thiếu `queues` thì không tạo được |
 
 Kết quả `set_outcome` gắn vào phiên (`outcome`) và cập nhật trạng thái khách trong chiến dịch gọi ra theo `campaignAction`.
@@ -84,13 +84,12 @@ Tool ghi có `requiresConfirmation` không ghi ngay: service trả bản tóm t�
 
 ## Chặn theo nguồn dữ liệu (cuộc gọi thật)
 
-Nền tảng coi kết quả tool là dữ liệu không tin cậy và chặn hai trường hợp sau (lỗi `blocked_untrusted_data`). Mô phỏng không áp dụng các chặn này, nên chỉ thấy được khi gọi thật.
+Nền tảng coi kết quả tool là dữ liệu không tin cậy (không phải yêu cầu của khách) và có thể từ chối thao tác dựa trên dữ liệu đó (lỗi `blocked_untrusted_data`). Mô phỏng không áp dụng cơ chế này, nên chỉ thấy được khi gọi thật.
 
-- **Ghi lại giá trị lấy từ tool:** tham số ghi dạng chuỗi từ 6 ký tự (sau khi chuyển chữ thường, bỏ dấu), nếu nằm trong một giá trị do tool trước trả về hoặc trùng cụm 3 từ với nó, mà khách chưa nói ra, thì bị chặn. Áp dụng cho mọi lệnh ghi, kể cả `requiresConfirmation: false`. Ví dụ tra cứu trả `col_language: "bengali"`, sau đó ghi lại `"bengali"` khi khách nói chữ Bengali sẽ bị chặn. Cách tránh: tool tra cứu chỉ trả field bot thật sự cần; tool ghi để `returnFields: []`; tóm tắt do bot tự viết, không chép văn bản từ hồ sơ.
-- **`end_call` ngay sau kết quả tool:** `end_call` gọi trong cùng lượt khách với một kết quả tool có dữ liệu (kể cả kết quả ghi trả về `id`) sẽ bị chặn, trừ khi câu cuối của khách có từ chào tạm biệt. Hiện chỉ nhận diện từ tiếng Việt/Anh không dấu (`tam biet`, `bye`, `goodbye`...). Kịch bản nên ghi kết quả trước, chào và chờ khách đáp, rồi mới kết thúc ở lượt sau.
+- **Ghi lại giá trị lấy từ tool:** lệnh ghi (kể cả `requiresConfirmation: false`) có thể bị chặn khi tham số chép giá trị từ kết quả tool mà khách chưa nói ra trong cuộc gọi. Ví dụ tra cứu trả ngôn ngữ ưu tiên `"bengali"`, rồi bot ghi lại đúng giá trị đó trong khi khách nói bằng chữ Bengali. Cách thiết kế: tool tra cứu chỉ trả field bot thật sự cần; tool ghi để `returnFields: []`; tóm tắt do bot tự viết, không chép văn bản từ hồ sơ.
+- **Kết thúc ngay sau kết quả tool:** `end_call` gọi ngay sau một kết quả tool trong cùng lượt khách có thể bị chặn nếu khách chưa thể hiện ý muốn kết thúc. Kịch bản nên ghi kết quả và `set_outcome` trước, chào và chờ khách đáp, rồi mới kết thúc ở lượt sau.
 
 ## Giới hạn mỗi cuộc gọi
 
-- Tối đa 3 lệnh ghi được thực thi trong một phiên (tính cả `create`/`update`/`http`); lệnh thứ tư bị từ chối. Thiết kế luồng để mỗi cuộc gọi ghi ít lần: ví dụ hẹn trả nợ (1) + ghi kết quả (1), chừa 1 lần cho khách đổi ý.
-- Tối đa 5 lần gọi tool trong 10 giây, và tổng số lần gọi tool không vượt `maxToolCalls` của callbot.
-- 5 lỗi tool liên tiếp thì mọi tool (trừ `end_call`) bị tắt cho tới hết cuộc gọi.
+- Nền tảng giới hạn số lệnh ghi được thực thi trong một cuộc gọi (hiện là 3, tính cả `create`/`update`/`http`). Thiết kế luồng để mỗi cuộc gọi ghi ít lần: ví dụ hẹn trả nợ (1) + ghi kết quả (1), chừa chỗ cho khách đổi ý.
+- Tổng số lần gọi tool không vượt `maxToolCalls` của callbot; nền tảng cũng giới hạn tần suất gọi tool và tạm tắt tool khi lỗi lặp lại nhiều lần trong một cuộc gọi.

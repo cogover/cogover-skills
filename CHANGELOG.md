@@ -7,10 +7,10 @@ Dựng Callbot (voice AI agent) của Cogover Call Center từ nhu cầu khách 
 - `callbot-builder` 1.0.0 (mới):
   - `SKILL.md`: quy trình chuẩn hoá nhu cầu (hướng gọi, ngôn ngữ, kết quả, dữ liệu, guardrail, danh tính thực thi), chọn provider/model/giọng (Sarvam `language: auto` tự nhận diện ngôn ngữ), viết kịch bản không mâu thuẫn luật nền của nền tảng, thiết kế tool, guardrail, tạo bằng spec, kiểm thử bằng mô phỏng/gọi thử/cuộc gọi thật và bàn giao.
   - `references/rpc-api.md`: RPC `POST /api/v1/call-center` (service 17) — action, body, quyền Super Admin, mã lỗi, ràng buộc trường callbot, danh mục provider/model/giọng.
-  - `references/tools.md`: tool `cogover_object` (giới hạn theo số khách, `update` tự tìm bản ghi người gọi, `writableFields`, xác nhận ghi), `system` (`set_outcome` + `campaignAction`, `end_call`, `switch_to_consultant`), `http`, `cogover_agent`; thiết kế field cho bot (ngày dạng văn bản, slug option); chặn lệnh ghi chép giá trị từ kết quả tool và chặn `end_call` cùng lượt với kết quả tool; giới hạn 3 lệnh ghi mỗi phiên, 5 lỗi tool liên tiếp.
+  - `references/tools.md`: tool `cogover_object` (giới hạn theo số khách, `update` tự tìm bản ghi người gọi, `writableFields`, xác nhận ghi), `system` (`set_outcome` + `campaignAction`, `end_call`, `switch_to_consultant`), `http`, `cogover_agent`; thiết kế field cho bot (ngày dạng văn bản, slug option); cách thiết kế để không bị chặn khi ghi lại giá trị từ kết quả tool hoặc kết thúc ngay sau kết quả tool; giới hạn số lệnh ghi mỗi cuộc gọi.
   - `references/testing.md`: mô phỏng (model text của nền tảng thay cho model của callbot, số khách lấy từ hồ sơ nhân sự, tool ghi chạy thử, các chặn lúc chạy không áp dụng, 10 phiên/giờ), gọi thử, cuộc gọi thật, đọc lịch sử phiên và đối chiếu bản ghi.
   - `references/collections-template.md`, `assets/collections-spec.example.json`: mẫu callbot thu hồi nợ Hindi/Bengali (xác minh danh tính, hẹn trả nợ, hẹn gọi lại, quy tắc ứng xử, đối chiếu quy định).
-  - `scripts/callbot_api.py`: lệnh `rpc`, `bapi`, `apply` (dry-run mặc định, kiểm tra trước khi ghi, in từng bước, chạy lại được), `simulate`, `sessions`, `session`; chỉ HTTPS, không gửi lại lệnh ghi khi lỗi mạng, đổi phiên khi 401, không in token phiên.
+  - `scripts/callbot_api.py`: lệnh `rpc`, `bapi`, `apply` (dry-run mặc định, kiểm tra trước khi ghi, in từng bước, chạy lại được), `simulate`, `sessions`, `session`; chỉ HTTPS, không gửi lại lệnh ghi khi lỗi mạng, đổi phiên khi 401, không in token phiên, che số điện thoại và ẩn biến hệ thống khi in phiên.
 
 ## 4.32.0 - 2026-10-29
 

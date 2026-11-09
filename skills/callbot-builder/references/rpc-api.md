@@ -1,6 +1,6 @@
 # RPC Callbot
 
-Contract đã kiểm chứng trên Workspace thật (tạo, sửa, tool, mô phỏng, lịch sử phiên). Ví dụ dùng placeholder.
+Các action tạo/sửa callbot, tool, giọng, mô phỏng và lịch sử phiên đã được kiểm chứng trên Workspace thật. Một số mã lỗi hiếm gặp liệt kê theo response của service, chưa gặp trực tiếp. Ví dụ dùng placeholder.
 
 ## Endpoint và xác thực
 
@@ -30,11 +30,11 @@ Thành công: `{"r": 0, "msg": "OK", "data": ...}`. Lỗi: `r` là mã kiểu HT
 
 | `r` / `msg` | Ý nghĩa |
 |---|---|
-| `403 forbidden` | Người thao tác không phải admin Call Center của portal (áp dụng cho mọi action, kể cả đọc) |
+| `403 forbidden` | Người thao tác không phải admin của tài khoản Call Center gắn với Workspace (áp dụng cho mọi action, kể cả đọc) |
 | `403 config_forbidden` | Action ghi khi người thao tác không phải Super Admin |
-| `403 run_as_forbidden` | `runAsPersonnelId` không phải nhân sự đang hoạt động của portal |
+| `403 run_as_forbidden` | `runAsPersonnelId` không phải nhân sự đang hoạt động của Workspace |
 | `403 byo_disabled` | Gửi key/SIP URI/project riêng khi Workspace không cho phép |
-| `404 no_portal`, `404 no_project`, `409 multiple_portals` | Workspace chưa gắn (hoặc gắn nhiều) portal Call Center |
+| `404 no_portal`, `404 no_project`, `409 multiple_portals` | Workspace chưa gắn (hoặc gắn nhiều hơn một) tài khoản Call Center |
 | `400 invalid_params` | Tham số sai định dạng, kèm mô tả trường (ví dụ `voice is not supported by sarvam`, `callerScopeField is required for search`) |
 | `400 invalid_action` | Action không tồn tại |
 | `400 no_phone_number` | `test_call` khi hồ sơ nhân sự của người thao tác chưa có số điện thoại |
@@ -42,9 +42,9 @@ Thành công: `{"r": 0, "msg": "OK", "data": ...}`. Lỗi: `r` là mã kiểu HT
 | `404 not_found` | Callbot/tool/phiên không thuộc Workspace |
 | `409 duplicate_name` | Trùng tên tool trong callbot |
 | `409 version_conflict` | `update_callbot` với `version` cũ: đọc lại rồi gộp thay đổi |
-| `429 rate_limited` | Quá 300 request/phút mỗi project; mô phỏng quá 10 phiên/giờ; gọi thử quá giới hạn |
-| `409 simulation_ended`, `409 turn_limit`, `410 simulation_expired` | Phiên mô phỏng đã kết thúc, quá 30 lượt, hoặc quá 15 phút không dùng |
-| `400 simulation_not_supported`, `400 no_api_key` | Provider không mô phỏng được (`sarvam_agent`), hoặc thiếu key model text để mô phỏng |
+| `429 rate_limited` | Vượt giới hạn tần suất của API, của mô phỏng (10 phiên/giờ) hoặc của gọi thử; chờ rồi thử lại thao tác đọc |
+| `409 simulation_ended`, `409 turn_limit`, `410 simulation_expired` | Phiên mô phỏng đã kết thúc, quá 30 lượt, hoặc đã hết hạn sau một thời gian không dùng: tạo phiên mới |
+| `400 simulation_not_supported`, `400 no_api_key` | Provider không mô phỏng được (`sarvam_agent`), hoặc môi trường chưa cấu hình model dùng cho mô phỏng |
 | `400 callbot_disabled`, `400 no_hotline` | Gọi thử khi callbot đang tắt, hoặc project không có hotline gọi ra |
 | `503 callbot_admin_disabled` | Môi trường chưa bật API quản trị Callbot |
 
@@ -52,7 +52,7 @@ Thao tác ghi và gọi ra ngoài (`create_*`, `update_*`, `delete_*`, `put_*_se
 
 ## Action
 
-Mọi action cần người thao tác là admin Call Center của portal gắn với Workspace. Đọc: `list_callbots`, `get_callbot`, `get_callbot_settings`, `list_tools`, `list_voices`, `list_sessions`, `get_session`. Mọi action còn lại cần thêm quyền Super Admin của Workspace, kể cả mô phỏng và gọi thử.
+Mọi action cần người thao tác là admin của tài khoản Call Center gắn với Workspace. Đọc: `list_callbots`, `get_callbot`, `get_callbot_settings`, `list_tools`, `list_voices`, `list_sessions`, `get_session`. Mọi action còn lại cần thêm quyền Super Admin của Workspace, kể cả mô phỏng và gọi thử.
 
 | Action | Khoá | `body` / `query` | `data` |
 |---|---|---|---|
@@ -96,7 +96,7 @@ Mọi action cần người thao tác là admin Call Center của portal gắn v
 | `maxToolCalls` | 1–50 | Giới hạn số lần gọi tool mỗi cuộc |
 | `maxConcurrent` | 0–100 | Số cuộc đồng thời |
 
-Chuỗi không được chứa ký tự điều khiển (trừ xuống dòng, tab). Tạo callbot `openai_realtime` (hoặc không gửi `provider`) cần `openaiProjectSipUri` khi môi trường chưa có SIP URI dùng chung.
+Chuỗi không được chứa ký tự điều khiển (trừ xuống dòng, tab). Tạo callbot `openai_realtime` (hoặc không gửi `provider`) có thể bị từ chối nếu thiếu `openaiProjectSipUri`; khi đó chọn provider có trong `managed` hoặc hỏi quản trị môi trường.
 
 ## Provider, model và giọng
 
