@@ -2,7 +2,7 @@
 
 [English](README.md) | **Tiếng Việt**
 
-Bộ 24 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình, AI Agent và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
+Bộ 25 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình, AI Agent, Callbot và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
 
 Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.md). Mỗi skill có version riêng trong frontmatter và dưới tiêu đề.
 
@@ -14,6 +14,7 @@ Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.
 | Điều phối dự án App từ yêu cầu đến triển khai | [build-cogover-app](skills/build-cogover-app/SKILL.md) |
 | Xác thực API và quản lý credential | [cogover-api-auth](skills/cogover-api-auth/SKILL.md) |
 | Xây AI Agent, Skill, Tool, tra cứu kiến thức và kiểm thử hội thoại | [agent-builder](skills/agent-builder/SKILL.md) |
+| Xây và kiểm thử Callbot (voice AI) gọi vào/gọi ra | [callbot-builder](skills/callbot-builder/SKILL.md) |
 | Xây frontend/backend tùy chỉnh | [cogover-custom-module](skills/cogover-custom-module/SKILL.md) |
 | Thiết kế schema bằng Excel | [create-cogover-objects](skills/create-cogover-objects/SKILL.md) |
 | Tra cứu và quản lý Object/field/formula | [object-info](skills/object-info/SKILL.md) |
@@ -37,7 +38,7 @@ Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.
 
 ## Cài đặt và cập nhật
 
-Cách khuyến nghị là cài bộ skill dưới dạng plugin `cogover`; repository này đồng thời là marketplace cho Claude và Codex. Plugin chứa đủ 24 skill trong thư mục `skills/` và cập nhật theo [VERSION.md](VERSION.md).
+Cách khuyến nghị là cài bộ skill dưới dạng plugin `cogover`; repository này đồng thời là marketplace cho Claude và Codex. Plugin chứa đủ 25 skill trong thư mục `skills/` và cập nhật theo [VERSION.md](VERSION.md).
 
 | Môi trường | Cài đặt | Cập nhật |
 |---|---|---|

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Callbot Builder"
+  short_description: "Tạo và kiểm thử Callbot (voice AI) của Cogover Call Center bằng API"
+  default_prompt: "Dùng $callbot-builder để dựng một Callbot Cogover từ nhu cầu khách hàng: giọng/ngôn ngữ, kịch bản, tool ghi dữ liệu, guardrail, rồi mô phỏng và kiểm chứng kết quả."
