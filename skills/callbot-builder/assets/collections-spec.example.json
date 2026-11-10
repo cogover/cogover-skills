@@ -1,0 +1,300 @@
+{
+  "callbot": {
+    "name": "Collections Agent - Hindi/Bengali",
+    "provider": "sarvam",
+    "engine": "service",
+    "model": "sarvam-105b",
+    "voice": "priya",
+    "providerOptions": {
+      "language": "auto",
+      "ttsModel": "bulbul:v3",
+      "sttModel": "saaras:v3-realtime",
+      "sttMode": "transcribe",
+      "silenceMs": 700
+    },
+    "companyName": "Demo Bank",
+    "recordEnabled": true,
+    "runAsPersonnelId": "PER0000EXAMPLE",
+    "maxDurationSec": 420,
+    "silenceTimeoutSec": 20,
+    "maxToolCalls": 12,
+    "welcomeMessage": "नमस्ते, मैं डेमो बैंक की वर्चुअल असिस्टेंट प्रिया हूँ। यह कॉल गुणवत्ता के लिए रिकॉर्ड की जा रही है। क्या आप हिंदी में बात करेंगे या বাংলায়?",
+    "instructions": "You are Priya, a polite virtual collections assistant of Demo Bank (a demo for an Indian bank). You speak with retail borrowers about an overdue EMI.\n\n# Language\n- Speak Hindi or Bengali. Detect the language from the customer's first reply and answer in that language, in its own script (Devanagari for Hindi, Bengali script for Bengali). If the customer asks to switch, switch immediately. If unclear, ask once: Hindi or Bengali.\n- Keep every turn short: one or two simple sentences.\n- Numbers: write amounts with Latin digits exactly as in the record, without adding separators, followed by the rupee word of the customer's language (for example '12450 रुपये' or '23000 টাকা'); never convert digits into another script or into words, and never round or change them. Read the due date text exactly as given in the record.\n\n# Call flow\n1. At the start, look up the borrower's record for this phone number. Do not say anything about a loan or an amount yet.\n   - If the lookup returns an error (not 'no record'), apologise, say an officer will call back, set the outcome to callback and end the call. Do not record anything else and do not verify identity.\n2. Identity check (mandatory before any debt detail): ask the person to confirm their full name, then ask them to say the last 4 digits of their loan account. It passes only if the name matches the record's first and last name and the 4 digits match the last 4 characters of the loan reference. Never read out the name, the loan reference or its digits yourself. Allow two attempts.\n   - If the check fails, or the person says they are someone else: say you will contact the account holder later, do not mention the bank's reason for calling or any amount, record the result as wrong_party, and end the call politely.\n   - If no record is found for this number: create a new lead with the name the person gives and their preferred language, and say a bank officer will contact them. Do not discuss any debt. Set the outcome to new_lead.\n3. After the check passes: tell them the overdue amount and the original due date from the record, and ask when they can pay.\n4. Outcomes:\n   - They give a payment date and amount: record a promise to pay (date in YYYY-MM-DD, amount in rupees, a one-line summary). Record it only after the customer has said the date themselves in this call; never use the original due date or a date you suggested. The date must be today or within the next 30 days; otherwise ask for an earlier date. A part payment is acceptable.\n   - They want to talk later or need a human officer: schedule a call-back (date in YYYY-MM-DD and time HH:mm in India time). Offer only times between 08:00 and 19:00 India time, never on the same day after 18:30.\n   - They say they already paid: thank them, record the result as paid with what they said (date, mode), and tell them the bank will verify. Do not argue.\n   - They dispute the debt, report hardship (job loss, illness, death in family) or are upset: be empathetic, do not push for payment, schedule a call-back by a human officer and record dispute in the summary.\n   - They refuse to pay: stay calm, explain once that paying soon avoids further late charges, record refused, and end politely.\n   - They ask not to be called again: acknowledge, record do_not_call and end the call.\n   - Only tell the customer that a payment promise or call-back is booked after the tool has confirmed it. If the customer changes the date or time while you are confirming, call the tool again with the new values and confirm again.\n5. Ending: once the outcome is clear, record the call result (only when the borrower's record was found; not after creating a new lead), then set the campaign outcome. Then say a short goodbye in the customer's language and ask if there is anything else. End the call only after the customer has replied to that goodbye, or if they say goodbye first in a later turn. Never call end call in the same turn as recording something.\n6. Summaries are one short English line in your own words; do not copy the due date or other record text into them.\n\n# Conduct rules (RBI Fair Practices Code for recovery)\n- Never threaten, insult, shame or use intimidating language. Never mention police, arrest, legal action, seizure, or informing family, employer, friends or neighbours.\n- Never discuss the loan with anyone other than the verified borrower.\n- Do not ask for or accept card numbers, OTP, PIN, CVV, passwords or bank login details. If the customer offers them, stop them and say the bank never asks for these on a call.\n- Do not promise waivers, settlements, interest reduction or restructuring; say an officer will call back about such requests.\n- Do not collect payment on the call and do not share payment links; say they can pay through the bank's official app, branch or the usual channel.\n- India Standard Time is 1 hour 30 minutes behind the system time below (system time is UTC+7). Calls are only allowed between 08:00 and 19:00 India time; if the customer says it is an inconvenient time, offer a call-back.\n- If the customer asks whether this is a real person: say you are an automated assistant of Demo Bank.\n\n# Context\n- System time (UTC+7, weekday in Vietnamese: Thứ Hai=Monday, Thứ Ba=Tuesday, Thứ Tư=Wednesday, Thứ Năm=Thursday, Thứ Sáu=Friday, Thứ Bảy=Saturday, Chủ Nhật=Sunday): {{system.current_datetime}}\n- When the customer names a weekday, convert it to the next such date after today and say the full date back (for example 'Thursday, 12 November').\n- Customer phone number: {{system.customer_number}}"
+  },
+  "status": "active",
+  "tools": [
+    {
+      "kind": "cogover_object",
+      "name": "lookup_borrower",
+      "description": "Look up the borrower record of the current phone number: name, masked loan reference, overdue amount and due date. Call this at the start of the call.",
+      "params": [],
+      "config": {
+        "objectSlug": "lead",
+        "action": "search",
+        "callerScopeField": "mobile_phones",
+        "paramFields": {},
+        "returnFields": [
+          "first_name",
+          "last_name",
+          "col_loan_ref",
+          "col_overdue_amount",
+          "col_due_date_text"
+        ],
+        "writableFields": [],
+        "size": 1
+      }
+    },
+    {
+      "kind": "cogover_object",
+      "name": "record_promise_to_pay",
+      "description": "Record the borrower's promise to pay (PTP) on their own record after identity is verified: payment date, amount in rupees and a one-line summary.",
+      "params": [
+        {
+          "key": "ptp_date",
+          "type": "string",
+          "description": "Promised payment date, format YYYY-MM-DD, today or within 30 days"
+        },
+        {
+          "key": "ptp_amount",
+          "type": "number",
+          "description": "Promised amount in rupees"
+        },
+        {
+          "key": "collection_status",
+          "type": "string",
+          "description": "Always ptp"
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "description": "One-line English summary of the call"
+        }
+      ],
+      "config": {
+        "objectSlug": "lead",
+        "action": "update",
+        "callerScopeField": "mobile_phones",
+        "paramFields": {
+          "ptp_date": "col_ptp_date",
+          "ptp_amount": "col_ptp_amount",
+          "collection_status": "col_status",
+          "summary": "col_call_summary"
+        },
+        "returnFields": [],
+        "writableFields": [
+          "col_ptp_date",
+          "col_ptp_amount",
+          "col_status",
+          "col_call_summary"
+        ],
+        "size": 1,
+        "requiresConfirmation": true
+      }
+    },
+    {
+      "kind": "cogover_object",
+      "name": "schedule_callback",
+      "description": "Schedule a call-back on the caller's own record: date and time in India time (08:00-19:00), plus a one-line summary of why.",
+      "params": [
+        {
+          "key": "callback_date",
+          "type": "string",
+          "description": "Call-back date, format YYYY-MM-DD"
+        },
+        {
+          "key": "callback_time",
+          "type": "string",
+          "description": "Call-back time in India time, format HH:mm, between 08:00 and 19:00"
+        },
+        {
+          "key": "collection_status",
+          "type": "string",
+          "description": "Always callback"
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "description": "One-line English summary, including dispute or hardship if mentioned"
+        }
+      ],
+      "config": {
+        "objectSlug": "lead",
+        "action": "update",
+        "callerScopeField": "mobile_phones",
+        "paramFields": {
+          "callback_date": "col_callback_date",
+          "callback_time": "col_callback_time",
+          "collection_status": "col_status",
+          "summary": "col_call_summary"
+        },
+        "returnFields": [],
+        "writableFields": [
+          "col_callback_date",
+          "col_callback_time",
+          "col_status",
+          "col_call_summary"
+        ],
+        "size": 1,
+        "requiresConfirmation": true
+      }
+    },
+    {
+      "kind": "cogover_object",
+      "name": "log_call_result",
+      "description": "Record the result of this call on the caller's own record: collection status, the language used and a one-line summary. Use once near the end of every call where the caller's record was found.",
+      "params": [
+        {
+          "key": "collection_status",
+          "type": "string",
+          "description": "Exactly one of: ptp, callback, paid, dispute, refused, wrong_party, do_not_call, no_contact"
+        },
+        {
+          "key": "language",
+          "type": "string",
+          "description": "hindi or bengali"
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "description": "One-line English summary of the call"
+        }
+      ],
+      "config": {
+        "objectSlug": "lead",
+        "action": "update",
+        "callerScopeField": "mobile_phones",
+        "paramFields": {
+          "collection_status": "col_status",
+          "language": "col_language",
+          "summary": "col_call_summary"
+        },
+        "returnFields": [],
+        "writableFields": [
+          "col_status",
+          "col_language",
+          "col_call_summary"
+        ],
+        "size": 1,
+        "requiresConfirmation": false
+      }
+    },
+    {
+      "kind": "cogover_object",
+      "name": "create_lead",
+      "description": "Create a new lead when no record exists for the current phone number. Use the name the person gives and the current phone number.",
+      "params": [
+        {
+          "key": "title",
+          "type": "string",
+          "description": "Lead title: 'Voice AI - ' followed by the person's full name"
+        },
+        {
+          "key": "first_name",
+          "type": "string",
+          "description": "First name"
+        },
+        {
+          "key": "last_name",
+          "type": "string",
+          "description": "Last name (surname); use the full name if only one name is given"
+        },
+        {
+          "key": "mobile",
+          "type": "string",
+          "description": "The current customer phone number from the context"
+        },
+        {
+          "key": "language",
+          "type": "string",
+          "description": "hindi or bengali"
+        },
+        {
+          "key": "lead_source",
+          "type": "string",
+          "description": "Always call"
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "description": "One-line English summary of what the person wants"
+        }
+      ],
+      "config": {
+        "objectSlug": "lead",
+        "action": "create",
+        "paramFields": {
+          "title": "name",
+          "first_name": "first_name",
+          "last_name": "last_name",
+          "mobile": "mobile_phones",
+          "language": "col_language",
+          "lead_source": "lead_source",
+          "summary": "col_call_summary"
+        },
+        "returnFields": [],
+        "writableFields": [
+          "name",
+          "first_name",
+          "last_name",
+          "mobile_phones",
+          "col_language",
+          "lead_source",
+          "col_call_summary"
+        ],
+        "size": 1,
+        "requiresConfirmation": false
+      }
+    },
+    {
+      "kind": "system",
+      "name": "set_outcome",
+      "description": "Set the campaign outcome of this call once, just before ending it.",
+      "params": [],
+      "config": {
+        "outcomes": [
+          {
+            "value": "ptp",
+            "description": "Verified borrower promised to pay",
+            "campaignAction": "done"
+          },
+          {
+            "value": "callback",
+            "description": "Call-back scheduled (customer request, dispute or hardship)",
+            "campaignAction": "callback"
+          },
+          {
+            "value": "paid",
+            "description": "Customer says already paid",
+            "campaignAction": "done"
+          },
+          {
+            "value": "refused",
+            "description": "Verified borrower refused to pay",
+            "campaignAction": "retry"
+          },
+          {
+            "value": "wrong_party",
+            "description": "Identity not verified or wrong person",
+            "campaignAction": "none"
+          },
+          {
+            "value": "do_not_call",
+            "description": "Customer explicitly asked not to be called again",
+            "campaignAction": "do_not_call"
+          },
+          {
+            "value": "new_lead",
+            "description": "Unknown number, new lead created",
+            "campaignAction": "done"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "end_call",
+      "description": "End the call after saying goodbye.",
+      "params": []
+    }
+  ]
+}

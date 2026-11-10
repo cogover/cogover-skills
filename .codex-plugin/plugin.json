@@ -1,6 +1,6 @@
 {
   "name": "cogover",
-  "version": "4.32.0",
+  "version": "4.33.0",
   "description": "Agent Skills for exploring and configuring Cogover Workspaces: data models, layouts, permissions, workflows, reports, AI Agents and Custom Modules.",
   "author": {
     "name": "Cogover",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Cogover",
     "shortDescription": "Configure Cogover Workspaces",
-    "longDescription": "Cogover is a low-code platform for building business apps such as CRM, sales, service and operations. This plugin gives Codex 23 Agent Skills for exploring and configuring a Cogover Workspace through the Cogover API: design Objects and fields, configure layouts, buttons, filters, forms and status transitions, manage members, roles and data permissions, build Process (BPMN) workflows, reports, dashboards, document templates and AI Agents, and develop Custom Modules.\n\nIntended for Cogover administrators, implementation partners and developers. You need access to a Cogover Workspace and an API key you create in that Workspace; the skills use only the permissions of that key. The skills are written to ask for confirmation before destructive changes such as deleting records or configuration. The plugin contains no MCP server; the skills call the Cogover API of your own Workspace.",
+    "longDescription": "Cogover is a low-code platform for building business apps such as CRM, sales, service and operations. This plugin gives Codex 25 Agent Skills for exploring and configuring a Cogover Workspace through the Cogover API: design Objects and fields, configure layouts, buttons, filters, forms and status transitions, manage members, roles and data permissions, build Process (BPMN) workflows, reports, dashboards, document templates, AI Agents and voice Callbots, and develop Custom Modules.\n\nIntended for Cogover administrators, implementation partners and developers. You need access to a Cogover Workspace and an API key you create in that Workspace; the skills use only the permissions of that key. The skills are written to ask for confirmation before destructive changes such as deleting records or configuration. The plugin contains no MCP server; the skills call the Cogover API of your own Workspace.",
     "developerName": "Cogover",
     "category": "Productivity",
     "capabilities": [
