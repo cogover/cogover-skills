@@ -41,6 +41,7 @@ Gọi ra tới số đầu tiên trong hồ sơ nhân sự của người thao t
 
 - Gọi vào: số hotline có cây IVR chứa node "Kết nối callbot" trỏ tới callbot (cấu hình trên màn Call Center). Thay đổi IVR có thể mất vài phút mới có hiệu lực.
 - Gọi ra: chiến dịch autocall có node "Kết nối callbot"; `set_outcome` cập nhật trạng thái khách trong chiến dịch theo `campaignAction`.
+- Cuộc gọi vào callbot thất bại (bot im lặng, log `NO_SECRET`) khi project Stringee chưa có `signing_secret_key`: kiểm tra và xử lý theo [Signing key của project](project-signing-key.md) trước khi gọi.
 - Cuộc gọi bị từ chối khi Workspace hết credit AI (log `insufficient_credit`; cuộc gọi vào rơi sang nhánh dự phòng của IVR, không có phiên callbot).
 - Kịch bản audio tự động: bot chỉ bắt đầu nghe sau khi nối máy và nói xong lời chào; khoảng lặng của khách dài hơn `silenceTimeoutSec` thì bot tự kết thúc (`endReason: silence`).
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.34.0 - 2026-11-10
+
+Callbot: bảo đảm project Stringee có signing key, vì thiếu key thì cuộc gọi vào callbot thất bại (`NO_SECRET`).
+
+- `callbot-builder` 1.1.0:
+  - `SKILL.md`: thêm bước A.5. Service callbot tự tạo `signing_secret_key` (32 ký tự chữ và số) cho project chưa có key mỗi khi tạo, sửa hoặc bật callbot; skill đọc kết quả `signingKey` và báo "đã có" hoặc "đã tạo mới", không in key. Mục C: phân biệt nguyên nhân bot im lặng qua log (`NO_SECRET`, `insufficient_credit`, `is not portal admin`). Bàn giao: thêm trạng thái signing key.
+  - `scripts/callbot_api.py`: `apply` in `projectSigningKey` từ response tạo/sửa/bật callbot, cảnh báo khi `failed` hoặc `project_not_found`.
+  - `references/project-signing-key.md`: ý nghĩa của `signingKey`. Khi service không tự tạo được (thiếu quyền `UPDATE`, service bản cũ): master/vn-release thì cấp quyền hoặc dùng helper; prod chỉ đọc, kèm lệnh SQL cho quản trị DB.
+  - `scripts/ProjectSigningKey.java`: helper `check`/`ensure` chạy trong pod `stringeex-callbot`, nhận project hoặc Workspace ID, tự chặn ghi ngoài namespace thử nghiệm.
+  - `references/testing.md`: nhắc kiểm tra signing key trước cuộc gọi thật.
+
 ## 4.33.0 - 2026-11-09
 
 Dựng Callbot (voice AI agent) của Cogover Call Center từ nhu cầu khách hàng bằng API, kèm mẫu thu hồi nợ đa ngôn ngữ (Hindi/Bengali).

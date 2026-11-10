@@ -267,6 +267,7 @@ def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool
                              "delete it first or rename")
     print(("APPLYING" if do_apply else "DRY-RUN (add --apply to write)") + (f" callbot={callbot_id}" if callbot_id else ""),
           flush=True)
+    signing_key = None  # trạng thái signing_secret_key của project do service trả về (không chứa key)
     if callbot_id:
         current = client.rpc({"action": "get_callbot", "callbotId": callbot_id})
         diff = callbot_diff(current, wanted)
@@ -275,12 +276,14 @@ def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool
             res = client.rpc({"action": "update_callbot", "callbotId": callbot_id,
                               "body": {**diff, "version": current["version"]}})
             step(f"  -> version {res.get('version')}")
+            signing_key = res.get("signingKey", signing_key)
     else:
         step(f"create callbot {wanted['name']!r}")
         if do_apply:
             res = client.rpc({"action": "create_callbot", "body": wanted})
             callbot_id = str(res["id"])
             step(f"  -> id {callbot_id} version {res.get('version')}")
+            signing_key = res.get("signingKey", signing_key)
     for tool in tools:
         cur = by_name.get(tool["name"])
         if cur is None:
@@ -307,7 +310,8 @@ def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool
         if current.get("status") != status:
             step(f"set status {status}")
             if do_apply:
-                client.rpc({"action": "set_callbot_status", "callbotId": callbot_id, "body": {"status": status}})
+                res = client.rpc({"action": "set_callbot_status", "callbotId": callbot_id, "body": {"status": status}})
+                signing_key = res.get("signingKey", signing_key)
     elif status and not do_apply:
         step(f"set status {status} (after create)")
     if do_apply and callbot_id:
@@ -316,7 +320,11 @@ def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool
         dump({"id": final["id"], "version": final["version"], "status": final["status"],
               "provider": final["provider"], "model": final["model"], "voice": final["voice"],
               "providerOptions": final.get("providerOptions"), "runAsPersonnelId": final.get("runAsPersonnelId"),
-              "recordEnabled": final.get("recordEnabled"), "tools": [f"{t['name']} ({t['kind']})" for t in tools_now]})
+              "recordEnabled": final.get("recordEnabled"), "tools": [f"{t['name']} ({t['kind']})" for t in tools_now],
+              "projectSigningKey": signing_key or "not_reported"})
+        if signing_key in ("failed", "project_not_found"):
+            print(f"WARNING: project signing key {signing_key}: calls to this callbot will fail (NO_SECRET); "
+                  "see references/project-signing-key.md", file=sys.stderr)
 
 
 # ---------------------------------------------------------------- simulate / sessions
