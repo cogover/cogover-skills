@@ -48,6 +48,8 @@ Thành công: `{"r": 0, "msg": "OK", "data": ...}`. Lỗi: `r` là mã kiểu HT
 | `400 callbot_disabled`, `400 no_hotline` | Gọi thử khi callbot đang tắt, hoặc project không có hotline gọi ra |
 | `503 callbot_admin_disabled` | Môi trường chưa bật API quản trị Callbot |
 
+`signingKey` (service từ bản `2026-11-10-signkey-*`): trạng thái `signing_secret_key` của project sau khi service tự bảo đảm key: `existing`, `created`, `failed` hoặc `project_not_found`. Không chứa key. Xem [Signing key của project](project-signing-key.md).
+
 Thao tác ghi và gọi ra ngoài (`create_*`, `update_*`, `delete_*`, `put_*_secret(s)`, `sync_callbot`, `set_callbot_status`, `test_call`, `start_simulation`, `send_simulation_message`) không tự gửi lại khi timeout: đọc lại trạng thái trước khi thử lại để tránh tạo trùng hoặc gọi trùng.
 
 ## Action
@@ -59,9 +61,9 @@ Mọi action cần người thao tác là admin của tài khoản Call Center g
 | `list_callbots` | — | — | Mảng callbot (không có `instructions`) |
 | `get_callbot_settings` | — | — | `{byoAllowed, managed: {provider: true}}` |
 | `get_callbot` | `callbotId` | — | Callbot đầy đủ, `version`, `secrets` (chỉ trạng thái) |
-| `create_callbot` | — | Callbot input | `{id, version}` |
-| `update_callbot` | `callbotId` | Trường cần đổi + `version` hiện tại | `{id, version}` |
-| `set_callbot_status` | `callbotId` | `{"status": "active" \| "disabled"}` | `{id, version}` |
+| `create_callbot` | — | Callbot input | `{id, version, signingKey}` |
+| `update_callbot` | `callbotId` | Trường cần đổi + `version` hiện tại | `{id, version, signingKey}` |
+| `set_callbot_status` | `callbotId` | `{"status": "active" \| "disabled"}` | `{id, version, status}`; khi `active` thêm `signingKey` |
 | `delete_callbot` | `callbotId` | — | `{id, version}` |
 | `put_callbot_secrets` | `callbotId` | `{apiKey, expectedProvider}` (chỉ khi `byoAllowed`) | `{id, version}` |
 | `list_voices` | — | `query: {provider, model, callbotId?}` | `{voices: [{id, name, gender?, language?}], source}` |

@@ -2,11 +2,14 @@
 
 ## 4.34.0 - 2026-11-10
 
-Callbot: kiểm tra signing key của project Stringee trước khi gọi thử, vì thiếu key thì cuộc gọi vào callbot thất bại.
+Callbot: bảo đảm project Stringee có signing key, vì thiếu key thì cuộc gọi vào callbot thất bại (`NO_SECRET`).
 
 - `callbot-builder` 1.1.0:
-  - `SKILL.md` (bước A.5, C, Bàn giao), `references/project-signing-key.md`, `scripts/ProjectSigningKey.java`: bước bắt buộc trước khi gọi thử — kiểm tra `signing_secret_key` của project Stringee (thiếu thì cuộc gọi lỗi `NO_SECRET`, bot im lặng); đã có thì giữ nguyên, trống thì sinh key 32 ký tự chữ+số bằng nguồn ngẫu nhiên an toàn, ghi thẳng DB (không có API) chỉ trên master/vn-release, đọc lại xác nhận rồi chờ hết cache 5 phút; prod chỉ đọc, kèm lệnh SQL cho quản trị DB; không in key, chỉ báo "đã có"/"đã tạo mới". Helper chạy trong pod `stringeex-callbot`, nhận project hoặc Workspace ID, tự chặn ghi ngoài namespace thử nghiệm.
-  - `SKILL.md` mục C: phân biệt nguyên nhân bot im lặng qua log pod callbot (`NO_SECRET`, `insufficient_credit`, `is not portal admin`); `references/testing.md`: nhắc kiểm tra signing key trước cuộc gọi thật.
+  - `SKILL.md`: thêm bước A.5. Service callbot tự tạo `signing_secret_key` (32 ký tự chữ và số) cho project chưa có key mỗi khi tạo, sửa hoặc bật callbot; skill đọc kết quả `signingKey` và báo "đã có" hoặc "đã tạo mới", không in key. Mục C: phân biệt nguyên nhân bot im lặng qua log (`NO_SECRET`, `insufficient_credit`, `is not portal admin`). Bàn giao: thêm trạng thái signing key.
+  - `scripts/callbot_api.py`: `apply` in `projectSigningKey` từ response tạo/sửa/bật callbot, cảnh báo khi `failed` hoặc `project_not_found`.
+  - `references/project-signing-key.md`: ý nghĩa của `signingKey`. Khi service không tự tạo được (thiếu quyền `UPDATE`, service bản cũ): master/vn-release thì cấp quyền hoặc dùng helper; prod chỉ đọc, kèm lệnh SQL cho quản trị DB.
+  - `scripts/ProjectSigningKey.java`: helper `check`/`ensure` chạy trong pod `stringeex-callbot`, nhận project hoặc Workspace ID, tự chặn ghi ngoài namespace thử nghiệm.
+  - `references/testing.md`: nhắc kiểm tra signing key trước cuộc gọi thật.
 
 ## 4.33.0 - 2026-11-09
 

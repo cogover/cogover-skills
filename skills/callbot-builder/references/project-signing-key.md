@@ -1,40 +1,58 @@
 # Signing key của project Stringee
 
-Mỗi callbot chạy trên project Stringee gắn với Workspace (`stringee_x.dh_portal.stringee_project`). Service callbot dùng `stringee.dh_account_project.signing_secret_key` của project để ký và kiểm tra luồng media. Key trống thì cuộc gọi vào/ra callbot thất bại:
+Mỗi callbot chạy trên một project Stringee gắn với Workspace (`stringee_x.dh_portal.stringee_project`). Service callbot dùng `stringee.dh_account_project.signing_secret_key` của project để ký và kiểm tra luồng media.
 
-- Phiên được tạo nhưng bot im lặng, rồi cuộc gọi bị cúp.
-- Log của pod `stringeex-callbot` có `media ws: chu ky NO_SECRET` (WebSocket media trả 401) và `bot_leg_ended rejected: NO_SECRET`.
+Nếu key trống, mọi cuộc gọi vào/ra callbot đều thất bại:
+- phiên vẫn được tạo nhưng bot im lặng rồi cúp máy;
+- log pod `stringeex-callbot` có `media ws: chu ky NO_SECRET` và `bot_leg_ended rejected: NO_SECRET`.
 
-Nhiều project, nhất là project cũ trên prod, chưa có key. Vì vậy **luôn kiểm tra key trước khi gọi thử** (bước A.5 trong [SKILL.md](../SKILL.md)).
+## Service tự bảo đảm key
 
-## Quy tắc
+Từ image `stringeex-callbot` `2026-11-10-signkey-*`, mỗi khi tạo callbot, sửa callbot hay bật callbot (`status: active`) qua admin API, service tự kiểm tra key của project:
 
 - **Đã có giá trị:** giữ nguyên, không ghi đè.
-- **NULL hoặc rỗng:** sinh ngẫu nhiên chuỗi **32 ký tự chữ và số** từ nguồn ngẫu nhiên an toàn (`SecureRandom`; nếu sinh ngoài pod thì dùng `secrets` của Python hoặc `openssl rand`), rồi cập nhật vào project.
-- **Không lộ key:** không in key ra output, log, transcript hay báo cáo. Không truyền key qua tham số dòng lệnh. Chỉ báo "đã có" hoặc "đã tạo mới".
-- **Xác nhận trước khi test:** sau khi cập nhật, đọc lại để chắc giá trị không còn trống. Chờ cache hết hạn rồi mới gọi kiểm tra:
-  - service callbot cache key 5 phút, kể cả kết quả trống;
-  - stringee-server cache 1 phút.
-- **Chỉ ghi trên môi trường thử nghiệm.** Không có API công khai hay API của Cogover/StringeeX để đặt key: cách duy nhất là ghi thẳng DB `stringee.dh_account_project`. Được phép trên **master / vn-release** (namespace `vn-release`, `master`, `release`).
-- **Prod chỉ đọc** (mọi namespace production, ở mọi vùng). Thiếu key trên prod thì dừng bước gọi thử và báo người dùng nhờ quản trị DB chạy lệnh ở [Lệnh cho quản trị DB](#lệnh-cho-quản-trị-db). Cấu hình callbot và mô phỏng vẫn làm được.
+- **NULL hoặc rỗng:** service sinh 32 ký tự chữ và số bằng `SecureRandom`. Lệnh `UPDATE` chỉ ghi khi key vẫn trống, nên an toàn khi nhiều replica cùng chạy. Ghi xong service đọc lại để xác nhận.
+- **Không lộ key:** response và log không chứa key.
+- **Hiệu lực:** kết quả "chưa có key" chỉ được cache 15 giây, nên key mới có hiệu lực gần như ngay trên mọi replica. stringee-server còn cache thêm khoảng 1 phút.
 
-## Xác định môi trường
+Response của `create_callbot`, `update_callbot` và `set_callbot_status` (khi bật) có thêm trường `signingKey`. Lệnh `apply` in giá trị này ở dòng `projectSigningKey`.
 
-Domain Workspace không nói lên cụm. Cách chắc chắn:
-1. Gọi một action đọc (ví dụ `rpc get_callbot_settings`).
-2. Tìm pod `stringeex-callbot` có log admin API của Workspace đó (`admin api GET /callbot/v1/admin/workspaces/{WS}/...`).
+| `signingKey` | Ý nghĩa | Việc cần làm |
+|---|---|---|
+| `existing` | Project đã có key | Báo "đã có" |
+| `created` | Vừa tạo key mới, đọc lại thấy có giá trị | Báo "đã tạo mới"; chờ khoảng 1 phút rồi gọi thử |
+| `failed` | Ghi không được: thường do user DB `callbot` thiếu quyền `UPDATE (signing_secret_key)` trên `stringee.dh_account_project`, hoặc lỗi DB | Lưu callbot vẫn thành công. Làm theo [Khi service không tự tạo được](#khi-service-không-tự-tạo-được) |
+| `project_not_found` | Project không có trong `dh_account_project` | Kiểm tra lại cấu hình portal/project |
+| không có trường này | Service đang chạy bản cũ | Kiểm tra bằng helper bên dưới |
 
-Workspace production có thể chạy ở cụm của vùng khác. Namespace của pod đó cho biết đó là master/vn-release hay prod.
+Báo người dùng đúng một trong các trạng thái trên ("đã có" / "đã tạo mới" / lỗi). Không in key.
 
-## Kiểm tra / tạo bằng helper
+## Khi service không tự tạo được
 
-[scripts/ProjectSigningKey.java](../scripts/ProjectSigningKey.java) chạy **trong** pod `stringeex-callbot`. Nó dùng cấu hình DB và Vault sẵn có của pod, nên mật khẩu DB và key không bao giờ rời pod.
+Áp dụng khi kết quả là `failed`, hoặc môi trường còn chạy service bản cũ.
 
-- Tham số là project ID, hoặc Workspace ID (`WS...`, helper tự tra ra project qua `stringee_x.dh_portal`).
-- `check`: chỉ đọc.
-- `ensure`: chỉ ghi khi key trống, dùng `UPDATE ... WHERE signing_secret_key IS NULL OR = ''`, rồi đọc lại. Helper tự từ chối ghi nếu namespace của pod không thuộc `vn-release`/`master`/`release`.
+- **master / vn-release:** được phép xử lý trực tiếp.
+  - Cấp quyền: `GRANT UPDATE (signing_secret_key) ON stringee.dh_account_project TO 'callbot'@'%'`. Lệnh cho user này nằm trong runbook của `stringeex-callbot`.
+  - Sau đó lưu lại callbot, ví dụ chạy lại `apply`.
+  - Hoặc chạy helper ở chế độ `ensure`.
+- **Prod** (mọi namespace production, ở mọi vùng): chỉ đọc. Không tự cấp quyền, không tự ghi key. Báo người dùng nhờ quản trị DB làm một trong hai việc:
+  - cấp quyền như trên;
+  - chạy lệnh ở [Lệnh cho quản trị DB](#lệnh-cho-quản-trị-db).
 
-Pod chỉ có JRE (không có `javac`): biên dịch ở máy local với thư viện của `stringeex-callbot`, rồi copy file `.class` vào pod.
+Domain Workspace không cho biết nó chạy ở cụm nào: Workspace production có thể nằm ở cụm của vùng khác. Để biết chắc:
+1. Gọi một action đọc, ví dụ `rpc get_callbot_settings`.
+2. Tìm pod `stringeex-callbot` có log `admin api GET /callbot/v1/admin/workspaces/{WS}/...`.
+3. Namespace của pod đó cho biết đây là master/vn-release hay prod.
+
+### Helper `scripts/ProjectSigningKey.java`
+
+Helper [scripts/ProjectSigningKey.java](../scripts/ProjectSigningKey.java) chạy **trong** pod `stringeex-callbot` và dùng cấu hình DB/Vault của pod, nên mật khẩu DB và key không rời khỏi pod.
+
+- Tham số là project ID, hoặc Workspace ID (`WS...`); helper tự tra ra project qua `stringee_x.dh_portal`.
+- `check` chỉ đọc.
+- `ensure` chỉ ghi khi key đang trống, rồi đọc lại. Helper tự từ chối ghi nếu namespace của pod không phải `vn-release`, `master` hay `release`.
+
+Pod chỉ có JRE, không có `javac`, nên phải biên dịch ở máy local với thư viện của `stringeex-callbot` rồi copy file `.class` vào pod:
 
 ```bash
 LIB=$(ls -d <stringeex-callbot>/build/install/*/lib)       # ./gradlew installDist nếu chưa có
@@ -48,20 +66,20 @@ kubectl -n <ns> exec <pod> -- rm -f /tmp/sk/ProjectSigningKey.class
 
 Kết quả, mỗi lệnh in một dòng, không có key:
 
-| Dòng in ra | Ý nghĩa | Báo người dùng |
-|---|---|---|
-| `status=existing length=N` | Đã có key | "đã có" |
-| `status=created length=32` | Vừa tạo và đọc lại thấy có giá trị | "đã tạo mới"; chờ 5 phút rồi mới gọi |
-| `status=missing` (exit 3) | `check`: chưa có key | Chạy `ensure` (master/vn-release) hoặc báo quản trị DB (prod) |
-| `status=missing write_refused=prod_read_only` (exit 4) | `ensure` trên prod bị chặn | Báo quản trị DB |
-| `status=project_not_found`, `no_portal`, `ambiguous_or_no_project` | Sai ID, hoặc Workspace chưa gắn đúng một portal hay project | Kiểm tra lại Workspace/portal |
-| `status=update_failed` | Ghi xong đọc lại vẫn trống | Dừng, báo lỗi |
-
-Nhớ xoá file `.class` khỏi pod sau khi chạy xong. Không sửa code hay ảnh của service.
+| Dòng in ra | Ý nghĩa |
+|---|---|
+| `status=existing length=N` | Đã có key |
+| `status=created length=32` | Vừa tạo key và đọc lại thấy có giá trị |
+| `status=missing` (exit 3) | `check`: chưa có key |
+| `status=missing write_refused=prod_read_only` (exit 4) | `ensure` trên prod bị chặn |
+| `status=project_not_found` / `no_portal` / `ambiguous_or_no_project` | Sai ID, hoặc Workspace chưa gắn đúng một portal/project |
+| `status=update_failed` | Ghi xong đọc lại vẫn trống |
 
 ## Lệnh cho quản trị DB
 
-Dùng cho prod hoặc khi không chạy được helper. Quản trị DB chạy trên DB `stringee`, thay `{PROJECT_ID}`. Key được sinh ngay trong DB, không đi qua máy ai. `RANDOM_BYTES` cần MySQL ≥ 5.6.17 hoặc MariaDB ≥ 10.10; DB không hỗ trợ thì sinh key bằng `openssl rand` / `secrets` rồi nhập trực tiếp.
+Dùng cho prod. Thay `{PROJECT_ID}` rồi chạy trên DB `stringee`. Key được sinh ngay trong DB, không đi qua máy ai.
+
+`RANDOM_BYTES` cần MySQL ≥ 5.6.17 hoặc MariaDB ≥ 10.10. Nếu DB không hỗ trợ, sinh key bằng `openssl rand` hoặc `secrets` rồi nhập trực tiếp.
 
 ```sql
 UPDATE stringee.dh_account_project
@@ -71,4 +89,4 @@ WHERE id = {PROJECT_ID} AND (signing_secret_key IS NULL OR signing_secret_key = 
 SELECT id, CHAR_LENGTH(signing_secret_key) AS key_length FROM stringee.dh_account_project WHERE id = {PROJECT_ID};
 ```
 
-`key_length` phải bằng 32. Chờ 5 phút rồi mới gọi thử.
+`key_length` phải bằng 32. Sau khi ghi, chờ khoảng 5 phút (cache của service bản cũ) rồi mới gọi thử.
