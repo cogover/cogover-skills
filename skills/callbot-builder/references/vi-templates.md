@@ -1,13 +1,14 @@
 # Mẫu tiếng Việt: CSKH, telesale, nhắc lịch
 
-Ba callbot mẫu cho một chuỗi điện máy giả định (**An Phát Home**: điều hoà, máy lọc nước, máy lọc không khí). Chúng phủ 3 nhóm callbot phổ biến nhất: tổng đài CSKH gọi vào, telesale chăm sóc lead gọi ra, nhắc và xác nhận lịch hẹn gọi ra. Cả 3 dùng `openai_realtime` (`gpt-realtime`, giọng `marin`, `gpt-4o-mini-transcribe`), ghi âm bật, ghi dữ liệu bằng hồ sơ ghi v2.
+Bốn callbot mẫu cho một chuỗi điện máy giả định (**An Phát Home**: điều hoà, máy lọc nước, máy lọc không khí). Chúng phủ các nhóm callbot phổ biến: tổng đài CSKH gọi vào, telesale chăm sóc lead gọi ra, nhắc và xác nhận lịch hẹn gọi ra, khảo sát hài lòng sau dịch vụ gọi ra. Cả 3 dùng `openai_realtime` (`gpt-realtime`, giọng `marin`, `gpt-4o-mini-transcribe`), ghi âm bật, ghi dữ liệu bằng hồ sơ ghi v2.
 
-Spec chạy được bằng `apply` (xuất từ callbot đã dựng và mô phỏng trên Workspace thật ngày 2026-11-16; đã thay `runAsPersonnelId` và email nhân sự bằng giá trị mẫu):
+Spec chạy được bằng `apply` (dựng và mô phỏng trên Workspace thật ngày 2026-11-16; bản khảo sát được dựng bằng chính skill này qua `apply`; đã thay `runAsPersonnelId` và email nhân sự bằng giá trị mẫu):
 
 | Spec | Hướng | Tool |
 |---|---|---|
 | [an-phat-cskh.spec.json](../assets/vi-an-phat/an-phat-cskh.spec.json) | Gọi vào (IVR "Kết nối callbot") | `tra_cuu_khach_hang` (search contact), `tra_cuu_yeu_cau` (search ticket theo `phone_number`), `tao_yeu_cau_ho_tro` (hồ sơ ghi: ticket), `switch_to_consultant`, `set_outcome`, `end_call` |
 | [an-phat-telesale.spec.json](../assets/vi-an-phat/an-phat-telesale.spec.json) | Gọi ra (chiến dịch, biến `ten_khach`, `san_pham`) | `tra_cuu_lead` (search lead), `dat_lich_tu_van` (hồ sơ ghi: task gọi lại gắn lead/contact, giao chuyên viên), `set_outcome` (chấm điểm + `callback_at`), `switch_to_consultant`, `end_call` |
+| [an-phat-khao-sat.spec.json](../assets/vi-an-phat/an-phat-khao-sat.spec.json) | Gọi ra (chiến dịch, biến `ten_khach`, `dich_vu`, `ngay_hoan_thanh`) | `tra_cuu_khach_hang`, `tao_phan_anh` (hồ sơ ghi: ticket `problem` khi điểm 1–3 hoặc thiết bị chưa ổn), `set_outcome` (`diem_hai_long`, `thiet_bi_on_dinh`, `gop_y`, `callback_at`), `switch_to_consultant`, `end_call` |
 | [an-phat-nhac-lich.spec.json](../assets/vi-an-phat/an-phat-nhac-lich.spec.json) | Gọi ra (chiến dịch, biến `ten_khach`, `dich_vu`, `thoi_gian_hen`, `dia_chi_rut_gon`) | `tao_yeu_cau_doi_lich` (hồ sơ ghi: ticket đổi/huỷ lịch), `set_outcome`, `switch_to_consultant`, `end_call` |
 
 Trước khi `apply` lên Workspace khác:
@@ -37,6 +38,8 @@ Trước khi `apply` lên Workspace khác:
 | Chèn tên khách vào mô tả ticket (nguy cơ bị chặn khi gọi thật) | "Không ghi tên, danh xưng hay dữ liệu tra cứu vào tieu_de và mo_ta; viết dạng 'Khách báo ...'" |
 | Gọi `set_outcome` hai lần; chào mà không `end_call` | Khối "Quy tắc công cụ kết thúc (bắt buộc)": `set_outcome` chỉ một lần; khách chào thì chào ngắn **và** gọi `end_call` trong lượt đó |
 | Đọc hiểu quá đà câu "không hứa chắc giờ" thành lời từ chối | Viết sẵn nguyên câu bot nói sau khi tạo yêu cầu đổi lịch |
+| Khách bận: tự chọn giờ gọi lại hoặc `end_call` trước khi khách chào | Tách nhánh: "khách CHƯA nói giờ thì chỉ hỏi giờ, KHÔNG gọi công cụ nào"; "khi khách đã nói giờ: `set_outcome` với ĐÚNG HAI trường outcome và `callback_at`... chưa `end_call`, gọi ở lượt sau khi khách chào lại" |
+| Bot nói ra ghi chú hành động ("(kết thúc cuộc gọi)") | "Không bao giờ nói ra tên công cụ hay ghi chú hành động" |
 | Tự điền field chấm điểm khi khách chỉ hẹn gọi lại | "KHÔNG kèm các trường chấm điểm" ở nhánh gọi lại (model đôi khi vẫn điền; không ảnh hưởng luồng) |
 
 ## Dữ liệu demo

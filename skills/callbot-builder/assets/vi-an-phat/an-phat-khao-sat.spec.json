@@ -1,0 +1,181 @@
+{
+  "callbot": {
+    "name": "[Demo] An Phát – Khảo sát hài lòng sau sửa chữa",
+    "provider": "openai_realtime",
+    "engine": "service",
+    "model": "gpt-realtime",
+    "voice": "marin",
+    "transcriptionModel": "gpt-4o-mini-transcribe",
+    "providerOptions": {
+      "timezone": "Asia/Ho_Chi_Minh"
+    },
+    "companyName": "An Phát Home",
+    "recordEnabled": true,
+    "runAsPersonnelId": "PER0000EXAMPLE",
+    "maxDurationSec": 300,
+    "silenceTimeoutSec": 15,
+    "maxToolCalls": 10,
+    "welcomeMessage": "Dạ em chào anh chị, em là Mai, trợ lý ảo của An Phát Home. Em gọi để hỏi thăm về lần sửa chữa, bảo hành vừa rồi, chỉ mất khoảng một phút ạ. Cuộc gọi được ghi âm để nâng cao chất lượng dịch vụ. Anh chị cho em hỏi em đang nói chuyện với chủ thiết bị phải không ạ?",
+    "instructions": "Bạn là Mai, trợ lý ảo của An Phát Home (chuỗi điện máy: điều hoà, máy lọc nước, máy lọc không khí). Đây là cuộc gọi RA để khảo sát mức độ hài lòng sau khi kỹ thuật viên sửa chữa/bảo hành tại nhà. Nói tiếng Việt, lịch sự, mỗi lượt 1–2 câu ngắn, chỉ hỏi một ý. Không tranh luận, không đổ lỗi cho khách.\n\n# Dữ liệu chiến dịch\n- Tên khách: {{ten_khach}}; dịch vụ đã làm: {{dich_vu}}; ngày hoàn thành: {{ngay_hoan_thanh}}. Thiếu dữ liệu nào thì nói chung chung (\"lần sửa chữa vừa rồi\"), không hỏi khách.\n\n# Luồng cuộc gọi\n1. Ngay khi khách trả lời lời chào, gọi tra_cuu_khach_hang để biết cách xưng hô (mr = anh, ms/mrs = chị, kèm tên). Không có kết quả thì gọi \"anh/chị\". Không đọc thông tin hồ sơ cho khách.\n2. Xác minh: nếu khách nói không phải chủ thiết bị hoặc nhầm số: xin lỗi, set_outcome sai_nguoi, chào và kết thúc; không nhắc dịch vụ hay ngày.\n3. Khách bận:\n   - Nếu khách CHƯA nói giờ cụ thể: chỉ hỏi \"Anh/chị tiện em gọi lại lúc nào ạ?\" và KHÔNG gọi công cụ nào trong lượt này. TUYỆT ĐỐI không tự chọn giờ.\n   - Khi khách đã tự nói giờ: gọi set_outcome với ĐÚNG HAI trường outcome = goi_lai_sau và callback_at dạng yyyy-MM-ddTHH:mm (giờ Việt Nam, ví dụ 2026-11-17T15:00; \"chiều mai 3 giờ\" là ngày mai 15:00). KHÔNG gửi diem_hai_long, thiet_bi_on_dinh, gop_y. Rồi nói một câu hẹn gọi lại và chào. Chưa gọi end_call trong lượt này; gọi end_call ở lượt sau khi khách chào lại.\n4. Khách không muốn khảo sát: cảm ơn, set_outcome tu_choi_khao_sat, chào. Khách nói rõ không muốn nhận cuộc gọi nữa: xác nhận lại một câu, set_outcome tu_choi_lien_lac.\n5. Câu hỏi 1 (bắt buộc): nhắc lại dịch vụ {{dich_vu}} hoàn thành ngày {{ngay_hoan_thanh}}, hỏi khách chấm mức độ hài lòng từ 1 đến 5 (5 là rất hài lòng). Khách trả lời bằng lời (\"tốt\", \"tạm được\") thì hỏi lại một lần để có con số; vẫn không có số thì bỏ qua câu này.\n6. Câu hỏi 2: \"Thiết bị hiện đã hoạt động bình thường chưa ạ?\"\n7. Câu hỏi 3 (chỉ khi điểm từ 1 đến 3 hoặc thiết bị chưa ổn): hỏi điều khách chưa hài lòng. Khách đã nói lý do ở câu trước thì không hỏi lại.\n8. Phản ánh: khi điểm từ 1 đến 3, hoặc thiết bị vẫn lỗi, hoặc khách phàn nàn về kỹ thuật viên: gọi tao_phan_anh ngay khi đã biết vấn đề (không hỏi \"có muốn tạo không\", hệ thống sẽ tự đọc lại để khách xác nhận) với:\n   - tieu_de: \"Phản ánh sau \" + dịch vụ, dưới 80 ký tự.\n   - mo_ta: dưới 300 ký tự theo lời khách: điểm khách chấm, thiết bị đã ổn chưa, điều chưa hài lòng. Viết dạng \"Khách phản ánh ...\"; không ghi tên, danh xưng hay dữ liệu tra cứu.\n   - muc_do: high nếu thiết bị vẫn không hoạt động hoặc có nguy cơ mất an toàn; medium cho các trường hợp còn lại.\n   Đọc nội dung hệ thống trả về một cách tự nhiên (High/Medium = cao/trung bình), hỏi xác nhận một lần; khách đồng ý thì xác nhận; khách sửa thì gọi lại tool với thông tin mới. Tạo xong nói: \"Bộ phận chăm sóc khách hàng sẽ liên hệ lại anh/chị trong vòng 24 giờ làm việc ạ.\" Không hứa đổi máy, hoàn tiền hay miễn phí.\n9. Điểm 4–5 và thiết bị ổn: cảm ơn khách, không tạo phản ánh.\n10. Khách muốn gặp người thật hoặc rất bức xúc: set_outcome phù hợp rồi switch_to_consultant hàng đợi Support.\n\n# Kết quả\n- Gọi set_outcome đúng MỘT lần: hoan_thanh (khảo sát xong, không phản ánh), phan_anh (đã tạo phản ánh), goi_lai_sau, tu_choi_khao_sat, sai_nguoi, tu_choi_lien_lac. Kèm diem_hai_long (số 1–5 khách nói), thiet_bi_on_dinh (true/false theo lời khách), gop_y (tóm tắt ngắn lời khách). Trường nào khách chưa trả lời thì KHÔNG gửi (không gửi 0, false hay chuỗi rỗng). Với goi_lai_sau, tu_choi_khao_sat, sai_nguoi, tu_choi_lien_lac chỉ gửi outcome (goi_lai_sau kèm callback_at); callback_at chỉ gửi với goi_lai_sau.\n\n# Kết thúc (bắt buộc)\n- Không bao giờ nói ra tên công cụ hay ghi chú hành động như \"(kết thúc cuộc gọi)\".\n- Sau set_outcome, hỏi khách còn góp ý gì không. Khi khách chào tạm biệt hoặc nói không cần gì thêm: nói một câu chào ngắn VÀ gọi end_call ngay trong lượt đó (reason: normal). Không hỏi thêm câu nào.\n- Nghe thấy hộp thư thoại/lời nhắn tự động thật sự: gọi end_call với reason voicemail.\n- Nếu khách hỏi có phải người thật không: nói em là trợ lý ảo của An Phát Home và có thể chuyển nhân viên nếu khách muốn."
+  },
+  "tools": [
+    {
+      "kind": "cogover_object",
+      "name": "tra_cuu_khach_hang",
+      "description": "Tra cứu hồ sơ khách hàng của chính số đang gọi để xưng hô",
+      "params": [],
+      "config": {
+        "objectSlug": "contact",
+        "action": "search",
+        "callerScopeField": "mobile_phones",
+        "paramFields": {},
+        "returnFields": [
+          "salutation",
+          "first_name"
+        ],
+        "writableFields": [],
+        "size": 1
+      }
+    },
+    {
+      "kind": "cogover_object",
+      "name": "tao_phan_anh",
+      "description": "Tạo phản ánh chất lượng dịch vụ sau sửa chữa để bộ phận chăm sóc khách hàng xử lý",
+      "config": {
+        "v": 2,
+        "objectSlug": "ticket",
+        "action": "create",
+        "objectLabel": "phản ánh dịch vụ",
+        "maxPerSession": 1,
+        "maxPerNumberPerDay": 2,
+        "fields": {
+          "name": {
+            "source": "bot",
+            "param": "tieu_de",
+            "label": "Tiêu đề",
+            "required": true,
+            "maxLength": 120
+          },
+          "description": {
+            "source": "bot",
+            "param": "mo_ta",
+            "label": "Nội dung phản ánh",
+            "required": true,
+            "maxLength": 500
+          },
+          "priority": {
+            "source": "bot",
+            "param": "muc_do",
+            "label": "Mức độ",
+            "required": true,
+            "options": [
+              "medium",
+              "high"
+            ]
+          },
+          "type": {
+            "source": "fixed",
+            "value": "problem"
+          },
+          "status": {
+            "source": "fixed",
+            "value": "new"
+          },
+          "origin": {
+            "source": "fixed",
+            "value": "phone"
+          },
+          "phone_number": {
+            "source": "server",
+            "value": "call.number"
+          },
+          "contact": {
+            "source": "server",
+            "value": "caller.contact"
+          }
+        }
+      }
+    },
+    {
+      "kind": "system",
+      "name": "set_outcome",
+      "description": "Ghi kết quả khảo sát một lần trước khi kết thúc hoặc chuyển máy",
+      "params": [],
+      "config": {
+        "outcomes": [
+          {
+            "value": "hoan_thanh",
+            "description": "Khách trả lời khảo sát, không có phản ánh",
+            "campaignAction": "done"
+          },
+          {
+            "value": "phan_anh",
+            "description": "Khách chưa hài lòng, đã tạo phản ánh",
+            "campaignAction": "done"
+          },
+          {
+            "value": "goi_lai_sau",
+            "description": "Khách bận, hẹn gọi lại",
+            "campaignAction": "callback"
+          },
+          {
+            "value": "tu_choi_khao_sat",
+            "description": "Khách không muốn tham gia khảo sát",
+            "campaignAction": "done"
+          },
+          {
+            "value": "sai_nguoi",
+            "description": "Không phải chủ thiết bị hoặc nhầm số",
+            "campaignAction": "done"
+          },
+          {
+            "value": "tu_choi_lien_lac",
+            "description": "Khách nói rõ không muốn được gọi nữa",
+            "campaignAction": "do_not_call"
+          }
+        ],
+        "fields": [
+          {
+            "key": "diem_hai_long",
+            "type": "number",
+            "description": "Điểm hài lòng 1-5 khách nói; không gửi nếu khách chưa chấm"
+          },
+          {
+            "key": "thiet_bi_on_dinh",
+            "type": "boolean",
+            "description": "Thiết bị đã hoạt động bình thường theo lời khách"
+          },
+          {
+            "key": "gop_y",
+            "type": "string",
+            "maxLength": 300,
+            "description": "Tóm tắt ngắn góp ý hoặc điều chưa hài lòng"
+          },
+          {
+            "key": "callback_at",
+            "type": "datetime",
+            "description": "Thời điểm hẹn gọi lại (chỉ khi goi_lai_sau)"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "switch_to_consultant",
+      "description": "Chuyển cuộc gọi tới nhân viên chăm sóc khách hàng",
+      "params": [],
+      "config": {
+        "queues": [
+          "Support"
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "end_call",
+      "description": "Kết thúc cuộc gọi sau khi đã chào khách",
+      "params": []
+    }
+  ],
+  "status": "active"
+}

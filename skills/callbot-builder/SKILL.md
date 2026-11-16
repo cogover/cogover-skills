@@ -39,7 +39,7 @@ Ngoài phạm vi: mua/gán số hotline, dựng cây IVR hay chiến dịch auto
 | Guardrail | Xác minh danh tính, điều cấm nói, khung giờ, chuyển người thật, ghi âm |
 | Danh tính thực thi | Nhân sự mà tool chạy dưới quyền (`runAsPersonnelId`) |
 
-4. Chuẩn bị dữ liệu với [$object-info](../object-info/SKILL.md): Object có field điện thoại để giới hạn theo người gọi và đủ field cho kết quả. Thêm field còn thiếu, theo quy tắc ở [Thiết kế field cho callbot](references/tools.md#thiết-kế-field-cho-callbot). Thêm field xong chờ khoảng 5 phút trước khi test tool đọc/ghi field đó (danh sách field của Object được cache; trước đó tool trả lỗi tra cứu `adapter_400`). Đọc field, kiểu và option đang bật đúng như callbot thấy (quyền run-as) bằng `rpc get_object_fields --callbot ID --object SLUG`.
+4. Chuẩn bị dữ liệu với [$object-info](../object-info/SKILL.md): Object có field điện thoại để giới hạn theo người gọi và đủ field cho kết quả. Thêm field còn thiếu, theo quy tắc ở [Thiết kế field cho callbot](references/tools.md#thiết-kế-field-cho-callbot). Thêm field xong chờ khoảng 5 phút trước khi test tool đọc/ghi field đó (danh sách field của Object được cache; trước đó tool trả lỗi tra cứu `adapter_400`). Đọc field, kiểu và option đang bật đúng như callbot thấy (quyền run-as) bằng `rpc get_object_fields --callbot ID --object SLUG`: action cần một callbot có sẵn, nên khi chưa tạo callbot thì dùng callbot khác có cùng `runAsPersonnelId`, hoặc chạy `apply` cho phần callbot trước.
 5. Bot **không sửa được lead, contact, account**. Kết quả cuộc gọi đi vào `set_outcome` hoặc một bản ghi mới (task, ticket...) gắn với khách; cần cập nhật hồ sơ khách theo kết quả thì dựng Process riêng.
 
 ## B. Thiết kế callbot
@@ -90,7 +90,7 @@ Chọn theo ngôn ngữ và danh sách `managed` (chi tiết, giá trị hợp l
 
 ### 5. Tạo bằng spec
 
-Viết spec JSON gồm `callbot` (body của `create_callbot`), `tools[]` (body của `create_tool`) và `status` (`active`/`disabled`). Ví dụ đầy đủ: [assets/vi-an-phat/](assets/vi-an-phat/) (3 callbot tiếng Việt) và [assets/collections-spec.example.json](assets/collections-spec.example.json). Tool hồ sơ ghi v2 trong spec không cần `params` và không chứa `snapshot` (service tự đọc schema khi lưu); `apply` so config đã chuẩn hoá nên chạy lại không cập nhật thừa; sau khi đổi field/option của Object, chạy `apply --apply --resave-tools` để lưu lại schema cho tool hồ sơ ghi.
+Viết spec JSON gồm `callbot` (body của `create_callbot`), `tools[]` (body của `create_tool`) và `status` (`active`/`disabled`). Ví dụ đầy đủ: [assets/vi-an-phat/](assets/vi-an-phat/) (4 callbot tiếng Việt) và [assets/collections-spec.example.json](assets/collections-spec.example.json). Tool hồ sơ ghi v2 trong spec không cần `params` và không chứa `snapshot` (service tự đọc schema khi lưu); `apply` so config đã chuẩn hoá nên chạy lại không cập nhật thừa; sau khi đổi field/option của Object, chạy `apply --apply --resave-tools` để lưu lại schema cho tool hồ sơ ghi.
 
 ```bash
 python3 scripts/callbot_api.py apply spec.json          # in kế hoạch, không ghi

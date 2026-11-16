@@ -223,12 +223,12 @@ PROFILE_DEFAULTS = {"maxPerSession": 1, "maxPerNumberPerDay": 3}
 
 def norm_profile(config: Any, wanted_label: bool) -> Any:
     """Chuẩn hoá config hồ sơ ghi v2 như service lưu (WriteProfile.toJson): bỏ snapshot/requiresConfirmation, điền mặc
-    định, bỏ khoá service không giữ; giữ thứ tự field (thứ tự câu đọc lại)."""
+    định, bỏ khoá service không giữ. Không so thứ tự field: service không giữ thứ tự khi trả config."""
     c = {k: v for k, v in dict(config or {}).items() if k not in ("snapshot", "requiresConfirmation")}
     c = {**PROFILE_DEFAULTS, **c}
     if not wanted_label or not c.get("objectLabel"):
         c.pop("objectLabel", None)  # service lấy nhãn Object khi spec bỏ trống
-    fields = []
+    fields = {}
     for name, rule in (c.get("fields") or {}).items():
         r = dict(rule or {})
         src = r.get("source")
@@ -241,7 +241,7 @@ def norm_profile(config: Any, wanted_label: bool) -> Any:
         for flag in ("required", "sensitive", "appendCallNumber", "callSummary"):
             if r.get(flag) is False:
                 r.pop(flag)
-        fields.append((name, r))
+        fields[name] = r
     c["fields"] = fields
     return c
 
