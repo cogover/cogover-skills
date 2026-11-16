@@ -20,7 +20,7 @@
     {
       "kind": "cogover_object",
       "name": "tao_yeu_cau_doi_lich",
-      "description": "Gửi yêu cầu đổi hoặc huỷ lịch kỹ thuật",
+      "description": "Dùng khi khách muốn đổi hoặc huỷ lịch kỹ thuật.",
       "config": {
         "v": 2,
         "objectSlug": "ticket",

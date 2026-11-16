@@ -427,6 +427,7 @@ def safe_row(row: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
     return {k: (mask_phone(row.get(k)) if k in PHONE_KEYS else row.get(k)) for k in keys}
 
 
+TOOL_ID = re.compile(r"^tl[0-9A-Za-z]{16}$")
 VAR_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 SESSION_FILTERS = {"direction": "direction", "phone": "phone", "outcome": "outcome", "end_reason": "endReason",
                    "has_tool_calls": "hasToolCalls", "min_duration": "minDuration", "max_duration": "maxDuration"}
@@ -468,7 +469,7 @@ def main() -> None:
     p = sub.add_parser("rpc")
     p.add_argument("action")
     p.add_argument("--callbot")
-    p.add_argument("--tool")
+    p.add_argument("--tool", help="tool id or tool name (needs --callbot)")
     p.add_argument("--sim")
     p.add_argument("--session")
     p.add_argument("--object", help="objectSlug (get_object_fields)")
@@ -512,6 +513,13 @@ def main() -> None:
                                ("sessionId", args.session), ("objectSlug", args.object)):
                 if value:
                     req[key] = value
+            if args.tool and args.callbot and args.tool != "confirm_pending" and not TOOL_ID.match(args.tool):
+                # --tool nhận cả tên tool: đổi sang id (service chỉ nhận id)
+                ids = [t["id"] for t in client.rpc({"action": "list_tools", "callbotId": args.callbot})
+                       if t.get("name") == args.tool]
+                if not ids:
+                    raise SystemExit(f"no tool named {args.tool!r} in callbot {args.callbot}")
+                req["toolId"] = ids[0]
             if args.body:
                 req["body"] = read_json(args.body)
             if args.query:

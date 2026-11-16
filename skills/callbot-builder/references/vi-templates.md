@@ -1,6 +1,6 @@
-# Mẫu tiếng Việt: CSKH, telesale, nhắc lịch
+# Mẫu tiếng Việt: CSKH, telesale, nhắc lịch, khảo sát
 
-Bốn callbot mẫu cho một chuỗi điện máy giả định (**An Phát Home**: điều hoà, máy lọc nước, máy lọc không khí). Chúng phủ các nhóm callbot phổ biến: tổng đài CSKH gọi vào, telesale chăm sóc lead gọi ra, nhắc và xác nhận lịch hẹn gọi ra, khảo sát hài lòng sau dịch vụ gọi ra. Cả 3 dùng `openai_realtime` (`gpt-realtime`, giọng `marin`, `gpt-4o-mini-transcribe`), ghi âm bật, ghi dữ liệu bằng hồ sơ ghi v2.
+Bốn callbot mẫu cho một chuỗi điện máy giả định (**An Phát Home**: điều hoà, máy lọc nước, máy lọc không khí). Chúng phủ các nhóm callbot phổ biến: tổng đài CSKH gọi vào, telesale chăm sóc lead gọi ra, nhắc và xác nhận lịch hẹn gọi ra, khảo sát hài lòng sau dịch vụ gọi ra. Cả 4 dùng `openai_realtime` (`gpt-realtime`, giọng `marin`, `gpt-4o-mini-transcribe`), ghi âm bật, ghi dữ liệu bằng hồ sơ ghi v2.
 
 Spec chạy được bằng `apply` (dựng và mô phỏng trên Workspace thật ngày 2026-11-16; bản khảo sát được dựng bằng chính skill này qua `apply`; đã thay `runAsPersonnelId` và email nhân sự bằng giá trị mẫu):
 
@@ -17,6 +17,13 @@ Trước khi `apply` lên Workspace khác:
 2. Đọc field bằng `rpc get_object_fields --callbot ID --object ticket` (và `activity`, `lead`): slug option (`status`, `type`, `priority`, `origin`, `task_type`...) phải khớp Workspace; Object có field bắt buộc riêng thì thêm vào `fields`.
 3. Đổi tên hàng đợi `Support` trong `switch_to_consultant` thành hàng đợi có thật.
 4. Sửa phần "Thông tin được phép trả lời" (bảo hành, giá, ưu đãi) theo dữ liệu thật của khách hàng; bot chỉ được nói những gì có trong kịch bản.
+
+Đổi provider: kịch bản và tool giữ nguyên, chỉ đổi `provider`, `model`, `voice`, `providerOptions` và bỏ `transcriptionModel`. Đã dựng và mô phỏng mẫu CSKH (2026-11-17) với:
+
+- `gemini_live`: `model` `gemini-3.8-live`, `voice` `Aoede`, `providerOptions` `{"language": "vi-VN", "timezone": "Asia/Ho_Chi_Minh"}`.
+- `qwen_omni_rt`: `model` `qwen3.8-omni-flash-realtime` (dòng `qwen3-omni-flash` không nói tiếng Việt), `voice` `Tina`, `providerOptions` `{"timezone": "Asia/Ho_Chi_Minh"}` (Qwen không nhận `language`).
+
+Mô phỏng không chạy model của Gemini/Qwen ([Mô phỏng](testing.md)); giọng, phát âm tiếng Việt và cách model gọi tool phải kiểm bằng `test_call`.
 
 ## Thiết kế dùng lại được
 

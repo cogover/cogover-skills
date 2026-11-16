@@ -39,7 +39,7 @@
     {
       "kind": "cogover_object",
       "name": "dat_lich_tu_van",
-      "description": "Đặt lịch chuyên viên tư vấn gọi lại",
+      "description": "Dùng khi khách muốn chuyên viên tư vấn gọi lại vào giờ khách chọn.",
       "config": {
         "v": 2,
         "objectSlug": "activity",

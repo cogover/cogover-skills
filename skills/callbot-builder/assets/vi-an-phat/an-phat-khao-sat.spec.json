@@ -40,7 +40,7 @@
     {
       "kind": "cogover_object",
       "name": "tao_phan_anh",
-      "description": "Tạo phản ánh chất lượng dịch vụ sau sửa chữa để bộ phận chăm sóc khách hàng xử lý",
+      "description": "Dùng khi khách chấm 1–3 điểm, thiết bị chưa ổn hoặc phàn nàn về kỹ thuật viên.",
       "config": {
         "v": 2,
         "objectSlug": "ticket",

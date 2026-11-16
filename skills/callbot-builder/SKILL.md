@@ -73,7 +73,7 @@ Chọn theo ngôn ngữ và danh sách `managed` (chi tiết, giá trị hợp l
 - Mỗi cuộc gọi tối đa 3 lệnh ghi cho mọi tool; hồ sơ ghi có thêm `maxPerSession` (1–3) và `maxPerNumberPerDay` (1–20). Nền tảng có thể chặn lệnh ghi có giá trị chép từ kết quả tool mà khách chưa nói ra: gắn khách bằng nguồn `server`, không để bot chép tên/id.
 - Tool hệ thống: `set_outcome` (kết quả có kiểu + việc chiến dịch làm tiếp; field `datetime` nhận giờ địa phương không offset; giờ gọi lại của chiến dịch phải là field tên `callback_at`), `end_call` (`reason`: `normal`, `announcement`, `voicemail`, `wrong_person`), `switch_to_consultant` (chuyển hàng đợi đã khai báo).
 - `http` (POST ra API ngoài, có `basic`/`hmac`) và `cogover_agent` (hỏi một AI Agent Cogover) khi dữ liệu nằm ngoài Object.
-- Xem hàm tool đúng như model nhận bằng `rpc get_tool_function --callbot ID --tool TOOL_ID` (cũng là bản cần dán lên Sarvam Voice Agents khi dùng `sarvam_agent`). Đổi `kind` của tool thì xoá rồi tạo lại, giữ được tên cũ.
+- Xem hàm tool đúng như model nhận bằng `rpc get_tool_function --callbot ID --tool TOOL_ID` (script nhận cả tên tool; cũng là bản cần dán lên Sarvam Voice Agents khi dùng `sarvam_agent`). Đổi `kind` của tool thì xoá rồi tạo lại, giữ được tên cũ.
 
 ### 4. Guardrail
 

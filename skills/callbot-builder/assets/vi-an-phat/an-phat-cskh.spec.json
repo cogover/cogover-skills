@@ -60,7 +60,7 @@
     {
       "kind": "cogover_object",
       "name": "tao_yeu_cau_ho_tro",
-      "description": "Tạo yêu cầu hỗ trợ",
+      "description": "Dùng khi khách báo sự cố, cần bảo hành, sửa chữa hoặc lắp đặt.",
       "config": {
         "v": 2,
         "objectSlug": "ticket",

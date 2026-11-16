@@ -10,10 +10,10 @@ Body của `create_tool`/`update_tool`:
 |---|---|
 | `kind` | `system`, `cogover_object`, `cogover_task`, `http`, `cogover_agent`; không đổi được sau khi tạo (xoá rồi tạo lại, kể cả cùng tên) |
 | `name` | `^[a-z][a-z0-9_]{0,63}$`, duy nhất trong callbot; `end_call`, `set_outcome`, `switch_to_consultant` dành cho `system`; `cogover_task` bỏ trống thì là `create_task` |
-| `description` | 1–1.000 ký tự: khi nào dùng và kết quả trả về; model chọn tool theo mô tả này |
+| `description` | 1–1.000 ký tự: khi nào dùng và kết quả trả về; model chọn tool theo mô tả này. Hồ sơ ghi v2 và `cogover_task`: service nối thêm sau mô tả (chỉ cách một dấu cách) câu "Tạo <objectLabel>. Chỉ gửi thông tin khách đã nói..." nên mô tả chỉ nói khi nào dùng, kết thúc bằng dấu chấm, không lặp "Tạo <objectLabel>" |
 | `params` | Tối đa 15 `{key, type: "string" \| "number", description ≤ 300}`; `key` theo `^[a-z][a-z0-9_]{0,63}$` (không dùng chữ hoa). Hồ sơ ghi v2 và `cogover_task` bỏ qua `params` gửi lên: tham số sinh từ `config` |
 
-Tối đa 20 tool mỗi callbot. Service trả `params` theo thứ tự khác lúc gửi; so sánh theo `key`. Xem hàm tool đúng như model nhận (tên, mô tả, JSON schema tham số) bằng `rpc get_tool_function --callbot ID --tool TOOL_ID`.
+Tối đa 20 tool mỗi callbot. Service trả `params` theo thứ tự khác lúc gửi; so sánh theo `key`. Xem hàm tool đúng như model nhận (tên, mô tả, JSON schema tham số) bằng `rpc get_tool_function --callbot ID --tool TOOL_ID` (script nhận cả tên tool).
 
 Chọn loại tool ghi:
 
@@ -70,7 +70,7 @@ Một tool = **tạo một bản ghi** của một Object cố định. Với m�
 {
   "kind": "cogover_object",
   "name": "tao_yeu_cau_ho_tro",
-  "description": "Tạo yêu cầu hỗ trợ",
+  "description": "Dùng khi khách báo sự cố, cần bảo hành, sửa chữa hoặc lắp đặt.",
   "config": {
     "v": 2,
     "objectSlug": "ticket",
