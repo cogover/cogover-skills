@@ -2,11 +2,13 @@
 """Cogover Callbot admin client: RPC `/api/v1/call-center` (service 17) and `/bapi/v1` helpers.
 
 Commands:
-  rpc ACTION        One RPC call, e.g. `rpc list_callbots`, `rpc get_callbot --callbot 12`.
+  rpc ACTION        One RPC call, e.g. `rpc list_callbots`, `rpc get_callbot --callbot 12`,
+                    `rpc get_object_fields --callbot 12 --object activity`.
   bapi PATH         One `/bapi/v1/...` call with the API Key (POST, or --method PUT).
   apply SPEC.json   Create/update a callbot and its tools from a spec. Dry-run unless --apply.
-  simulate          Text simulation: start, send each --say, print replies and tool calls, end.
-  sessions          Recent call sessions of a callbot (newest first).
+  simulate          Text simulation: start (--var for campaign variables), send each --say, print replies and
+                    tool calls (with the tool's error message), end.
+  sessions          Recent call sessions of a callbot (newest first), with optional filters.
   session ID        One session: transcript, tool calls, outcome, variables.
 
 Credentials: COGOVER_BASE_URL (https) + COGOVER_API_KEY, or COGOVER_API_KEY_FILE pointing to a file that
@@ -210,6 +212,52 @@ def callbot_diff(current: dict[str, Any], wanted: dict[str, Any]) -> dict[str, A
 OBJECT_DEFAULTS = {"paramFields": {}, "paramOps": {}, "returnFields": [], "writableFields": [], "size": 3}
 
 
+def generated(kind: str, config: Any) -> bool:
+    """Tool có tham số do service sinh từ config: hồ sơ ghi v2 (`cogover_object` + `v: 2`) và `cogover_task`."""
+    return kind == "cogover_task" or (kind == "cogover_object" and isinstance(config, dict)
+                                      and (config.get("v") == 2 or "fields" in config))
+
+
+PROFILE_DEFAULTS = {"maxPerSession": 1, "maxPerNumberPerDay": 3}
+
+
+def norm_profile(config: Any, wanted_label: bool) -> Any:
+    """Chuẩn hoá config hồ sơ ghi v2 như service lưu (WriteProfile.toJson): bỏ snapshot/requiresConfirmation, điền mặc
+    định, bỏ khoá service không giữ; giữ thứ tự field (thứ tự câu đọc lại)."""
+    c = {k: v for k, v in dict(config or {}).items() if k not in ("snapshot", "requiresConfirmation")}
+    c = {**PROFILE_DEFAULTS, **c}
+    if not wanted_label or not c.get("objectLabel"):
+        c.pop("objectLabel", None)  # service lấy nhãn Object khi spec bỏ trống
+    fields = []
+    for name, rule in (c.get("fields") or {}).items():
+        r = dict(rule or {})
+        src = r.get("source")
+        if src == "fixed":
+            r.setdefault("readback", False)
+        elif src == "choice":
+            r.pop("required", None)
+            r["choices"] = [{k: v for k, v in ch.items() if not (k == "description" and not v)}
+                            for ch in r.get("choices") or []]
+        for flag in ("required", "sensitive", "appendCallNumber", "callSummary"):
+            if r.get(flag) is False:
+                r.pop(flag)
+        fields.append((name, r))
+    c["fields"] = fields
+    return c
+
+
+def covers(current: Any, wanted: Any) -> bool:
+    """`wanted` là tập con của `current`: service chuẩn hoá config (thêm snapshot, giá trị mặc định, readback...).
+    Khoá spec bỏ trống/false/null coi như bằng khoá service không trả."""
+    if isinstance(wanted, dict):
+        if not isinstance(current, dict):
+            return False
+        return all(covers(current[k], v) if k in current else (v is None or v is False) for k, v in wanted.items())
+    if isinstance(wanted, list):
+        return isinstance(current, list) and len(current) == len(wanted) and all(map(covers, current, wanted))
+    return current == wanted
+
+
 def norm_config(kind: str, config: Any) -> Any:
     """Điền giá trị mặc định service tự thêm để so sánh đúng cả khi spec bỏ một khoá."""
     config = dict(config or {})
@@ -224,6 +272,18 @@ def norm_config(kind: str, config: Any) -> Any:
 
 def tool_changed(current: dict[str, Any], wanted: dict[str, Any]) -> bool:
     kind = wanted["kind"]
+    if generated(kind, wanted.get("config")):
+        # tham số sinh từ config; so config theo tập con (service thêm snapshot schema và giá trị mặc định)
+        cur_cfg, want_cfg = current.get("config") or {}, wanted.get("config") or {}
+        if kind == "cogover_object":
+            label = bool(want_cfg.get("objectLabel"))
+            if norm_profile(cur_cfg, label) != norm_profile(want_cfg, label):
+                return True
+        else:
+            want_cfg = {k: v for k, v in want_cfg.items() if k != "requiresConfirmation"}
+            if not covers(cur_cfg, want_cfg):
+                return True
+        return any(key in wanted and current.get(key) != wanted[key] for key in ("description",))
     if norm_config(kind, current.get("config")) != norm_config(kind, wanted.get("config")):
         return True
     # service không giữ thứ tự params; tool cogover_agent tự có tham số `question` khi spec để trống
@@ -241,7 +301,7 @@ def step(line: str) -> None:
     print(" ", line, flush=True)
 
 
-def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool) -> None:
+def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool, resave: bool = False) -> None:
     wanted = pick(spec["callbot"], CALLBOT_FIELDS)
     if "name" not in wanted:
         raise SystemExit("spec.callbot.name is required")
@@ -288,7 +348,8 @@ def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool
             if do_apply:
                 res = client.rpc({"action": "create_tool", "callbotId": callbot_id, "body": tool})
                 step(f"  -> {res.get('id')}")
-        elif tool_changed(cur, tool):
+        elif tool_changed(cur, tool) or (resave and generated(tool["kind"], tool.get("config"))):
+            # --resave-tools: lưu lại hồ sơ ghi/cogover_task để service đọc lại schema Object
             step(f"update tool {tool['name']} ({cur['id']})")
             if do_apply:
                 client.rpc({"action": "update_tool", "callbotId": callbot_id, "toolId": cur["id"], "body": tool})
@@ -321,8 +382,10 @@ def apply_spec(client: Client, spec: dict[str, Any], do_apply: bool, prune: bool
 
 # ---------------------------------------------------------------- simulate / sessions
 
-def simulate(client: Client, callbot_id: str, says: list[str]) -> None:
-    start = client.rpc({"action": "start_simulation", "callbotId": callbot_id, "body": {}})
+def simulate(client: Client, callbot_id: str, says: list[str], variables: dict[str, str] | None = None) -> None:
+    # gửi tuần tự từng câu: một phiên không nhận hai tin nhắn cùng lúc
+    body = {"variables": variables} if variables else {}
+    start = client.rpc({"action": "start_simulation", "callbotId": callbot_id, "body": body})
     sim_id = start["simId"]
     print(f"[sim {sim_id}] bot: {start.get('reply', '')}")
     try:
@@ -333,6 +396,9 @@ def simulate(client: Client, callbot_id: str, says: list[str]) -> None:
                 result = json.dumps(call.get("result"), ensure_ascii=False)
                 print(f"  tool {call['name']} {call.get('arguments')} -> {call.get('status')}"
                       f"{' (dry-run)' if call.get('dryRun') else ''} {result[:300]}")
+                if call.get("message"):
+                    # lý do tool không chạy / câu đọc lại chờ xác nhận, như model nhận
+                    print(f"    message: {call['message'][:600]}")
             for reply in res.get("replies") or [res.get("reply", "")]:
                 print(f"bot: {reply}")
             if res.get("ended"):
@@ -361,8 +427,17 @@ def safe_row(row: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
     return {k: (mask_phone(row.get(k)) if k in PHONE_KEYS else row.get(k)) for k in keys}
 
 
-def sessions(client: Client, callbot_id: str, minutes: int) -> None:
+VAR_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+SESSION_FILTERS = {"direction": "direction", "phone": "phone", "outcome": "outcome", "end_reason": "endReason",
+                   "has_tool_calls": "hasToolCalls", "min_duration": "minDuration", "max_duration": "maxDuration"}
+
+
+def sessions(client: Client, callbot_id: str, minutes: int, filters: dict[str, Any] | None = None) -> None:
     query = {"limit": "20", "callbotId": callbot_id, "from": str(int((time.time() - minutes * 60) * 1000))}
+    for arg, key in SESSION_FILTERS.items():
+        value = (filters or {}).get(arg)
+        if value is not None:
+            query[key] = str(value).lower() if isinstance(value, bool) else str(value)
     data = client.rpc({"action": "list_sessions", "query": query})
     for row in data.get("items", []):
         print(json.dumps(safe_row(row, ("sessionId", "callId", "direction", "from", "to", "startedAt",
@@ -396,6 +471,7 @@ def main() -> None:
     p.add_argument("--tool")
     p.add_argument("--sim")
     p.add_argument("--session")
+    p.add_argument("--object", help="objectSlug (get_object_fields)")
     p.add_argument("--body", help="JSON or @file")
     p.add_argument("--query", help="JSON object of strings")
     p = sub.add_parser("bapi")
@@ -406,12 +482,23 @@ def main() -> None:
     p.add_argument("spec")
     p.add_argument("--apply", action="store_true")
     p.add_argument("--prune", action="store_true", help="delete tools that are not in the spec")
+    p.add_argument("--resave-tools", dest="resave_tools", action="store_true",
+                   help="update write-profile/cogover_task tools even if unchanged (refresh the object schema)")
     p = sub.add_parser("simulate")
     p.add_argument("--callbot", required=True)
     p.add_argument("--say", action="append", default=[])
+    p.add_argument("--var", action="append", default=[], metavar="KEY=VALUE",
+                   help="campaign variable passed to start_simulation (repeatable)")
     p = sub.add_parser("sessions")
     p.add_argument("--callbot", required=True)
     p.add_argument("--minutes", type=int, default=60)
+    p.add_argument("--direction", choices=["inbound", "outbound"])
+    p.add_argument("--phone", help="part of the customer number, ^[0-9+*#]{3,20}$")
+    p.add_argument("--outcome")
+    p.add_argument("--end-reason", dest="end_reason")
+    p.add_argument("--has-tool-calls", dest="has_tool_calls", choices=["true", "false"])
+    p.add_argument("--min-duration", dest="min_duration", type=int, help="seconds")
+    p.add_argument("--max-duration", dest="max_duration", type=int, help="seconds")
     p = sub.add_parser("session")
     p.add_argument("session_id")
     args = parser.parse_args()
@@ -422,7 +509,7 @@ def main() -> None:
                 raise SystemExit("Pass secrets with --body @file (0600), never inline on the command line.")
             req: dict[str, Any] = {"action": args.action}
             for key, value in (("callbotId", args.callbot), ("toolId", args.tool), ("simId", args.sim),
-                               ("sessionId", args.session)):
+                               ("sessionId", args.session), ("objectSlug", args.object)):
                 if value:
                     req[key] = value
             if args.body:
@@ -433,11 +520,21 @@ def main() -> None:
         elif args.cmd == "bapi":
             dump(client.bapi(args.path, read_json(args.body), args.method))
         elif args.cmd == "apply":
-            apply_spec(client, read_json("@" + args.spec), args.apply, args.prune)
+            apply_spec(client, read_json("@" + args.spec), args.apply, args.prune, args.resave_tools)
         elif args.cmd == "simulate":
-            simulate(client, args.callbot, args.say)
+            variables = {}
+            for item in args.var:
+                key, sep, value = item.partition("=")
+                key = key.strip()
+                # service bỏ âm thầm biến sai tên hoặc quá 20 biến
+                if not sep or not VAR_KEY.match(key):
+                    raise SystemExit(f"--var expects KEY=VALUE with KEY matching {VAR_KEY.pattern}, got {item!r}")
+                variables[key] = value
+            if len(variables) > 20:
+                raise SystemExit("at most 20 --var")
+            simulate(client, args.callbot, args.say, variables)
         elif args.cmd == "sessions":
-            sessions(client, args.callbot, args.minutes)
+            sessions(client, args.callbot, args.minutes, {k: getattr(args, k) for k in SESSION_FILTERS})
         elif args.cmd == "session":
             session(client, args.session_id)
     except ApiError as error:

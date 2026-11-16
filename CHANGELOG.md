@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.35.0 - 2026-11-16
+
+Cập nhật `callbot-builder` theo các tính năng mới của Callbot (stringeex-callbot master): hồ sơ ghi v2, chặn sửa hồ sơ khách, múi giờ theo callbot, action RPC mới, và thêm 3 mẫu tiếng Việt đã kiểm chứng. Cùng phiên bản skill với PR #12 (1.1.0, signing key): PR này lên 1.2.0.
+
+- `callbot-builder` 1.2.0:
+  - `references/tools.md`: hồ sơ ghi v2 (`config.v: 2`): nguồn `bot`/`fixed`/`server`/`choice`, khoá server (`caller.*`, `call.number`, `now`, `run_as`, `session.id`), `range`, `appendCallNumber`, `callSummary`, `sensitive`, giới hạn `maxPerSession`/`maxPerNumberPerDay`, giá trị cố định theo kiểu (`time_duration` tính ms, lookup nhân sự theo email), field bắt buộc của Object, luồng `invalid_args` → `need_confirmation` → `confirm_pending`, mẫu Task gọi lại; `update` chỉ sửa bản ghi bot tạo trong cuộc gọi và không áp dụng cho lead/contact/account; tool `cogover_task`; `set_outcome` field `datetime` nhận giờ địa phương; lý do `end_call`; kinh nghiệm viết kịch bản cho tool ghi; cấu hình tool trên Sarvam Voice Agents.
+  - `references/rpc-api.md`: action `get_object_fields`, `get_tool_function`, `get_test_call_defaults`; `test_call` nhận `toNumber`/`fromNumber`; bộ lọc `list_sessions` (`direction`, `phone`, `outcome`, thời lượng, `hasToolCalls`); `providerOptions.timezone` và biến hệ thống theo múi giờ, thứ tiếng Việt/tiếng Anh theo ngôn ngữ bot; `message` của tool call trong mô phỏng; mã lỗi mới.
+  - `references/testing.md`: đọc `message` của tool call, biến chiến dịch khi mô phỏng, gửi tuần tự trong một phiên, ca kết thúc cuộc gọi và hẹn giờ, gọi thử tới số khác, lọc phiên.
+  - `references/vi-templates.md`, `assets/vi-an-phat/*.spec.json` (mới): 3 callbot tiếng Việt (CSKH gọi vào, telesale chăm sóc lead, nhắc và xác nhận lịch kỹ thuật) xuất từ callbot đã dựng và mô phỏng trên Workspace thật, kèm bảng lỗi kịch bản thường gặp và câu sửa.
+  - `references/collections-template.md`, `assets/collections-spec.example.json`: bỏ `update` Lead (đã bị chặn); hẹn trả nợ và hẹn gọi lại là task tạo bằng hồ sơ ghi v2 gắn Lead, lead mới bằng hồ sơ ghi, kết quả và ngôn ngữ vào `set_outcome`; `timezone: Asia/Kolkata` thay cho quy đổi UTC+7 trong kịch bản; kết thúc cuộc gọi đúng lượt. Đã mô phỏng lại hai nhánh PTP và gọi lại.
+  - `scripts/callbot_api.py`: `rpc --object` (cho `get_object_fields`), `simulate --var KEY=VALUE` (kiểm tra tên biến, tối đa 20) và in `message` của tool call, `sessions` thêm bộ lọc (`--direction`, `--phone`, `--outcome`, `--end-reason`, `--has-tool-calls`, thời lượng); `apply` so config hồ sơ ghi v2 sau khi chuẩn hoá như service lưu (bỏ `snapshot`, điền mặc định, xét thứ tự field) và không so `params` sinh tự động; `apply --resave-tools` lưu lại tool hồ sơ ghi để cập nhật schema Object.
+  - Mã lỗi: `400 validation` cho body callbot/tool sai (trước ghi nhầm là `invalid_params`), `invalid_phone_number`/`invalid_hotline` của gọi thử; `get_object_fields` cần Super Admin; `end_call` chỉ bị chặn sau kết quả tool có dữ liệu.
+
 ## 4.33.0 - 2026-11-09
 
 Dựng Callbot (voice AI agent) của Cogover Call Center từ nhu cầu khách hàng bằng API, kèm mẫu thu hồi nợ đa ngôn ngữ (Hindi/Bengali).

@@ -1,0 +1,234 @@
+{
+  "callbot": {
+    "name": "[Demo] An Phát – Telesale chăm sóc lead",
+    "provider": "openai_realtime",
+    "engine": "service",
+    "model": "gpt-realtime",
+    "voice": "marin",
+    "transcriptionModel": "gpt-4o-mini-transcribe",
+    "providerOptions": {},
+    "companyName": "An Phát Home",
+    "recordEnabled": true,
+    "runAsPersonnelId": "PER0000EXAMPLE",
+    "maxDurationSec": 420,
+    "silenceTimeoutSec": 15,
+    "maxToolCalls": 15,
+    "welcomeMessage": "Dạ em chào anh chị, em là Mai, trợ lý ảo của An Phát Home. Em gọi về đăng ký nhận tư vấn của anh chị trên website ạ. Cuộc gọi được ghi âm để nâng cao chất lượng dịch vụ. Anh chị cho em xin hai phút được không ạ?",
+    "instructions": "Bạn là Mai, trợ lý ảo telesale của An Phát Home (chuỗi điện máy). Đây là cuộc gọi RA tới khách vừa đăng ký nhận tư vấn trên website. Nói tiếng Việt, lịch sự, ngắn gọn: mỗi lượt 1–2 câu, chỉ hỏi một ý. Không ép mua.\n\n# Dữ liệu chiến dịch\n- Tên khách: {{ten_khach}}. Sản phẩm khách quan tâm: {{san_pham}}. Nếu thiếu thì hỏi khách quan tâm sản phẩm nào.\n\n# Luồng cuộc gọi\n1. Ngay khi khách trả lời lời chào, gọi tra_cuu_lead để biết cách xưng hô (mr = anh, ms/mrs = chị, kèm tên). Không có kết quả thì dùng tên trong dữ liệu chiến dịch hoặc \"anh/chị\". Không đọc thông tin hồ sơ cho khách.\n2. Nếu khách bận: hỏi thời điểm tiện gọi lại (nếu khách chưa nói), rồi set_outcome goi_lai_sau kèm callback_at dạng yyyy-MM-ddTHH:mm (giờ Việt Nam, ví dụ 2026-11-16T15:00), KHÔNG kèm các trường chấm điểm. Nói một câu hẹn gọi lại và chào. Khi khách chào lại hoặc đồng ý, gọi end_call ngay trong lượt đó.\n3. Nếu khách nói không phải người đăng ký / nhầm số: xin lỗi, set_outcome sai_nguoi, chào và kết thúc. Không nhắc nội dung đăng ký.\n4. Chấm điểm nhu cầu, hỏi lần lượt (mỗi lượt một câu): (a) dùng cho không gian nào, diện tích khoảng bao nhiêu mét vuông; (b) ngân sách dự kiến; (c) khi nào dự định mua. Có thể gợi ý dòng sản phẩm phù hợp theo diện tích từ bảng giá bên dưới.\n5. Nếu khách quan tâm: mời hẹn lịch để chuyên viên tư vấn gọi lại báo giá chi tiết theo model. Hỏi khách muốn được gọi vào ngày giờ nào (8:00–20:00, từ thời điểm hiện tại trở đi). TUYỆT ĐỐI không tự chọn hay gợi ý sẵn một giờ cụ thể; chỉ gọi dat_lich_tu_van SAU KHI khách đã tự nói ngày giờ trong cuộc gọi. Đổi \"thứ Năm\", \"chiều mai\"... thành ngày giờ cụ thể theo lịch (tính từ hôm nay trong ngữ cảnh hệ thống). Rồi gọi dat_lich_tu_van:\n   - tieu_de: \"Tư vấn \" + sản phẩm khách quan tâm (dưới 80 ký tự, không chèn tên khách).\n   - due_at: thời gian hẹn dạng yyyy-MM-ddTHH:mm (giờ Việt Nam).\n   - nhu_cau: tóm tắt dưới 300 ký tự theo lời khách: sản phẩm, diện tích, ngân sách, thời điểm mua.\n   - uu_tien: high nếu khách định mua trong 2 tuần; medium nếu 1–3 tháng; low nếu còn tham khảo.\n   - phu_trach: tu_van.\n   Hệ thống trả câu đọc lại: đọc đúng nội dung đó một cách tự nhiên (High/Medium/Low = cao/trung bình/thấp), hỏi xác nhận một lần; khách đồng ý thì xác nhận; khách đổi giờ thì gọi lại tool với giờ mới. Chỉ báo đã đặt lịch khi công cụ xác nhận thành công.\n6. Kết quả chiến dịch: gọi set_outcome một lần với dat_lich / goi_lai_sau / chua_quan_tam / sai_nguoi / tu_choi_lien_lac (chỉ khi khách nói rõ không muốn được gọi nữa; xác nhận lại một câu), kèm muc_do_quan_tam, nhu_cau, dien_tich, ngan_sach, thoi_diem_mua theo lời khách (trường nào khách chưa trả lời thì KHÔNG gửi, không tự đoán).\n\n# Thông tin sản phẩm được phép nói (không bịa thêm)\n- Máy lọc không khí: dòng cho phòng đến 30 m² từ 3,5 triệu; đến 60 m² từ 6,9 triệu. Điều hoà inverter 9000 BTU (phòng dưới 15 m²) từ 7,9 triệu; 12000 BTU (15–20 m²) từ 9,9 triệu.\n- Ưu đãi tháng này: tặng gói vệ sinh máy 12 tháng; lắp đặt miễn phí nội thành Hà Nội và TP.HCM.\n- Giá theo model cụ thể, trả góp và khuyến mãi khác: để chuyên viên tư vấn báo. Không hứa giảm giá thêm.\n- Khách muốn nói chuyện với người thật ngay: set_outcome phù hợp rồi switch_to_consultant hàng đợi Support.\n\n# Kết thúc\n- Sau khi ghi kết quả, cảm ơn khách và hỏi khách còn câu hỏi gì không. Chỉ gọi end_call ở lượt nói sau của khách, khi khách đã chào hoặc không cần gì thêm.\n- Nếu nghe thấy hộp thư thoại/lời nhắn tự động thật sự: gọi end_call với reason voicemail, không để lại lời nhắn.\n- Nếu khách hỏi có phải người thật không: nói em là trợ lý ảo của An Phát Home.\n\n# Quy tắc công cụ kết thúc (bắt buộc)\n- set_outcome chỉ gọi MỘT lần trong cả cuộc gọi. Nếu đã gọi rồi thì tuyệt đối không gọi lại (kể cả khi khách chào hay hỏi thêm), trừ khi khách đổi ý làm kết quả khác hẳn.\n- Khi khách đã chào tạm biệt hoặc nói không cần gì thêm: nói một câu chào ngắn VÀ gọi end_call ngay trong lượt đó (reason: normal). Không hỏi thêm câu nào."
+  },
+  "tools": [
+    {
+      "kind": "cogover_object",
+      "name": "tra_cuu_lead",
+      "description": "Tra cứu hồ sơ đăng ký tư vấn của chính số đang gọi để xưng hô",
+      "params": [],
+      "config": {
+        "size": 1,
+        "paramOps": {},
+        "callerScopeField": "mobile_phones",
+        "action": "search",
+        "paramFields": {},
+        "returnFields": [
+          "salutation",
+          "first_name"
+        ],
+        "objectSlug": "lead",
+        "writableFields": []
+      }
+    },
+    {
+      "kind": "cogover_object",
+      "name": "dat_lich_tu_van",
+      "description": "Đặt lịch chuyên viên tư vấn gọi lại",
+      "config": {
+        "v": 2,
+        "objectSlug": "activity",
+        "action": "create",
+        "objectLabel": "lịch tư vấn",
+        "maxPerSession": 1,
+        "maxPerNumberPerDay": 3,
+        "fields": {
+          "activity_time": {
+            "param": "due_at",
+            "range": "future",
+            "source": "bot",
+            "label": "Thời gian hẹn",
+            "required": true
+          },
+          "task_assigned_to": {
+            "default": "tu_van",
+            "param": "phu_trach",
+            "source": "choice",
+            "label": "Người phụ trách",
+            "choices": [
+              {
+                "description": "Mọi lịch tư vấn sản phẩm",
+                "label": "Chuyên viên tư vấn",
+                "value": {
+                  "personnelEmail": "tu-van@example.com"
+                },
+                "key": "tu_van"
+              }
+            ]
+          },
+          "task_priority": {
+            "param": "uu_tien",
+            "options": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "source": "bot",
+            "label": "Mức ưu tiên",
+            "required": true
+          },
+          "activity_type": {
+            "source": "fixed",
+            "value": "task",
+            "readback": false
+          },
+          "name": {
+            "param": "tieu_de",
+            "source": "bot",
+            "label": "Nội dung tư vấn",
+            "appendCallNumber": true,
+            "required": true,
+            "maxLength": 120
+          },
+          "reminder_before_due": {
+            "source": "fixed",
+            "value": 900000,
+            "readback": false
+          },
+          "time": {
+            "param": "due_at",
+            "range": "future",
+            "source": "bot",
+            "label": "Thời gian hẹn",
+            "required": true
+          },
+          "task_type": {
+            "source": "fixed",
+            "value": "call",
+            "readback": false
+          },
+          "content": {
+            "param": "nhu_cau",
+            "callSummary": true,
+            "source": "bot",
+            "label": "Nhu cầu của khách",
+            "required": true,
+            "maxLength": 500
+          },
+          "lead": {
+            "source": "server",
+            "value": "caller.lead"
+          },
+          "contacts": {
+            "source": "server",
+            "value": "caller.contact"
+          },
+          "status": {
+            "source": "fixed",
+            "value": "todo",
+            "readback": false
+          }
+        }
+      }
+    },
+    {
+      "kind": "system",
+      "name": "set_outcome",
+      "description": "Ghi kết quả chiến dịch và thông tin chấm điểm khách một lần trước khi kết thúc",
+      "params": [],
+      "config": {
+        "outcomes": [
+          {
+            "description": "Khách quan tâm, đã đặt lịch tư vấn",
+            "campaignAction": "done",
+            "value": "dat_lich"
+          },
+          {
+            "description": "Khách bận, hẹn gọi lại",
+            "campaignAction": "callback",
+            "value": "goi_lai_sau"
+          },
+          {
+            "description": "Khách chưa có nhu cầu",
+            "campaignAction": "done",
+            "value": "chua_quan_tam"
+          },
+          {
+            "description": "Không phải người đăng ký hoặc nhầm số",
+            "campaignAction": "done",
+            "value": "sai_nguoi"
+          },
+          {
+            "description": "Khách nói rõ không muốn được gọi nữa",
+            "campaignAction": "do_not_call",
+            "value": "tu_choi_lien_lac"
+          }
+        ],
+        "fields": [
+          {
+            "description": "hot: mua trong 2 tuần; warm: trong 1-3 tháng; cold: chưa có kế hoạch",
+            "type": "string",
+            "key": "muc_do_quan_tam",
+            "enum": [
+              "hot",
+              "warm",
+              "cold"
+            ]
+          },
+          {
+            "description": "Sản phẩm và không gian sử dụng khách nói",
+            "type": "string",
+            "key": "nhu_cau",
+            "maxLength": 200
+          },
+          {
+            "description": "Diện tích phòng khách nói",
+            "type": "string",
+            "key": "dien_tich",
+            "maxLength": 50
+          },
+          {
+            "description": "Ngân sách khách nói",
+            "type": "string",
+            "key": "ngan_sach",
+            "maxLength": 100
+          },
+          {
+            "description": "Thời điểm dự định mua",
+            "type": "string",
+            "key": "thoi_diem_mua",
+            "maxLength": 100
+          },
+          {
+            "description": "Thời điểm hẹn gọi lại (chỉ khi goi_lai_sau)",
+            "type": "datetime",
+            "key": "callback_at"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "switch_to_consultant",
+      "description": "Chuyển cuộc gọi tới chuyên viên tư vấn",
+      "params": [],
+      "config": {
+        "queues": [
+          "Support"
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "end_call",
+      "description": "Kết thúc cuộc gọi sau khi đã chào khách",
+      "params": []
+    }
+  ],
+  "status": "active"
+}

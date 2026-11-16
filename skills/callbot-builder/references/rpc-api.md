@@ -19,7 +19,7 @@ Phiên lấy từ `POST /bapi/v1/auth-token` với `Authorization: Bearer {token
 Body:
 
 ```json
-{"action": "get_callbot", "callbotId": "{CALLBOT_ID}", "toolId": "...", "simId": "...", "sessionId": "...", "body": {}, "query": {}}
+{"action": "get_callbot", "callbotId": "{CALLBOT_ID}", "toolId": "...", "simId": "...", "sessionId": "...", "objectSlug": "...", "body": {}, "query": {}}
 ```
 
 Chỉ gửi các khoá action cần. `callbotId` là chuỗi số (`^[1-9][0-9]{0,9}$`); `query` là object giá trị chuỗi.
@@ -33,9 +33,13 @@ Thành công: `{"r": 0, "msg": "OK", "data": ...}`. Lỗi: `r` là mã kiểu HT
 | `403 forbidden` | Người thao tác không phải admin của tài khoản Call Center gắn với Workspace (áp dụng cho mọi action, kể cả đọc) |
 | `403 config_forbidden` | Action ghi khi người thao tác không phải Super Admin |
 | `403 run_as_forbidden` | `runAsPersonnelId` không phải nhân sự đang hoạt động của Workspace |
+| `403 permission_denied`, `404 object_not_found` | `get_object_fields` hoặc lưu hồ sơ ghi v2: nhân sự run-as không đọc được Object, hoặc sai `objectSlug` |
+| `503` khi lưu hồ sơ ghi v2 | Không đọc được schema Object lúc lưu; cấu hình chưa được lưu, thử lại sau |
 | `403 byo_disabled` | Gửi key/SIP URI/project riêng khi Workspace không cho phép |
 | `404 no_portal`, `404 no_project`, `409 multiple_portals` | Workspace chưa gắn (hoặc gắn nhiều hơn một) tài khoản Call Center |
-| `400 invalid_params` | Tham số sai định dạng, kèm mô tả trường (ví dụ `voice is not supported by sarvam`, `callerScopeField is required for search`) |
+| `400 validation` | Body callbot/tool sai, kèm mô tả trong `data.message` (ví dụ `voice is not supported by sarvam`, `callerScopeField is required for search`, `action update is not allowed on lead`, `config.fields is missing required fields of the object: [...]`) |
+| `400 invalid_params` | Khoá định danh hoặc `query` sai định dạng (`callbotId`, `toolId`, `objectSlug`, `sessionId`...) |
+| `400 invalid_phone_number`, `400 invalid_hotline` | `test_call` với `toNumber`/`fromNumber` không hợp lệ (số được chuẩn hoá về chữ số, `0...` thành `84...`) |
 | `400 invalid_action` | Action không tồn tại |
 | `400 no_phone_number` | `test_call` khi hồ sơ nhân sự của người thao tác chưa có số điện thoại |
 | `401 unauthorized` | Phiên hết hạn: request bị từ chối, chưa thực thi; đổi phiên rồi gửi lại một lần |
@@ -45,14 +49,14 @@ Thành công: `{"r": 0, "msg": "OK", "data": ...}`. Lỗi: `r` là mã kiểu HT
 | `429 rate_limited` | Vượt giới hạn tần suất của API, của mô phỏng (10 phiên/giờ) hoặc của gọi thử; chờ rồi thử lại thao tác đọc |
 | `409 simulation_ended`, `409 turn_limit`, `410 simulation_expired` | Phiên mô phỏng đã kết thúc, quá 30 lượt, hoặc đã hết hạn sau một thời gian không dùng: tạo phiên mới |
 | `400 simulation_not_supported`, `400 no_api_key` | Provider không mô phỏng được (`sarvam_agent`), hoặc môi trường chưa cấu hình model dùng cho mô phỏng |
-| `400 callbot_disabled`, `400 no_hotline` | Gọi thử khi callbot đang tắt, hoặc project không có hotline gọi ra |
+| `400 callbot_disabled`, `400 no_hotline`, `400 callbot_not_served` | Gọi thử khi callbot đang tắt, project không có hotline gọi ra, hoặc callbot không được môi trường này phục vụ |
 | `503 callbot_admin_disabled` | Môi trường chưa bật API quản trị Callbot |
 
 Thao tác ghi và gọi ra ngoài (`create_*`, `update_*`, `delete_*`, `put_*_secret(s)`, `sync_callbot`, `set_callbot_status`, `test_call`, `start_simulation`, `send_simulation_message`) không tự gửi lại khi timeout: đọc lại trạng thái trước khi thử lại để tránh tạo trùng hoặc gọi trùng.
 
 ## Action
 
-Mọi action cần người thao tác là admin của tài khoản Call Center gắn với Workspace. Đọc: `list_callbots`, `get_callbot`, `get_callbot_settings`, `list_tools`, `list_voices`, `list_sessions`, `get_session`. Mọi action còn lại cần thêm quyền Super Admin của Workspace, kể cả mô phỏng và gọi thử.
+Mọi action cần người thao tác là admin của tài khoản Call Center gắn với Workspace. Đọc: `list_callbots`, `get_callbot`, `get_callbot_settings`, `list_tools`, `get_tool_function`, `list_voices`, `list_sessions`, `get_session`. Mọi action còn lại cần thêm quyền Super Admin của Workspace, kể cả `get_object_fields`, mô phỏng và gọi thử. Riêng `get_test_call_defaults` chỉ cần đăng nhập (trả số của chính người thao tác).
 
 | Action | Khoá | `body` / `query` | `data` |
 |---|---|---|---|
@@ -69,11 +73,14 @@ Mọi action cần người thao tác là admin của tài khoản Call Center g
 | `create_tool` / `update_tool` | `callbotId` (+ `toolId`) | Tool input | `{id}` |
 | `delete_tool` | `callbotId`, `toolId` | — | `{id}` |
 | `put_tool_secret` | `callbotId`, `toolId` | `{value}` (tool `http` có auth) | `{id}` |
-| `test_call` | `callbotId` | `{}` | `{requestId, callId}` |
+| `get_tool_function` | `callbotId`, `toolId` | — | `{name, description, parameters}`: hàm đúng như model nhận (tham số sinh từ hồ sơ ghi, múi giờ, lựa chọn) |
+| `get_object_fields` | `callbotId`, `objectSlug` | — | `{objectSlug, label, fields: [{slug, label, type, required, readOnly, active, maxLength, pattern, options, lookupObject, defaultValue}]}`, đọc bằng quyền run-as của callbot |
+| `get_test_call_defaults` | — | — | `{phoneNumbers: [...]}`: số trong hồ sơ nhân sự của người thao tác |
+| `test_call` | `callbotId` | `{}` hoặc `{"toNumber": "...", "fromNumber": "..."}` | `{requestId, callId}` |
 | `start_simulation` | `callbotId` | `{}` hoặc `{"variables": {...}}` | `{simId, reply}` |
-| `send_simulation_message` | `simId` | `{"text": "..."}` | `{reply, replies[], toolCalls[], ended, turns}` |
+| `send_simulation_message` | `simId` | `{"text": "..."}` | `{reply, replies[], toolCalls[{name, arguments, status, result, dryRun, message?}], ended, turns}`; `message` là lý do tool không chạy hoặc câu đọc lại chờ xác nhận, như model nhận |
 | `end_simulation` | `simId` | — | `{simId}` |
-| `list_sessions` | — | `query: {callbotId?, from?, to?, endReason?, cursor?, limit?}` (epoch ms) | `{items[], nextCursor?}` |
+| `list_sessions` | — | `query: {callbotId?, from?, to?, endReason?, direction?, phone?, outcome?, minDuration?, maxDuration?, hasToolCalls?, cursor?, limit?}`: `from`/`to` epoch ms; `direction` `inbound`/`outbound`; `phone` khớp một phần (`^[0-9+*#]{3,20}$`); thời lượng tính giây; `hasToolCalls` `true`/`false`; `limit` ≤ 100 | `{items[], nextCursor?}` |
 | `get_session` | `sessionId` | — | Phiên + `transcript[]`, `toolCalls[]`, `variables`, `securityFlags[]` |
 
 ## Callbot input
@@ -87,7 +94,7 @@ Mọi action cần người thao tác là admin của tài khoản Call Center g
 | `engine` | `service` | |
 | `model`, `voice` | Theo provider | Xem dưới |
 | `transcriptionModel` | OpenAI: `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `whisper-1`; `null` để tắt | Provider khác bỏ trống |
-| `providerOptions` | Object ≤ 10 khoá, giá trị chuỗi/số | Thay toàn bộ khi gửi; GET trả dạng chuỗi |
+| `providerOptions` | Object ≤ 10 khoá, giá trị chuỗi/số | Thay toàn bộ khi gửi; GET trả dạng chuỗi. Mọi provider nhận thêm `timezone` (IANA, ví dụ `Asia/Kolkata`; mặc định giờ Việt Nam) |
 | `companyName` | 1–100 | Tên trong câu công bố khi gọi ra; mặc định tên callbot |
 | `recordEnabled` | boolean | Ghi âm |
 | `runAsPersonnelId` | ID nhân sự đang hoạt động | Danh tính của tool `cogover_object` |
@@ -116,5 +123,7 @@ Chuỗi không được chứa ký tự điều khiển (trừ xuống dòng, ta
 - `sttModel`: `saaras:v3-realtime` (mặc định), `saaras:v4`. `sttMode`: `transcribe` (mặc định) hoặc `codemix`.
 - `silenceMs`: 200–2000.
 - `list_voices` cho Sarvam: gửi `model` là LLM (ví dụ `sarvam-105b`) để nhận danh sách giọng `bulbul:v3`; giá trị có dấu `:` như `bulbul:v3` bị từ chối ở bước kiểm tra tham số.
+
+`timezone` quyết định `{{system.current_datetime}}`, `{{system.current_date}}`, `{{system.current_time}}`, `{{system.weekday}}`, `{{system.timezone}}`, giờ trong hồ sơ ghi và `set_outcome`, và ngày tính `maxPerNumberPerDay`. Bot nói tiếng Việt (`language` bắt đầu bằng `vi`, hoặc không đặt `language` với provider khác Sarvam) nhận thứ bằng tiếng Việt ("Thứ Hai"), còn lại bằng tiếng Anh ("Monday"); câu đọc lại của tool và mô tả `confirm_pending` cũng theo quy tắc này.
 
 Workspace có `byoAllowed: false` không được gửi API key, SIP URI hay project riêng (`403 byo_disabled`). Lúc tạo, service không kiểm tra provider có nằm trong `managed` hay không: chọn provider ngoài `managed` vẫn lưu được nhưng cuộc gọi sẽ lỗi vì thiếu key. Luôn đối chiếu với `get_callbot_settings` trước.

@@ -1,0 +1,155 @@
+{
+  "callbot": {
+    "name": "[Demo] An Phát – Nhắc & xác nhận lịch kỹ thuật",
+    "provider": "openai_realtime",
+    "engine": "service",
+    "model": "gpt-realtime",
+    "voice": "marin",
+    "transcriptionModel": "gpt-4o-mini-transcribe",
+    "providerOptions": {},
+    "companyName": "An Phát Home",
+    "recordEnabled": true,
+    "runAsPersonnelId": "PER0000EXAMPLE",
+    "maxDurationSec": 300,
+    "silenceTimeoutSec": 15,
+    "maxToolCalls": 12,
+    "welcomeMessage": "Dạ em chào anh chị, em là Mai, trợ lý ảo của An Phát Home, em gọi về lịch hẹn kỹ thuật sắp tới ạ. Cho em hỏi em đang nói chuyện với chủ lịch hẹn phải không ạ?",
+    "instructions": "Bạn là Mai, trợ lý ảo của An Phát Home, gọi RA để nhắc và xác nhận lịch kỹ thuật (lắp đặt / bảo dưỡng / sửa chữa). Nói tiếng Việt, lịch sự, mỗi lượt 1–2 câu ngắn.\n\n# Dữ liệu chiến dịch\n- Tên khách: {{ten_khach}}; dịch vụ: {{dich_vu}}; thời gian hẹn: {{thoi_gian_hen}}; địa chỉ: {{dia_chi_rut_gon}}.\n\n# Luồng cuộc gọi\n1. Xác minh đúng người: hỏi có phải anh/chị {{ten_khach}} không. Chỉ khi khách xác nhận mới nói chi tiết lịch hẹn. Nếu không phải hoặc nhầm số: xin lỗi, set_outcome sai_nguoi, chào và kết thúc (không nói dịch vụ, giờ hay địa chỉ).\n2. Nhắc lịch: lịch {{dich_vu}} vào {{thoi_gian_hen}} tại {{dia_chi_rut_gon}}, rồi hỏi khách có giữ lịch này không.\n3. Khách giữ lịch: dặn chuẩn bị (có người lớn ở nhà, dọn chỗ quanh vị trí lắp/máy, để sẵn hoá đơn hoặc phiếu bảo hành nếu có), báo kỹ thuật viên sẽ gọi trước khoảng 30 phút. Rồi set_outcome xac_nhan. Không gọi công cụ ghi nào khác.\n4. Khách muốn đổi lịch: nếu khách chưa nói thời gian mới thì hỏi thời gian mới khách tiện (kỹ thuật làm 8:00–18:00 thứ Hai–thứ Bảy; ngày phải sau hôm nay; đổi thứ trong tuần thành ngày cụ thể và đọc lại). Ngay khi khách đã nói thời gian mới, gọi tao_yeu_cau_doi_lich trong cùng lượt đó (không hỏi lý do, không tự xác nhận trước vì hệ thống sẽ đọc lại cho khách) với tieu_de \"Đổi lịch \" + dịch vụ + thời gian mới (dưới 100 ký tự) và mo_ta dưới 300 ký tự gồm lịch cũ, thời gian mới khách muốn, lý do nếu khách nói. Hệ thống tự gắn số điện thoại và hồ sơ khách. Hệ thống trả câu đọc lại: đọc đúng nội dung đó một cách tự nhiên, hỏi xác nhận một lần; khách đồng ý thì xác nhận. Sau khi tạo xong, nói: \"Bộ phận điều phối sẽ gọi lại để chốt lịch mới cho anh/chị trong ngày làm việc ạ.\" Không nói thêm về việc hứa hay không hứa giờ. Rồi set_outcome doi_lich kèm thoi_gian_moi.\n5. Khách muốn huỷ: hỏi nhẹ lý do (không ép, không thuyết phục quá một lần). Gọi tao_yeu_cau_doi_lich với tieu_de \"Huỷ lịch \" + dịch vụ, mo_ta gồm lịch cũ và lý do. Sau khi xác nhận, set_outcome huy_lich kèm ly_do.\n6. Khách bận, muốn gọi lại sau: hỏi giờ tiện, set_outcome goi_lai_sau kèm callback_at dạng yyyy-MM-ddTHH:mm (giờ Việt Nam, ví dụ 2026-11-16T15:00).\n7. Khách hỏi về phí hay kỹ thuật ngoài phần chuẩn bị ở trên, hoặc muốn gặp người thật: set_outcome phù hợp rồi switch_to_consultant hàng đợi Support.\n- Khách nói rõ không muốn nhận cuộc gọi nữa: set_outcome tu_choi_lien_lac, xác nhận lại một câu, chào.\n\n# Kết thúc\n- Gọi set_outcome đúng một lần. Sau đó hỏi khách còn cần gì không; chỉ gọi end_call ở lượt nói sau của khách, khi khách đã chào hoặc không cần gì thêm.\n- Nếu nghe thấy hộp thư thoại/lời nhắn tự động thật sự: gọi end_call với reason voicemail.\n- Không bịa phí dịch vụ, không hứa giờ kỹ thuật đến chính xác. Nếu khách hỏi có phải người thật không: nói em là trợ lý ảo của An Phát Home.\n\n# Quy tắc công cụ kết thúc (bắt buộc)\n- set_outcome chỉ gọi MỘT lần trong cả cuộc gọi. Nếu đã gọi rồi thì tuyệt đối không gọi lại (kể cả khi khách chào hay hỏi thêm), trừ khi khách đổi ý làm kết quả khác hẳn.\n- Khi khách đã chào tạm biệt hoặc nói không cần gì thêm: nói một câu chào ngắn VÀ gọi end_call ngay trong lượt đó (reason: normal). Không hỏi thêm câu nào."
+  },
+  "tools": [
+    {
+      "kind": "cogover_object",
+      "name": "tao_yeu_cau_doi_lich",
+      "description": "Gửi yêu cầu đổi hoặc huỷ lịch kỹ thuật",
+      "config": {
+        "v": 2,
+        "objectSlug": "ticket",
+        "action": "create",
+        "objectLabel": "yêu cầu đổi/huỷ lịch",
+        "maxPerSession": 1,
+        "maxPerNumberPerDay": 3,
+        "fields": {
+          "origin": {
+            "source": "fixed",
+            "value": "phone",
+            "readback": false
+          },
+          "contact": {
+            "source": "server",
+            "value": "caller.contact"
+          },
+          "name": {
+            "param": "tieu_de",
+            "source": "bot",
+            "label": "Yêu cầu",
+            "required": true,
+            "maxLength": 120
+          },
+          "description": {
+            "param": "mo_ta",
+            "source": "bot",
+            "label": "Chi tiết",
+            "required": true,
+            "maxLength": 500
+          },
+          "phone_number": {
+            "source": "server",
+            "value": "call.number"
+          },
+          "type": {
+            "source": "fixed",
+            "value": "request",
+            "readback": false
+          },
+          "priority": {
+            "source": "fixed",
+            "value": "medium",
+            "readback": false
+          },
+          "status": {
+            "source": "fixed",
+            "value": "new",
+            "readback": false
+          }
+        }
+      }
+    },
+    {
+      "kind": "system",
+      "name": "set_outcome",
+      "description": "Ghi kết quả chiến dịch một lần trước khi kết thúc",
+      "params": [],
+      "config": {
+        "outcomes": [
+          {
+            "description": "Khách xác nhận giữ lịch",
+            "campaignAction": "done",
+            "value": "xac_nhan"
+          },
+          {
+            "description": "Khách yêu cầu đổi lịch, đã tạo yêu cầu",
+            "campaignAction": "done",
+            "value": "doi_lich"
+          },
+          {
+            "description": "Khách huỷ lịch, đã tạo yêu cầu",
+            "campaignAction": "done",
+            "value": "huy_lich"
+          },
+          {
+            "description": "Khách bận, hẹn gọi lại",
+            "campaignAction": "callback",
+            "value": "goi_lai_sau"
+          },
+          {
+            "description": "Không phải chủ lịch hẹn hoặc nhầm số",
+            "campaignAction": "done",
+            "value": "sai_nguoi"
+          },
+          {
+            "description": "Khách nói rõ không muốn được gọi nữa",
+            "campaignAction": "do_not_call",
+            "value": "tu_choi_lien_lac"
+          }
+        ],
+        "fields": [
+          {
+            "description": "Thời gian mới khách muốn (khi đổi lịch)",
+            "type": "string",
+            "key": "thoi_gian_moi",
+            "maxLength": 100
+          },
+          {
+            "description": "Lý do đổi/huỷ nếu khách nói",
+            "type": "string",
+            "key": "ly_do",
+            "maxLength": 200
+          },
+          {
+            "description": "Thời điểm hẹn gọi lại (chỉ khi goi_lai_sau)",
+            "type": "datetime",
+            "key": "callback_at"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "switch_to_consultant",
+      "description": "Chuyển cuộc gọi tới bộ phận điều phối kỹ thuật",
+      "params": [],
+      "config": {
+        "queues": [
+          "Support"
+        ]
+      }
+    },
+    {
+      "kind": "system",
+      "name": "end_call",
+      "description": "Kết thúc cuộc gọi sau khi đã chào khách",
+      "params": []
+    }
+  ],
+  "status": "active"
+}
