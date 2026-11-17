@@ -2,7 +2,7 @@
 
 ## 4.35.0 - 2026-11-16
 
-Cập nhật `callbot-builder` theo các tính năng mới của Callbot (stringeex-callbot master): hồ sơ ghi v2, chặn sửa hồ sơ khách, múi giờ theo callbot, action RPC mới, và thêm 3 mẫu tiếng Việt đã kiểm chứng. Cùng phiên bản skill với PR #12 (1.1.0, signing key): PR này lên 1.2.0.
+Cập nhật `callbot-builder` theo các tính năng mới của Callbot (stringeex-callbot master): hồ sơ ghi v2, chặn sửa hồ sơ khách, múi giờ theo callbot, action RPC mới, và thêm 3 mẫu tiếng Việt đã kiểm chứng. Nối tiếp 4.34.0 (`callbot-builder` 1.1.0, signing key).
 
 - `callbot-builder` 1.2.0:
   - `references/tools.md`: hồ sơ ghi v2 (`config.v: 2`): nguồn `bot`/`fixed`/`server`/`choice`, khoá server (`caller.*`, `call.number`, `now`, `run_as`, `session.id`), `range`, `appendCallNumber`, `callSummary`, `sensitive`, giới hạn `maxPerSession`/`maxPerNumberPerDay`, giá trị cố định theo kiểu (`time_duration` tính ms, lookup nhân sự theo email), field bắt buộc của Object, luồng `invalid_args` → `need_confirmation` → `confirm_pending`, mẫu Task gọi lại; `update` chỉ sửa bản ghi bot tạo trong cuộc gọi và không áp dụng cho lead/contact/account; tool `cogover_task`; `set_outcome` field `datetime` nhận giờ địa phương; lý do `end_call`; kinh nghiệm viết kịch bản cho tool ghi; cấu hình tool trên Sarvam Voice Agents.
@@ -14,6 +14,17 @@ Cập nhật `callbot-builder` theo các tính năng mới của Callbot (string
   - `scripts/callbot_api.py`: `rpc --object` (cho `get_object_fields`), `simulate --var KEY=VALUE` (kiểm tra tên biến, tối đa 20) và in `message` của tool call, `sessions` thêm bộ lọc (`--direction`, `--phone`, `--outcome`, `--end-reason`, `--has-tool-calls`, thời lượng); `apply` so config hồ sơ ghi v2 sau khi chuẩn hoá như service lưu (bỏ `snapshot`, điền mặc định, không phụ thuộc thứ tự field service trả về) và không so `params` sinh tự động; `apply --resave-tools` lưu lại tool hồ sơ ghi để cập nhật schema Object.
   - Đổi provider cho mẫu tiếng Việt: CSKH dựng và mô phỏng thêm trên `gemini_live` (`gemini-3.8-live`, `language: vi-VN`) và `qwen_omni_rt` (`qwen3.8-omni-flash-realtime`); mô tả tool hồ sơ ghi chỉ nói khi nào dùng và kết thúc bằng dấu chấm (service nối "Tạo <objectLabel>." ngay sau); `rpc --tool` nhận cả tên tool.
   - Mã lỗi: `400 validation` cho body callbot/tool sai (trước ghi nhầm là `invalid_params`), `invalid_phone_number`/`invalid_hotline` của gọi thử; `get_object_fields` cần Super Admin; `end_call` chỉ bị chặn sau kết quả tool có dữ liệu.
+
+## 4.34.0 - 2026-11-10
+
+Callbot: bảo đảm project Stringee có signing key, vì thiếu key thì cuộc gọi vào callbot thất bại (`NO_SECRET`).
+
+- `callbot-builder` 1.1.0:
+  - `SKILL.md`: thêm bước A.5. Service callbot tự tạo `signing_secret_key` (32 ký tự chữ và số) cho project chưa có key mỗi khi tạo, sửa hoặc bật callbot; skill đọc kết quả `signingKey` và báo "đã có" hoặc "đã tạo mới", không in key. Mục C: phân biệt nguyên nhân bot im lặng qua log (`NO_SECRET`, `insufficient_credit`, `is not portal admin`). Bàn giao: thêm trạng thái signing key.
+  - `scripts/callbot_api.py`: `apply` in `projectSigningKey` từ response tạo/sửa/bật callbot, cảnh báo khi `failed` hoặc `project_not_found`.
+  - `references/project-signing-key.md`: ý nghĩa của `signingKey`. Khi service không tự tạo được (thiếu quyền `UPDATE`, service bản cũ): master/vn-release thì cấp quyền hoặc dùng helper; prod chỉ đọc, kèm lệnh SQL cho quản trị DB.
+  - `scripts/ProjectSigningKey.java`: helper `check`/`ensure` chạy trong pod `stringeex-callbot`, nhận project hoặc Workspace ID, tự chặn ghi ngoài namespace thử nghiệm.
+  - `references/testing.md`: nhắc kiểm tra signing key trước cuộc gọi thật.
 
 ## 4.33.0 - 2026-11-09
 

@@ -40,7 +40,14 @@ Ngoài phạm vi: mua/gán số hotline, dựng cây IVR hay chiến dịch auto
 | Danh tính thực thi | Nhân sự mà tool chạy dưới quyền (`runAsPersonnelId`) |
 
 4. Chuẩn bị dữ liệu với [$object-info](../object-info/SKILL.md): Object có field điện thoại để giới hạn theo người gọi và đủ field cho kết quả. Thêm field còn thiếu, theo quy tắc ở [Thiết kế field cho callbot](references/tools.md#thiết-kế-field-cho-callbot). Thêm field xong chờ khoảng 5 phút trước khi test tool đọc/ghi field đó (danh sách field của Object được cache; trước đó tool trả lỗi tra cứu `adapter_400`). Đọc field, kiểu và option đang bật đúng như callbot thấy (quyền run-as) bằng `rpc get_object_fields --callbot ID --object SLUG`: action cần một callbot có sẵn, nên khi chưa tạo callbot thì dùng callbot khác có cùng `runAsPersonnelId`, hoặc chạy `apply` cho phần callbot trước.
-5. Bot **không sửa được lead, contact, account**. Kết quả cuộc gọi đi vào `set_outcome` hoặc một bản ghi mới (task, ticket...) gắn với khách; cần cập nhật hồ sơ khách theo kết quả thì dựng Process riêng.
+5. **Bắt buộc: signing key của project Stringee** gắn với Workspace (`stringee.dh_account_project.signing_secret_key`). Key trống thì mọi cuộc gọi vào callbot đều lỗi `NO_SECRET` (bot im lặng). Chi tiết: [Signing key của project](references/project-signing-key.md).
+   - Service callbot tự bảo đảm key mỗi khi tạo, sửa hoặc bật callbot. Đã có key thì giữ nguyên. Key trống thì service sinh 32 ký tự chữ và số rồi ghi vào; response trả `signingKey`, còn `apply` in ra `projectSigningKey`.
+   - Sau `apply --apply`, đọc `projectSigningKey` và báo "đã có" (`existing`) hoặc "đã tạo mới" (`created`). Không in key.
+   - Gặp `failed`, `project_not_found`, hoặc không thấy trường này (service bản cũ): xử lý theo tài liệu trên.
+     - master/vn-release: được cấp quyền cho user DB hoặc chạy helper `ensure`.
+     - Prod: chỉ đọc, báo người dùng nhờ quản trị DB.
+     - Chưa có key thì không gọi thử.
+6. Bot **không sửa được lead, contact, account**. Kết quả cuộc gọi đi vào `set_outcome` hoặc một bản ghi mới (task, ticket...) gắn với khách; cần cập nhật hồ sơ khách theo kết quả thì dựng Process riêng.
 
 ## B. Thiết kế callbot
 
@@ -104,10 +111,15 @@ python3 scripts/callbot_api.py apply spec.json --apply  # tạo/cập nhật, đ
 Chi tiết lệnh và cách đọc kết quả: [Kiểm thử](references/testing.md). Bằng chứng chính cho ngôn ngữ/nhận dạng giọng nói, kết thúc cuộc gọi và ghi dữ liệu là cuộc gọi thật (bước 2–3); mô phỏng chỉ để rà kịch bản.
 
 1. **Mô phỏng hội thoại (text):** `simulate --callbot ID [--var ten_khach=...] --say "..." --say "..."`. Số khách của phiên là số điện thoại đầu tiên trong hồ sơ nhân sự của người gọi API; tool đọc chạy thật, tool ghi chỉ chạy thử (`dry-run`, không tạo bản ghi) nhưng vẫn đi qua kiểm tra tham số, bước đọc lại và xác nhận. Tool không chạy thì script in `message` (lý do model nhận) để sửa kịch bản hoặc cấu hình. Mô phỏng dùng model text của nền tảng, không dùng model/giọng của callbot và bỏ qua nhiều chặn lúc chạy: chỉ dùng để rà kịch bản và tham số tool (xác minh sai, đổi ý khi xác nhận, ngoài phạm vi, chèn lệnh). Giới hạn 10 phiên/giờ mỗi project.
+Trước bước 2–3, xác nhận signing key của project đã có giá trị (`projectSigningKey` là `existing`/`created`, bước A.5). Nếu bot im lặng, đọc log pod `stringeex-callbot` để phân biệt nguyên nhân:
+- `NO_SECRET`: thiếu signing key;
+- `rejected by billing: insufficient_credit`: Workspace hết credit AI;
+- `is not portal admin`: thiếu quyền admin Call Center.
+
 2. **Gọi thử (thoại):** `rpc test_call --callbot ID --body '{}'` gọi tới số trong hồ sơ nhân sự của người thao tác (xem bằng `rpc get_test_call_defaults`; `toNumber` để gọi số khác) qua hotline của project; cần hồ sơ có số và project có hotline gọi ra được. Chỉ gọi khi người dùng biết máy nào sẽ đổ chuông.
 3. **Cuộc gọi thật:** gọi vào số hotline có node IVR "Kết nối callbot" trỏ tới callbot, hoặc chạy chiến dịch gọi ra.
 4. **Kiểm chứng:** `sessions --callbot ID` (lọc thêm `--direction`, `--outcome`, `--has-tool-calls`...) rồi `session SESSION_ID` (transcript, tool đã gọi và trạng thái, outcome, cờ an ninh); sau đó đọc lại bản ghi bằng [$object-record](../object-record/SKILL.md) để xác nhận field đã ghi đúng. Chỉ báo đạt khi bản ghi đổi đúng, không dựa vào lời bot nói.
 
 ## Bàn giao
 
-Nêu ID/tên callbot, provider/model/giọng/ngôn ngữ, danh tính thực thi, danh sách tool (Object, action, field ghi, có cần xác nhận), outcome và việc chiến dịch làm tiếp, guardrail đã đặt. Liệt kê ca kiểm thử đã chạy kèm bằng chứng (session ID, giá trị field trước/sau), ca chưa kiểm được và lý do (chưa có hotline, chưa có số trong hồ sơ...), dữ liệu test đã tạo. Không đưa API Key, cookie hay số điện thoại thật của khách vào báo cáo.
+Nêu ID/tên callbot, provider/model/giọng/ngôn ngữ, danh tính thực thi, danh sách tool (Object, action, field ghi, có cần xác nhận), outcome và việc chiến dịch làm tiếp, guardrail đã đặt, trạng thái signing key của project ("đã có" / "đã tạo mới" / "thiếu, chờ quản trị DB"). Liệt kê ca kiểm thử đã chạy kèm bằng chứng (session ID, giá trị field trước/sau), ca chưa kiểm được và lý do (chưa có hotline, chưa có số trong hồ sơ...), dữ liệu test đã tạo. Không đưa API Key, cookie hay số điện thoại thật của khách vào báo cáo.
