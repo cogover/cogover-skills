@@ -26,8 +26,13 @@ Workspace luôn build version bằng `@cogover/sdk` của chính Runtime của n
 Thủ tục kiểm (làm theo thứ tự, dừng ở bước có kết luận):
 
 1. Công cụ cục bộ: `npm ls @cogover/sdk`, `cogover-dev --version`; bản phát hành mới nhất: `npm view @cogover/sdk version`, `npm view @cogover/dev-cli version`. Nâng project lên SDK từ `0.18.0` và CLI từ `0.22.0` khi npm đã có (không cài từ nguồn khác npm). Kết luận riêng từng công cụ: SDK cục bộ dưới `0.18.0` → không dùng `router.route()`; CLI dưới `0.22.0` → không khai báo `entryPointParts`. Vẫn làm bước 2–3 để biết Workspace có Load profile.
-2. Workspace, bằng chứng có sẵn (chỉ đọc): liệt kê version bằng `POST /api/v1/ts-projects/{projectId}/versions/list` của project này hoặc của một backend Project khác trên cùng Workspace (liệt kê module theo [Backend API Reference](custom-backend-module-api-reference.md#liệt-kê-module)), chọn version `READY` mới nhất rồi đọc chi tiết bằng `POST /api/v1/ts-projects/{projectId}/versions/{versionId}`. `loadProfile` khác `null` → **Workspace hỗ trợ**, sang bước 4. `loadProfile: null` hoặc chưa có version nào → chưa kết luận được (version publish trước khi Runtime hỗ trợ luôn `null`), sang bước 3.
-3. Workspace, bằng lần publish kế tiếp: viết theo cách cũ (route đăng ký thẳng trên router chính, không `router.route()`, không khai báo `entryPointParts`) và publish như bình thường ở bước 9 của skill (lần publish đầu của project mới chính là lần kiểm này; vẫn xin xác nhận như mọi lần publish, chưa cần activate). Sau khi version `READY`: đọc chi tiết version bằng API như bước 2 (với CLI từ `0.22.0` có thể xem luôn output `publish`). `loadProfile` khác `null` (CLI in khối `Load profile` kèm dòng `Runs on:`) → **Workspace hỗ trợ**; `loadProfile` vắng hoặc `null` ở version vừa `READY` → **chưa hỗ trợ**. CLI cũ không in Load profile kể cả khi Workspace hỗ trợ, nên với CLI cũ chỉ kết luận bằng API.
+2. Workspace, bằng chứng có sẵn (chỉ đọc): liệt kê version bằng `POST /api/v1/ts-projects/{projectId}/versions/list` của project này hoặc của một backend Project khác trên cùng Workspace (liệt kê module theo [Backend API Reference](custom-backend-module-api-reference.md#liệt-kê-module)), rồi đọc chi tiết một version bằng `POST /api/v1/ts-projects/{projectId}/versions/{versionId}` và xem JSON thô của response (ví dụ `jq 'has("loadProfile")'`; không dùng công cụ tự bỏ field `null`):
+   - Response chi tiết **có** field `loadProfile`, kể cả khi giá trị là `null` → **Workspace hỗ trợ**, sang bước 4. Workspace chưa hỗ trợ không trả field này.
+   - Response **không có** field `loadProfile` → **chưa hỗ trợ**, sang bước 4.
+   - Chưa có version nào để đọc → sang bước 3.
+3. Workspace, bằng lần publish kế tiếp: viết theo cách cũ (route đăng ký thẳng trên router chính, không `router.route()`, không khai báo `entryPointParts`) và publish như bình thường ở bước 9 của skill (lần publish đầu của project mới chính là lần kiểm này; vẫn xin xác nhận như mọi lần publish, chưa cần activate). Khi version `READY`, đọc chi tiết version như bước 2 và áp cùng quy tắc. CLI từ `0.22.0` in khối `Load profile` kèm dòng `Runs on:` khi có profile; CLI cũ không in kể cả khi Workspace hỗ trợ, nên luôn kết luận bằng API.
+
+`loadProfile` là `null` (field vẫn có mặt) trong các trường hợp nguồn nêu: version chưa build xong; version publish trước khi Workspace có hồ sơ nạp (nên mọi version cũ đều `null`); và khi không có hồ sơ cho version đó (trường hợp hiếm, ví dụ không lưu hoặc đọc được hồ sơ). Version mới `READY` trên Workspace hỗ trợ bình thường luôn có `loadProfile` khác `null`, kể cả khi không dựng được phần nào (khi đó `parts` rỗng và có mã lý do). Version mới `READY` mà vẫn `null`: đọc lại sau vài giây; còn `null` thì publish lại một lần; lần đó vẫn `null` thì coi version không có hồ sơ: Workspace vẫn hỗ trợ `router.route()`, nhưng không khai báo `entryPointParts` (bảng mục 5.1 cần Load profile) và báo người dùng.
 4. Hành động:
    - Workspace hỗ trợ và SDK cục bộ từ `0.18.0`: chuyển route sang router con (mục 3.3). Workspace hỗ trợ và CLI từ `0.22.0`: quyết định khai báo theo bảng mục 5.1. Thay đổi nào cũng publish thành version mới.
    - Workspace chưa hỗ trợ: giữ cách cũ, không `router.route()`, không khai báo, dù SDK/CLI cục bộ đã mới; vẫn tổ chức file theo mục 3.1–3.2 và mục 4. Ghi kết luận và bằng chứng trong báo cáo bàn giao. Khi đủ điều kiện về sau, chuyển route sang router con chỉ là thay đổi nhỏ ở `src/main.ts` và các file router.
@@ -203,15 +208,15 @@ Code chạy lúc file được nạp là mọi câu lệnh ở cấp cao nhất 
 - Thứ Cogover không kiểm được lúc publish (bị tính như thay đổi bên ngoài): gọi tham số, hàm bị gán nhiều lần, phương thức của giá trị không lần ra được là code của project hay kiểu built-in (chỉ nhận phương thức chỉ đọc thông dụng như `map`, `filter`, `includes`, `join`, `slice`, `split`, `trim`, `toString`), hàm `async` hay generator, `console.log()`, `Object.defineProperty()`, `Object.setPrototypeOf()`, `Object.create(prototype)`, `new Object(value)`, built-in gọi với đối số spread (`Math.max(...values)` thì được), phương thức hay chuyển đổi dữ liệu import từ file JSON, getter/setter/`toString`/`toJSON`/phương thức `Symbol` có tác động ra ngoài trong đối tượng hay class tạo lúc nạp.
 - Lời gọi phương thức của đối tượng hay class của project (`Config.select()`, `registry.get()`) chỉ được tính là an toàn khi không chỗ nào trong project, kể cả trong handler, đưa đối tượng hay class đó ra chỗ khác hoặc sửa nó: truyền vào hàm, gán sang biến khác, spread, đặt vào đối tượng/mảng khác, trả về, ghi một thành viên (`registry.get = ...`), tạo thể hiện (`new Config()`), đọc `prototype`, chuyển thành chuỗi hay JSON.
 
-Hậu quả khi vi phạm (Cogover đọc code lúc publish, không chạy):
+Hậu quả của vi phạm mà Cogover **phát hiện** được lúc publish (đọc code, không chạy). Cả ba trường hợp đều an toàn về hành vi; cái giá chỉ là kích thước và thời gian nạp:
 
 | Vi phạm ở | Kết quả | Mã trong Load profile |
 |---|---|---|
-| Một file bất kỳ (trừ `src/main.ts`) | File đó và những gì nó import được nạp cùng mọi điểm vào: phần lớn hơn cần thiết | `REQUIRED_MODULES` (kèm câu lệnh và chuỗi `via`) |
-| `src/main.ts` | Version không có phần nào, mọi điểm vào dùng module đầy đủ | `MAIN_TOP_LEVEL_EFFECT` |
-| Ghi global/đối tượng built-in ở bất kỳ đâu, hoặc module đầy đủ đổi chúng lúc nạp | Không có phần | `PART_GLOBALS_MODIFIED` |
+| Một file bất kỳ trừ `src/main.ts` (kể cả `Date.now()`, `Math.random()`, `console.log()` hay lời gọi không phân tích được ở cấp cao nhất của file đó) | File đó cùng những gì nó import được đưa vào **mọi** phần, đúng thứ tự nạp như module đầy đủ, nên hiệu ứng lúc nạp của nó vẫn xảy ra ở mọi điểm vào. Hành vi giữ nguyên; phần to hơn và nạp chậm hơn | `REQUIRED_MODULES` (`requiredModules` kèm câu lệnh và chuỗi `via`, `requiredBytes`) |
+| `src/main.ts` (cùng các loại câu lệnh trên, kể cả `Date.now()` hay giá trị không tất định ở cấp cao nhất của `src/main.ts`) | Version không có phần nào, mọi điểm vào dùng module đầy đủ | `MAIN_TOP_LEVEL_EFFECT` (`mainTopLevelEffect`) |
+| Ghi global/đối tượng built-in ở bất kỳ đâu trong project, kể cả trong handler, hoặc module đầy đủ đổi chúng lúc nạp | Version không có phần nào | `PART_GLOBALS_MODIFIED` |
 
-Cogover không bảo đảm bắt được mọi vi phạm. Giới hạn đã biết (thuộc trách nhiệm của khai báo `true`):
+Rủi ro thật của khai báo `true` nằm ở vi phạm Cogover **không phát hiện** được: khi đó file gây hiệu ứng không được đưa vào mọi phần, và một điểm vào có thể chạy thiếu cấu hình hay quy tắc (kể cả quy tắc quyền) mà file đó đặt lúc nạp. Cogover không bảo đảm bắt được mọi vi phạm. Giới hạn đã biết (thuộc trách nhiệm của khai báo `true`, là thứ checklist mục 4.2 phải tìm):
 
 - `.name` của class hay hàm (cả `constructor.name`, `error.name`) có thể khác giữa module đầy đủ và phần khi hai file định nghĩa class hay hàm cấp module trùng tên: không dựa vào nó, tự đặt `name` ở chỗ cần (ví dụ `class OrderError extends Error { name = "OrderError"; }`).
 - Giá trị không lần ra được (tham số, kết quả một lời gọi) có phương thức trùng tên phương thức built-in chỉ đọc được nhận (`map`, `filter`, `includes`, `join`...), hoặc có getter, setter, `Proxy`, iterator, `toString`, `valueOf`, `toJSON`, phương thức `Symbol` chạy khi code lúc nạp đọc hay chuyển đổi nó: không được kiểm.
@@ -349,7 +354,9 @@ Dùng khi project sắp khai báo hoặc đã khai báo `entryPointParts: true`,
 - [ ] Code kiểm tra quyền, role, Super Admin, policy nghiệp vụ không phụ thuộc trạng thái do file khác đặt lúc nạp; quy tắc là hằng số hoặc đọc trong handler.
 - [ ] Không dựa vào `.name`, `constructor.name`, `error.name` của class/hàm; class lỗi tự đặt `name`.
 - [ ] Không chuyển đổi dữ liệu import từ JSON ở cấp cao nhất; không dùng getter/setter/`Proxy`/`toJSON` có tác động ra ngoài trong đối tượng tạo lúc nạp.
-- [ ] `requiredModules` của Load profile (mục 6) rỗng, hoặc từng mục đã được đọc và chắc chắn vô hại; `mainTopLevelEffect` là `null`.
+- [ ] Mục đích của checklist là tìm vi phạm **không** có trong `requiredModules`/cảnh báo của Load profile (đặc biệt code cấu hình quyền, registry, khởi tạo thư viện, và các giới hạn đã biết ở mục 4). Mục đã có trong `requiredModules` không cần chứng minh gì thêm: chúng đã được đưa vào mọi phần.
+- [ ] Mỗi file trong `requiredModules` cho thấy project có kiểu code cấu hình lúc nạp: tìm code cùng kiểu ở file khác mà Load profile không liệt kê (ví dụ cùng gọi một hàm `configure`/`register` qua tham số hay biến được gán lại) và sửa theo mục 4.1.
+- [ ] `mainTopLevelEffect` là `null` và không có `PART_GLOBALS_MODIFIED` (nếu có thì version không có phần, khai báo không có tác dụng).
 
 ## 5. Khai báo `entryPointParts`
 
@@ -371,19 +378,21 @@ Tổ chức code theo mục 3.1–3.2 và mục 4 **luôn** làm, mọi phiên b
 |---|---|
 | Chưa đủ điều kiện mục 2 | Không khai báo |
 | Chưa có Load profile của đúng code sẽ publish (thay đổi chỉ ở `cogover.json`/`cogover.example.json` không tính) | Publish không khai báo trước, đọc Load profile, rồi xét lại bảng này |
-| `mainTopLevelEffect` khác `null`, có `PART_GLOBALS_MODIFIED`, hoặc `requiredModules` còn mục chưa chắc vô hại | Sửa code theo mục 4.1 rồi publish lại không khai báo; không sửa được thì không khai báo |
+| `mainTopLevelEffect` khác `null` hoặc có `PART_GLOBALS_MODIFIED` (version không có phần nào) | Không khai báo (không có tác dụng). Sửa code theo mục 4.1 nếu muốn có phần, rồi publish lại không khai báo và xét lại bảng |
 | Checklist mục 4.2 chưa được sub-agent Review bảo mật rà trên đúng code sẽ publish (ở bước 8 của skill; mọi project có code đều qua review này) | Không khai báo cho tới khi đã rà |
-| Có cảnh báo `LOAD_TIME_HIGH` của module đầy đủ (`message` bắt đầu bằng `The merged bundle`), hoặc **lợi ích ước tính từ 200 ms trở lên** (công thức dưới) | Khai báo `true` |
+| Có cảnh báo `LOAD_TIME_HIGH` của module đầy đủ (`message` bắt đầu bằng `The merged bundle`), hoặc **lợi ích ước tính từ 200 ms trở lên** (công thức dưới; `requiredModules` không rỗng vẫn được, vì số đo của phần đã gồm module bắt buộc) | Khai báo `true` |
 | Người dùng **yêu cầu tường minh** bật chạy bằng phần sau khi đã được xem số đo và nghĩa của khai báo (mục 5) | Khai báo `true` |
 | Các trường hợp còn lại | Không khai báo; báo người dùng số đo, lợi ích ước tính và khi nào nên bật |
 
 Lợi ích ước tính, lấy từ cùng một Load profile:
 
 ```text
-lợi ích = coldLoadMs của Merged bundle − (coldLoadMs của Shared SDK + coldLoadMs của phần chậm nhất phục vụ loại điểm vào cần nhanh)
+lợi ích = coldLoadMs của Merged bundle − (coldLoadMs của Shared SDK + coldLoadMs của phần chứa điểm vào cần nhanh)
 ```
 
-- Loại điểm vào cần nhanh: trigger before-change nếu có (giới hạn thời gian ngắn), nếu không thì route HTTP người dùng chờ, rồi action. Phần phục vụ điểm vào nào xem ở `parts[].entryPoints` và `parts[].source` của `cogover-dev publish --json` hoặc API; không xác định được thì dùng phần chậm nhất trong `Slowest parts` (ước tính thận trọng).
+- Loại điểm vào cần nhanh: trigger before-change nếu có (giới hạn thời gian ngắn), nếu không thì route HTTP người dùng chờ, rồi action.
+- Phần cần lấy là phần của **file chứa** điểm vào đó: trong `loadProfile.parts[]` (API, hoặc `cogover-dev publish --json`), tìm phần `kind: "FILE"` có `source` là file định nghĩa trigger/job/action (hoặc file router chứa route) và `entryPoints` đếm loại tương ứng; lấy `coldLoadMs` của phần đó (không gồm SDK, đã gồm module bắt buộc). Output thường của CLI chỉ in 3 phần chậm nhất, nên đọc `parts[]` khi file cần tìm không có trong danh sách đó. Có nhiều điểm vào cần nhanh thì lấy phần chậm nhất trong số các phần của chúng.
+- Điểm vào nằm trong `entryPoints[]` của Load profile thì không có phần riêng theo file: `level: "KIND"` nghĩa là nó chạy bằng phần dùng chung của cả loại (phần `kind: "KIND"` có `source` là `triggers`, `jobs` hoặc `actions`; lấy `coldLoadMs` của phần đó), `level: "BUNDLE"` nghĩa là nó chạy bằng module đầy đủ (lợi ích bằng 0). `reason` đi kèm cho biết vì sao (bảng mã ở mục 6); tài liệu công khai không nêu thêm điều kiện để rơi vào `KIND`.
 - SDK dùng chung thường vài chục tới khoảng 100 ms, nên ngưỡng 200 ms thường tương ứng với bundle đầy đủ nạp nguội từ khoảng 300 ms trở lên.
 - Số đo dao động khoảng ±25% giữa các lần: chỉ so các số trong cùng một profile. Lợi ích dưới 200 ms (kể cả sát ngưỡng) thì không khai báo, ghi số đo và xét lại ở lần publish sau; không publish thêm chỉ để đo lại.
 - Ví dụ: bundle đầy đủ 95 ms, SDK 75 ms, phần chậm nhất 4 ms → lợi ích khoảng 16 ms: không khai báo. Bundle đầy đủ 1.180 ms, SDK 53 ms, phần của trigger 60 ms → lợi ích khoảng 1.067 ms (và có `LOAD_TIME_HIGH`): khai báo khi các dòng trên của bảng đã qua.
@@ -395,7 +404,9 @@ Nêu quyết định, số đo và lý do trong yêu cầu xác nhận publish v
 Không khai báo `true` khi còn một trong các điều sau, kể cả khi lợi ích lớn:
 
 - Không chắc project tuân quy tắc ("không chắc thì đừng khai báo").
-- `requiredModules` có file sửa đối tượng của file khác, hoặc có lời gọi Cogover không phân giải được, mà chưa chứng minh được là vô hại.
+- Checklist mục 4.2 tìm thấy code cấu hình lúc nạp (quyền, registry, khởi tạo thư viện) mà Load profile không liệt kê, chưa sửa.
+
+Hướng dẫn SDK khuyên đừng khai báo khi `requiredModules` có file sửa đối tượng của file khác hay lời gọi không phân giải được mà bạn không chắc là vô hại. Hiểu theo nghĩa: file đã liệt kê không gây sai hành vi (đã nằm trong mọi phần), nhưng nó cho thấy project có kiểu code cấu hình lúc nạp, nên phải rà checklist 4.2 để chắc không còn code cùng kiểu mà Cogover không phát hiện.
 - Project dùng thư viện cấu hình bằng lời gọi lúc nạp, plugin tự đăng ký, polyfill, hay quy tắc quyền đặt lúc nạp mà chưa chuyển sang khởi tạo lười.
 - Code dựa vào `.name` của class/hàm, hoặc dựa vào ngày giờ lúc nạp.
 
@@ -451,24 +462,24 @@ Next: cogover-dev activate TSVXXXXXXXXXXXX
 | `entry-point parts (the platform default)` | Không khai báo nhưng nền tảng mặc định chạy bằng phần: project vẫn phải tuân mục 4 |
 | `entry-point parts for HTTP routes (...); triggers, jobs and actions on the merged bundle` (hoặc ngược lại) | Nền tảng mới bật phần cho một loại điểm vào (`effectiveFor`); điểm vào loại kia vẫn chạy bằng module đầy đủ |
 | `merged bundle (entryPointParts not declared)` | Phần đã dựng nhưng chưa khai báo; quyết định theo mục 5 |
-| `merged bundle (entryPointParts: false at publish)` | Theo khai báo `false` |
+| `merged bundle (entryPointParts: false at publish)` | Theo khai báo `false`. Có phần đã dựng thì CLI in thêm `; publish with --parts to use the parts`; không có hậu tố đó nghĩa là version không có phần nào |
 | `merged bundle (entry-point parts are not enabled on this platform yet)` | Đã khai báo `true` nhưng nền tảng chưa bật phần; không cần sửa code |
-| `merged bundle (no part could be built)` | Không dựng được phần: xem lý do và cảnh báo |
-| Không có dòng `Runs on:` | Workspace chưa hỗ trợ khai báo (mục 2) |
+| `merged bundle (no part could be built)` | Version không có phần nào (khai báo `true` hoặc không khai báo): xem `MAIN_TOP_LEVEL_EFFECT` (kèm dòng `No part, src/main.ts runs code while it loads: ...`), `PART_GLOBALS_MODIFIED`, `PART_GLOBAL_STATE_UNKNOWN` hoặc mã `PARTS_*` trong cảnh báo |
+| Không có dòng `Runs on:` và không có khối `Load profile` | CLI dưới `0.22.0`, Workspace chưa hỗ trợ, hoặc version không có hồ sơ: kết luận theo field `loadProfile` của API như mục 2 |
 
 - Đọc qua API: `loadProfile.entryPointParts.effective` (`true` khi ít nhất một loại điểm vào đang chạy bằng phần) là field quyết định; đọc nó trước. `effectiveFor` (`entryPoints` cho trigger/job/action, `http` cho route) chỉ chi tiết theo loại và có thể vắng trên Workspace chạy bản Runtime sớm hơn: vắng thì chỉ dựa vào `effective`. `requested` là giá trị đã khai báo (`true`, `false` hoặc `null`).
-- `Modules in every part` (`requiredModules`): file vi phạm mục 4, kèm câu lệnh cấp cao nhất và chuỗi `via` tới chỗ gây thay đổi. Sửa theo mục 4.1 hoặc chuyển vào file mà chỉ điểm vào cần nó import.
+- `Modules in every part` (`requiredModules`): file chạy code tác động ra ngoài lúc nạp mà Cogover phát hiện, kèm câu lệnh cấp cao nhất và chuỗi `via`; số trong ngoặc là số file và `requiredBytes` (kích thước nguồn mọi phần phải mang thêm). Hành vi an toàn (mục 4); nên sửa theo mục 4.1 để phần nhỏ lại, không bắt buộc phải rỗng mới được khai báo.
 - `Slowest parts`: phần nạp chậm nhất (không tính SDK). Phần lớn: giảm import, tách bảng dữ liệu, bỏ barrel (mục 3.4).
-- `No part, src/main.ts runs code while it loads` (`mainTopLevelEffect`): đưa câu lệnh đó ra khỏi `src/main.ts`.
+- `No part, src/main.ts runs code while it loads: <file:dòng lý do: câu lệnh>` (`mainTopLevelEffect`): version không có phần; đưa câu lệnh đó ra khỏi `src/main.ts`.
 
 Lý do (`reason` của `entryPoints[]`) và cảnh báo (`warnings[].code`) thường gặp:
 
 | Mã | Cách xử lý |
 |---|---|
 | `NOT_LOCATED` | Điểm vào viết trong `src/main.ts` hoặc không export từ file định nghĩa nó: chuyển sang file riêng, export, gom lại trong `src/main.ts` (mục 3.2) |
-| `MAIN_TOP_LEVEL_EFFECT` | `src/main.ts` tác động ra ngoài lúc nạp (xem `mainTopLevelEffect`): giữ `src/main.ts` chỉ gồm import, mảng export và đăng ký route; chuyển câu lệnh vào handler hoặc file mà điểm vào cần nó import |
-| `REQUIRED_MODULES` | Đọc từng mục `requiredModules` (`file`, `line`, `statement`, `reason`, `via`): chuyển code lúc nạp vào handler (khởi tạo lười) hoặc vào file chỉ điểm vào cần mới import. Còn mục chưa chắc vô hại thì không khai báo `true` |
-| `PART_GLOBALS_MODIFIED` | Project ghi vào global/đối tượng built-in (`message` nêu file và dòng): bỏ polyfill, vá prototype, gán `globalThis`; nếu bắt buộc thì làm trong handler. Còn lại thì mọi điểm vào dùng module đầy đủ |
+| `MAIN_TOP_LEVEL_EFFECT` | `src/main.ts` có câu lệnh cấp cao nhất tác động ra ngoài, không tất định (`Date.now()`, `Math.random()`...) hoặc không phân tích được (xem `mainTopLevelEffect`); version không có phần: giữ `src/main.ts` chỉ gồm import, mảng export và đăng ký route; chuyển câu lệnh vào handler hoặc file mà điểm vào cần nó import |
+| `REQUIRED_MODULES` | An toàn về hành vi: các file trong `requiredModules` đã được đưa vào mọi phần. Cái giá là kích thước (`requiredBytes`) và thời gian nạp của mọi phần. Nên sửa (chuyển code lúc nạp vào hàm gọi từ handler, hoặc vào file chỉ điểm vào cần mới import) để phần nhỏ lại; không bắt buộc trước khi khai báo, quyết định theo lợi ích ở mục 5.1 |
+| `PART_GLOBALS_MODIFIED` | Project ghi vào global/đối tượng built-in ở đâu đó (`message` nêu file và dòng); Cogover xét cả project, kể cả code trong handler, nên chuyển vào handler không giải quyết được. Bỏ polyfill/vá prototype/gán `globalThis`, thay bằng hàm của project (mục 4.1); không bỏ được thì chấp nhận chạy bằng module đầy đủ (không khai báo) |
 | `PART_GLOBAL_STATE_UNKNOWN` | Code lúc nạp đưa quá nhiều vào global để so: thu nhỏ code lúc nạp |
 | `LOAD_TIME_HIGH` | Module đầy đủ (hoặc SDK cộng một phần) nạp lâu hơn `thresholdMillis`. Module đầy đủ: tách điểm vào và nhóm route ra file riêng/router con. Một phần (`message` bắt đầu bằng `Part`): import ít hơn từ file dùng chung, xử lý `requiredModules` |
 | `ENTRY_POINTS_IN_BUNDLE` | Liệt kê điểm vào dùng module đầy đủ; xử lý theo `reason` của từng điểm vào |
@@ -476,7 +487,7 @@ Lý do (`reason` của `entryPoints[]`) và cảnh báo (`warnings[].code`) thư
 | `PART_NOT_SMALLER` | File import gần như cả module: import ít hơn từ file dùng chung |
 | `ROUTE_MATCH_MISMATCH`, `PART_REJECTED`, `PART_ORDER_MISMATCH`, `PARTS_LIMIT`, `PARTS_TIMEOUT`, `PARTS_BUILD_FAILED`, `PARTS_PLAN_MISMATCH` | Điểm vào bị ảnh hưởng dùng module đầy đủ; không cần sửa code để module chạy đúng. Lặp lại qua nhiều lần publish thì báo người dùng kèm mã và `message` |
 
-`level` của điểm vào là `KIND` khi nó dùng phần chung của mọi trigger, job hoặc action của version, `BUNDLE` khi dùng module đầy đủ. Load profile chỉ để tham khảo: cảnh báo không bao giờ làm publish thất bại.
+`level` của điểm vào trong `entryPoints[]` là `KIND` khi nó không có phần theo file mà chạy bằng phần dùng chung của cả loại (mọi trigger, mọi job hoặc mọi action của version), `BUNDLE` khi dùng module đầy đủ. Load profile chỉ để tham khảo: cảnh báo không bao giờ làm publish thất bại.
 
 Publish chậm hơn trước vì dựng và đo phần, tuỳ kích thước: module nhỏ (vài trăm KiB) thêm vài giây; module vài MB với khoảng 100 điểm vào thêm khoảng 10–25 giây; bước này dừng ở 45 giây, quá thì version vẫn được publish nhưng không có phần (`PARTS_TIMEOUT`). Đặt thời gian chờ publish có dư địa.
 
