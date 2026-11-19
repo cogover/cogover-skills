@@ -289,6 +289,7 @@ export default router.toHandler();
 - Các bước kiểm tra từ chối phiếu của thiết bị khác và bảo hành đã được kích hoạt, nên gọi route hai lần cho cùng một phiếu không tạo thêm bộ linh kiện thứ hai.
 - Các thao tác ghi không phải transaction, ở phiên bản này cũng như phiên bản tuần tự. Khi một call trong `Promise.all` cuối cùng ném lỗi, các call khác vẫn chạy và dữ liệu chúng ghi vẫn được giữ; khi batch báo có dòng thất bại, route trả `500` kèm chỉ số các dòng đó. Hãy kiểm tra dữ liệu trước khi kích hoạt lại cùng phiếu.
 - Route đọc bằng quyền của người gọi, nên người gọi cần quyền đọc và ghi năm Object.
+- Ví dụ gom mọi thứ trong `src/main.ts` cho dễ đọc. Trong project thật, đặt job ở file riêng (ví dụ `src/jobs/activate-warranties.ts`), hàm kích hoạt ở file logic dùng chung và `src/main.ts` chỉ import và gom lại, theo [Giữ module nạp nhanh](keep-module-fast-to-load.md).
 
 ## 5. Chạy thử và publish
 

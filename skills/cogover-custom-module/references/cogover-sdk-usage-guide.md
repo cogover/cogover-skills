@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng `@cogover/sdk`
 
-Snapshot tài liệu `@cogover/sdk` `0.16.0` ngày `2026-10-13`, bổ sung `categories` của `notifications.send` (`0.17.0`) ngày `2026-10-23`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy, `deliverTo` để agent chủ động nhắn chat cho một nhân sự và kết quả `delivery`), gửi notification và email (người nhận, notification channel, danh mục thông báo `categories`, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
+Snapshot tài liệu `@cogover/sdk` `0.16.0` ngày `2026-10-13`, bổ sung `categories` của `notifications.send` (`0.17.0`) ngày `2026-10-23`, `router.route()` gắn router con và mục Giữ module nạp nhanh (`0.18.0`, khai báo `entryPointParts` cần Dev CLI từ `0.22.0` và Workspace hỗ trợ) ngày `2026-11-20`, đi kèm [SDK API reference](cogover-sdk-api-reference.md). Sub-agent backend đọc trước khi code để nắm mẫu handler, chọn field khi đọc record (`fields` bắt buộc, `"*"`), đọc record liên kết (`expandLookups`), đếm/tổng hợp record (`records.aggregate`), ngân sách của một lần thực thi (capability call, lời gọi cục bộ, record đọc/ghi, đọc mức đã dùng bằng `limits.usage()`), filter, fetch, secret/credential, mã hoá/giải mã và chữ ký (AES, RSA, ECDSA), state, lock, push message (làm mới record, toast, message ngầm), background job (enqueue, lịch cron, retry), Custom Module Action cho Process và AI Agent gọi (`defineAction`, schema builder `s`, `effect`, danh tính chạy), khởi chạy Process và AI Agent từ code (`processes.start`/`agents.start`, job nhận kết quả `onComplete`/`onResult`, mục `processes`/`agents` của identity policy, `deliverTo` để agent chủ động nhắn chat cho một nhân sự và kết quả `delivery`), gửi notification và email (người nhận, notification channel, danh mục thông báo `categories`, hộp thư gửi, grant `email` trong identity policy, idempotency key), đọc cơ cấu tổ chức (phòng ban, vị trí, nhân sự, chuỗi quản lý, kiểm tra người duyệt), chọn danh tính, cho phép thao tác theo role của người gọi (Super Admin, danh sách role), record trigger (before-change và after-change), TypeScript config (TypeScript 5.0 trở lên), router (gắn router con bằng `router.route()`), tổ chức file để module nạp nhanh (phần theo điểm vào, quy tắc code chạy lúc nạp, khai báo `entryPointParts`) và nhận webhook; contract chi tiết theo API reference. Object, field và giá trị trong ví dụ chỉ minh họa.
 
 ## Custom Backend Module là gì?
 
@@ -1243,6 +1243,124 @@ Các helper `response.json`, `text`, `bytes`, `empty`, `redirect` cho phép đ�
 response header an toàn và body text/binary. Route thiếu, kể cả path chỉ được đăng ký
 cho method khác, trả 404; method ngoài năm method trên trả 405. Project `defineScript()` cũ tiếp tục chạy tại `/`. Cần validate mọi input
 nghiệp vụ. Xem [router API reference](cogover-sdk-api-reference.md#http-router-và-request-context).
+
+### Tổ chức route theo nhóm
+
+Từ `@cogover/sdk` `0.18.0`, trên Workspace hỗ trợ (cách kiểm và cách viết khi chưa đủ điều kiện: [Giữ module nạp nhanh](keep-module-fast-to-load.md#2-điều-kiện-phiên-bản-và-môi-trường)).
+Khi module lớn dần, có thể đặt mỗi nhóm route liên quan trong một file riêng: tạo router
+bằng `createRouter()` trong file đó, export nó, rồi gắn vào router chính bằng
+`router.route(prefix, childRouter)`. Việc này là tuỳ chọn; route đăng ký thẳng trên
+router chính vẫn hoạt động như cũ.
+
+```typescript
+// src/orders-router.ts
+import { createRouter } from "@cogover/sdk";
+
+export const ordersRouter = createRouter();
+ordersRouter.get("/", () => ({ orders: [] }));
+ordersRouter.get("/:orderId", ({ request }) => ({ orderId: request.params.orderId }));
+
+// src/main.ts
+import { createRouter } from "@cogover/sdk";
+import { ordersRouter } from "./orders-router";
+
+const router = createRouter();
+router.get("/health", () => ({ ok: true }));
+router.route("/orders", ordersRouter);
+export default router.toHandler();
+```
+
+Route được gắn được chọn như thể đăng ký trên router chính tại vị trí gọi `route()`. Hai
+nhóm có thể dùng chung prefix, ví dụ `/me`, miễn route của chúng không trùng nhau. Xem
+[`router.route()`](cogover-sdk-api-reference.md#routerrouteprefix-string-router-scriptroutertschema-scriptroutertschema).
+
+### Giữ module nạp nhanh
+
+Hướng dẫn áp dụng, ví dụ trước/sau, checklist và cách đọc Load profile: [Giữ module nạp nhanh](keep-module-fast-to-load.md).
+
+Mỗi lượt gọi nạp code module mà nó chạy. Khi module được publish, Cogover có thể chỉ
+nạp phần code mà một trigger, job, action hoặc nhóm route cần thay vì cả module, nhờ đó
+lượt gọi đầu tiên sau khi publish hoặc sau một thời gian rảnh nhanh hơn nhiều. Load
+profile của `cogover-dev publish` cho biết mỗi điểm vào được gì. Để tận dụng:
+
+- Định nghĩa mỗi trigger, job hoặc action (`defineTrigger`, `defineJob`,
+  `defineAction`) trong một file khác `src/main.ts` và export từ file đó, trực tiếp
+  hoặc trong một mảng được export. `src/main.ts` chỉ import và gom lại.
+- Đặt mỗi nhóm route trong một file router chỉ chứa `createRouter()` và các dòng
+  đăng ký route, chỉ `src/main.ts` import file đó, và gắn bằng `router.route()`. Hàm
+  xử lý và logic dùng chung đặt ở file khác, để một job hay route khác import một hàm
+  xử lý không phải nạp theo cả nhóm. Route đăng ký thẳng trên router chính luôn nạp
+  cả module.
+- Code chạy khi file được nạp có thể tính giá trị và tạo đối tượng của riêng nó: gọi
+  hàm và static method của chính module (kể cả ở file khác) mà code của chúng cũng theo
+  các quy tắc này, `.map()`, `.filter()`, vòng lặp, `if`, `try`, `throw`, hàm gọi
+  ngay, `new Intl.Collator()`, đăng ký route trên router do chính file tạo, thêm vào
+  mảng, đối tượng hoặc `Map` do chính file đó tạo (kể cả từ hàm của chính file). Nó
+  không được thay đổi gì ở bên ngoài: biến hoặc đối tượng của file khác (registry được
+  import, đối tượng cấu hình, danh sách mà một hàm trả về), global hay prototype, tham
+  số của hàm, biến của file khác từ một hàm của file đó.
+- Nó cũng phải cho cùng kết quả mỗi lần nạp: không dùng `Date.now()`, `new Date()`
+  không đối số, `Intl.DateTimeFormat#format()` không có ngày, `Math.random()`,
+  `performance`, `globalThis`, global do runtime định nghĩa, hay dịch vụ SDK như
+  `fetch`, `crypto`, `limits` khi các file đang nạp.
+- Lời gọi phương thức của một đối tượng hay class của bạn (`Config.select()`,
+  `registry.get()`) chỉ được tính khi không chỗ nào trong project đưa đối tượng hay
+  class đó ra chỗ khác hoặc sửa nó, ở bất kỳ đâu, kể cả trong hàm xử lý: truyền nó vào
+  một hàm, gán sang biến khác, spread, đặt vào đối tượng hay mảng khác, trả về, ghi
+  một thành viên của nó (`registry.get = ...`), tạo thể hiện của class
+  (`new Config()`) hay đọc `prototype` của class. Nếu có, Cogover không biết phương
+  thức đó chạy code nào, và lời gọi được tính là thay đổi bên ngoài. Chuyển đối tượng
+  như vậy thành chuỗi hay JSON cũng thế.
+- Những gì Cogover không kiểm được lúc publish được tính là thay đổi bên ngoài: gọi
+  tham số, hàm bị gán nhiều lần, phương thức của giá trị mà Cogover không lần ra được
+  là code của bạn hay kiểu built-in (trên giá trị như vậy chỉ nhận các phương thức chỉ
+  đọc thông dụng như `map`, `filter`, `includes`, `join`, `slice`, `split`, `trim`,
+  `toString`), hàm `async` hay generator, `console.log()`; `Object.defineProperty()`,
+  `Object.setPrototypeOf()`, `Object.create(prototype)`, `new Object(value)`, gọi
+  built-in với đối số spread (`Math.max(...values)` thì được), phương thức hay chuyển
+  đổi dữ liệu import từ file JSON, và getter, setter, phương thức
+  `toString`/`toJSON`/`Symbol` thay đổi bên ngoài trong đối tượng hay class được tạo khi
+  nạp.
+- File vi phạm các quy tắc này được nạp, cùng những gì nó import, với mọi điểm vào;
+  load profile liệt kê file đó ở `REQUIRED_MODULES` kèm câu lệnh và chuỗi lời gọi dẫn
+  tới đó. Hãy chuyển code như vậy vào hàm xử lý, hoặc vào một file mà chỉ các điểm vào
+  cần nó mới import.
+- Khi `src/main.ts` vi phạm các quy tắc này, mọi điểm vào nạp cả module
+  (`MAIN_TOP_LEVEL_EFFECT`). Hãy cấu hình trong một file mà các điểm vào import.
+- Khi code ở bất kỳ đâu trong project ghi vào global hay đối tượng built-in (polyfill
+  như `URL`, `TextEncoder`, vá prototype, đặt giá trị lên `globalThis`), hoặc cả
+  module đổi chúng lúc nạp, mọi điểm vào nạp cả module (`PART_GLOBALS_MODIFIED`).
+
+Điểm vào chỉ chạy bằng module nhỏ khi bạn khai báo project tuân các quy tắc trên: đặt
+`"entryPointParts": true` trong `cogover.json` (hoặc publish bằng
+`cogover-dev publish --parts`). Không khai báo thì áp dụng mặc định của nền tảng, tức
+module đầy đủ trừ khi nền tảng quy định khác; `false` (hoặc `--no-parts`) luôn giữ
+module đầy đủ. Load profile mà `cogover-dev publish` in ra cho biết version đang chạy
+bằng gì.
+
+Khai báo `true` nghĩa là bạn xác nhận code chạy khi các file nạp không thay đổi gì ngoài
+file của nó, và bạn chịu trách nhiệm về khác biệt nếu vi phạm: một điểm vào khi đó có
+thể chạy thiếu cấu hình mà file khác đặt lúc nạp, kể cả kiểm tra quyền do chính project
+của bạn viết. Cogover đọc code để kiểm hết mức có thể: file bị phát hiện vi phạm được nạp
+cùng mọi điểm vào, và các trường hợp ở trên nạp cả module. Cogover không bảo đảm bắt được
+mọi vi phạm. Giới hạn đã biết:
+
+- `.name` của class hay hàm (cả `constructor.name`, `error.name`) có thể khác giữa cả
+  module và module nhỏ khi hai file định nghĩa class hay hàm cấp module trùng tên: đừng
+  dựa vào nó, hãy tự đặt `name` ở chỗ cần;
+- giá trị mà Cogover không lần ra được (tham số của hàm, kết quả một lời gọi) có phương
+  thức trùng tên một phương thức built-in chỉ đọc được nhận (`map`, `filter`,
+  `includes`, `join`...), hoặc có getter, setter, `Proxy`, iterator, phương thức
+  `toString`, `valueOf`, `toJSON` hay `Symbol` chạy khi code lúc nạp đọc hay chuyển đổi
+  nó, thì không được kiểm;
+- đối tượng built-in bị sửa qua tên khác (`const p = Array.prototype; p.x = ...`) rồi
+  hoàn tác trong lúc nạp thì không được thấy;
+- code lúc nạp phụ thuộc ngày giờ thì chạy như vào ngày publish.
+
+Hãy giữ code như vậy trong hàm xử lý. Xem danh sách `REQUIRED_MODULES` của load
+profile: nếu có file thay đổi đối tượng của file khác, hay có lời gọi mà Cogover không
+phân giải được, và bạn không chắc là vô hại, thì đừng khai báo `true`. Không chắc thì
+đừng khai báo.
 
 ## Nhận webhook
 

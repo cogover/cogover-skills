@@ -10,7 +10,7 @@ cogover-dev --version
 cogover-dev --help
 ```
 
-Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`, áp ngân sách của lần thực thi khi chạy local và hiện `durationMs`/`usage` trong `jobs runs`/`jobs run` từ `0.19.0`, xếp `processes.start` và `agents.start` là thao tác ghi, áp trần 20 `processes.start` và 5 `agents.start` mỗi lần gọi handler và giải thích `NOT_SUPPORTED` của `onComplete`/`onResult` từ `0.20.0`, lệnh `git` (`git setup`, `git token create|list|delete`, `git credential`) từ `0.21.0`. `--allow-scripts=keytar` cho npm từ 12 cài phần kết nối credential store của hệ điều hành (npm cũ bỏ qua cờ này). Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
+Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local từ `0.10.0`, các lệnh `secrets`, `inbound`, `jobs` và `auth logout` từ `0.13.1`, truyền `invocation.user.membership.isSuperAdmin`/`roles` vào script local từ `0.14.0` (giá trị lấy lúc development session bắt đầu, đổi role thì khởi động lại `cogover-dev`), đọc `org` trên local từ `0.14.0`, xếp `notifications.send` và `email.send` là thao tác ghi từ `0.15.0`, gọi Workspace/Runtime bằng `x-req-type: 9` (response không bọc envelope) từ `0.16.0`, áp ngân sách của lần thực thi khi chạy local và hiện `durationMs`/`usage` trong `jobs runs`/`jobs run` từ `0.19.0`, xếp `processes.start` và `agents.start` là thao tác ghi, áp trần 20 `processes.start` và 5 `agents.start` mỗi lần gọi handler và giải thích `NOT_SUPPORTED` của `onComplete`/`onResult` từ `0.20.0`, lệnh `git` (`git setup`, `git token create|list|delete`, `git credential`) từ `0.21.0`, khai báo `entryPointParts` (`cogover.json`, `publish --parts`/`--no-parts`) và in Load profile sau publish từ `0.22.0`. `--allow-scripts=keytar` cho npm từ 12 cài phần kết nối credential store của hệ điều hành (npm cũ bỏ qua cờ này). Kiểm tra help của bản đang cài trước khi dùng option. Mỗi thư mục backend/frontend có `cogover.json` riêng; CLI tìm cấu hình gần nhất từ thư mục hiện tại lên cha:
 
 ```json
 {
@@ -22,7 +22,7 @@ Node.js >= 20; lệnh `auth session` có từ CLI `0.9.0`, chạy trigger local 
 }
 ```
 
-Frontend đổi `projectType` thành `frontend` và dùng Project ID frontend. Không trộn ID `TSP`/`TSV` backend với `FEP`/`FEV` frontend; slug không phải ID, `slugSlot` không phải slug.
+Backend có thể thêm `"entryPointParts": true` hoặc `false` (CLI từ `0.22.0`; chỉ backend, giá trị khác boolean hoặc đặt ở frontend báo `PROJECT_CONFIG_INVALID`) theo mục [Phần theo điểm vào và Load profile](#phần-theo-điểm-vào-và-load-profile); CLI cũ bỏ qua key này. Frontend đổi `projectType` thành `frontend` và dùng Project ID frontend. Không trộn ID `TSP`/`TSV` backend với `FEP`/`FEV` frontend; slug không phải ID, `slugSlot` không phải slug.
 
 | Thao tác | Credential |
 |---|---|
@@ -66,6 +66,19 @@ cogover-dev activate <VERSION_ID_FROM_PUBLISH>
 ```
 
 Backend starter `build` chỉ typecheck; publish tự đóng gói `src/`. Frontend `build` phải sinh `dist/index.html`; CLI tự đóng gói `dist/`, không build hộ. CLI kiểm tra trước khi upload cùng giới hạn kích thước với server (backend: ZIP 20 MiB, 512 entry, 20 MiB sau giải nén, 5 MiB mỗi file; frontend: 80 MiB, 2.048 entry, 80 MiB, 20 MiB mỗi file) theo mục Giới hạn kích thước của [Backend API Reference](custom-backend-module-api-reference.md#giới-hạn-kích-thước) và [Frontend API Reference](custom-frontend-module-api-reference.md#giới-hạn-kích-thước); bước upload file của Workspace có thể áp dung lượng tối đa thấp hơn (`WORKSPACE_UPLOAD_TOO_LARGE`). Publish chờ `READY`/`FAILED`, không tự activate. Archive chỉ có source backend cần thiết hoặc static asset frontend, không có key, session, `.env`, `node_modules`, `local/` hay source map.
+
+### Phần theo điểm vào và Load profile
+
+Cần CLI từ `0.22.0` và Workspace hỗ trợ; cách tổ chức code, quy tắc, khi nào khai báo và cách xử lý từng cảnh báo: [Giữ module nạp nhanh](keep-module-fast-to-load.md).
+
+```bash
+cogover-dev publish [zip-file] [--parts | --no-parts]
+```
+
+- `--parts` khai báo `entryPointParts: true`, `--no-parts` khai báo `false` cho riêng lần publish đó, ghi đè `cogover.json`; không có cả hai thì không khai báo và áp dụng mặc định của nền tảng (module đầy đủ, trừ khi nền tảng quy định khác). Chỉ dùng cho backend (frontend: `CLI_USAGE`); CLI cũ từ chối hai option này với `CLI_USAGE`. Workspace chưa hỗ trợ bỏ qua khai báo và không in dòng `Runs on:`.
+- Khi version `READY` và Workspace có đo, publish in **Load profile**: kích thước và thời gian nạp nguội của module đầy đủ và SDK dùng chung, số phần và số điểm vào có phần theo từng loại, dòng `Runs on:`, các file có trong mọi phần vì chạy code lúc nạp (kèm chuỗi `via`), các phần nạp chậm nhất, điểm vào không có phần của file riêng kèm lý do, và cảnh báo kèm `Hint:`. `--json` trả kèm object `loadProfile`. Cảnh báo không làm publish thất bại. Ví dụ đầy đủ và bảng dòng `Runs on:`: mục [Đọc Load profile](keep-module-fast-to-load.md#6-đọc-load-profile).
+- Publish lâu hơn trước vài giây tới khoảng 20 giây (tối đa 45 giây cho bước dựng phần) vì dựng và đo phần.
+- Bố cục `src/` gợi ý để có phần: `main.ts` chỉ import, gom `triggers`/`jobs`/`actions` và gắn router con; `triggers/`, `jobs/`, `actions/` mỗi điểm vào (hoặc nhóm nhỏ liên quan) một file; `routers/` chỉ `createRouter()` và đăng ký route; `handlers/`, `lib/`, `data/` cho hàm xử lý, logic dùng chung và bảng dữ liệu lớn. Tên thư mục không bắt buộc; chi tiết ở mục [Bố cục gợi ý](keep-module-fast-to-load.md#31-bố-cục-gợi-ý).
 
 ## Lệnh secrets, inbound và jobs
 

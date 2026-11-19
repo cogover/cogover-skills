@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.36.0 - 2026-11-20
+
+Custom Backend Module nạp nhanh hơn nhờ phần theo điểm vào: tổ chức file theo điểm vào, router con, khai báo `entryPointParts` và đọc Load profile sau publish.
+
+- `cogover-custom-module` 1.25.0:
+  - `references/keep-module-fast-to-load.md` (mới): vì sao module lớn nạp chậm và phần theo điểm vào; điều kiện phiên bản (`@cogover/sdk` từ `0.18.0`, Dev CLI từ `0.22.0`, Workspace hỗ trợ) và cách kiểm trước khi dùng; bố cục `src/` gợi ý, ví dụ trước/sau cho trigger/job/action và cho ba route trong router con, cách viết khi chưa đủ điều kiện; quy tắc "lệnh ở đầu file" kèm ví dụ sai/đúng (cấu hình thư viện, registry, quy tắc quyền, polyfill, dữ liệu JSON) và checklist rà soát; khai báo `entryPointParts` (`true`/`false`/không khai báo, trách nhiệm của tác giả, khi nào không khai báo); đọc Load profile, bảng dòng `Runs on:` và bảng mã lý do/cảnh báo → cách xử lý; giới hạn kích thước; kiểm thử và bàn giao.
+  - `references/cogover-sdk-usage-guide.md`, `references/cogover-sdk-api-reference.md`: `router.route(prefix, router)` (SDK `0.18.0`), mục Tổ chức route theo nhóm và Giữ module nạp nhanh.
+  - `references/custom-backend-module-api-reference.md`: tham số publish `entryPointParts`, `loadProfile` trong chi tiết version (mục Hồ sơ nạp: field, `entryPointParts.requested`/`effective`/`effectiveFor`, `requiredModules`, bảng `reason` và mã cảnh báo), giới hạn tổng source 6 MiB (bundle vẫn 4 MiB).
+  - `references/cli-session-and-delivery.md`: `"entryPointParts"` trong `cogover.json`, `cogover-dev publish --parts`/`--no-parts`, Load profile sau publish, bố cục `src/` gợi ý.
+  - `references/get-started-background-jobs.md`: job định nghĩa trong `src/jobs/hello-job.ts`, `src/main.ts` chỉ gom lại. `references/get-started-custom-backend-module.md`, `references/get-started-record-trigger.md`, `references/write-records-efficiently.md`: ghi chú bố cục file và Load profile.
+  - `references/backend-review-and-testing.md`, `references/security-review.md`, `references/performance-testing.md`: rà bố cục và quy tắc code chạy lúc nạp khi khai báo `entryPointParts: true` (đặc biệt kiểm tra quyền), kiểm thử lại trên version khai báo, đo thời gian nạp bằng Load profile và lượt gọi đầu sau activate.
+  - `SKILL.md`: mô tả, dòng mới trong bảng tài liệu theo nhánh và bảng chọn capability; bố cục file ở bước 1, 7 và 8; quyết định khai báo và đọc Load profile ở bước 9; bàn giao.
+
 ## 4.35.0 - 2026-11-16
 
 Cập nhật `callbot-builder` theo các tính năng mới của Callbot (stringeex-callbot master): hồ sơ ghi v2, chặn sửa hồ sơ khách, múi giờ theo callbot, action RPC mới, và thêm 3 mẫu tiếng Việt đã kiểm chứng. Nối tiếp 4.34.0 (`callbot-builder` 1.1.0, signing key).

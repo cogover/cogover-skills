@@ -397,11 +397,14 @@ Content-Type: application/json
     "fileExt": "zip",
     "fileType": "application/zip",
     "acl": "private"
-  }
+  },
+  "entryPointParts": true
 }
 ```
 
 Tên ZIP dài tối đa 255 ký tự. `fileSize` phải dương, `fileExt` phải là `zip`, `acl` phải là `private` và `idempotencyKey` là bắt buộc. Dùng lại key với publish input khác trả về `409`. File phải là ZIP private đã upload vào chính Workspace đó; `file_id` khác trả về `400` và không tạo version.
+
+`entryPointParts` không bắt buộc. `true` khai báo module tuân quy tắc mà phần dựa vào: code chạy khi một file được nạp không thay đổi gì bên ngoài file đó (xem mục [Giữ module nạp nhanh](cogover-sdk-usage-guide.md#giữ-module-nạp-nhanh) của hướng dẫn sử dụng SDK), nên version có thể chạy điểm vào bằng phần của nó ở nơi nền tảng đã bật phần. Khai báo `true` nghĩa là bạn xác nhận project tuân quy tắc đó và chịu trách nhiệm về khác biệt nếu vi phạm, kể cả với kiểm tra quyền do project tự viết: Cogover kiểm hết mức có thể lúc publish nhưng không bảo đảm bắt được mọi vi phạm (giới hạn đã biết ở mục [Hồ sơ nạp](#hồ-sơ-nạp)). Không chắc thì đừng khai báo. `false` giữ mọi lần thực thi của version trên module đầy đủ. Bỏ trống (hoặc gửi `null`) là không khai báo: áp dụng mặc định của nền tảng (module đầy đủ, trừ khi nền tảng chạy version không khai báo bằng phần). Giá trị khác trả `400` với `entryPointParts must be a boolean`. Phần vẫn được dựng và đo trong mọi trường hợp, và khai báo chỉ áp dụng cho version này: publish lại để đổi. `cogover-dev` gửi giá trị từ `cogover.json` hoặc option `--parts` và `--no-parts`. Workspace chưa hỗ trợ bỏ qua khai báo; cách kiểm và khi nào nên khai báo: [Giữ module nạp nhanh](keep-module-fast-to-load.md).
 
 HTTP `202` trả về version object và quá trình publish tiếp tục bất đồng bộ:
 
@@ -452,7 +455,7 @@ Các build state có thể có: `PENDING`, `DOWNLOADING`, `VALIDATING`, `COMPILI
 | Tổng dung lượng sau khi giải nén | 20 MiB | `INVALID_PROJECT_ARCHIVE` |
 | Dung lượng một file | 5 MiB | `INVALID_PROJECT_ARCHIVE` |
 | Số source file được `src/main.ts` import tới | 512 | `TYPESCRIPT_COMPILE_FAILED` |
-| Tổng dung lượng các source file đó | 4 MiB | `TYPESCRIPT_COMPILE_FAILED` |
+| Tổng dung lượng các source file đó | 6 MiB | `TYPESCRIPT_COMPILE_FAILED` |
 | Bundle JavaScript sau khi compile | 4 MiB | `TYPESCRIPT_COMPILE_FAILED` |
 
 Request có `fileSize` lớn hơn 20 MiB bị từ chối với `400` trước khi tạo version, ví dụ `ZIP file is 25 MiB, which exceeds the 20 MiB limit`. Các giới hạn còn lại làm version chuyển sang `FAILED`, và `buildErrorMessage` nêu giới hạn bị vượt cùng đường dẫn file liên quan (nếu có):
@@ -464,10 +467,10 @@ Request có `fileSize` lớn hơn 20 MiB bị từ chối với `400` trước k
 | Quá nhiều entry | `ZIP contains more than 512 entries; files and directories both count` |
 | Một file nén hơn 100:1 | `File "src/data/rates.json" exceeds the 100:1 compression-ratio limit` |
 | Quá nhiều source file | `Project exceeds the limit of 512 source files; the limit was reached at src/lib/helpers.ts` |
-| Source code quá lớn | `Project source exceeds the 4 MiB total size limit; the limit was reached at src/lib/tables.ts` |
+| Source code quá lớn | `Project source exceeds the 6 MiB total size limit; the limit was reached at src/lib/tables.ts` |
 | Bundle quá lớn | `Compiled JavaScript exceeds the 4 MiB limit` |
 
-Chỉ các file được `src/main.ts` import trực tiếp hoặc gián tiếp mới tính vào giới hạn source; `@cogover/sdk` được bundle kèm không tính. Mỗi invocation đều nạp toàn bộ bundle, nên bundle nhỏ hơn cũng khởi động nhanh hơn. 1 MiB bằng 1.048.576 byte. Cogover Dev CLI kiểm tra các giới hạn ZIP trước khi upload ZIP do CLI tạo. Bước upload file của Workspace áp dụng dung lượng tối đa riêng cho file ZIP (field Files của object Contract), có thể thấp hơn giới hạn ZIP ở trên; khi đó upload bị từ chối trước khi tạo version.
+Chỉ các file được `src/main.ts` import trực tiếp hoặc gián tiếp mới tính vào giới hạn source; `@cogover/sdk` được bundle kèm không tính. Mỗi invocation đều nạp toàn bộ bundle (trừ khi chạy bằng phần, xem [Hồ sơ nạp](#hồ-sơ-nạp)), nên bundle nhỏ hơn cũng khởi động nhanh hơn. 1 MiB bằng 1.048.576 byte. Cogover Dev CLI kiểm tra các giới hạn ZIP trước khi upload ZIP do CLI tạo. Bước upload file của Workspace áp dụng dung lượng tối đa riêng cho file ZIP (field Files của object Contract), có thể thấp hơn giới hạn ZIP ở trên; khi đó upload bị từ chối trước khi tạo version.
 
 ### Liệt kê version
 
@@ -493,7 +496,7 @@ Content-Type: application/json
 {}
 ```
 
-Response là một version object. Response chi tiết có thêm `triggerManifest`: danh sách record trigger mà version khai báo bằng `defineTrigger`, dạng JSON array chỉ đọc. Giá trị là `[]` khi version không khai trigger nào và `null` khi chưa có build tạo ra nó (gồm cả các version được publish trước khi có record trigger). Response liệt kê không có field này.
+Response là một version object. Response chi tiết có thêm `triggerManifest`: danh sách record trigger mà version khai báo bằng `defineTrigger`, dạng JSON array chỉ đọc. Giá trị là `[]` khi version không khai trigger nào và `null` khi chưa có build tạo ra nó (gồm cả các version được publish trước khi có record trigger). Response chi tiết cũng có `loadProfile`, mô tả ở mục [Hồ sơ nạp](#hồ-sơ-nạp). Response liệt kê không có hai field này.
 
 ```json
 {
@@ -518,6 +521,119 @@ Response là một version object. Response chi tiết có thêm `triggerManifes
 ```
 
 Hãy xem lại `triggerManifest` trước khi activate version: khi version đã active, các trigger của nó chạy cho mọi thao tác tạo, sửa hoặc xoá bản ghi của các object được liệt kê và thoả điều kiện, từ bất kỳ nguồn nào. Trigger có `"timing": "beforeChange"` chạy trước khi thay đổi được lưu và có thể từ chối hoặc điều chỉnh thay đổi. Trigger có `"timing": "afterChange"` chạy bất đồng bộ sau khi thay đổi đã được lưu, theo cơ chế best-effort, và không thể từ chối hay sửa thay đổi đó. Version có khai báo trigger không hợp lệ kết thúc ở `FAILED` với `buildErrorCode: "TRIGGER_MANIFEST_INVALID"`: ví dụ object hoặc field không tồn tại, key trùng nhau, `writableFields` có field không ghi được (Formula, đánh số tự động, Rollup Summary, field read-only khác hoặc field hệ thống), hoặc hơn 20 trigger `beforeChange` trên cùng một object.
+
+#### Hồ sơ nạp
+
+`loadProfile` cho biết code đã biên dịch của version lớn bao nhiêu và mất bao lâu để nạp trong một sandbox mới, đo một lần lúc publish version. Mọi lần thực thi đều bắt đầu bằng việc nạp code, nên thời gian nạp sát giới hạn thời gian (ví dụ giới hạn 3 giây của trigger `beforeChange`) để lại rất ít thời gian cho handler. Ngoài module biên dịch đầy đủ, publish còn dựng các module nhỏ hơn gọi là *phần* (part):
+
+- Record trigger, background job hoặc Custom Module Action được định nghĩa và export từ file riêng của nó (không phải `src/main.ts`) có một phần chỉ chứa code mà file đó cần. `src/main.ts` vẫn có thể gom lại và export tiếp.
+- Router tạo bằng `createRouter()` trong file riêng và được gắn vào `src/main.ts` bằng `router.route()` cũng có một phần cho các route của nó. Route đăng ký thẳng trên router chính dùng module đầy đủ.
+- `@cogover/sdk` là một module dùng chung riêng, được nạp trước phần.
+- Code chạy khi file được nạp có thể tính giá trị và tạo đối tượng của riêng nó (gọi hàm và static method của module, vòng lặp, `.map()`, `throw`, đăng ký route trên router do nó tạo...). File có code thay đổi gì đó bên ngoài khi nạp (biến hoặc đối tượng của file khác, global hay prototype, tham số, biến của file khác từ một hàm của file đó), cho kết quả có thể khác giữa các lần nạp (`Date.now()`, `new Date()`, `Math.random()`, global do runtime định nghĩa, dịch vụ SDK như `fetch`), hoặc gọi thứ không phân tích được lúc publish (tham số, hàm bị gán nhiều lần, phương thức của giá trị không lần ra được là của module hay kiểu built-in, hàm `async`), được thêm vào mọi phần, cùng các file nó import, đúng vị trí của nó trong module đầy đủ; `requiredModules` liệt kê các file này kèm chuỗi lời gọi. Khi chính `src/main.ts` như vậy, version không có phần nào (`MAIN_TOP_LEVEL_EFFECT`).
+
+Cogover có thể chạy một điểm vào bằng phần của nó, nạp nhanh hơn module đầy đủ, khi version đã khai báo `entryPointParts: true` lúc publish (hoặc không khai báo và nền tảng chạy các version như vậy bằng phần) và nền tảng đã bật phần cho loại điểm vào đó; `loadProfile.entryPointParts.effective` và `effectiveFor` cho biết có đang như vậy không. Các quy tắc được kiểm bằng cách đọc code, không chạy nó, nên có giới hạn đã biết, do khai báo của tác giả đảm nhận: `.name` của class hay hàm có thể khác giữa module đầy đủ và phần; code chạy ngầm (getter, setter, `Proxy`, iterator, phương thức `toString`, `valueOf`, `toJSON` hay `Symbol`) khi code lúc nạp đọc hoặc chuyển đổi một giá trị không lần ra được (tham số của hàm, kết quả một lời gọi), và phương thức của giá trị như vậy trùng tên một phương thức built-in chỉ đọc thông dụng (`map`, `filter`, `includes`...), thì không được thấy; đối tượng built-in bị sửa qua tên khác (`const p = Array.prototype; p.x = ...`) rồi hoàn tác trong lúc nạp thì không được thấy; code lúc nạp phụ thuộc ngày giờ thì chạy như vào ngày publish. Hãy giữ code như vậy trong handler. Version có code ghi vào global hay đối tượng built-in ở bất kỳ đâu (polyfill, vá prototype, gán lên `globalThis`), hoặc module đầy đủ đổi chúng khi nạp, thì không có phần (`PART_GLOBALS_MODIFIED`); không đọc được thay đổi thì cũng không có phần (`PART_GLOBAL_STATE_UNKNOWN`). Module vi phạm theo cách khác được nạp cùng mọi điểm vào (`REQUIRED_MODULES`). Mục [Giữ module nạp nhanh](cogover-sdk-usage-guide.md#giữ-module-nạp-nhanh) của hướng dẫn sử dụng SDK chỉ cách tổ chức module; cách áp dụng và xử lý từng cảnh báo: [Giữ module nạp nhanh](keep-module-fast-to-load.md). Hồ sơ nạp chỉ để tham khảo: giá trị vượt ngưỡng chỉ tạo cảnh báo, không bao giờ làm build thất bại. `loadProfile` là `null` khi version chưa build xong, với các version được publish trước khi có hồ sơ nạp, và khi không có hồ sơ. Workspace chưa hỗ trợ không trả field này.
+
+Ví dụ (số liệu tổng hợp):
+
+```json
+{
+  "id": "TSVXXXXXXXXXXXX",
+  "status": "READY",
+  "loadProfile": {
+    "measuredAt": 1795095914928,
+    "thresholdMillis": 1000,
+    "bundle": {"bytes": 1677721, "coldLoadMs": 1180.4},
+    "sdk": {"bytes": 186772, "coldLoadMs": 52.9},
+    "parts": [
+      {
+        "no": 1,
+        "kind": "FILE",
+        "source": "src/triggers/order-credit-check.ts",
+        "bytes": 40960,
+        "coldLoadMs": 60.2,
+        "entryPoints": {"triggers": 1, "jobs": 0, "actions": 0, "routes": 0},
+        "coldLoadRuns": 1
+      }
+    ],
+    "coverage": {
+      "triggers": {"part": 3, "kind": 0, "bundle": 1},
+      "jobs": {"part": 2, "kind": 0, "bundle": 0},
+      "actions": {"part": 1, "kind": 0, "bundle": 0},
+      "routes": {"part": 3, "bundle": 2}
+    },
+    "entryPoints": [
+      {
+        "kind": "triggers",
+        "key": "order_inline",
+        "level": "BUNDLE",
+        "reason": "NOT_LOCATED",
+        "message": "It is not exported from a file other than src/main.ts."
+      }
+    ],
+    "requiredModules": [
+      {"file": "src/lib/setup.ts", "line": 3, "statement": "configure({ locale: \"vi\" });",
+       "reason": "changes a module-level variable from a function",
+       "via": [{"file": "src/lib/setup.ts", "line": 3, "statement": "configure({ locale: \"vi\" });"},
+               {"file": "src/lib/i18n.ts", "line": 4, "statement": "locale = options.locale;"}]}
+    ],
+    "requiredCount": 1,
+    "requiredBytes": 4210,
+    "mainTopLevelEffect": null,
+    "coldLoadRuns": 1,
+    "entryPointParts": {"requested": true, "effective": true, "effectiveFor": {"entryPoints": true, "http": true}},
+    "warnings": [
+      {"code": "LOAD_TIME_HIGH", "message": "The merged bundle took 1180 ms to load (threshold 1000 ms)."},
+      {"code": "ENTRY_POINTS_IN_BUNDLE", "message": "1 entry point(s) run on the merged bundle: order_inline."}
+    ],
+    "timings": {"totalMs": 6400}
+  }
+}
+```
+
+| Field | Ý nghĩa |
+|---|---|
+| `measuredAt` | Thời điểm đo, tính bằng mili giây kể từ epoch. |
+| `thresholdMillis` | Thời gian nạp mà vượt quá thì có cảnh báo `LOAD_TIME_HIGH`. |
+| `bundle` | Module biên dịch đầy đủ (*merged bundle*): `bytes` và `coldLoadMs`, thời gian nạp nó trong một sandbox mới. |
+| `sdk` | Module dùng chung `@cogover/sdk`: `bytes` và `coldLoadMs`. `null` khi version không có phần nào. |
+| `parts[]` | Mỗi phần một phần tử: `no`; `kind`, `FILE` cho phần của một file hoặc `KIND` cho phần dùng chung của mọi trigger, job hoặc action của version; `source`, đường dẫn file, hoặc `triggers`, `jobs`, `actions` với phần `KIND`; `bytes`; `coldLoadMs`, không tính SDK; `entryPoints`, số trigger, job, action và route mà phần phục vụ; `coldLoadRuns`, `2` khi phần mất từ 100 ms trở lên và được nạp lần hai trong sandbox mới (khi đó `coldLoadMs` là thời gian nhỏ hơn), ngược lại `1`. |
+| `coverage` | Với `triggers`, `jobs`, `actions`: số điểm vào chạy bằng phần của file chứa nó (`part`), bằng phần dùng chung của loại (`kind`) hoặc bằng module đầy đủ (`bundle`). Với `routes`: `part` và `bundle`. |
+| `entryPoints[]` | Mọi trigger, job hoặc action không có phần của file riêng: `kind` (`triggers`, `jobs`, `actions`), `key`, `level` (`KIND` hoặc `BUNDLE`), `reason` và `message` tiếng Anh. |
+| `requiredModules[]` | Tối đa 50 file có code thay đổi gì đó bên ngoài khi nạp nên có trong mọi phần: `file`, `line` (của câu lệnh top-level đầu tiên làm vậy), `statement` (dòng đó, đã rút gọn), `reason` tiếng Anh, ví dụ `calls push() on an object it did not create`, và `via`: các lời gọi từ câu lệnh đó tới code gây thay đổi, mỗi bước có `file`, `line`, `statement` (rỗng khi chính câu lệnh gây thay đổi). Rỗng khi không có. |
+| `requiredCount` | Số file có trong mọi phần vì lý do đó (`requiredModules` liệt kê 50 file đầu). |
+| `requiredBytes` | Kích thước nguồn (byte) của các file trong `requiredModules` và các file chúng import: phần mà mọi phần chứa thêm ngoài code của chính nó. |
+| `mainTopLevelEffect` | `null`, hoặc câu lệnh của `src/main.ts` có code thay đổi gì đó bên ngoài khi nạp (`file`, `line`, `statement`, `reason`, `via`); khi đó version không có phần nào. |
+| `coldLoadRuns` | `2` khi có ít nhất một phần được nạp hai lần (xem `parts[].coldLoadRuns`), `1` trong trường hợp còn lại, `0` khi không có phần. |
+| `entryPointParts` | `requested`: giá trị `entryPointParts` của lần publish (`true`, `false`, hoặc `null` khi không gửi). `effective`: các lần thực thi của version này hiện có chạy điểm vào bằng phần hay không, với ít nhất một loại, theo thiết lập hiện tại của nền tảng; có thể đổi mà không cần publish lại. `effectiveFor`: như trên theo từng loại, `entryPoints` (trigger, job, action) và `http` (route HTTP). |
+| `warnings[]` | Tối đa 100 phần tử, mỗi phần tử có `code` và `message` tiếng Anh. |
+| `timings` | Thời gian (mili giây) của các bước publish tạo ra hồ sơ. Chỉ để tham khảo; các key có thể thay đổi. |
+
+Dựng và đo phần làm build lâu thêm: vài giây với module nhỏ, khoảng 10 đến 20 giây với module lớn, và tối đa 45 giây, sau đó version được publish không có phần. Thời gian nạp được đo trên server build version. Số đo dao động giữa các lần (khoảng ±25%) và có thể chậm tới khoảng gấp đôi khi Workspace đang tải cao. Bỏ qua các field không có trong bảng trên: field mới có thể được thêm.
+
+`coldLoadMs` của một phần là thời gian nạp nó vào một sandbox đã nạp SDK và các phần trước đó, nên có thể phụ thuộc thứ tự các phần; phần từ 100 ms trở lên được đo lại theo thứ tự ngược và giữ số nhỏ hơn khi build còn thời gian.
+
+`reason` giải thích vì sao một điểm vào không có phần của file riêng:
+
+| `reason` | Ý nghĩa và cách xử lý |
+|---|---|
+| `NOT_LOCATED` | Điểm vào được viết trong `src/main.ts`, hoặc không được export từ file định nghĩa nó. Hãy định nghĩa và export nó từ file riêng, rồi gom lại trong `src/main.ts`. |
+| `MAIN_TOP_LEVEL_EFFECT` | Code của `src/main.ts` thay đổi gì đó bên ngoài khi nạp (xem `mainTopLevelEffect`), điều mà không phần nào tái tạo được. Hãy chuyển code đó vào handler hoặc vào một file mà các điểm vào cần nó import. |
+| `PART_GLOBALS_MODIFIED` | Project thay đổi global hay đối tượng built-in: có code ghi vào chúng ở đâu đó trong project (`message` nêu file và dòng), hoặc module đầy đủ đã đổi chúng khi nạp (`message` nêu chỗ đổi). Bộ phân tích coi built-in là không đổi, nên mọi điểm vào dùng module đầy đủ. Hãy thay đổi như vậy trong handler, hoặc bỏ hẳn. |
+| `PART_GLOBAL_STATE_UNKNOWN` | Không đọc được module đầy đủ thay đổi global và đối tượng built-in thế nào khi nạp (quá nhiều đối tượng, hoặc giới hạn của sandbox), nên không phần nào kiểm được; mọi điểm vào dùng module đầy đủ. |
+| `PART_REJECTED` | Phần không dựng được, nạp lỗi, hoặc không khai báo đúng các điểm vào như module đầy đủ. |
+| `PART_ORDER_MISMATCH` | Phần không giữ được thứ tự nạp file như module đầy đủ. |
+| `PART_NOT_SMALLER` | Phần gần lớn bằng module đầy đủ nên không được giữ. |
+| `PARTS_LIMIT` | Version chạm giới hạn số lượng hoặc tổng kích thước phần. |
+| `PARTS_TIMEOUT`, `PARTS_BUILD_FAILED`, `PARTS_PLAN_MISMATCH` | Không dựng được phần cho version này; mọi điểm vào dùng module đầy đủ. |
+
+| `code` cảnh báo | Ý nghĩa |
+|---|---|
+| `LOAD_TIME_HIGH` | Module đầy đủ, hoặc SDK cộng một phần, nạp lâu hơn `thresholdMillis`. Với module đầy đủ: đặt điểm vào và nhóm route ở file riêng (route đăng ký thẳng trên router chính luôn dùng module đầy đủ). Với một phần: import ít hơn từ file dùng chung, và chuyển code chạy lúc nạp (`requiredModules`) vào handler. |
+| `REQUIRED_MODULES` | Code của một số file thay đổi gì đó bên ngoài khi nạp nên mọi phần đều chứa chúng (xem `requiredModules`); các phần lớn hơn mức cần thiết. |
+| `ENTRY_POINTS_IN_BUNDLE` | Liệt kê các điểm vào dùng module đầy đủ (xem `entryPoints`). |
+| `ROUTE_SHADOWED` | Route của router được gắn không bao giờ được gọi tới vì một route đứng trước trên router chính đã trả lời cùng request. |
+| `ROUTE_MATCH_MISMATCH` | Không gán được route của version cho phần; mọi route dùng module đầy đủ. |
+| Các mã trong bảng `reason` | Cùng vấn đề đó, báo cho phần hoặc cho cả version. |
 
 ### Activate version
 
@@ -556,7 +672,7 @@ Content-Type: application/json
 {}
 ```
 
-Không thể xóa active version. Hãy activate version khác hoặc deactivate module trước. Version trả về có `deleted: true`.
+Không thể xóa active version. Hãy activate version khác hoặc deactivate module trước. Version trả về có `deleted: true`. Hồ sơ nạp của version đã xóa không còn được trả về.
 
 ## Identity policy
 

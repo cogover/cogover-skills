@@ -50,12 +50,12 @@ Chạy các lệnh còn lại trong thư mục này.
 
 ## 2. Viết job và route
 
-Tạo file `src/main.ts` với nội dung sau:
+Mỗi job định nghĩa trong file riêng, `src/main.ts` chỉ import và gom lại: cách tổ chức này dùng được với mọi phiên bản và cho phép Cogover nạp riêng code của job ([Giữ module nạp nhanh](keep-module-fast-to-load.md)). Tạo file `src/jobs/hello-job.ts`:
 
 ```typescript
-import { createRouter, defineJob, RetryableError } from "@cogover/sdk";
+import { defineJob, RetryableError } from "@cogover/sdk";
 
-const helloJob = defineJob({
+export const helloJob = defineJob({
   key: "hello_job",
   timeoutMs: 10_000,
   maxAttempts: 3,
@@ -78,6 +78,13 @@ const helloJob = defineJob({
   }, { ttlSeconds: 3600 });
   log.info("Job completed", { runId: job.id, attempt: job.attempt });
 });
+```
+
+Tạo file `src/main.ts`:
+
+```typescript
+import { createRouter } from "@cogover/sdk";
+import { helloJob } from "./jobs/hello-job.js";
 
 export const jobs = [helloJob];
 
@@ -214,10 +221,10 @@ Sau khi publish và activate thay đổi này, mỗi POST tạo một run và tr
 
 ## 7. Chạy theo lịch
 
-Trong `src/main.ts`, tìm `const helloJob = defineJob(...)` và thêm `schedule` ngay sau dòng `maxAttempts: 3,`. Toàn bộ khai báo `helloJob` sau khi thêm sẽ như sau; phần xử lý trong handler giữ nguyên:
+Trong `src/jobs/hello-job.ts`, tìm `export const helloJob = defineJob(...)` và thêm `schedule` ngay sau dòng `maxAttempts: 3,`. Toàn bộ khai báo `helloJob` sau khi thêm sẽ như sau; phần xử lý trong handler giữ nguyên:
 
 ```typescript
-const helloJob = defineJob({
+export const helloJob = defineJob({
   key: "hello_job",
   timeoutMs: 10_000,
   maxAttempts: 3,
@@ -246,7 +253,7 @@ const helloJob = defineJob({
 });
 ```
 
-Giữ nguyên `export const jobs = [helloJob]` và các route bên dưới. Sau khi activate version mới, lịch `*/5 * * * *` tạo run vào các mốc phút chia hết cho 5, ví dụ 09:00, 09:05, 09:10 theo giờ Việt Nam. Route POST `/hello` vẫn có thể enqueue thêm run khi cần.
+Giữ nguyên `src/main.ts` (`export const jobs = [helloJob]` và các route). Sau khi activate version mới, lịch `*/5 * * * *` tạo run vào các mốc phút chia hết cho 5, ví dụ 09:00, 09:05, 09:10 theo giờ Việt Nam. Route POST `/hello` vẫn có thể enqueue thêm run khi cần.
 
 Publish và activate version mới:
 

@@ -177,6 +177,8 @@ router.post("/", getLeadHandler);
 export default router.toHandler();
 ```
 
+Hàm xử lý nằm ở file riêng, `src/main.ts` chỉ import và đăng ký route. Module lớn dần thì giữ cách tổ chức này: mỗi trigger, job, action một file, mỗi nhóm route một router con, `src/main.ts` chỉ gom lại, không chạy code tác động ra ngoài file lúc nạp; xem [Giữ module nạp nhanh](keep-module-fast-to-load.md).
+
 `records.get()` chỉ yêu cầu 5 field cần hiển thị và trả `null` nếu Lead không tồn tại. Mọi lệnh đọc (`get`, `getMany`, `list`) đều phải truyền `fields`, và kiểu kết quả chỉ chứa các field đó, nên đọc một field không được yêu cầu sẽ lỗi compile. `fields: "*"` đọc mọi field mà caller được đọc; chỉ dùng khi code thực sự cần tất cả. Các message do sample trả về luôn dùng tiếng Anh.
 
 ## 5. Đăng nhập bằng Cogover Dev CLI
@@ -273,7 +275,7 @@ Archive phải chứa `src/main.ts` tại đúng path. Không đưa `local/`, `n
 
 `publish` và `activate` dùng Workspace API key (lấy từ quản trị viên Workspace), tách biệt với Project key của `login` và `run`; thứ tự tìm `COGOVER_API_KEY` (`.env` của Project, rồi credential store, rồi prompt bảo mật) theo [Cấu hình và credential](cli-session-and-delivery.md#cấu-hình-và-credential). Không truyền key trên command line hoặc ghi vào source.
 
-Khi version đã `READY`, output của `publish` hiển thị version ID và lệnh activate tương ứng. Chạy đúng version ID đó; CLI kiểm tra version thuộc đúng Project trong `cogover.json` và đang ở trạng thái `READY` trước khi activate:
+Khi version đã `READY`, output của `publish` hiển thị version ID và lệnh activate tương ứng; CLI từ `0.22.0` trên Workspace hỗ trợ in thêm **Load profile** (kích thước, thời gian nạp và dòng `Runs on:`), đọc theo mục [Đọc Load profile](keep-module-fast-to-load.md#6-đọc-load-profile). Chạy đúng version ID đó; CLI kiểm tra version thuộc đúng Project trong `cogover.json` và đang ở trạng thái `READY` trước khi activate:
 
 ```bash
 cogover-dev activate <VERSION_ID>

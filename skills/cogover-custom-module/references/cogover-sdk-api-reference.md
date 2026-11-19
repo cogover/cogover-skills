@@ -258,6 +258,50 @@ Có thể đăng ký cùng một handler cho nhiều path.
 
 Cách viết ngắn theo từng method của `addRoute()`, cùng validation, giá trị trả về và lỗi.
 
+### `router.route(prefix: string, router: ScriptRouter<TSchema>): ScriptRouter<TSchema>`
+
+SDK từ `0.18.0`, chỉ publish được trên Workspace chạy Runtime hỗ trợ; cách kiểm và cách viết khi chưa đủ điều kiện: [Giữ module nạp nhanh](keep-module-fast-to-load.md#2-điều-kiện-phiên-bản-và-môi-trường).
+
+Gắn mọi route của một router khác dưới `prefix` và trả lại chính router này để gọi
+nối tiếp. Dùng để đặt một nhóm route liên quan trong file riêng:
+
+```typescript
+// src/orders-router.ts
+import { createRouter } from "@cogover/sdk";
+
+export const ordersRouter = createRouter();
+ordersRouter.get("/", () => ({ orders: [] }));
+ordersRouter.get("/:orderId", ({ request }) => ({ orderId: request.params.orderId }));
+
+// src/main.ts
+import { createRouter } from "@cogover/sdk";
+import { ordersRouter } from "./orders-router";
+
+const router = createRouter();
+router.get("/health", () => ({ ok: true }));
+router.route("/orders", ordersRouter); // GET /orders, GET /orders/:orderId
+export default router.toHandler();
+```
+
+`prefix` theo cùng quy tắc với path của route và có thể chứa param, ví dụ
+`/customers/:customerId`; giá trị của chúng có trong `request.params` cùng với param
+của route. `"/"` gắn route giữ nguyên path. Route `/` của router được gắn trả lời tại
+chính `prefix`. Router được gắn phải tạo bằng `createRouter()` và không được là chính
+router này; mỗi router gắn tối đa 64 lần. Các lỗi này ném `ValidationError` ngay.
+
+Route của router được gắn được đọc khi gọi `toHandler()`, nên route thêm vào router đó
+sau khi gọi `route()` vẫn được tính. Router được gắn có thể gắn tiếp router khác, sâu
+tối đa 8 cấp, và một router có thể được gắn dưới nhiều prefix. Khi `toHandler()` dựng
+bảng route, vòng gắn lặp, gắn sâu hơn giới hạn, path đầy đủ vi phạm quy tắc path (ví dụ
+tên param lặp giữa prefix và route), route trùng hoặc mơ hồ về cấu trúc giữa các router,
+hoặc tổng cộng hơn 2.048 route đều ném `ValidationError`. Giới hạn 256 route đăng ký
+trên một router vẫn giữ nguyên.
+
+Route được chọn đúng như khi đăng ký mọi route trên một router theo thứ tự đăng ký,
+mỗi lần gắn chèn route của nó tại vị trí gọi `route()`: route tĩnh trùng path được ưu
+tiên, nếu không thì route khớp đầu tiên xử lý request. Gắn router là tuỳ chọn; router
+không gắn router nào hoạt động như trước.
+
 ### `router.toHandler(): SandboxHandler`
 
 Trả về handler để default-export, chụp lại danh sách route hiện tại.

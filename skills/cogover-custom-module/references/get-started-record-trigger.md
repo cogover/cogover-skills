@@ -306,7 +306,7 @@ Handler làm gì:
 
 ### 4.4. Export trigger
 
-Tạo `src/main.ts`. Cogover nhận diện record trigger qua named export `triggers`; default export vẫn là HTTP handler và là tuỳ chọn với Project chỉ khai báo trigger. Sample giữ một route nhỏ liệt kê các trigger đã khai báo; mục 6 gọi route này trên local:
+Tạo `src/main.ts`. Cogover nhận diện record trigger qua named export `triggers`; default export vẫn là HTTP handler và là tuỳ chọn với Project chỉ khai báo trigger. Trigger được định nghĩa và export từ `src/review-triggers.ts`, `src/main.ts` chỉ import và gom lại: giữ cách tổ chức này để Cogover có thể nạp riêng code của trigger ([Giữ module nạp nhanh](keep-module-fast-to-load.md)). Sample giữ một route nhỏ liệt kê các trigger đã khai báo; mục 6 gọi route này trên local:
 
 ```typescript
 import { createRouter } from "@cogover/sdk";
