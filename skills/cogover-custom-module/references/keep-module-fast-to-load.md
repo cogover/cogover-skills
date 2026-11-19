@@ -405,10 +405,10 @@ Không khai báo `true` khi còn một trong các điều sau, kể cả khi l�
 
 - Không chắc project tuân quy tắc ("không chắc thì đừng khai báo").
 - Checklist mục 4.2 tìm thấy code cấu hình lúc nạp (quyền, registry, khởi tạo thư viện) mà Load profile không liệt kê, chưa sửa.
-
-Hướng dẫn SDK khuyên đừng khai báo khi `requiredModules` có file sửa đối tượng của file khác hay lời gọi không phân giải được mà bạn không chắc là vô hại. Hiểu theo nghĩa: file đã liệt kê không gây sai hành vi (đã nằm trong mọi phần), nhưng nó cho thấy project có kiểu code cấu hình lúc nạp, nên phải rà checklist 4.2 để chắc không còn code cùng kiểu mà Cogover không phát hiện.
 - Project dùng thư viện cấu hình bằng lời gọi lúc nạp, plugin tự đăng ký, polyfill, hay quy tắc quyền đặt lúc nạp mà chưa chuyển sang khởi tạo lười.
 - Code dựa vào `.name` của class/hàm, hoặc dựa vào ngày giờ lúc nạp.
+
+Hướng dẫn SDK khuyên đừng khai báo khi `requiredModules` có file sửa đối tượng của file khác hay lời gọi không phân giải được mà bạn không chắc là vô hại. Hiểu theo nghĩa: file đã liệt kê không gây sai hành vi (đã nằm trong mọi phần), nhưng nó cho thấy project có kiểu code cấu hình lúc nạp, nên phải rà checklist 4.2 để chắc không còn code cùng kiểu mà Cogover không phát hiện.
 
 ### 5.2. Giữ khai báo trong repository
 
