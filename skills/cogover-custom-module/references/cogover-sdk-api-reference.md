@@ -275,7 +275,7 @@ ordersRouter.get("/:orderId", ({ request }) => ({ orderId: request.params.orderI
 
 // src/main.ts
 import { createRouter } from "@cogover/sdk";
-import { ordersRouter } from "./orders-router";
+import { ordersRouter } from "./orders-router.js";
 
 const router = createRouter();
 router.get("/health", () => ({ ok: true }));

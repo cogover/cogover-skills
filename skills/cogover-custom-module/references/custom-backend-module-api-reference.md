@@ -604,7 +604,7 @@ Ví dụ (số liệu tổng hợp):
 | `requiredBytes` | Kích thước nguồn (byte) của các file trong `requiredModules` và các file chúng import: phần mà mọi phần chứa thêm ngoài code của chính nó. |
 | `mainTopLevelEffect` | `null`, hoặc câu lệnh của `src/main.ts` có code thay đổi gì đó bên ngoài khi nạp (`file`, `line`, `statement`, `reason`, `via`); khi đó version không có phần nào. |
 | `coldLoadRuns` | `2` khi có ít nhất một phần được nạp hai lần (xem `parts[].coldLoadRuns`), `1` trong trường hợp còn lại, `0` khi không có phần. |
-| `entryPointParts` | `requested`: giá trị `entryPointParts` của lần publish (`true`, `false`, hoặc `null` khi không gửi). `effective`: các lần thực thi của version này hiện có chạy điểm vào bằng phần hay không, với ít nhất một loại, theo thiết lập hiện tại của nền tảng; có thể đổi mà không cần publish lại. `effectiveFor`: như trên theo từng loại, `entryPoints` (trigger, job, action) và `http` (route HTTP). |
+| `entryPointParts` | `requested`: giá trị `entryPointParts` của lần publish (`true`, `false`, hoặc `null` khi không gửi). `effective`: các lần thực thi của version này hiện có chạy điểm vào bằng phần hay không, với ít nhất một loại, theo thiết lập hiện tại của nền tảng; có thể đổi mà không cần publish lại. `effectiveFor`: như trên theo từng loại, `entryPoints` (trigger, job, action) và `http` (route HTTP); có thể vắng trên Workspace chạy bản Runtime sớm hơn, khi đó chỉ dựa vào `effective`. |
 | `warnings[]` | Tối đa 100 phần tử, mỗi phần tử có `code` và `message` tiếng Anh. |
 | `timings` | Thời gian (mili giây) của các bước publish tạo ra hồ sơ. Chỉ để tham khảo; các key có thể thay đổi. |
 
