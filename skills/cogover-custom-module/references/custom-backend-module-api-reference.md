@@ -456,7 +456,7 @@ Các build state có thể có: `PENDING`, `DOWNLOADING`, `VALIDATING`, `COMPILI
 | Dung lượng một file | 5 MiB | `INVALID_PROJECT_ARCHIVE` |
 | Số source file được `src/main.ts` import tới | 512 | `TYPESCRIPT_COMPILE_FAILED` |
 | Tổng dung lượng các source file đó | 6 MiB | `TYPESCRIPT_COMPILE_FAILED` |
-| Bundle JavaScript sau khi compile | 4 MiB | `TYPESCRIPT_COMPILE_FAILED` |
+| Bundle JavaScript sau khi compile | 6 MiB | `TYPESCRIPT_COMPILE_FAILED` |
 
 Request có `fileSize` lớn hơn 20 MiB bị từ chối với `400` trước khi tạo version, ví dụ `ZIP file is 25 MiB, which exceeds the 20 MiB limit`. Các giới hạn còn lại làm version chuyển sang `FAILED`, và `buildErrorMessage` nêu giới hạn bị vượt cùng đường dẫn file liên quan (nếu có):
 
@@ -468,9 +468,9 @@ Request có `fileSize` lớn hơn 20 MiB bị từ chối với `400` trước k
 | Một file nén hơn 100:1 | `File "src/data/rates.json" exceeds the 100:1 compression-ratio limit` |
 | Quá nhiều source file | `Project exceeds the limit of 512 source files; the limit was reached at src/lib/helpers.ts` |
 | Source code quá lớn | `Project source exceeds the 6 MiB total size limit; the limit was reached at src/lib/tables.ts` |
-| Bundle quá lớn | `Compiled JavaScript exceeds the 4 MiB limit` |
+| Bundle quá lớn | `Compiled JavaScript exceeds the 6 MiB limit` |
 
-Chỉ các file được `src/main.ts` import trực tiếp hoặc gián tiếp mới tính vào giới hạn source; `@cogover/sdk` được bundle kèm không tính. Mỗi invocation đều nạp toàn bộ bundle (trừ khi chạy bằng phần, xem [Hồ sơ nạp](#hồ-sơ-nạp)), nên bundle nhỏ hơn cũng khởi động nhanh hơn. 1 MiB bằng 1.048.576 byte. Cogover Dev CLI kiểm tra các giới hạn ZIP trước khi upload ZIP do CLI tạo. Bước upload file của Workspace áp dụng dung lượng tối đa riêng cho file ZIP (field Files của object Contract), có thể thấp hơn giới hạn ZIP ở trên; khi đó upload bị từ chối trước khi tạo version.
+Chỉ các file được `src/main.ts` import trực tiếp hoặc gián tiếp mới tính vào giới hạn source; `@cogover/sdk` được bundle kèm không tính. Bundle chứa cả `@cogover/sdk`, nên source sát giới hạn 6 MiB vẫn có thể vượt giới hạn bundle 6 MiB. Mỗi invocation đều nạp toàn bộ bundle (trừ khi chạy bằng phần, xem [Hồ sơ nạp](#hồ-sơ-nạp)), nên bundle nhỏ hơn cũng khởi động nhanh hơn. 1 MiB bằng 1.048.576 byte. Cogover Dev CLI kiểm tra các giới hạn ZIP trước khi upload ZIP do CLI tạo. Bước upload file của Workspace áp dụng dung lượng tối đa riêng cho file ZIP (field Files của object Contract), có thể thấp hơn giới hạn ZIP ở trên; khi đó upload bị từ chối trước khi tạo version.
 
 ### Liệt kê version
 

@@ -493,7 +493,13 @@ Publish chậm hơn trước vì dựng và đo phần, tuỳ kích thước: mo
 
 ## 7. Giới hạn kích thước
 
-Tổng dung lượng source file mà `src/main.ts` import tới tối đa **6 MiB**, bundle JavaScript sau khi compile vẫn tối đa **4 MiB** (`TYPESCRIPT_COMPILE_FAILED`); bảng đầy đủ ở mục [Giới hạn kích thước](custom-backend-module-api-reference.md#giới-hạn-kích-thước). Tách file không làm module đầy đủ nhỏ đi: dữ liệu lớn vẫn tính vào cả hai giới hạn.
+Tổng dung lượng source file mà `src/main.ts` import tới tối đa **6 MiB**, bundle JavaScript sau khi compile cũng tối đa **6 MiB** (`TYPESCRIPT_COMPILE_FAILED`); bảng đầy đủ ở mục [Giới hạn kích thước](custom-backend-module-api-reference.md#giới-hạn-kích-thước). Bundle chứa cả `@cogover/sdk` (source thì không tính SDK), nên source sát 6 MiB vẫn có thể vượt giới hạn bundle. Tách file không làm module đầy đủ nhỏ đi: dữ liệu lớn vẫn tính vào cả hai giới hạn.
+
+6 MiB là trần để publish được, không phải kích thước nên nhắm tới:
+
+- Bundle càng lớn nạp càng lâu: mọi lần thực thi không chạy bằng phần đều nạp cả bundle (mục 1).
+- Bước kiểm bundle lúc publish cũng có giới hạn thời gian xử lý, nên bundle nhiều **code** cỡ vài MB có thể bị từ chối ở bước kiểm bundle lúc publish (version `FAILED`) trước khi chạm 6 MiB. Bundle nặng **dữ liệu** (bảng tra cứu lớn) ít gặp trường hợp này hơn.
+- Module lớn: tổ chức theo điểm vào (mục 3) và chạy bằng phần khi bảng mục 5.1 cho phép; dữ liệu lớn tách file riêng chỉ điểm vào cần mới import, hoặc đưa ra Object hay file của Workspace và đọc khi cần; theo dõi `LOAD_TIME_HIGH` trong Load profile sau mỗi lần publish.
 
 ## 8. Kiểm thử và bàn giao
 

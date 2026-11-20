@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.36.1 - 2026-11-20
+
+Giới hạn bundle JavaScript sau biên dịch của Custom Backend Module nâng từ 4 MiB lên 6 MiB, bằng giới hạn tổng source.
+
+- `cogover-custom-module` 1.25.1:
+  - `references/custom-backend-module-api-reference.md`: bảng giới hạn kích thước, ví dụ `Compiled JavaScript exceeds the 6 MiB limit`, bundle chứa cả `@cogover/sdk` nên source sát 6 MiB vẫn có thể vượt giới hạn bundle.
+  - `references/keep-module-fast-to-load.md`: mục Giới hạn kích thước theo giới hạn mới; 6 MiB là trần publish, không phải mức nên nhắm tới (bundle lớn nạp lâu, bundle nhiều code cỡ vài MB có thể bị từ chối ở bước kiểm bundle lúc publish); khuyến nghị tổ chức theo điểm vào, tách dữ liệu lớn, theo dõi `LOAD_TIME_HIGH`.
+  - `SKILL.md`: ghi chú snapshot.
+
 ## 4.36.0 - 2026-11-20
 
 Custom Backend Module nạp nhanh hơn nhờ phần theo điểm vào: tổ chức file theo điểm vào, router con, khai báo `entryPointParts` và đọc Load profile sau publish.
