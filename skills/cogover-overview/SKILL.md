@@ -3,13 +3,13 @@ name: cogover-overview
 description: "Tổng quan Cogover Platform: kiến trúc 3 tầng, tính năng chuẩn của Sales, Finance, Inventory, Manufacture, Omni Channel, Custom Frontend/Backend Module và bản đồ skill chuyên trách. Dùng khi hỏi Cogover/App chuẩn làm được gì hoặc cần chọn skill. Tạo/sửa Custom Module: $cogover-custom-module; dự án App end-to-end từ BRD/SRS: $build-cogover-app."
 metadata:
   author: cogover
-  version: "1.2.1"
+  version: "1.3.0"
 ---
 
 # Tổng quan Cogover Platform
 
-- **Phiên bản:** `1.2.1`
-- **Ngày phát hành:** `2026-10-06`
+- **Phiên bản:** `1.3.0`
+- **Ngày phát hành:** `2026-11-22`
 
 Điểm vào và bản đồ điều phối cho mọi bài toán Cogover: xác định yêu cầu thuộc tầng nào, đọc reference tương ứng, rồi gọi skill chuyên trách để đọc state thật, thực hiện thay đổi và xác minh.
 
@@ -100,6 +100,7 @@ Bổ sung phần nghiệp vụ mà Object, Process hoặc chức năng chuẩn c
 | Tạo Button, action hoặc action chain | [$object-button](../object-button/SKILL.md); [$cogover-icon](../cogover-icon/SKILL.md) khi cần icon |
 | Tạo saved filter và cấu hình bảng danh sách | [$object-filter](../object-filter/SKILL.md) |
 | Tạo form công khai thu thập dữ liệu | [$object-form](../object-form/SKILL.md) cùng [$object-layout](../object-layout/SKILL.md) |
+| Cổng khách hàng (Customer Portal): khách xem chứng từ, công nợ, gửi yêu cầu hỗ trợ, đặt hàng; cấp quyền cho Liên hệ | [$cogover-customer-portal](../cogover-customer-portal/SKILL.md) |
 | Cấu hình transition và Path Component | [$object-transition-rule](../object-transition-rule/SKILL.md), [$object-path-component](../object-path-component/SKILL.md) |
 | Bật và chọn field history tracking | [$object-history-tracking](../object-history-tracking/SKILL.md) |
 | User, Personnel, Department, Position, Role và Data Security | [$user-permission](../user-permission/SKILL.md) |

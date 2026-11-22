@@ -2,7 +2,7 @@
 
 **English** | [Tiếng Việt](README.vi.md)
 
-A collection of 25 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows, AI Agents and voice Callbots, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
+A collection of 26 Agent Skills that help AI assistants explore and configure Cogover Workspaces, design data models, build workflows, AI Agents, voice Callbots and Customer Portals, and develop Custom Modules. Each skill includes a `SKILL.md` file along with the API documentation, scripts, or sample data it needs.
 
 For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGELOG.md). Each skill has its own version in its frontmatter and below its heading.
 
@@ -25,6 +25,7 @@ For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGEL
 | Configure Buttons and action chains | [object-button](skills/object-button/SKILL.md) |
 | Configure filters and list columns | [object-filter](skills/object-filter/SKILL.md) |
 | Create forms for collecting external submissions | [object-form](skills/object-form/SKILL.md) |
+| Set up a Customer Portal where customers view documents, track tickets, and place orders | [cogover-customer-portal](skills/cogover-customer-portal/SKILL.md) |
 | Configure status transition rules | [object-transition-rule](skills/object-transition-rule/SKILL.md) |
 | Provide stage guidance with a Path Component | [object-path-component](skills/object-path-component/SKILL.md) |
 | Configure field history tracking | [object-history-tracking](skills/object-history-tracking/SKILL.md) |
@@ -38,7 +39,7 @@ For the current release, see [VERSION.md](VERSION.md) and [CHANGELOG.md](CHANGEL
 
 ## Install and update
 
-The recommended way is to install the collection as the `cogover` plugin; this repository is also a marketplace for Claude and Codex. The plugin contains all 25 skills in the `skills/` directory and follows [VERSION.md](VERSION.md).
+The recommended way is to install the collection as the `cogover` plugin; this repository is also a marketplace for Claude and Codex. The plugin contains all 26 skills in the `skills/` directory and follows [VERSION.md](VERSION.md).
 
 | Environment | Install | Update |
 |---|---|---|

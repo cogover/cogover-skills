@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cogover Customer Portal"
+  short_description: "Thiết lập, xuất bản và kiểm chứng cổng khách hàng Cogover"
+  default_prompt: "Dùng $cogover-customer-portal để khảo sát yêu cầu, thiết lập Customer Portal cho Workspace của tôi bằng API, cấp quyền cho khách và kiểm chứng kết quả."

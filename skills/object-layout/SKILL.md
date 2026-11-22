@@ -3,13 +3,13 @@ name: object-layout
 description: "Quản lý layout Cogover Object qua Layouts V2 API `/bapi/v1/layouts_v2`: tạo, xem, cập nhật, xoá layout; tạo layout `isForm: 1` khi $object-form gọi; thiết kế row/column/section/tab/group/component; lấy/cập nhật `pageSettings.script`; đặt Object Button vào `pageSettings.buttons.listButton`, Path Component và Federation component (custom component) vào layout xem/sửa."
 metadata:
   author: cogover
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Object Layout
 
-- **Phiên bản:** `1.2.0`
-- **Ngày phát hành:** `2026-10-06`
+- **Phiên bản:** `1.2.1`
+- **Ngày phát hành:** `2026-11-22`
 
 Skill này được `$object-form` gọi như sub-skill khi Object chưa có layout `isForm` hợp lệ, được `$layout-scripting` dùng để lấy/ghi `pageSettings.script`, và phối hợp với `$object-button`, `$document-template`, `$object-path-component` khi cần đặt Object Button hoặc Path Component lên layout xem/sửa. `$cogover-custom-module` gọi skill này để nhúng custom component của Custom Frontend Module (item Federation component) vào layout.
 
@@ -51,11 +51,13 @@ Link layout: `https://{WORKSPACE_DOMAIN}/settings/object/{OBJECT_SLUG}/layout/{L
 Quy tắc cho mọi `PUT`:
 
 - View lại layout ngay trước khi sửa và dựng payload từ `data` mới nhất để không ghi đè thay đổi của người khác.
-- Payload chỉ gồm allowlist: `name`, `objectTypeSlug`, `status`, `type`, `updateRecordMode`, `accessControls`, `hasComponentPath`, `content`, `title`, `pageSettings`, `functionLayout`, `isWeb`, `isMobile`. Không gửi raw `data` của response view (chứa trường server-managed `id`, `slug`, `created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`, `objectTypeId`, `contentCompiled` mà API update không nhận). Không gửi payload rút gọn chỉ có `pageSettings.script` hoặc chỉ `name`, `content`, `pageSettings`.
+- Payload chỉ gồm allowlist: `name`, `objectTypeSlug`, `status`, `type`, `updateRecordMode`, `accessControls`, `hasComponentPath`, `content`, `title`, `pageSettings`, `functionLayout`, `isWeb`, `isMobile` (thêm `isShowInPicker` khi cần đổi, xem dưới). Không gửi raw `data` của response view (chứa trường server-managed `id`, `slug`, `created`, `updated`, `createdBy`, `updatedBy`, `workspaceId`, `objectTypeId`, `contentCompiled` mà API update không nhận). Không gửi payload rút gọn chỉ có `pageSettings.script` hoặc chỉ `name`, `content`, `pageSettings`.
 - Giữ nguyên mọi giá trị không được yêu cầu thay đổi, kể cả `hasComponentPath` (có thể là `null`); không tự dựng lại `content` khi chỉ sửa script, button hoặc thêm một component.
 - `title` phải là object hợp lệ: view trả `title: null` thì bỏ key `title` khỏi payload hoặc dựng object theo [layout-json-structure.md](references/layout-json-structure.md). Gửi `title: null` hoặc thiếu `pageSettings` trả `42201` với `meta` như `{"title": "array"}`; đọc `meta` để biết khoá sai.
 - Layout tiêu chuẩn sinh khi tạo Object (thường tên "Giao diện tiêu chuẩn") có thể có `content` rỗng và `title: null`; đã quan sát `PUT` `content` vào layout này trả `r: 0` nhưng view lại vẫn rỗng. Không dùng nó làm đích: tạo layout custom theo [Tạo layout](#tạo-layout).
 - Layout custom tồn tại song song với layout tiêu chuẩn: xác định layout giao diện thực sự dùng cho màn Tạo và Xem/Sửa bằng cách mở form, theo [Kiểm tra trên giao diện](#kiểm-tra-trên-giao-diện).
+- `accessControls[].items` khi ghi là **mảng ID dạng chuỗi**; `view` trả `items` dạng object đầy đủ (option 1 trả `[{"id": "all", ...}]`). Dựng payload: `option: 1` gửi `items: []`; `option: 2` đổi từng item thành `item.id`. Gửi lại nguyên dạng object với `option: 2` (đã kiểm trên Object tạm): `type: "personnel"` → 400 `r: 43201` (bên trong `r: 14`); `type: "role"` → lưu `r: 0` nhưng sau đó `list` và `view` layout của Object trả HTTP 200 `msg: "Internal Server Error"` không có `data`. Gặp tình trạng này: xoá layout vừa ghi, hoặc `PUT` lại đủ payload với `items` là ID chuỗi (cần bản `content` đã chụp trước), rồi đọc lại `list`. Không thử nghiệm quyền layout trên Object chuẩn đang dùng.
+- Layout mới được xếp sau cùng (`sort` lớn nhất) nên trở thành layout mặc định của màn hình tương ứng (Tạo hoặc Xem/Sửa) cho người có quyền, kể cả khi quyền chỉ giao cho người khác: Super Admin vẫn nhận layout đó làm mặc định (đã kiểm). Layout phụ không được thay màn hình của người dùng (vd layout cho Customer Portal) tạo với `isShowInPicker: 0`: không được chọn làm mặc định, ẩn khỏi bộ chọn layout; `isShowInPicker` nhận được ở cả `POST` và `PUT`, view trả lại `isShowInPicker`.
 - Sau `PUT`, view lại và so với payload. So `accessControls` theo `functions`, `option`, `items`, `type`: server cấp lại `id`, `created`, `updated` của từng entry ở mỗi lần `PUT` dù quyền không đổi (đã quan sát). Không khớp: báo dữ liệu chưa được lưu đúng và dừng.
 
 ## Phân loại layout
@@ -290,5 +292,7 @@ Quy trình:
 | Field người dùng nêu không có trong Object | Báo field không tồn tại trong Object và hỏi lại |
 | `42201` khi `PUT` | Đọc `meta`; thường do `title: null`, thiếu `pageSettings`/`type`/`updateRecordMode`. Bỏ `title` null hoặc dựng object, giữ đủ allowlist |
 | `PUT` `content` trả `r: 0` nhưng view vẫn rỗng | Layout tiêu chuẩn tự sinh; tạo layout custom, không thử lại |
+| `list`/`view` trả HTTP 200, `msg: "Internal Server Error"`, không có `data` | Một layout của Object có `accessControls.items` dạng object; xoá layout vừa ghi hoặc `PUT` lại với ID chuỗi (xem quy tắc `PUT`) |
+| `PUT` trả 400 `r: 43201` (`body.r: 14`) | `accessControls.items` gửi dạng object của response view; đổi thành ID chuỗi |
 | Update trả thành công nhưng view không khớp | Báo dữ liệu chưa được lưu đúng và dừng; không fallback endpoint khác |
 | 401/403, 422 hoặc `r` khác `0`, 5xx | Theo `$cogover-api-auth`; hiển thị `r`, `msg`; không đổi endpoint hay cơ chế xác thực |

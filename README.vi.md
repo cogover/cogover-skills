@@ -2,7 +2,7 @@
 
 [English](README.md) | **Tiếng Việt**
 
-Bộ 25 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình, AI Agent, Callbot và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
+Bộ 26 Agent Skills giúp trợ lý AI khảo sát và cấu hình Cogover Workspace, thiết kế dữ liệu, xây quy trình, AI Agent, Callbot, Customer Portal và phát triển Custom Module. Mỗi skill gồm `SKILL.md` cùng tài liệu API, scripts hoặc dữ liệu mẫu cần thiết.
 
 Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.md). Mỗi skill có version riêng trong frontmatter và dưới tiêu đề.
 
@@ -25,6 +25,7 @@ Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.
 | Button và chuỗi hành động | [object-button](skills/object-button/SKILL.md) |
 | Bộ lọc và cột danh sách | [object-filter](skills/object-filter/SKILL.md) |
 | Biểu mẫu thu thập dữ liệu bên ngoài | [object-form](skills/object-form/SKILL.md) |
+| Cổng khách hàng: khách xem chứng từ, theo dõi yêu cầu hỗ trợ, đặt hàng | [cogover-customer-portal](skills/cogover-customer-portal/SKILL.md) |
 | Quy tắc chuyển trạng thái | [object-transition-rule](skills/object-transition-rule/SKILL.md) |
 | Path Component hướng dẫn theo giai đoạn | [object-path-component](skills/object-path-component/SKILL.md) |
 | Cấu hình lịch sử thay đổi field | [object-history-tracking](skills/object-history-tracking/SKILL.md) |
@@ -38,7 +39,7 @@ Release hiện tại: xem [VERSION.md](VERSION.md) và [CHANGELOG.md](CHANGELOG.
 
 ## Cài đặt và cập nhật
 
-Cách khuyến nghị là cài bộ skill dưới dạng plugin `cogover`; repository này đồng thời là marketplace cho Claude và Codex. Plugin chứa đủ 25 skill trong thư mục `skills/` và cập nhật theo [VERSION.md](VERSION.md).
+Cách khuyến nghị là cài bộ skill dưới dạng plugin `cogover`; repository này đồng thời là marketplace cho Claude và Codex. Plugin chứa đủ 26 skill trong thư mục `skills/` và cập nhật theo [VERSION.md](VERSION.md).
 
 | Môi trường | Cài đặt | Cập nhật |
 |---|---|---|

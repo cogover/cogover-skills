@@ -43,7 +43,8 @@ Schema từng cấp của payload Layouts V2. Quy tắc bắt buộc về `type`
 | `status` | Number | `1` = active |
 | `type` | Number | `0` Custom layout, `1` Standard layout, `2` record detail (mặc định) |
 | `updateRecordMode` | Number | `4` = mặc định |
-| `accessControls` | Array | `type`: `"personnel"` (nhân sự), `"position"` (chức vụ), `"department"` (phòng ban), `"role"` (vai trò); `option: 1` tất cả, `option: 2` chỉ định cụ thể kèm `items`; `functions` theo loại layout |
+| `accessControls` | Array | `type`: `"personnel"` (nhân sự), `"position"` (chức vụ), `"department"` (phòng ban), `"role"` (vai trò); `option: 1` tất cả (`items: []`), `option: 2` chỉ định cụ thể kèm `items` là mảng ID dạng chuỗi, vd `{"functions": ["VIEW_EDIT"], "option": 2, "items": ["<PERSONNEL_ID>"], "type": "personnel"}`; `functions` theo loại layout. Response `view` trả `items` dạng object (`{"id", "name", ...}`; option 1 là `[{"id": "all", ...}]`): không gửi lại dạng đó, xem quy tắc `PUT` trong SKILL.md |
+| `isShowInPicker` | Number | `1` (mặc định) hiện trong bộ chọn layout và có thể là layout mặc định; `0` ẩn khỏi bộ chọn và không bao giờ là layout mặc định |
 | `hasComponentPath` | Number/null | `0`, `1` hoặc `null`. Không suy ra sự hiện diện của Path Component từ trường này: layout thật có `path_component` trong `content` vẫn có thể trả `null`. Khi update giữ nguyên giá trị response; không đổi thành `1`, không chuẩn hoá `null` thành `0`. Xác định Path bằng cách duyệt `content` tìm `fieldType: "path_component"` |
 | `content` | Array | Mảng `layoutRow` |
 | `title` | Object | `value`; `valueType` `"text"`/`"html"`/`"react"`/`"markdown"`; `valueIsRaw` (nội dung raw); `valuePathName` (tham chiếu data path); `valueDataType`; `isShowTitle`; `isShowHelpText`; `helpText` |

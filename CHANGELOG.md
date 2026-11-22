@@ -1,5 +1,22 @@
 # Changelog
 
+## 4.37.0 - 2026-11-22
+
+Skill mới thiết lập Cogover Customer Portal (cổng khách hàng) từ yêu cầu nghiệp vụ tới kiểm chứng, dựa trên API quản trị đã gọi thật.
+
+- `cogover-customer-portal` 1.0.0 (mới):
+  - `SKILL.md`: Customer Portal là gì, tác nhân, quy trình khảo sát → hỏi lại (bảng câu hỏi phải hỏi và mặc định tự quyết) → điều kiện tiên quyết → đường vào trên giao diện → cấu hình theo thứ tự → xuất bản → cấp quyền → vận hành → kiểm chứng → bàn giao; nguyên tắc lưu nháp/xuất bản, ghi đè theo khối, giới hạn phiên `auth-token`.
+  - `references/admin-api.md`: endpoint `/api/v1/workspace/customer-portal/...` (cấu hình, logo, xuất bản, tắt cổng, Object, người dùng cổng, trao đổi, duyệt đơn, duyệt đăng ký, nhật ký, tên miền), request/response và mã lỗi thật; danh sách hộp thư `/api/v1/workspaceEmail`.
+  - `references/settings-and-features.md`: bảng điều kiện tiên quyết theo tính năng; thương hiệu, thư mời, thông báo email, công nợ, đặt hàng và bảng giá riêng, việc cần làm (`portal_task`, tạo bằng bản ghi hoặc Process), xác nhận số dư, nhóm, tự đăng ký, tra cứu, chat + AI Agent (Trang Live Chat, router, bẫy cập nhật agent thiếu danh tính), gợi ý bài viết, tên miền riêng.
+  - `references/portal-objects.md`: preset (đọc slug trạng thái bằng `$object-info`), schema cấu hình Object, tổ hợp `enabled`/`published`/`publishedVersion` và cách bật lại, khoá của bản đã xuất bản khác bản nháp; quy trình an toàn tạo layout dành cho khách (`isShowInPicker: 0` để không thành layout Xem mặc định của nhân viên, `accessControls.items` là ID chuỗi, đọc lại `list`/`view`, khôi phục khi danh sách layout lỗi); đánh giá field khách đang thấy khi khảo sát cổng đang chạy; related list, bộ lọc, khách tạo bản ghi kèm tệp, phạm vi thành viên theo `contactField` từng preset, trao đổi, mẫu PDF, hành động có mã xác nhận (`reasonField` bắt buộc khi cần lý do, phải có trên layout).
+  - `references/customer-access-and-operations.md`: cấp quyền cho Liên hệ, tìm `linkId`/`userId` bằng `users?q=`, vòng đời liên kết (hiệu lực ngay), vai trò phía khách (một Tài khoản có nhiều `ADMIN`; đặt mới là thêm), nhiều Tài khoản, nhật ký (mặc định, `cursor`, giới hạn 93 ngày, sự kiện ẩn danh), nhân viên trả lời/duyệt đơn/duyệt đăng ký, nhật ký, phân quyền nhân viên (`customer_portal_setting`, `customer_portal_user` qua `/bapi/v1/roles`), mục menu Cài đặt.
+  - `references/troubleshooting.md`: checklist kiểm chứng, kịch bản để người dùng tự thử trên `/portal` (gồm cô lập hai Tài khoản), mã issue/cảnh báo xuất bản, bảng sự cố.
+  - `references/recipes.md`: ba công thức (cổng hỗ trợ tối thiểu; hoá đơn + công nợ + báo giá; đặt hàng B2B) và mẫu báo cáo bàn giao.
+  - `scripts/customer_portal_api.py`: đổi API Key thành phiên, kiểm Workspace, lệnh `status`, `get`, `mailboxes`, `settings`, `object-update`, `publish`, `unpublish`, `logo`, `grant`, `call`, `batch` (một phiên cho cả chuỗi, `"lockVersion": "current"`, tham chiếu `{{steps.N.<đường dẫn>}}`, `--out` ghi kết quả JSON); chặn ghi khi thiếu `--apply` (đặt trước hoặc sau lệnh con), không in bí mật, chờ và thử lại khi `auth-token` bị giới hạn ngắn.
+- `cogover-overview` 1.3.0: thêm `$cogover-customer-portal` vào bản đồ điều phối skill.
+- `object-layout` 1.2.1: `accessControls[].items` khi ghi là mảng ID dạng chuỗi, response `view` trả dạng object (option 1 là `[{"id": "all", ...}]`); gửi lại dạng object với `option: 2` bị 400 `r: 43201` (nhân sự) hoặc làm `list`/`view` layout của Object trả `Internal Server Error` (role), cách khôi phục; layout mới nhất thành layout mặc định (kể cả với Super Admin khi quyền giao cho người khác), `isShowInPicker: 0` để ẩn khỏi bộ chọn và không làm mặc định; mẫu `jq` dựng `accessControls` cho `PUT`.
+- README, plugin: 26 skill.
+
 ## 4.36.1 - 2026-11-20
 
 Giới hạn bundle JavaScript sau biên dịch của Custom Backend Module nâng từ 4 MiB lên 6 MiB, bằng giới hạn tổng source.
