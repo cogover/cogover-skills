@@ -201,7 +201,7 @@ Ngưỡng cảnh báo của Load profile (cảnh báo không làm publish thất
 
 | Mã | Khi nào | Đo bằng |
 |---|---|---|
-| `PART_SIZE_HIGH` | Một phần lớn bằng hoặc hơn **400 KB** | `parts[].bytes`: phần không tính SDK dùng chung, đã gồm `requiredModules` |
+| `PART_SIZE_HIGH` | Một phần lớn bằng hoặc hơn **400 KB**; báo cả khi version chưa chạy bằng phần (không khai báo hoặc `false`), để biết trước khi khai báo `true` | `parts[].bytes`: phần không tính SDK dùng chung, đã gồm `requiredModules` |
 | `BUNDLE_SIZE_HIGH` | Module đầy đủ lớn bằng hoặc hơn **500 KB** | `bundle.bytes`: gồm cả `@cogover/sdk` (khoảng 190 KB), nên code của project chỉ còn khoảng 310 KB trước khi chạm ngưỡng |
 
 - Đơn vị: KB thập phân (1 KB = 1.000 byte), đúng như trong `message`. CLI in kích thước theo KiB (1 KiB = 1.024 byte): `390.6 KiB` đã là 400 KB, `488.3 KiB` là 500 KB. So bằng byte trong JSON khi sát ngưỡng.
