@@ -1,6 +1,6 @@
 # Giữ module nạp nhanh: tách phần theo điểm vào
 
-Snapshot tài liệu `@cogover/sdk` `0.18.0`, Cogover Dev CLI `0.22.0` và Backend API Reference ngày `2026-11-20`. Đọc khi tổ chức source của Custom Backend Module (mọi project), quyết định có khai báo `entryPointParts` hay không, đọc **Load profile** sau khi publish, và khi review code của project đã khai báo `entryPointParts: true`. Contract chi tiết: mục [Tổ chức route theo nhóm](cogover-sdk-usage-guide.md#tổ-chức-route-theo-nhóm) và [Giữ module nạp nhanh](cogover-sdk-usage-guide.md#giữ-module-nạp-nhanh) của SDK usage guide, [`router.route()`](cogover-sdk-api-reference.md#routerrouteprefix-string-router-scriptroutertschema-scriptroutertschema) của SDK API reference, [Hồ sơ nạp](custom-backend-module-api-reference.md#hồ-sơ-nạp) của Backend API Reference, [Phần theo điểm vào và Load profile](cli-session-and-delivery.md#phần-theo-điểm-vào-và-load-profile) của CLI reference. Tên file, Object và số liệu bên dưới chỉ minh hoạ.
+Snapshot tài liệu `@cogover/sdk` `0.18.0`, Cogover Dev CLI `0.22.0` và Backend API Reference ngày `2026-11-22`. Đọc khi tổ chức source của Custom Backend Module (mọi project), quyết định có khai báo `entryPointParts` hay không, đọc **Load profile** sau khi publish, và khi review code của project đã khai báo `entryPointParts: true`. Contract chi tiết: mục [Tổ chức route theo nhóm](cogover-sdk-usage-guide.md#tổ-chức-route-theo-nhóm) và [Giữ module nạp nhanh](cogover-sdk-usage-guide.md#giữ-module-nạp-nhanh) của SDK usage guide, [`router.route()`](cogover-sdk-api-reference.md#routerrouteprefix-string-router-scriptroutertschema-scriptroutertschema) của SDK API reference, [Hồ sơ nạp](custom-backend-module-api-reference.md#hồ-sơ-nạp) của Backend API Reference, [Phần theo điểm vào và Load profile](cli-session-and-delivery.md#phần-theo-điểm-vào-và-load-profile) của CLI reference. Tên file, Object và số liệu bên dưới chỉ minh hoạ.
 
 ## 1. Vì sao
 
@@ -8,6 +8,7 @@ Snapshot tài liệu `@cogover/sdk` `0.18.0`, Cogover Dev CLI `0.22.0` và Backe
 - Khi publish, ngoài module biên dịch đầy đủ (*merged bundle*), Cogover dựng thêm các module nhỏ gọi là **phần** (*part*): trigger, job hoặc action được định nghĩa và export từ file riêng (không phải `src/main.ts`) có phần chỉ chứa code file đó cần; router con tạo trong file riêng và gắn bằng `router.route()` có phần cho các route của nó. `@cogover/sdk` là module dùng chung, nạp trước phần. Một lần thực thi chạy bằng phần thì chỉ nạp SDK và phần của nó.
 - Module đầy đủ luôn được dựng và là đường dự phòng: điểm vào không có phần, phần không dựng được hoặc version không chạy bằng phần đều dùng module đầy đủ như trước.
 - Lợi ích phụ thuộc kích thước module: một lần chạy bằng phần vẫn phải nạp SDK dùng chung (thường vài chục tới khoảng 100 ms). Module nhỏ (bundle đầy đủ vài trăm KiB) nạp đầy đủ chỉ mất xấp xỉ thời gian nạp SDK, nên chạy bằng phần gần như không nhanh hơn; ví dụ đo thật với bundle khoảng 177 KiB: bundle đầy đủ 83–104 ms, chạy bằng phần = SDK 63–87 ms + phần 4 ms. Lợi ích chỉ rõ khi module lớn dần; code đã tổ chức theo mục 3 từ đầu thì lúc đó chỉ cần khai báo (mục 5).
+- Kích thước cũng quan trọng, không chỉ thời gian nạp: một phần hay module đầy đủ được nạp nhiều lần (vài trăm lượt gọi trở lên, như trigger hay route được gọi dày) được môi trường chạy tối ưu thêm. Với code lớn, việc này tốn nhiều bộ nhớ tới mức môi trường chạy của Workspace bị khởi động lại, và lượt gọi kế tiếp của Workspace nạp nguội lại từ đầu. Vì vậy Load profile cảnh báo khi một phần từ **400 KB** (`PART_SIZE_HIGH`) hoặc module đầy đủ từ **500 KB** (`BUNDLE_SIZE_HIGH`); cách giữ kích thước ở mục 3.5.
 - Chạy bằng phần chỉ an toàn khi code chạy lúc file được nạp không tác động ra ngoài file đó (mục 4), vì phần chỉ nạp một tập file. Vì vậy tác giả phải khai báo (mục 5); không khai báo thì theo mặc định của nền tảng, hiện là module đầy đủ.
 
 ## 2. Điều kiện phiên bản và môi trường
@@ -193,6 +194,37 @@ Quy tắc của `router.route()`:
 - Import đúng thứ cần từ đúng file; tránh file "barrel" (`index.ts` re-export mọi thứ) và file tiện ích khổng lồ mà mọi điểm vào đều import, vì phần nào import nó cũng mang theo toàn bộ.
 - Dữ liệu và bảng tra cứu lớn tách file riêng, chỉ điểm vào cần mới import; tạo chỉ mục từ dữ liệu đó trong hàm (khởi tạo lười), không ở cấp cao nhất khi dữ liệu import từ file JSON (mục 4).
 - Code chạy lúc nạp của file dùng chung giữ ở mức khai báo hằng số và hàm.
+
+### 3.5. Giữ kích thước phần và module đầy đủ dưới ngưỡng
+
+Ngưỡng cảnh báo của Load profile (cảnh báo không làm publish thất bại):
+
+| Mã | Khi nào | Đo bằng |
+|---|---|---|
+| `PART_SIZE_HIGH` | Một phần lớn bằng hoặc hơn **400 KB** | `parts[].bytes`: phần không tính SDK dùng chung, đã gồm `requiredModules` |
+| `BUNDLE_SIZE_HIGH` | Module đầy đủ lớn bằng hoặc hơn **500 KB** | `bundle.bytes`: gồm cả `@cogover/sdk` (khoảng 190 KB), nên code của project chỉ còn khoảng 310 KB trước khi chạm ngưỡng |
+
+- Đơn vị: KB thập phân (1 KB = 1.000 byte), đúng như trong `message`. CLI in kích thước theo KiB (1 KiB = 1.024 byte): `390.6 KiB` đã là 400 KB, `488.3 KiB` là 500 KB. So bằng byte trong JSON khi sát ngưỡng.
+- Ngưỡng do Workspace cấu hình: đọc `loadProfile.partSizeThresholdBytes` và `bundleSizeThresholdBytes` (`0` là Workspace không cảnh báo loại đó). Workspace có Load profile nhưng chưa có hai field này thì chưa có cảnh báo kích thước: tự so `parts[].bytes` và `bundle.bytes` với 400.000 và 500.000 byte.
+- `BUNDLE_SIZE_HIGH` không báo khi module đầy đủ chỉ còn là đường dự phòng: version khai báo `entryPointParts: true`, mọi trigger/job/action và mọi route đều có phần, nền tảng đang chạy cả hai loại bằng phần (`effectiveFor`), và `src/main.ts` không export default một handler không phải `router.toHandler()` (handler đó luôn chạy bằng module đầy đủ). Không khai báo hoặc khai báo `false` thì vẫn báo, vì khi đó mọi lần thực thi nạp module đầy đủ.
+- Cộng dồn: cảnh báo xét từng phần riêng, nhưng nhiều phần cỡ vừa cùng được gọi dày cũng cộng dồn: trong phép đo, hai phần khoảng 400 KB cùng nóng đã chạm giới hạn ở một trong hai lần, ba phần thì chạm ở mọi lần. Phần của điểm vào gọi dày (trigger, route chính) càng nhỏ càng tốt; hai phần trở lên từ khoảng 300 KB cùng được gọi dày thì xử lý như đã có cảnh báo.
+
+Bố cục file quyết định kích thước phần, vì phần chứa mọi thứ file khai báo điểm vào import tới:
+
+- Không gom điểm vào thành một file "registry" (ví dụ `triggers/registry.ts` import trigger của mọi Object rồi export một mảng; một file router đăng ký route của mọi nhóm): mọi điểm vào trong file dùng chung một phần chứa code của tất cả. Ví dụ đo thật: một file registry gom trigger của nhiều Object cho phần 616 KB, một file chứa nhiều job cùng hàm dựng dữ liệu của chúng cho phần 455 KB. Mỗi điểm vào (hoặc nhóm nhỏ cần cùng code) một file; chỉ `src/main.ts` gom lại.
+- Nhóm route có phần từ 400 KB: tách thành nhiều router con theo nhóm hàm xử lý, mỗi file router chỉ import hàm xử lý của nhóm đó (mục 3.3).
+- Import hàm từ đúng file của nó, không qua barrel; thư viện lớn gói vào bundle chỉ import ở file điểm vào cần nó.
+- Xử lý `requiredModules` (mục 4.1): các file đó nằm trong **mọi** phần, nên chúng làm mọi phần lớn lên cùng lúc.
+- Dữ liệu viết thành object hay mảng literal tốn bộ nhớ khi tối ưu như code cùng kích thước (đo: khoảng 600 KB object literal tốn gần bằng code thật); một chuỗi lớn hay thân hàm chưa được gọi thì rẻ hơn nhiều. Cảnh báo chỉ đo byte nên vẫn báo cả hai trường hợp. Bảng tra cứu lớn: đưa ra Object hay file của Workspace và đọc khi cần; buộc phải nhúng thì tách file riêng chỉ điểm vào cần mới import, có thể lưu dạng chuỗi JSON và `JSON.parse` lười trong hàm (mục 4.1); còn cảnh báo thì ghi lý do chấp nhận vào bàn giao.
+
+Đọc kích thước sau publish: CLI in kích thước module đầy đủ (`Merged bundle`), 3 phần chậm nhất kèm KiB (`Slowest parts`) và các dòng `PART_SIZE_HIGH: Part <số> (<file>) is <x> KB (threshold 400 KB): ...`; danh sách đầy đủ ở `loadProfile.parts[]` (`no`, `source`, `bytes`) qua API hoặc `cogover-dev publish --json`. `Slowest parts` xếp theo thời gian nạp, không theo kích thước, nên phần lớn nhất có thể không có trong đó.
+
+Kiểm trước khi bàn giao:
+
+- [ ] Không có `PART_SIZE_HIGH`; hoặc có lý do chấp nhận (phần đó ít được gọi) đã ghi vào bàn giao.
+- [ ] Không có `BUNDLE_SIZE_HIGH`; hoặc module đã tổ chức theo điểm vào và quyết định khai báo theo mục 5.1, phần còn lại ghi lý do.
+- [ ] Không có hai phần trở lên từ khoảng 300 KB cùng phục vụ điểm vào gọi dày.
+- [ ] Không có file registry hay router gom điểm vào của nhiều nhóm.
 
 ## 4. Quy tắc "lệnh ở đầu file"
 
@@ -380,7 +412,7 @@ Tổ chức code theo mục 3.1–3.2 và mục 4 **luôn** làm, mọi phiên b
 | Chưa có Load profile của đúng code sẽ publish (thay đổi chỉ ở `cogover.json`/`cogover.example.json` không tính) | Publish không khai báo trước, đọc Load profile, rồi xét lại bảng này |
 | `mainTopLevelEffect` khác `null` hoặc có `PART_GLOBALS_MODIFIED` (version không có phần nào) | Không khai báo (không có tác dụng). Sửa code theo mục 4.1 nếu muốn có phần, rồi publish lại không khai báo và xét lại bảng |
 | Checklist mục 4.2 chưa được sub-agent Review bảo mật rà trên đúng code sẽ publish (ở bước 8 của skill; mọi project có code đều qua review này) | Không khai báo cho tới khi đã rà |
-| Có cảnh báo `LOAD_TIME_HIGH` của module đầy đủ (`message` bắt đầu bằng `The merged bundle`), hoặc **lợi ích ước tính từ 200 ms trở lên** (công thức dưới; `requiredModules` không rỗng vẫn được, vì số đo của phần đã gồm module bắt buộc) | Khai báo `true` |
+| Có cảnh báo `LOAD_TIME_HIGH` của module đầy đủ (`message` bắt đầu bằng `The merged bundle`), có `BUNDLE_SIZE_HIGH` (module đầy đủ từ 500 KB, mục 3.5), hoặc **lợi ích ước tính từ 200 ms trở lên** (công thức dưới; `requiredModules` không rỗng vẫn được, vì số đo của phần đã gồm module bắt buộc) | Khai báo `true` |
 | Người dùng **yêu cầu tường minh** bật chạy bằng phần sau khi đã được xem số đo và nghĩa của khai báo (mục 5) | Khai báo `true` |
 | Các trường hợp còn lại | Không khai báo; báo người dùng số đo, lợi ích ước tính và khi nào nên bật |
 
@@ -396,6 +428,7 @@ lợi ích = coldLoadMs của Merged bundle − (coldLoadMs của Shared SDK + c
 - SDK dùng chung thường vài chục tới khoảng 100 ms, nên ngưỡng 200 ms thường tương ứng với bundle đầy đủ nạp nguội từ khoảng 300 ms trở lên.
 - Số đo dao động khoảng ±25% giữa các lần: chỉ so các số trong cùng một profile. Lợi ích dưới 200 ms (kể cả sát ngưỡng) thì không khai báo, ghi số đo và xét lại ở lần publish sau; không publish thêm chỉ để đo lại.
 - Ví dụ: bundle đầy đủ 95 ms, SDK 75 ms, phần chậm nhất 4 ms → lợi ích khoảng 16 ms: không khai báo. Bundle đầy đủ 1.180 ms, SDK 53 ms, phần của trigger 60 ms → lợi ích khoảng 1.067 ms (và có `LOAD_TIME_HIGH`): khai báo khi các dòng trên của bảng đã qua.
+- `PART_SIZE_HIGH` không phải lý do để không khai báo: phần luôn nhỏ hơn module đầy đủ chứa nó. Sửa bố cục theo mục 3.5 trước khi khai báo nếu được; chưa sửa thì ghi phần nào, kích thước và mức độ được gọi vào bàn giao.
 
 Yêu cầu chung chung như "làm cho module nạp nhanh", "theo khuyến nghị mới nhất", "tối ưu hiệu năng" **không** phải yêu cầu khai báo. Với yêu cầu đó: tổ chức code theo quy ước, báo số đo Load profile (bundle đầy đủ, SDK, phần chậm nhất, lợi ích ước tính, dòng `Runs on:`) và nêu điều kiện nên bật; chỉ khai báo khi bảng trên cho kết quả khai báo.
 
@@ -443,12 +476,13 @@ Load profile (measured at publish, warning threshold 1000 ms):
   Entry points without a part of their own file (1):
     trigger order_inline -> merged bundle: It is not exported from a file other than src/main.ts. [NOT_LOCATED]
     Hint (NOT_LOCATED): Define and export each entry point from its own file, then collect it in src/main.ts.
-  Warnings (3):
+  Warnings (4):
     LOAD_TIME_HIGH: The merged bundle took 1180 ms to load (threshold 1000 ms).
       Hint: Put each group of routes in a router of its own file (createRouter() and its routes only) and mount it in src/main.ts with router.route(prefix, router).
     REQUIRED_MODULES: 1 module(s) run code while they load, so every part includes them (...).
       Hint: Move code that runs while a module loads into handlers, or into files that only the entry points needing it import.
     ENTRY_POINTS_IN_BUNDLE: 1 entry point(s) run on the merged bundle: order_inline.
+    BUNDLE_SIZE_HIGH: The merged bundle is 1678 KB (threshold 500 KB): a bundle this large that loads often can make the runtime of the Workspace restart, so that the next call loads cold. Declare each entry point in a file of its own and publish with entryPointParts: true, so that every entry point runs on a small part.
 Next: cogover-dev activate TSVXXXXXXXXXXXX
 ```
 
@@ -469,7 +503,8 @@ Next: cogover-dev activate TSVXXXXXXXXXXXX
 
 - Đọc qua API: `loadProfile.entryPointParts.effective` (`true` khi ít nhất một loại điểm vào đang chạy bằng phần) là field quyết định; đọc nó trước. `effectiveFor` (`entryPoints` cho trigger/job/action, `http` cho route) chỉ chi tiết theo loại và có thể vắng trên Workspace chạy bản Runtime sớm hơn: vắng thì chỉ dựa vào `effective`. `requested` là giá trị đã khai báo (`true`, `false` hoặc `null`).
 - `Modules in every part` (`requiredModules`): file chạy code tác động ra ngoài lúc nạp mà Cogover phát hiện, kèm câu lệnh cấp cao nhất và chuỗi `via`; số trong ngoặc là số file và `requiredBytes` (kích thước nguồn mọi phần phải mang thêm). Hành vi an toàn (mục 4); nên sửa theo mục 4.1 để phần nhỏ lại, không bắt buộc phải rỗng mới được khai báo.
-- `Slowest parts`: phần nạp chậm nhất (không tính SDK). Phần lớn: giảm import, tách bảng dữ liệu, bỏ barrel (mục 3.4).
+- `Slowest parts`: phần nạp chậm nhất (không tính SDK). Phần lớn: giảm import, tách bảng dữ liệu, bỏ barrel (mục 3.4, 3.5).
+- CLI `0.22.0` in `PART_SIZE_HIGH` và `BUNDLE_SIZE_HIGH` như mọi cảnh báo (`MÃ: message`) nhưng chưa có dòng `Hint:` riêng cho hai mã này; cách xử lý ở bảng dưới và mục 3.5.
 - `No part, src/main.ts runs code while it loads: <file:dòng lý do: câu lệnh>` (`mainTopLevelEffect`): version không có phần; đưa câu lệnh đó ra khỏi `src/main.ts`.
 
 Lý do (`reason` của `entryPoints[]`) và cảnh báo (`warnings[].code`) thường gặp:
@@ -482,6 +517,8 @@ Lý do (`reason` của `entryPoints[]`) và cảnh báo (`warnings[].code`) thư
 | `PART_GLOBALS_MODIFIED` | Project ghi vào global/đối tượng built-in ở đâu đó (`message` nêu file và dòng); Cogover xét cả project, kể cả code trong handler, nên chuyển vào handler không giải quyết được. Bỏ polyfill/vá prototype/gán `globalThis`, thay bằng hàm của project (mục 4.1); không bỏ được thì chấp nhận chạy bằng module đầy đủ (không khai báo) |
 | `PART_GLOBAL_STATE_UNKNOWN` | Code lúc nạp đưa quá nhiều vào global để so: thu nhỏ code lúc nạp |
 | `LOAD_TIME_HIGH` | Module đầy đủ (hoặc SDK cộng một phần) nạp lâu hơn `thresholdMillis`. Module đầy đủ: tách điểm vào và nhóm route ra file riêng/router con. Một phần (`message` bắt đầu bằng `Part`): import ít hơn từ file dùng chung, xử lý `requiredModules` |
+| `PART_SIZE_HIGH` | Một phần từ `partSizeThresholdBytes` (400 KB) trở lên; `message` nêu số thứ tự, file và kích thước. Phần lớn được nạp nhiều lần có thể làm môi trường chạy của Workspace khởi động lại. Tách file khai báo điểm vào của phần đó (bỏ file registry, chia router con), import ít hơn, xử lý `requiredModules`, dữ liệu lớn ra khỏi code (mục 3.5) |
+| `BUNDLE_SIZE_HIGH` | Module đầy đủ từ `bundleSizeThresholdBytes` (500 KB) trở lên và có lần thực thi còn chạy bằng nó. Tổ chức mọi điểm vào theo mục 3 (route trong router con) rồi quyết định khai báo `true` theo mục 5.1; cảnh báo hết khi mọi điểm vào chạy bằng phần (điều kiện ở mục 3.5) |
 | `ENTRY_POINTS_IN_BUNDLE` | Liệt kê điểm vào dùng module đầy đủ; xử lý theo `reason` của từng điểm vào |
 | `ROUTE_SHADOWED` | Route của router con không bao giờ được gọi vì route đứng trước trên router chính trả lời cùng request: đổi thứ tự hoặc đổi path |
 | `PART_NOT_SMALLER` | File import gần như cả module: import ít hơn từ file dùng chung |
@@ -499,11 +536,12 @@ Tổng dung lượng source file mà `src/main.ts` import tới tối đa **6 Mi
 
 - Bundle càng lớn nạp càng lâu: mọi lần thực thi không chạy bằng phần đều nạp cả bundle (mục 1).
 - Bước kiểm bundle lúc publish cũng có giới hạn thời gian xử lý, nên bundle nhiều **code** cỡ vài MB có thể bị từ chối ở bước kiểm bundle lúc publish (version `FAILED`) trước khi chạm 6 MiB. Bundle nặng **dữ liệu** (bảng tra cứu lớn) ít gặp trường hợp này hơn.
-- Module lớn: tổ chức theo điểm vào (mục 3) và chạy bằng phần khi bảng mục 5.1 cho phép; dữ liệu lớn tách file riêng chỉ điểm vào cần mới import, hoặc đưa ra Object hay file của Workspace và đọc khi cần; theo dõi `LOAD_TIME_HIGH` trong Load profile sau mỗi lần publish.
+- Kích thước nên nhắm tới thấp hơn nhiều: module đầy đủ dưới 500 KB và mỗi phần dưới 400 KB (mục 3.5); lớn hơn thì Load profile báo `BUNDLE_SIZE_HIGH`/`PART_SIZE_HIGH`.
+- Module lớn: tổ chức theo điểm vào (mục 3) và chạy bằng phần khi bảng mục 5.1 cho phép; dữ liệu lớn tách file riêng chỉ điểm vào cần mới import, hoặc đưa ra Object hay file của Workspace và đọc khi cần; theo dõi `LOAD_TIME_HIGH`, `PART_SIZE_HIGH` và `BUNDLE_SIZE_HIGH` trong Load profile sau mỗi lần publish.
 
 ## 8. Kiểm thử và bàn giao
 
 - Unit test không đổi: hàm thuần và handler import từ file của chúng. Chạy `npm test`/máy chủ local trước publish như thường (`defineTrigger`/`defineJob`/`defineAction` validate khi module được nạp).
 - Sau publish: lưu Load profile (output CLI hoặc `loadProfile` của version) vào bằng chứng; kiểm thử chức năng chạy trên đúng version sẽ activate (đã khai báo hay chưa). Đổi khai báo là version mới, kiểm thử lại trên chính version đó: trước khi activate, gọi các route chính qua preview service `6` chỉ rõ version ID (`READ_ONLY` khi route chỉ đọc), gồm ca từ chối quyền; sau khi activate, chạy lại ca trigger (đặc biệt before-change), job và action vì chúng chỉ chạy trên version active. Ca nào khác kết quả của version trước thì activate lại version trước và xử lý theo mục 4.
 - Đo hiệu năng: tính lợi ích ước tính theo mục 5.1 (bundle đầy đủ so với SDK cộng phần của điểm vào cần đo), và thời gian phản hồi lượt gọi đầu tiên sau activate với các lượt sau, theo [Kiểm thử hiệu năng](performance-testing.md).
-- Bàn giao: phiên bản SDK/CLI, Workspace hỗ trợ hay chưa (bằng chứng), bố cục `src/`, có dùng `router.route()` không, khai báo `entryPointParts` (`true`/`false`/không khai báo), lý do theo bảng mục 5.1 và nơi lưu khai báo (mục 5.2), dòng `Runs on:`, lợi ích ước tính, kích thước và `coldLoadMs` của module đầy đủ, số phần và độ phủ, `requiredModules` còn lại, cảnh báo còn lại và lý do chấp nhận.
+- Bàn giao: phiên bản SDK/CLI, Workspace hỗ trợ hay chưa (bằng chứng), bố cục `src/`, có dùng `router.route()` không, khai báo `entryPointParts` (`true`/`false`/không khai báo), lý do theo bảng mục 5.1 và nơi lưu khai báo (mục 5.2), dòng `Runs on:`, lợi ích ước tính, kích thước và `coldLoadMs` của module đầy đủ, số phần và độ phủ, kích thước các phần lớn nhất (theo `parts[].bytes`) và của phần phục vụ điểm vào gọi dày, `requiredModules` còn lại, cảnh báo còn lại (đặc biệt `PART_SIZE_HIGH`, `BUNDLE_SIZE_HIGH`) và lý do chấp nhận.

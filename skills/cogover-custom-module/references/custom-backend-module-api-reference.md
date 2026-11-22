@@ -542,6 +542,8 @@ Ví dụ (số liệu tổng hợp):
   "loadProfile": {
     "measuredAt": 1795095914928,
     "thresholdMillis": 1000,
+    "partSizeThresholdBytes": 400000,
+    "bundleSizeThresholdBytes": 500000,
     "bundle": {"bytes": 1677721, "coldLoadMs": 1180.4},
     "sdk": {"bytes": 186772, "coldLoadMs": 52.9},
     "parts": [
@@ -583,7 +585,8 @@ Ví dụ (số liệu tổng hợp):
     "entryPointParts": {"requested": true, "effective": true, "effectiveFor": {"entryPoints": true, "http": true}},
     "warnings": [
       {"code": "LOAD_TIME_HIGH", "message": "The merged bundle took 1180 ms to load (threshold 1000 ms)."},
-      {"code": "ENTRY_POINTS_IN_BUNDLE", "message": "1 entry point(s) run on the merged bundle: order_inline."}
+      {"code": "ENTRY_POINTS_IN_BUNDLE", "message": "1 entry point(s) run on the merged bundle: order_inline."},
+      {"code": "BUNDLE_SIZE_HIGH", "message": "The merged bundle is 1678 KB (threshold 500 KB): a bundle this large that loads often can make the runtime of the Workspace restart, so that the next call loads cold. Declare each entry point in a file of its own and publish with entryPointParts: true, so that every entry point runs on a small part."}
     ],
     "timings": {"totalMs": 6400}
   }
@@ -594,6 +597,8 @@ Ví dụ (số liệu tổng hợp):
 |---|---|
 | `measuredAt` | Thời điểm đo, tính bằng mili giây kể từ epoch. |
 | `thresholdMillis` | Thời gian nạp mà vượt quá thì có cảnh báo `LOAD_TIME_HIGH`. |
+| `partSizeThresholdBytes` | Kích thước (byte, không tính SDK dùng chung) từ đó một phần có cảnh báo `PART_SIZE_HIGH`; `0` khi không cảnh báo. 400000 byte là 400 KB. |
+| `bundleSizeThresholdBytes` | Kích thước (byte, tính cả `@cogover/sdk` gói trong đó) từ đó module đầy đủ có cảnh báo `BUNDLE_SIZE_HIGH`; `0` khi không cảnh báo. |
 | `bundle` | Module biên dịch đầy đủ (*merged bundle*): `bytes` và `coldLoadMs`, thời gian nạp nó trong một sandbox mới. |
 | `sdk` | Module dùng chung `@cogover/sdk`: `bytes` và `coldLoadMs`. `null` khi version không có phần nào. |
 | `parts[]` | Mỗi phần một phần tử: `no`; `kind`, `FILE` cho phần của một file hoặc `KIND` cho phần dùng chung của mọi trigger, job hoặc action của version; `source`, đường dẫn file, hoặc `triggers`, `jobs`, `actions` với phần `KIND`; `bytes`; `coldLoadMs`, không tính SDK; `entryPoints`, số trigger, job, action và route mà phần phục vụ; `coldLoadRuns`, `2` khi phần mất từ 100 ms trở lên và được nạp lần hai trong sandbox mới (khi đó `coldLoadMs` là thời gian nhỏ hơn), ngược lại `1`. |
@@ -629,6 +634,8 @@ Dựng và đo phần làm build lâu thêm: vài giây với module nhỏ, kho�
 | `code` cảnh báo | Ý nghĩa |
 |---|---|
 | `LOAD_TIME_HIGH` | Module đầy đủ, hoặc SDK cộng một phần, nạp lâu hơn `thresholdMillis`. Với module đầy đủ: đặt điểm vào và nhóm route ở file riêng (route đăng ký thẳng trên router chính luôn dùng module đầy đủ). Với một phần: import ít hơn từ file dùng chung, và chuyển code chạy lúc nạp (`requiredModules`) vào handler. |
+| `PART_SIZE_HIGH` | Một phần lớn bằng hoặc hơn `partSizeThresholdBytes` (`message` nêu số thứ tự, file và kích thước). Phần lớn được nạp nhiều lần có thể làm môi trường chạy của Workspace bị khởi động lại, và lượt gọi kế tiếp nạp lại từ đầu. Hãy tách file khai báo các điểm vào của phần đó, hoặc để file đó import ít code hơn. Nhiều phần cỡ vừa cùng được gọi dày cũng cộng dồn. |
+| `BUNDLE_SIZE_HIGH` | Module đầy đủ lớn bằng hoặc hơn `bundleSizeThresholdBytes`. Hãy định nghĩa mỗi điểm vào ở file riêng (route trong router gắn bằng `router.route()`) và publish với `entryPointParts: true` để mỗi điểm vào chạy bằng một phần nhỏ. Không báo khi version đã khai báo `entryPointParts: true`, mọi điểm vào đều có phần và nền tảng đang chạy chúng bằng phần, vì khi đó module đầy đủ chỉ là đường dự phòng. |
 | `REQUIRED_MODULES` | Code của một số file thay đổi gì đó bên ngoài khi nạp nên mọi phần đều chứa chúng (xem `requiredModules`); các phần lớn hơn mức cần thiết. |
 | `ENTRY_POINTS_IN_BUNDLE` | Liệt kê các điểm vào dùng module đầy đủ (xem `entryPoints`). |
 | `ROUTE_SHADOWED` | Route của router được gắn không bao giờ được gọi tới vì một route đứng trước trên router chính đã trả lời cùng request. |
