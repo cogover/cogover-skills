@@ -207,7 +207,7 @@ Ngưỡng cảnh báo của Load profile (cảnh báo không làm publish thất
 - Đơn vị: KB thập phân (1 KB = 1.000 byte), đúng như trong `message`. CLI in kích thước theo KiB (1 KiB = 1.024 byte): `390.6 KiB` đã là 400 KB, `488.3 KiB` là 500 KB. So bằng byte trong JSON khi sát ngưỡng.
 - Ngưỡng do Workspace cấu hình: đọc `loadProfile.partSizeThresholdBytes` và `bundleSizeThresholdBytes` (`0` là Workspace không cảnh báo loại đó). Workspace có Load profile nhưng chưa có hai field này thì chưa có cảnh báo kích thước: tự so `parts[].bytes` và `bundle.bytes` với 400.000 và 500.000 byte.
 - `BUNDLE_SIZE_HIGH` không báo khi module đầy đủ chỉ còn là đường dự phòng: version khai báo `entryPointParts: true`, mọi trigger/job/action và mọi route đều có phần, nền tảng đang chạy cả hai loại bằng phần (`effectiveFor`), và `src/main.ts` không export default một handler không phải `router.toHandler()` (handler đó luôn chạy bằng module đầy đủ). Không khai báo hoặc khai báo `false` thì vẫn báo, vì khi đó mọi lần thực thi nạp module đầy đủ.
-- Cộng dồn: cảnh báo xét từng phần riêng, nhưng nhiều phần cỡ vừa cùng được gọi dày cũng cộng dồn: trong phép đo, hai phần khoảng 400 KB cùng nóng đã chạm giới hạn ở một trong hai lần, ba phần thì chạm ở mọi lần. Phần của điểm vào gọi dày (trigger, route chính) càng nhỏ càng tốt; hai phần trở lên từ khoảng 300 KB cùng được gọi dày thì xử lý như đã có cảnh báo.
+- Cộng dồn: cảnh báo xét từng phần riêng, nhưng nhiều phần cỡ vừa cùng được gọi dày cũng cộng dồn: trong phép đo, hai phần khoảng 400 KB cùng nóng đã chạm giới hạn ở một trong hai lần, ba phần thì chạm ở mọi lần. Phần của điểm vào gọi dày (trigger, route chính) càng nhỏ càng tốt; hai phần trở lên từ khoảng 300 KB cùng được gọi dày thì xử lý như đã có cảnh báo (mốc 300 KB là ước lượng dè dặt suy từ phép đo một phần 300 KB và hai phần 400 KB, chưa đo riêng).
 
 Bố cục file quyết định kích thước phần, vì phần chứa mọi thứ file khai báo điểm vào import tới:
 
@@ -223,7 +223,7 @@ Kiểm trước khi bàn giao:
 
 - [ ] Không có `PART_SIZE_HIGH`; hoặc có lý do chấp nhận (phần đó ít được gọi) đã ghi vào bàn giao.
 - [ ] Không có `BUNDLE_SIZE_HIGH`; hoặc module đã tổ chức theo điểm vào và quyết định khai báo theo mục 5.1, phần còn lại ghi lý do.
-- [ ] Không có hai phần trở lên từ khoảng 300 KB cùng phục vụ điểm vào gọi dày.
+- [ ] Không có hai phần trở lên từ khoảng 300 KB (mốc ước lượng) cùng phục vụ điểm vào gọi dày; hoặc có lý do chấp nhận đã ghi vào bàn giao.
 - [ ] Không có file registry hay router gom điểm vào của nhiều nhóm.
 
 ## 4. Quy tắc "lệnh ở đầu file"
