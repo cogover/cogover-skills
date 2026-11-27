@@ -3,13 +3,13 @@ name: layout-scripting
 description: "Sinh hoặc sửa clientScript cho Layout Rule (`pageSettings.script`) của form builder Cogover từ mô tả nghiệp vụ tiếng Việt; output code paste-ready vào ô \"Cấu hình script\". Sửa script có sẵn: bắt buộc lấy script hiện tại qua $object-layout, giữ logic cũ, hỏi khi ranh giới chưa rõ. Nghiệp vụ có SET giá trị: bắt buộc decision tree 3 câu hỏi."
 metadata:
   author: cogover
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # layout-scripting — sinh code Layout Rule Script
 
-- **Phiên bản:** `1.1.0`
-- **Ngày phát hành:** `2026-10-06`
+- **Phiên bản:** `1.1.1`
+- **Ngày phát hành:** `2026-11-27`
 
 Sinh JavaScript paste-ready cho `pageSettings.script` (ô "Cấu hình script") của layout Cogover từ mô tả nghiệp vụ tiếng Việt. User là non-coder: mọi rủi ro runtime (re-render loop, ghi đè data, idempotency) phải được chặn bằng guard trong code và hỏi bằng ngôn ngữ tự nhiên. Đọc/ghi `pageSettings.script` trên layout qua [$object-layout](../object-layout/SKILL.md).
 
@@ -110,7 +110,7 @@ Sửa/thêm/cập nhật script trên layout đã có → làm RULE §-1 trướ
 Đọc [references/api-cheatsheet.md](references/api-cheatsheet.md) trước khi sinh code. Riêng:
 
 - Log debug: theo mục "Debug bằng `logger`". Không sinh `console.log`; mặc định `logger.log(...)`; `logger.forceShowLog = true` chỉ bật tạm khi user cần xem log ngoài chế độ nhà phát triển và phải nói rõ cần xoá/tắt sau khi debug.
-- Script dùng `filterRecords()` hoặc đọc record từ API: đọc lại mục "Record từ filterRecords + lookup expand 1 cấp". Lookup cấp 1 có thể là `RecordItem` object (`id`, `name`, field khác tuỳ object/config); lookup lồng từ cấp 2 trở đi không expand, chỉ là `string` hoặc `string[]` ID. Set vào `field.value`/`cell.value` vẫn dùng SCRIPT shape: lookup = string ID, không phải object.
+- Script dùng `filterRecords()` hoặc đọc record từ API: đọc lại mục "Record từ filterRecords + lookup expand 1 cấp". Lookup cấp 1 có thể là `RecordItem` object (`id`, `name`, field khác tuỳ object/config); lookup lồng từ cấp 2 trở đi không expand, chỉ là `string` hoặc `string[]` ID. Set vào `field.value`/`cell.value` vẫn dùng SCRIPT shape: lookup = string ID (multiple = `string[]`), không phải object; có record/tên trong tay cũng chỉ gán `record.id`. `rl.setData()` nhận object **không** có nghĩa `.value` nhận object (bảng so sánh ở đầu §7 cheatsheet).
 
 ### Bước 2: parse mô tả
 
@@ -208,7 +208,7 @@ Tự kiểm trước khi output; lỗi → sửa tại chỗ, không output code
 2. Sửa layout có sẵn: đã lấy `pageSettings.script` qua `$object-layout`; logic cũ không liên quan còn nguyên. Chưa lấy được hoặc không rõ block cần sửa → hỏi user, không output script thay thế.
 3. Mọi dòng `.value =` (`field`, `item`, `cell`, `row.get(...)`) có `if (current !== new)` ngay trên; set `null` cũng `if (item.value) { item.value = null; }`.
 4. `await` cho `rl.row/rows/getRow/getCol/findRow/submit/filterRecords`.
-5. Value set vào `field.value`/`row.get(slug).value` đúng SCRIPT shape §7: date → `Date`, time → ms, range → `{ gte, lte }`, lookup → string ID (không `{ id, ... }`).
+5. Value set vào `field.value`/`row.get(slug).value` đúng SCRIPT shape §7: date → `Date`, time → ms, range → `{ gte, lte }`, lookup single → string ID, lookup multiple → `string[]`. Grep mọi `.value =` của field/cell lookup: có `{ id`, `name:`, `.map(... => ({`, hoặc gán nguyên `record`/`records` → SAI, sửa thành ID. Lookup gán object làm **crash cả form** (không chỉ blank), xem "Lookup gán object → CRASH form" trong cheatsheet.
 6. `rl.setData(records)` đúng API record shape §7B: date → epoch ms number (không `Date`), lookup nhận `RecordItem | string | array`. Records từ `filterRecords` → pass thẳng, không map thủ công. Không nhầm hai shape.
 7. Set bảng có `if (rows.length === 0) { rl.setData(...) }` trừ khi user chọn overwrite; payload setData idempotent (cùng input → cùng output).
 8. `await rl.getCol(...)`/`await rl.getRow(...)` có null-check; `readOnly`/`required` đặt đúng thứ tự "lệnh sau thắng"; không có `row.value = ...`; `col.value = ...` chỉ khi user đã xác nhận ghi đè toàn cột và không đọc `col.value` để guard.
