@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.38.1 - 2026-11-27
+
+Layout Rule Script: chặn gán object vào ô lookup qua `.value` (làm crash cả form).
+
+- `layout-scripting` 1.1.1:
+  - `references/api-cheatsheet.md`: bảng so sánh lookup giữa `.value` (§7, chỉ `string`/`string[]`) và `rl.setData()` (§7B, nhận object); không suy từ §7B sang §7, không suy từ helper đọc giá trị có xử lý object, không gán kèm tên record. Mục "Sai shape" đổi từ "render blank" thành "blank hoặc CRASH cả form": lookup gán object làm `RecordMultipleSelect` ném `startsWith is not a function`, form bị unmount (trong khung chat omni trông như trang tự reload); thêm ví dụ sai/đúng cho lookup single, lookup multiple và record từ `filterRecords`.
+  - `SKILL.md`: Bước 1 và checklist Bước 7 mục 5 nêu rõ lookup multiple là `string[]`, cách grep phát hiện gán object và hậu quả crash.
+
 ## 4.38.0 - 2026-11-22
 
 Cảnh báo kích thước lúc publish của Custom Backend Module (`PART_SIZE_HIGH`, `BUNDLE_SIZE_HIGH`) và hướng dẫn giữ phần, module đầy đủ dưới ngưỡng.

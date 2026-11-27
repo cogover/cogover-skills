@@ -194,6 +194,17 @@ Cell có **đủ các key của FORM_ITEM trừ `display`**, cộng key mở r�
 > ⚠️ **2 SHAPE KHÁC NHAU** — đừng nhầm:
 > - **§7 dưới đây = SCRIPT shape** (cho `row.get(slug).value`, `field.value`, `$record.X`, `changedRowCells[i].newValue`, `screen.formItems[i].value`).
 > - **§7B = API record shape** (cho `rl.setData(records)`). Khác hẳn — vd `date` cần `number` (epoch ms) thay vì `Date`, `lookup` chấp nhận cả object/string/array.
+>
+> 🚨 **Lookup là chỗ hay nhầm nhất giữa 2 shape:**
+>
+> | Cách ghi | Lookup nhận | Object `{ id, name }` |
+> |---|---|---|
+> | `field.value = ...`, `row.get(slug).value = ...` (§7) | **chỉ** `string` (single) / `string[]` (multiple) | ❌ CẤM |
+> | `rl.setData(records)` (§7B) | `RecordItem \| string` hoặc mảng của 2 dạng | ✅ được, converter tự lấy `.id` |
+>
+> - `setData` nhận object **không** có nghĩa `.value` cũng nhận. Không suy từ §7B sang §7.
+> - Đọc giá trị mà code có xử lý cả object (vd helper `idOf(v) = typeof v === "object" ? v.id : v`) **không** có nghĩa được ghi object vào `.value`.
+> - Có sẵn tên record (từ `filterRecords`, `$ref`) cũng **không** gán kèm tên: ô lookup tự tải tên theo ID. Gán `record.id`, không gán `record`.
 
 ### Single (multiple=false)
 
@@ -245,18 +256,54 @@ if (customerId) {
 }
 ```
 
-### Sai shape = render blank
+### Sai shape = blank hoặc CRASH cả form
+
 ```js
 // SAI
 row.get("date").value = "2026-05-26";              // → blank
 row.get("time").value = "09:30";                   // → blank
-row.get("lookup_field").value = { id: "abc-id" };  // → blank (chờ string)
 
 // ĐÚNG
 row.get("date").value = new Date("2026-05-26");
 row.get("time").value = (9 * 60 + 30) * 60 * 1000;
-row.get("lookup_field").value = "abc-id";          // chỉ cần ID string
 ```
+
+#### 🚨 Lookup gán object → CRASH form (không chỉ blank)
+
+Ô lookup trên form (cả single và multiple) render bằng `RecordMultipleSelect`, component này gọi `id.startsWith("$")` trên từng phần tử value. Gán object → `TypeError: ... startsWith is not a function` → React unmount cả form. Ngoài thực tế: form "Tạo mới" mở trong khung chat omni bị ErrorBoundary bỏ khung chat và vẽ lại trang, người dùng thấy như **trang tự reload sau ~1s** và không tạo được bản ghi. Stack trace chỉ về ui-kit, không chỉ về script nên rất khó lần ra.
+
+```js
+// SAI — lookup single gán object
+customerItem.value = { id: customerId, name: customerName };     // → crash form
+
+// SAI — lookup multiple gán mảng object (kể cả để ô "hiện tên ngay")
+const modelNames = $ref.modelNames || {};
+productsItem.value = modelIds.map((modelId) => ({ id: modelId, name: modelNames[modelId] }));  // → crash form
+
+// SAI — gán nguyên record lấy từ filterRecords
+const { records } = await filterRecords("product", { filterItems: [...] });
+productsItem.value = records;                                     // → crash form
+
+// ĐÚNG — single: string ID
+if (customerItem.value !== customerId) {
+    customerItem.value = customerId;
+}
+
+// ĐÚNG — multiple: mảng string ID; ô tự tải tên model theo ID
+const currentIds = productsItem.value || [];
+const sameIds = currentIds.length === modelIds.length && currentIds.every((id) => modelIds.includes(id));
+if (!sameIds) {
+    productsItem.value = modelIds;
+}
+
+// ĐÚNG — từ record của filterRecords: chỉ lấy id
+const productIds = [];
+for (const record of records) {
+    productIds.push(record.id);
+}
+```
+
+Cell lookup trong related list (`row.get(slug).value`) cùng rule: chỉ `string` / `string[]`.
 
 ## 7B. Value shape cho `rl.setData(records)` (KHÁC §7)
 
